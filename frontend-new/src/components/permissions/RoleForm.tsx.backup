@@ -1,0 +1,476 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Checkbox,
+  Stack,
+  Alert,
+  Typography,
+  Divider,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { createRole, updateRole, getPermissions, type Role } from '../../api/permissions';
+import ClearIcon from '@mui/icons-material/Clear';
+
+interface RoleFormProps {
+  role?: Role;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+// Области действия роли
+const ROLE_SCOPES = [
+  { value: 'SYSTEM', label: 'Вся система' },
+  { value: 'COMPANY', label: 'Компания' },
+  { value: 'DEPARTMENT', label: 'Отдел' },
+  { value: 'OWN', label: 'Только свои данные' },
+];
+
+// Категории ролей
+const ROLE_CATEGORIES = [
+  { value: 'ADMINISTRATIVE', label: 'Административная' },
+  { value: 'MANAGEMENT', label: 'Управленческая' },
+  { value: 'OPERATIONAL', label: 'Операционная' },
+  { value: 'READONLY', label: 'Только просмотр' },
+  { value: 'CUSTOM', label: 'Пользовательская' },
+];
+
+// Действия в нужном порядке
+const ACTIONS = ['VIEW', 'ADD', 'EDIT', 'DELETE'] as const;
+
+// Группировка разрешений для матрицы
+const createPermissionsMatrix = (permissions: any[]) => {
+  // Группируем по ресурсам
+  const byResource: Record<string, Record<string, any[]>> = {};
+  
+  permissions.forEach((perm) => {
+    const resource = perm.resource || 'OTHER';
+    const action = perm.action;
+    
+    if (!byResource[resource]) {
+      byResource[resource] = {};
+    }
+    if (!byResource[resource][action]) {
+      byResource[resource][action] = [];
+    }
+    byResource[resource][action].push(perm);
+  });
+  
+  return byResource;
+};
+
+// Русские названия ресурсов
+const RESOURCE_LABELS: Record<string, string> = {
+  CLIENT: 'Клиенты',
+  APPLICATION: 'Заявки',
+  MEETING: 'Встречи',
+  DEAL: 'Сделки',
+  PAYMENT: 'Платежи',
+  REFUND: 'Возвраты',
+  PROJECT: 'Проекты',
+  BUILDING: 'Здания',
+  PROPERTY: 'Объекты недвижимости',
+  LAYOUT: 'Планировки',
+  DISCOUNT: 'Скидки',
+  DOCUMENT: 'Документы',
+  REPORT: 'Отчеты',
+  COMPANY: 'Компании',
+  DEPARTMENT: 'Отделы',
+  ROLE: 'Роли',
+  USER: 'Пользователи',
+  BENEFICIARY_ACCOUNT: 'Счета получателей',
+  DASHBOARD: 'Дашборд',
+  PAYMENT_TYPE: 'Типы платежей',
+  PERMISSION: 'Разрешения',
+  PLAN: 'Планы',
+  SETTINGS: 'Настройки',
+  TEMPLATE: 'Шаблоны',
+  OTHER: 'Прочее',
+};
+
+
+
+// Русские названия для scope
+const SCOPE_LABELS: Record<string, string> = {
+  OWN: 'Свои',
+  DEPARTMENT: 'Отдел',
+  COMPANY: 'Компания',
+  SYSTEM: 'Система',
+};
+
+// Компонент ячейки с radio buttons для выбора scope
+const PermissionCell = React.memo(({ 
+  availableScopes,
+  selectedScope,
+  onChange,
+  onClear,
+}: { 
+  availableScopes: string[];
+  selectedScope?: string;
+  onChange: (scope: string) => void;
+  onClear: () => void;
+}) => {
+  if (availableScopes.length === 0) {
+    return <TableCell align="center">—</TableCell>;
+  }
+
+  return (
+    <TableCell>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <RadioGroup
+          value={selectedScope || ''}
+          onChange={(e) => onChange(e.target.value)}
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'row',
+            gap: 0.5,
+          }}
+        >
+          {availableScopes.map((scope) => (
+            <Tooltip key={scope} title={SCOPE_LABELS[scope]} arrow>
+              <FormControlLabel
+                value={scope}
+                control={<Radio size="small" />}
+                label={SCOPE_LABELS[scope]?.charAt(0) || scope.charAt(0)}
+                sx={{ 
+                  m: 0,
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.75rem',
+                    fontWeight: selectedScope === scope ? 'bold' : 'normal',
+                  }
+                }}
+              />
+            </Tooltip>
+          ))}
+        </RadioGroup>
+        {selectedScope && (
+          <Tooltip title="Очистить" arrow>
+            <IconButton size="small" onClick={onClear}>
+              <ClearIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
+    </TableCell>
+  );
+});
+
+export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
+  const [formData, setFormData] = useState({
+    name: role?.name || '',
+    code: role?.code || '',
+    scope: role?.scope || 'OWN',
+    category: role?.category || 'CUSTOM',
+    description: role?.description || '',
+    is_active: role?.is_active ?? true,
+  });
+
+  // Храним выбранные разрешения в виде: { resource: { action: scope } }
+  // Например: { 'APPLICATION': { 'VIEW': 'COMPANY', 'ADD': 'DEPARTMENT' } }
+  const [permissionsMatrix, setPermissionsMatrix] = useState<Record<string, Record<string, string>>>({});
+
+  const [error, setError] = useState<string | null>(null);
+
+  // Загрузка всех доступных разрешений
+  const { data: allPermissions, isLoading: permissionsLoading } = useQuery({
+    queryKey: ['permissions'],
+    queryFn: () => getPermissions(),
+  });
+
+  // Инициализация матрицы разрешений из существующей роли
+  React.useEffect(() => {
+    if (role?.permissions && allPermissions) {
+      const matrix: Record<string, Record<string, string>> = {};
+      
+      role.permissions.forEach((perm: any) => {
+        const resource = perm.resource;
+        const action = perm.action;
+        const scope = perm.scope;
+        
+        if (!matrix[resource]) {
+          matrix[resource] = {};
+        }
+        matrix[resource][action] = scope;
+      });
+      
+      setPermissionsMatrix(matrix);
+    }
+  }, [role, allPermissions]);
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => {
+      // Преобразуем матрицу разрешений в массив ID
+      const permissionIds: number[] = [];
+      
+      if (allPermissions) {
+        Object.entries(permissionsMatrix).forEach(([resource, actions]) => {
+          Object.entries(actions).forEach(([action, scope]) => {
+            // Находим ID разрешения с нужными параметрами
+            const permission = allPermissions.find(
+              (p: any) => p.resource === resource && p.action === action && p.scope === scope
+            );
+            if (permission) {
+              permissionIds.push(permission.id);
+            }
+          });
+        });
+      }
+      
+      const payload = {
+        ...data,
+        permission_ids: permissionIds,
+      };
+      
+      if (role) {
+        return updateRole(role.id, payload);
+      }
+      return createRole(payload);
+    },
+    onSuccess: () => {
+      onSuccess();
+    },
+    onError: (err: any) => {
+      setError(err.response?.data?.detail || err.message || 'Ошибка при сохранении роли');
+    },
+  });
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    mutation.mutate(formData);
+  }, [formData, permissionsMatrix, mutation]);
+
+  const handleNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, name: e.target.value }));
+  }, []);
+
+  const handleCodeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, code: e.target.value.toUpperCase() }));
+  }, []);
+
+  const handleScopeChange = useCallback((e: any) => {
+    setFormData((prev) => ({ ...prev, scope: e.target.value }));
+  }, []);
+
+  const handleCategoryChange = useCallback((e: any) => {
+    setFormData((prev) => ({ ...prev, category: e.target.value }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, description: e.target.value }));
+  }, []);
+
+  const handleIsActiveChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({ ...prev, is_active: e.target.checked }));
+  }, []);
+
+  // Обработчик изменения разрешения (resource + action -> scope)
+  const handlePermissionChange = useCallback((resource: string, action: string, scope: string) => {
+    setPermissionsMatrix((prev) => {
+      const newMatrix = { ...prev };
+      if (!newMatrix[resource]) {
+        newMatrix[resource] = {};
+      }
+      newMatrix[resource][action] = scope;
+      return newMatrix;
+    });
+  }, []);
+
+  // Обработчик очистки разрешения
+  const handlePermissionClear = useCallback((resource: string, action: string) => {
+    setPermissionsMatrix((prev) => {
+      const newMatrix = { ...prev };
+      if (newMatrix[resource]?.[action]) {
+        delete newMatrix[resource][action];
+        // Если для ресурса не осталось действий, удаляем ресурс
+        if (Object.keys(newMatrix[resource]).length === 0) {
+          delete newMatrix[resource];
+        }
+      }
+      return newMatrix;
+    });
+  }, []);
+
+  // Создаем матрицу доступных разрешений
+  const permissionsData = useMemo(
+    () => allPermissions ? createPermissionsMatrix(allPermissions) : {},
+    [allPermissions]
+  );
+
+  // Получаем список всех ресурсов
+  const resources = useMemo(
+    () => Object.keys(permissionsData).sort(),
+    [permissionsData]
+  );
+
+  return (
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+      <Stack spacing={3}>
+        {error && <Alert severity="error">{error}</Alert>}
+
+        {/* Основная информация */}
+        <TextField
+          label="Название роли"
+          value={formData.name}
+          onChange={handleNameChange}
+          required
+          fullWidth
+        />
+
+        <TextField
+          label="Код роли"
+          value={formData.code}
+          onChange={handleCodeChange}
+          required
+          fullWidth
+          helperText="Уникальный код роли (например: MANAGER, ADMIN)"
+        />
+
+        <FormControl fullWidth>
+          <InputLabel>Область действия</InputLabel>
+          <Select
+            value={formData.scope}
+            onChange={handleScopeChange}
+            label="Область действия"
+          >
+            {ROLE_SCOPES.map((scope) => (
+              <MenuItem key={scope.value} value={scope.value}>
+                {scope.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth>
+          <InputLabel>Категория роли</InputLabel>
+          <Select
+            value={formData.category}
+            onChange={handleCategoryChange}
+            label="Категория роли"
+          >
+            {ROLE_CATEGORIES.map((category) => (
+              <MenuItem key={category.value} value={category.value}>
+                {category.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <TextField
+          label="Описание"
+          value={formData.description}
+          onChange={handleDescriptionChange}
+          multiline
+          rows={2}
+          fullWidth
+        />
+
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={formData.is_active}
+              onChange={handleIsActiveChange}
+            />
+          }
+          label="Активная роль"
+        />
+
+        <Divider />
+
+        {/* Матрица разрешений */}
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Разрешения
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Для каждого действия выберите область видимости: <strong>С</strong>вои, <strong>О</strong>тдел, <strong>К</strong>омпания, <strong>С</strong>истема
+          </Typography>
+
+          {permissionsLoading ? (
+            <Typography>Загрузка разрешений...</Typography>
+          ) : (
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 'bold', minWidth: 150 }}>Ресурс</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold', minWidth: 200 }}>
+                      Просмотр
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold', minWidth: 200 }}>
+                      Создание
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold', minWidth: 200 }}>
+                      Редактирование
+                    </TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 'bold', minWidth: 200 }}>
+                      Удаление
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {resources.map((resource) => {
+                    const resourcePerms = permissionsData[resource];
+                    
+                    return (
+                      <TableRow key={resource} hover>
+                        <TableCell sx={{ fontWeight: 'medium' }}>
+                          {RESOURCE_LABELS[resource] || resource}
+                        </TableCell>
+                        {ACTIONS.map((action) => {
+                          const availableScopes = resourcePerms[action]?.map((p: any) => p.scope) || [];
+                          const selectedScope = permissionsMatrix[resource]?.[action];
+                          
+                          return (
+                            <PermissionCell
+                              key={`${resource}-${action}`}
+                              availableScopes={availableScopes}
+                              selectedScope={selectedScope}
+                              onChange={(scope) => handlePermissionChange(resource, action, scope)}
+                              onClear={() => handlePermissionClear(resource, action)}
+                            />
+                          );
+                        })}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+
+        {/* Кнопки */}
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
+          <Button onClick={onCancel} disabled={mutation.isPending}>
+            Отмена
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={mutation.isPending || !formData.name || !formData.code}
+          >
+            {mutation.isPending ? 'Сохранение...' : role ? 'Обновить' : 'Создать'}
+          </Button>
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
