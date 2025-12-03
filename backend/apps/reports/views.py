@@ -17,6 +17,7 @@ from apps.deals.models import Deal
 from apps.finances.models import Payment
 from apps.realty.models import Project
 from django.contrib.auth.models import User
+from permissions.permissions import ReportPermission, PlanPermission
 
 
 # --- Helper Function ---
@@ -48,7 +49,7 @@ def calculate_metrics(plan, fact, start_date, end_date):
 # --- Project Report Views ---
 
 class PlanFactReportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ReportPermission]
 
     def get(self, request, *args, **kwargs):
         year = int(request.query_params.get('year', datetime.now().year))
@@ -132,7 +133,7 @@ class PlanFactReportView(APIView):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, PlanPermission])
 def plan_template_download(request):
     projects = Project.objects.all().values('id', 'name')
     df_data = []
@@ -153,7 +154,7 @@ def plan_template_download(request):
 
 
 class PlanUploadView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PlanPermission]
     parser_classes = [MultiPartParser]
 
     def post(self, request, format=None):
@@ -189,7 +190,7 @@ class PlanUploadView(APIView):
 # --- Employee Report Views ---
 
 class EmployeePlanFactReportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ReportPermission]
 
     def get(self, request, *args, **kwargs):
         year = int(request.query_params.get('year', datetime.now().year))
@@ -277,7 +278,7 @@ class EmployeePlanFactReportView(APIView):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, PlanPermission])
 def employee_plan_template_download(request):
     employees = User.objects.filter(is_staff=True, is_active=True).values('id', 'first_name', 'last_name', 'username')
     df_data = []
@@ -299,7 +300,7 @@ def employee_plan_template_download(request):
 
 
 class EmployeePlanUploadView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PlanPermission]
     parser_classes = [MultiPartParser]
 
     def post(self, request, format=None):

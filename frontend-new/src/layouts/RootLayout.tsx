@@ -18,6 +18,7 @@ import {
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import EventIcon from '@mui/icons-material/Event';
+import ChecklistIcon from '@mui/icons-material/Checklist';
 // Иконки
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
   { text: 'Клиенты', icon: <PeopleIcon />, path: '/clients', resource: 'CLIENT' },
   { text: 'Заявки', icon: <AssignmentIcon />, path: '/applications', resource: 'APPLICATION' },
   { text: 'Встречи', icon: <EventIcon />, path: '/meetings', resource: 'MEETING' },
+  { text: 'Задачи', icon: <ChecklistIcon />, path: '/tasks', resource: 'TASK' },
   { text: 'Сделки', icon: <BusinessCenterIcon />, path: '/deals', resource: 'DEAL' },
   { text: 'Проекты', icon: <AccountBalanceIcon />, path: '/projects', resource: 'PROJECT' },
   { text: 'Финансы', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },

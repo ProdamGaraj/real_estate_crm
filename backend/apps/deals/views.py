@@ -16,12 +16,12 @@ from .filters import DealFilter
 from apps.finances.models import Payment
 import pandas as pd
 from django.http import HttpResponse
-from permissions.permissions import DealPermission
+from permissions.permissions import DealPermission, ReportPermission, DiscountPermission
 from permissions.backends import get_filtered_queryset
 
 
 class DealSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ReportPermission]
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'created_by')
@@ -271,7 +271,7 @@ class AvailableDiscountsView(generics.ListAPIView):
     Возвращает список скидок, доступных для объекта в сделке.
     """
     serializer_class = DiscountListSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DiscountPermission]
 
     def get_queryset(self):
         deal_id = self.kwargs['deal_pk']

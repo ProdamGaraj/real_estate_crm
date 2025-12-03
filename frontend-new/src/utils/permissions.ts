@@ -7,6 +7,7 @@ export type ResourceType =
   | 'CLIENT'
   | 'APPLICATION'
   | 'MEETING'
+  | 'TASK'
   | 'DEAL'
   | 'PROJECT'
   | 'PROPERTY'

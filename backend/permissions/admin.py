@@ -2,7 +2,7 @@
 Административная панель для управления разрешениями
 """
 from django.contrib import admin
-from .models import Company, Department, Permission, Role, UserProfile, PermissionLog
+from .models import Company, Department, Permission, Role, UserProfile, PermissionLog, PartnerAPIKey
 
 
 @admin.register(Company)
@@ -66,3 +66,33 @@ class PermissionLogAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(PartnerAPIKey)
+class PartnerAPIKeyAdmin(admin.ModelAdmin):
+    list_display = ['name', 'get_companies', 'is_active', 'last_used_at', 'expires_at', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name', 'key', 'companies__name']
+    readonly_fields = ['key', 'created_at', 'last_used_at']
+    filter_horizontal = ['companies']
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'description', 'companies', 'is_active')
+        }),
+        ('API Ключ', {
+            'fields': ('key',),
+            'description': 'Ключ генерируется автоматически при создании'
+        }),
+        ('Ограничения', {
+            'fields': ('expires_at', 'allowed_ips', 'requests_per_minute', 'requests_per_day')
+        }),
+        ('Статистика', {
+            'fields': ('created_at', 'last_used_at'),
+        }),
+    )
+    
+    @admin.display(description='Компании')
+    def get_companies(self, obj):
+        return ', '.join([c.name for c in obj.companies.all()[:3]]) or 'Нет'

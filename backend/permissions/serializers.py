@@ -3,7 +3,7 @@ Serializers для системы разрешений
 """
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Company, Department, Permission, Role, UserProfile, PermissionLog
+from .models import Company, Department, Permission, Role, UserProfile, PermissionLog, PartnerAPIKey
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -397,3 +397,60 @@ class UserCreateSerializer(serializers.Serializer):
             profile.roles.set(roles)
         
         return profile
+
+
+class PartnerAPIKeySerializer(serializers.ModelSerializer):
+    """Сериализатор для API-ключей партнёров"""
+    companies_data = CompanySerializer(source='companies', many=True, read_only=True)
+    is_expired = serializers.SerializerMethodField()
+    available_scopes = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PartnerAPIKey
+        fields = [
+            'id', 'name', 'key', 'description', 'companies', 'companies_data',
+            'allowed_scopes', 'available_scopes',
+            'is_active', 'expires_at', 'allowed_ips',
+            'requests_per_minute', 'requests_per_day',
+            'created_at', 'last_used_at', 'is_expired'
+        ]
+        read_only_fields = ['key', 'created_at', 'last_used_at']
+    
+    def get_is_expired(self, obj):
+        from django.utils import timezone
+        if obj.expires_at and obj.expires_at < timezone.now():
+            return True
+        return False
+    
+    def get_available_scopes(self, obj):
+        """Возвращает список всех доступных scopes с описаниями"""
+        return [
+            {'value': choice[0], 'label': choice[1]}
+            for choice in PartnerAPIKey.AllowedScope.choices
+        ]
+
+
+class PartnerAPIKeyCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания API-ключа (без возможности указать ключ вручную)"""
+    
+    class Meta:
+        model = PartnerAPIKey
+        fields = [
+            'id', 'name', 'key', 'description', 'companies', 'allowed_scopes',
+            'is_active', 'expires_at', 'allowed_ips',
+            'requests_per_minute', 'requests_per_day',
+            'created_at'
+        ]
+        read_only_fields = ['key', 'created_at']
+
+
+class PartnerAPIKeyUpdateSerializer(serializers.ModelSerializer):
+    """Сериализатор для редактирования API-ключа"""
+    
+    class Meta:
+        model = PartnerAPIKey
+        fields = [
+            'id', 'name', 'description', 'companies', 'allowed_scopes',
+            'is_active', 'expires_at', 'allowed_ips',
+            'requests_per_minute', 'requests_per_day'
+        ]

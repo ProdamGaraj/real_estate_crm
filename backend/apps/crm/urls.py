@@ -4,7 +4,6 @@ from .views import (
     ClientDetailView,
     ApplicationListView,
     ApplicationDetailView,
-    PublicApplicationCreateView,
     RejectionReasonListView,
     MeetingListCreateView,
     MeetingDetailView,
@@ -35,9 +34,6 @@ urlpatterns = [
     path('meetings/', MeetingListCreateView.as_view(), name='meeting-list-create'),
     path('meetings/<int:pk>/', MeetingDetailView.as_view(), name='meeting-detail'),
     path('meetings/summary/', MeetingSummaryView.as_view(), name='meeting-summary'),
-
-    # Public Applications
-    path('public/applications/', PublicApplicationCreateView.as_view(), name='public-application-create'),
 
     # Rejection Reasons
     path('rejection-reasons/', RejectionReasonListView.as_view(), name='rejection-reason-list'),

@@ -3,6 +3,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import extend_schema
 from .models import Client, Application, ClientLog, RejectionReason, ApplicationLog, Meeting, MeetingLog, ClientFile
 from .serializers import (
     ClientListSerializer, ClientDetailSerializer,
@@ -20,12 +21,16 @@ from apps.deals.models import Deal
 from apps.finances.models import Payment
 import pandas as pd
 from django.http import HttpResponse
-from permissions.permissions import ClientPermission, ApplicationPermission, MeetingPermission
+from permissions.permissions import (
+    ClientPermission, ApplicationPermission, MeetingPermission, 
+    ReportPermission, DashboardPermission, SettingsPermission, UserPermission,
+    HasPartnerCreateApplicationScope
+)
 from permissions.backends import get_filtered_queryset
 
 
 class ApplicationSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ReportPermission]
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'created_by')
@@ -100,7 +105,7 @@ class ApplicationSummaryView(APIView):
 
 
 class MeetingSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ReportPermission]
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'executor')
@@ -206,7 +211,7 @@ class MeetingSummaryView(APIView):
 
 
 class DashboardAnalyticsView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, DashboardPermission]
 
     def get(self, request, *args, **kwargs):
         today = timezone.now().date()
@@ -266,7 +271,7 @@ class DashboardAnalyticsView(APIView):
 
 
 class ClientFileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ClientPermission]
     parser_classes = [MultiPartParser]
 
     def get(self, request, pk, format=None):
@@ -285,7 +290,7 @@ class ClientFileView(APIView):
 
 class RejectionReasonListView(generics.ListCreateAPIView):
     serializer_class = RejectionReasonSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SettingsPermission]
 
     def get_queryset(self):
         queryset = RejectionReason.objects.filter(is_active=True)
@@ -392,7 +397,7 @@ class ApplicationListView(generics.ListCreateAPIView):
 class RejectionReasonDetailView(generics.RetrieveUpdateAPIView):
     queryset = RejectionReason.objects.all()
     serializer_class = RejectionReasonSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SettingsPermission]
 
 
 class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -425,22 +430,54 @@ class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
             )
 
 
+@extend_schema(
+    tags=['Public API'],
+    description='''
+Создать заявку от партнёра.
+
+**Требует API-ключ партнёра** в заголовке `X-API-Key` с разрешением CREATE_APPLICATION.
+
+Создаёт нового клиента (если не существует по номеру телефона) и заявку.
+''',
+    responses={
+        201: {'description': 'Заявка успешно создана'},
+        400: {'description': 'Ошибка валидации данных'},
+        401: {'description': 'API-ключ отсутствует или недействителен'},
+        403: {'description': 'API-ключ не имеет разрешения CREATE_APPLICATION'},
+    }
+)
 class PublicApplicationCreateView(generics.CreateAPIView):
+    """
+    Публичный эндпоинт для создания заявок с сайтов партнёров.
+    Требует валидный API-ключ с правом CREATE_APPLICATION.
+    """
     serializer_class = PublicApplicationSerializer
-    permission_classes = []
+    authentication_classes = []  # API-ключ проверяется в permission_classes
+    permission_classes = [HasPartnerCreateApplicationScope]
 
     def create(self, request, *args, **kwargs):
+        from .models import ClientPhoneNumber
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         phone_number = data.get('phone_number')
-        client, created = Client.objects.get_or_create(
-            phone_number=phone_number,
-            defaults={'full_name': data.get('full_name', '')}
-        )
-        if not created and data.get('full_name') and client.full_name != data.get('full_name'):
-            client.full_name = data.get('full_name')
-            client.save()
+        full_name = data.get('full_name', '')
+        
+        # Ищем клиента по номеру телефона
+        phone_obj = ClientPhoneNumber.objects.filter(phone_number=phone_number).first()
+        
+        if phone_obj:
+            # Клиент существует
+            client = phone_obj.client
+            if full_name and client.full_name != full_name:
+                client.full_name = full_name
+                client.save()
+        else:
+            # Создаём нового клиента
+            client = Client.objects.create(full_name=full_name)
+            ClientPhoneNumber.objects.create(client=client, phone_number=phone_number)
+        
         Application.objects.create(
             client=client,
             source=data.get('source'),
@@ -488,4 +525,4 @@ class MeetingDetailView(generics.RetrieveUpdateDestroyAPIView):
 class UserListView(generics.ListAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, UserPermission]

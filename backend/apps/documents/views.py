@@ -11,25 +11,26 @@ import io
 from apps.deals.models import Deal
 from .models import Template
 from .serializers import TemplateSerializer
+from permissions.permissions import TemplatePermission
 
 
 class TemplateListCreateView(generics.ListCreateAPIView):
     queryset = Template.objects.all()
     serializer_class = TemplateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, TemplatePermission]
     parser_classes = [MultiPartParser]
 
 
 class TemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Template.objects.all()
     serializer_class = TemplateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, TemplatePermission]
     parser_classes = [MultiPartParser]
 
 
 class DealTemplatesListView(generics.ListAPIView):
     serializer_class = TemplateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, TemplatePermission]
 
     def get_queryset(self):
         deal_id = self.kwargs.get('deal_pk')
@@ -62,7 +63,7 @@ class DealTemplatesListView(generics.ListAPIView):
 
 
 class GenerateDocumentView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, TemplatePermission]
 
     def get(self, request, deal_pk, template_pk, *args, **kwargs):
         try:

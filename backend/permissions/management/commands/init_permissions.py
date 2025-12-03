@@ -35,6 +35,7 @@ class Command(BaseCommand):
             'PAYMENT', 'PAYMENT_TYPE', 'BENEFICIARY_ACCOUNT',
             'TEMPLATE',
             'REPORT', 'PLAN',
+            'TASK',  # Задачи
             'USER', 'ROLE', 'PERMISSION', 'COMPANY', 'DEPARTMENT',
             'DASHBOARD', 'SETTINGS'
         ]
@@ -90,7 +91,8 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Системный администратор',
                 'description': 'Полный доступ ко всей системе',
-                'level': Role.RoleLevel.SYSTEM_ADMIN,
+                'scope': Role.RoleScope.SYSTEM,
+                'category': Role.RoleCategory.ADMINISTRATIVE,
                 'is_system': True
             }
         )
@@ -110,7 +112,8 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Администратор компании',
                 'description': 'Управление всеми ресурсами компании',
-                'level': Role.RoleLevel.COMPANY_ADMIN,
+                'scope': Role.RoleScope.COMPANY,
+                'category': Role.RoleCategory.ADMINISTRATIVE,
                 'is_system': True
             }
         )
@@ -141,7 +144,8 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Руководитель отдела',
                 'description': 'Управление ресурсами отдела',
-                'level': Role.RoleLevel.DEPARTMENT_MANAGER,
+                'scope': Role.RoleScope.DEPARTMENT,
+                'category': Role.RoleCategory.MANAGEMENT,
                 'is_system': True
             }
         )
@@ -150,7 +154,7 @@ class Command(BaseCommand):
             # Все разрешения уровня DEPARTMENT и OWN для основных ресурсов
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',
-                'DEAL', 'PAYMENT'
+                'DEAL', 'PAYMENT', 'TASK'
             ]
             
             permissions = Permission.objects.filter(
@@ -186,14 +190,15 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Менеджер',
                 'description': 'Работа с клиентами, заявками и сделками',
-                'level': Role.RoleLevel.MANAGER,
+                'scope': Role.RoleScope.OWN,
+                'category': Role.RoleCategory.OPERATIONAL,
                 'is_system': True
             }
         )
         
         if created:
-            # Полный доступ к своим клиентам, заявкам, встречам, сделкам
-            own_resources = ['CLIENT', 'APPLICATION', 'MEETING', 'DEAL', 'PAYMENT']
+            # Полный доступ к своим клиентам, заявкам, встречам, сделкам, задачам
+            own_resources = ['CLIENT', 'APPLICATION', 'MEETING', 'DEAL', 'PAYMENT', 'TASK']
             own_permissions = Permission.objects.filter(
                 resource__in=own_resources,
                 scope='OWN'
@@ -237,7 +242,8 @@ class Command(BaseCommand):
             defaults={
                 'name': 'Наблюдатель',
                 'description': 'Только просмотр данных компании',
-                'level': Role.RoleLevel.VIEWER,
+                'scope': Role.RoleScope.COMPANY,
+                'category': Role.RoleCategory.READONLY,
                 'is_system': True
             }
         )
@@ -247,7 +253,7 @@ class Command(BaseCommand):
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',
                 'PROJECT', 'BUILDING', 'PROPERTY',
-                'DEAL', 'PAYMENT',
+                'DEAL', 'PAYMENT', 'TASK',
                 'DASHBOARD', 'REPORT'
             ]
             

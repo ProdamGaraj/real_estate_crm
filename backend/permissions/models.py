@@ -75,6 +75,10 @@ class Permission(models.Model):
         IMPORT = 'IMPORT', 'Импорт'
         APPROVE = 'APPROVE', 'Утверждение'
         ASSIGN = 'ASSIGN', 'Назначение'
+        EDIT_IN_PROGRESS = 'EDIT_IN_PROGRESS', 'Редактирование задачи в работе'
+        REOPEN = 'REOPEN', 'Возврат отменённой задачи'
+        FORCE_EDIT = 'FORCE_EDIT', 'Принудительное редактирование (завершенные/отмененные задачи)'
+        DELETE_LOG = 'DELETE_LOG', 'Удаление логов'
 
     class Resource(models.TextChoices):
         # CRM модуль
@@ -84,6 +88,7 @@ class Permission(models.Model):
         # Realty модуль
         PROJECT = 'PROJECT', 'Проекты'
         BUILDING = 'BUILDING', 'Дома'
+        BUILDING_TYPE = 'BUILDING_TYPE', 'Типы домов'
         PROPERTY = 'PROPERTY', 'Объекты недвижимости'
         LAYOUT = 'LAYOUT', 'Планировки'
         DISCOUNT = 'DISCOUNT', 'Скидки'
@@ -98,12 +103,16 @@ class Permission(models.Model):
         # Reports модуль
         REPORT = 'REPORT', 'Отчеты'
         PLAN = 'PLAN', 'Планы продаж'
+        # Tasks модуль
+        TASK = 'TASK', 'Задачи'
+        TASK_LOG = 'TASK_LOG', 'Логи задач'
         # Permissions модуль
         USER = 'USER', 'Пользователи'
         ROLE = 'ROLE', 'Роли'
         PERMISSION = 'PERMISSION', 'Разрешения'
         COMPANY = 'COMPANY', 'Компании'
         DEPARTMENT = 'DEPARTMENT', 'Отделы'
+        PARTNER_API_KEY = 'PARTNER_API_KEY', 'API-ключи партнёров'
         # Системные
         DASHBOARD = 'DASHBOARD', 'Дашборд'
         SETTINGS = 'SETTINGS', 'Настройки'
@@ -488,3 +497,106 @@ class PermissionLog(models.Model):
 
     def __str__(self):
         return f"{self.action} - {self.entity_type} #{self.entity_id}"
+
+
+class PartnerAPIKey(models.Model):
+    """
+    API-ключи для партнёров, имеющих доступ к публичному API
+    """
+    import secrets
+    
+    # Доступные действия для API-ключа
+    class AllowedScope(models.TextChoices):
+        VIEW_PROJECTS = 'VIEW_PROJECTS', 'Просмотр проектов'
+        VIEW_BUILDINGS = 'VIEW_BUILDINGS', 'Просмотр зданий'
+        VIEW_LAYOUTS = 'VIEW_LAYOUTS', 'Просмотр планировок'
+        CREATE_APPLICATION = 'CREATE_APPLICATION', 'Создание заявок'
+    
+    name = models.CharField(max_length=255, verbose_name="Название партнёра")
+    key = models.CharField(max_length=64, unique=True, verbose_name="API ключ", db_index=True)
+    description = models.TextField(blank=True, verbose_name="Описание")
+    companies = models.ManyToManyField(
+        Company,
+        related_name='partner_api_keys',
+        verbose_name="Компании",
+        help_text="Компании, к данным которых будет доступ",
+        blank=True
+    )
+    
+    # Разрешённые действия (scopes)
+    allowed_scopes = models.JSONField(
+        default=list,
+        verbose_name="Разрешённые действия",
+        help_text="Список разрешённых действий: VIEW_PROJECTS, VIEW_BUILDINGS, VIEW_LAYOUTS, CREATE_APPLICATION"
+    )
+    
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    last_used_at = models.DateTimeField(null=True, blank=True, verbose_name="Последнее использование")
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Срок действия")
+    
+    # Ограничения по IP (опционально)
+    allowed_ips = models.TextField(
+        blank=True, 
+        verbose_name="Разрешённые IP",
+        help_text="Список IP-адресов через запятую. Пустое поле = без ограничений"
+    )
+    
+    # Ограничения по запросам (rate limiting)
+    requests_per_minute = models.PositiveIntegerField(
+        default=60, 
+        verbose_name="Запросов в минуту"
+    )
+    requests_per_day = models.PositiveIntegerField(
+        default=10000, 
+        verbose_name="Запросов в день"
+    )
+
+    class Meta:
+        verbose_name = "API ключ партнёра"
+        verbose_name_plural = "API ключи партнёров"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        companies_count = self.companies.count()
+        if companies_count == 0:
+            return f"{self.name} (нет доступа)"
+        elif companies_count == 1:
+            return f"{self.name} ({self.companies.first().name})"
+        else:
+            return f"{self.name} ({companies_count} компаний)"
+    
+    def save(self, *args, **kwargs):
+        if not self.key:
+            import secrets
+            self.key = secrets.token_hex(32)
+        # Если scopes пустой, по умолчанию даём только просмотр
+        if not self.allowed_scopes:
+            self.allowed_scopes = ['VIEW_PROJECTS', 'VIEW_BUILDINGS']
+        super().save(*args, **kwargs)
+    
+    def is_valid(self):
+        """Проверяет, валиден ли ключ"""
+        from django.utils import timezone
+        if not self.is_active:
+            return False
+        if self.expires_at and self.expires_at < timezone.now():
+            return False
+        return True
+    
+    def has_scope(self, scope: str) -> bool:
+        """Проверяет, есть ли у ключа указанный scope"""
+        return scope in (self.allowed_scopes or [])
+    
+    def is_ip_allowed(self, ip_address):
+        """Проверяет, разрешён ли IP-адрес"""
+        if not self.allowed_ips:
+            return True
+        allowed = [ip.strip() for ip in self.allowed_ips.split(',') if ip.strip()]
+        return ip_address in allowed
+    
+    def update_last_used(self):
+        """Обновляет время последнего использования"""
+        from django.utils import timezone
+        self.last_used_at = timezone.now()
+        self.save(update_fields=['last_used_at'])

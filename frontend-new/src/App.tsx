@@ -18,6 +18,8 @@ import DealDetailPage from './pages/DealDetailPage';
 import DiscountsPage from './pages/DiscountsPage';
 import DiscountDetailPage from './pages/DiscountDetailPage';
 import MeetingsPage from './pages/MeetingsPage';
+import TasksPage from './pages/TasksPage';
+import TaskDetailPage from './pages/TaskDetailPage';
 import FinancesPage from './pages/FinancesPage';
 import PaymentDetailPage from './pages/PaymentDetailPage';
 import ReportsPage from './pages/ReportsPage';
@@ -64,6 +66,8 @@ const router = createBrowserRouter([
           { path: 'applications', element: <ApplicationsPage /> },
           { path: 'applications/:applicationId', element: <ApplicationDetailPage /> },
           { path: 'meetings', element: <MeetingsPage /> },
+          { path: 'tasks', element: <TasksPage /> },
+          { path: 'tasks/:id', element: <TaskDetailPage /> },
           { path: 'deals', element: <DealsPage /> },
           { path: 'deals/:dealId', element: <DealDetailPage /> },
           { path: 'projects', element: <ProjectsPage /> },

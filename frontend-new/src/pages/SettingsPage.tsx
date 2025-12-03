@@ -9,6 +9,7 @@ import PaymentTypeManager from '../components/settings/PaymentTypeManager';
 import BeneficiaryAccountManager from '../components/settings/BeneficiaryAccountManager';
 import TemplateManager from '../components/settings/TemplateManager';
 import TemplateTagsCheatSheet from '../components/settings/TemplateTagsCheatSheet';
+import PartnerAPIKeyManager from '../components/settings/PartnerAPIKeyManager';
 import CompaniesPage from './permissions/CompaniesPage';
 import DepartmentsPage from './permissions/DepartmentsPage';
 import RolesPage from './permissions/RolesPage';
@@ -39,6 +40,7 @@ const TABS = [
   { id: 'realty', label: 'Недвижимость' },
   { id: 'finances', label: 'Финансы' },
   { id: 'templates', label: 'Шаблоны' },
+  { id: 'api-keys', label: 'API-ключи' },
 ];
 
 export default function SettingsPage() {
@@ -142,6 +144,11 @@ export default function SettingsPage() {
               <TemplateTagsCheatSheet />
             </Grid>
           </Grid>
+        </TabPanel>
+
+        {/* Вкладка "API-ключи" */}
+        <TabPanel value={tabValue} index={8}>
+          <PartnerAPIKeyManager />
         </TabPanel>
 
       </Paper>

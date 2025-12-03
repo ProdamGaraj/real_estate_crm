@@ -7,7 +7,13 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from permissions.permissions import DiscountPermission
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+from permissions.permissions import (
+    DiscountPermission, ProjectPermission, BuildingPermission, 
+    BuildingTypePermission, PropertyPermission, LayoutPermission,
+    HasPartnerViewProjectsScope, HasPartnerViewBuildingsScope, HasPartnerViewLayoutsScope
+)
 from .serializers import (
     PublicProjectListSerializer, PublicProjectDetailSerializer, PublicBuildingDetailSerializer
 )
@@ -26,7 +32,7 @@ from .serializers import (
 # --- Views for Projects ---
 class ProjectListView(generics.ListCreateAPIView):
     queryset = Project.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ProjectPermission]
     filterset_class = ProjectFilter
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -39,7 +45,7 @@ class ProjectListView(generics.ListCreateAPIView):
 class ProjectImageDetailView(generics.DestroyAPIView):
     """ View для удаления изображения из галереи """
     serializer_class = ProjectImageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ProjectPermission]
 
     def get_queryset(self):
         # Убедимся, что можно удалить только фото из нужного проекта
@@ -48,7 +54,7 @@ class ProjectImageDetailView(generics.DestroyAPIView):
 class ProjectImageCreateView(generics.CreateAPIView):
     """ View для загрузки нового изображения в галерею проекта """
     serializer_class = ProjectImageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ProjectPermission]
     parser_classes = [MultiPartParser] # Для обработки загрузки файлов
 
     def perform_create(self, serializer):
@@ -57,13 +63,13 @@ class ProjectImageCreateView(generics.CreateAPIView):
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ProjectPermission]
 
 
 # --- Views for Buildings ---
 class BuildingListCreateView(generics.ListCreateAPIView):
     serializer_class = BuildingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BuildingPermission]
     filterset_class = BuildingFilter # <--- ДОБАВЛЕНО
 
     def get_queryset(self):
@@ -76,7 +82,7 @@ class BuildingListCreateView(generics.ListCreateAPIView):
 
 class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BuildingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BuildingPermission]
 
     def get_queryset(self):
         return Building.objects.filter(project_id=self.kwargs['project_pk'])
@@ -119,18 +125,18 @@ class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
 class BuildingTypeListView(generics.ListCreateAPIView):
     queryset = BuildingType.objects.all()
     serializer_class = BuildingTypeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BuildingTypePermission]
 
 
 class BuildingTypeDetailView(generics.DestroyAPIView):
     queryset = BuildingType.objects.all()
     serializer_class = BuildingTypeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BuildingTypePermission]
 
 
 # --- Views for Excel ---
 class PropertyTemplateDownloadView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PropertyPermission]
 
     def get(self, request, project_pk, building_pk, *args, **kwargs):
         header_map = {
@@ -146,13 +152,10 @@ class PropertyTemplateDownloadView(APIView):
             df = pd.DataFrame(properties_data)
         else:
             df = pd.DataFrame(columns=header_map.keys())
-        type_map_reverse = {k: v for k, v in Property.PropertyType.choices}
-        status_map_reverse = {k: v for k, v in Property.PropertyStatus.choices}
-        if 'property_type' in df.columns:
-            df['property_type'] = df['property_type'].map(type_map_reverse)
-        if 'status' in df.columns:
-            df['status'] = df['status'].map(status_map_reverse)
+        # Коды типов и статусов остаются как есть (не преобразуем в названия),
+        # т.к. при импорте ожидаются именно коды для поддержки мультиязычности
         df.rename(columns=header_map, inplace=True)
+        # Подсказки содержат коды (pt[0]), которые ожидаются при импорте
         property_types = [pt[0] for pt in Property.PropertyType.choices]
         statuses = [st[0] for st in Property.PropertyStatus.choices]
         max_len = max(len(property_types), len(statuses))
@@ -175,7 +178,7 @@ class PropertyTemplateDownloadView(APIView):
 
 
 class PropertyUploadView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PropertyPermission]
     parser_classes = [MultiPartParser]
 
     def post(self, request, project_pk, building_pk, format=None):
@@ -185,8 +188,9 @@ class PropertyUploadView(APIView):
         try:
             df = pd.read_excel(file_obj)
             building = Building.objects.get(pk=building_pk, project_id=project_pk)
-            type_map = {v: k for k, v in Property.PropertyType.choices}
-            status_map = {v: k for k, v in Property.PropertyStatus.choices}
+            # Маппинг кодов: код -> код (для валидации что код существует)
+            valid_types = {k: k for k, v in Property.PropertyType.choices}
+            valid_statuses = {k: k for k, v in Property.PropertyStatus.choices}
             allowed_statuses_from_excel = [Property.PropertyStatus.SELECTION, Property.PropertyStatus.RESERVE]
             created_count = 0
             updated_count = 0
@@ -211,10 +215,10 @@ class PropertyUploadView(APIView):
                     'price': row.get('Стоимость'),
                     'has_finishing': row.get('Наличие отделки (TRUE/FALSE)', False),
                     'description': row.get('Описание'),
-                    'property_type': type_map.get(row.get('Тип объекта'), Property.PropertyType.APARTMENT),
+                    'property_type': valid_types.get(row.get('Тип объекта'), Property.PropertyType.APARTMENT),
                     'layout': layout_obj,
                 }
-                status_from_file = status_map.get(row.get('Статус'), Property.PropertyStatus.SELECTION)
+                status_from_file = valid_statuses.get(row.get('Статус'), Property.PropertyStatus.SELECTION)
                 existing_property = Property.objects.filter(building=building, unit_number=unit_number).first()
                 if existing_property:
                     for key, value in property_data.items():
@@ -246,7 +250,7 @@ class PropertyUploadView(APIView):
 # --- Views for Properties ---
 class PropertyDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = PropertyDetailSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PropertyPermission]
 
     def get_queryset(self):
         return Property.objects.filter(building_id=self.kwargs['building_pk'])
@@ -255,7 +259,7 @@ class PropertyDetailView(generics.RetrieveUpdateAPIView):
 # --- Views for Layouts ---
 class LayoutListView(generics.ListCreateAPIView):
     serializer_class = LayoutSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, LayoutPermission]
 
     def get_queryset(self):
         return Layout.objects.filter(building_id=self.kwargs['building_pk'])
@@ -267,7 +271,7 @@ class LayoutListView(generics.ListCreateAPIView):
 
 class LayoutDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LayoutSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, LayoutPermission]
 
     def get_queryset(self):
         return Layout.objects.filter(building_id=self.kwargs['building_pk'])
@@ -323,7 +327,7 @@ class DiscountDetailView(generics.RetrieveUpdateDestroyAPIView):
 class BuildingImageCreateView(generics.CreateAPIView):
     """ View для загрузки нового изображения в галерею дома """
     serializer_class = BuildingImageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BuildingPermission]
     parser_classes = [MultiPartParser]
 
     def perform_create(self, serializer):
@@ -334,7 +338,7 @@ class BuildingImageCreateView(generics.CreateAPIView):
 class BuildingImageDetailView(generics.DestroyAPIView):
     """ View для удаления изображения из галереи дома """
     serializer_class = BuildingImageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BuildingPermission]
 
     def get_queryset(self):
         return BuildingImage.objects.filter(building_id=self.kwargs['building_pk'])
@@ -346,31 +350,136 @@ class BuildingListViewAll(generics.ListAPIView):
     """
     queryset = Building.objects.select_related('project').all()
     serializer_class = BuildingMiniSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BuildingPermission]
     pagination_class = None # Отключаем пагинацию для этого эндпоинта
 
+
+# === PUBLIC API (для партнёров) ===
+
+API_KEY_PARAMETER = OpenApiParameter(
+    name='X-API-Key',
+    type=OpenApiTypes.STR,
+    location=OpenApiParameter.HEADER,
+    required=True,
+    description='API-ключ партнёра. Получите у администратора системы.'
+)
+
+
+@extend_schema(
+    tags=['Public API'],
+    parameters=[API_KEY_PARAMETER],
+    description='''
+Получить список проектов с активными продажами.
+
+**Требует API-ключ партнёра** в заголовке `X-API-Key`.
+
+Возвращает только проекты, у которых есть здания со статусом "В продаже" (FOR_SALE).
+''',
+    responses={
+        200: PublicProjectListSerializer(many=True),
+        401: {'description': 'API-ключ отсутствует или недействителен'},
+        403: {'description': 'Доступ запрещён (IP не в белом списке, ключ деактивирован и т.д.)'},
+    }
+)
 class PublicProjectListView(generics.ListAPIView):
     """
-    Публичный список проектов. Доступен без аутентификации.
+    Публичный список проектов. Требует валидный API-ключ партнёра.
     """
     queryset = Project.objects.filter(
         buildings__status=Building.BuildingStatus.FOR_SALE
     ).distinct()
     serializer_class = PublicProjectListSerializer
-    permission_classes = [] # Пустой список разрешает доступ всем
+    authentication_classes = []  # API-ключ проверяется в permission_classes
+    permission_classes = [HasPartnerViewProjectsScope]
 
+
+@extend_schema(
+    tags=['Public API'],
+    parameters=[API_KEY_PARAMETER],
+    description='''
+Получить детальную информацию о проекте, включая здания и квартиры.
+
+**Требует API-ключ партнёра** в заголовке `X-API-Key`.
+
+Возвращает:
+- Информацию о проекте (название, адрес, описание, USP)
+- Список зданий со статусом "В продаже"
+- Для каждого здания — список доступных квартир
+- Галерею изображений проекта
+''',
+    responses={
+        200: PublicProjectDetailSerializer,
+        401: {'description': 'API-ключ отсутствует или недействителен'},
+        403: {'description': 'Доступ запрещён'},
+        404: {'description': 'Проект не найден'},
+    }
+)
 class PublicProjectDetailView(generics.RetrieveAPIView):
     """
-    Публичная детальная страница проекта.
+    Публичная детальная страница проекта. Требует валидный API-ключ партнёра.
     """
     queryset = Project.objects.all()
     serializer_class = PublicProjectDetailSerializer
-    permission_classes = []
+    authentication_classes = []  # API-ключ проверяется в permission_classes
+    permission_classes = [HasPartnerViewProjectsScope]
 
+
+@extend_schema(
+    tags=['Public API'],
+    parameters=[API_KEY_PARAMETER],
+    description='''
+Получить детальную информацию о здании (доме).
+
+**Требует API-ключ партнёра** в заголовке `X-API-Key`.
+
+Возвращает только здания со статусом "В продаже" (FOR_SALE).
+Включает список доступных квартир с ценами и характеристиками.
+''',
+    responses={
+        200: PublicBuildingDetailSerializer,
+        401: {'description': 'API-ключ отсутствует или недействителен'},
+        403: {'description': 'Доступ запрещён'},
+        404: {'description': 'Здание не найдено или не в продаже'},
+    }
+)
 class PublicBuildingDetailView(generics.RetrieveAPIView):
     """
-    Публичная детальная страница дома.
+    Публичная детальная страница дома. Требует валидный API-ключ партнёра.
     """
     queryset = Building.objects.filter(status=Building.BuildingStatus.FOR_SALE)
     serializer_class = PublicBuildingDetailSerializer
-    permission_classes = []
+    authentication_classes = []  # API-ключ проверяется в permission_classes
+    permission_classes = [HasPartnerViewBuildingsScope]
+
+
+@extend_schema(
+    tags=['Public API'],
+    parameters=[API_KEY_PARAMETER],
+    description='''
+Получить список планировок для указанного здания.
+
+**Требует API-ключ партнёра** в заголовке `X-API-Key` с разрешением VIEW_LAYOUTS.
+
+Возвращает только планировки зданий со статусом "В продаже".
+''',
+    responses={
+        200: LayoutSerializer(many=True),
+        401: {'description': 'API-ключ отсутствует или недействителен'},
+        403: {'description': 'Доступ запрещён'},
+        404: {'description': 'Здание не найдено или не в продаже'},
+    }
+)
+class PublicLayoutListView(generics.ListAPIView):
+    """
+    Публичный список планировок здания. Требует валидный API-ключ партнёра.
+    """
+    serializer_class = LayoutSerializer
+    authentication_classes = []  # API-ключ проверяется в permission_classes
+    permission_classes = [HasPartnerViewLayoutsScope]
+    
+    def get_queryset(self):
+        building_id = self.kwargs.get('building_pk')
+        return Layout.objects.filter(
+            building_id=building_id,
+            building__status=Building.BuildingStatus.FOR_SALE
+        )

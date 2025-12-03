@@ -7,7 +7,8 @@ from .views import (
     CompanyViewSet, DepartmentViewSet,
     PermissionViewSet, RoleViewSet,
     UserProfileViewSet, PermissionLogViewSet,
-    CurrentUserProfileView, PermissionStatsView
+    CurrentUserProfileView, PermissionStatsView,
+    PartnerAPIKeyViewSet
 )
 from .auth_views import (
     login_view,
@@ -24,6 +25,7 @@ router.register(r'permissions', PermissionViewSet, basename='permission')
 router.register(r'roles', RoleViewSet, basename='role')
 router.register(r'user-profiles', UserProfileViewSet, basename='userprofile')
 router.register(r'logs', PermissionLogViewSet, basename='permissionlog')
+router.register(r'partner-api-keys', PartnerAPIKeyViewSet, basename='partnerapikey')
 
 urlpatterns = [
     # ViewSets через router

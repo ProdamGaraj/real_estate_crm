@@ -2,7 +2,8 @@ import axios from 'axios';
 import { refreshAccessToken } from './auth';
 
 const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL:'https://tws483gv-8000.euw.devtunnels.ms/api',
+  // baseURL: 'http://127.0.0.1:8000/api',
   // baseURL: 'https://c0s9w1gq-8000.euw.devtunnels.ms/api',
   headers: {
     'Content-Type': 'application/json',
@@ -107,6 +108,16 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Эндпоинты которые не требуют авторизации
+const PUBLIC_ENDPOINTS = [
+  '/permissions/auth/login/',
+  '/permissions/auth/password-reset/',
+  '/token/refresh/',
+];
+
+// Флаг для предотвращения множественных редиректов
+let isRedirecting = false;
+
 // Перехватчик ОТВЕТОВ (обновляет токен при 401 ошибке)
 apiClient.interceptors.response.use(
   (response) => {
@@ -114,6 +125,13 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url || '';
+    
+    // Пропускаем публичные эндпоинты
+    if (PUBLIC_ENDPOINTS.some(endpoint => requestUrl.includes(endpoint))) {
+      return Promise.reject(error);
+    }
+
     const { refreshToken } = getAuthTokens();
 
     // Если ошибка 401, токен истек и это не повторный запрос
@@ -136,8 +154,25 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Если refresh токен тоже истек или невалиден, выходим из системы
         clearAuthTokens();
-        window.location.href = '/login';
+        
+        // Редиректим только если ещё не редиректим и не на странице логина
+        if (!isRedirecting && !window.location.pathname.includes('/login')) {
+          isRedirecting = true;
+          window.location.href = '/login';
+          // Сбрасываем флаг через небольшую задержку
+          setTimeout(() => { isRedirecting = false; }, 1000);
+        }
         return Promise.reject(refreshError);
+      }
+    }
+
+    // Если 401 и нет refresh токена - редирект на логин
+    if (error.response?.status === 401 && !refreshToken) {
+      if (!isRedirecting && !window.location.pathname.includes('/login')) {
+        isRedirecting = true;
+        clearAuthTokens();
+        window.location.href = '/login';
+        setTimeout(() => { isRedirecting = false; }, 1000);
       }
     }
 

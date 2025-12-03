@@ -76,6 +76,21 @@ export const uploadProjectImage = async ({ projectId, formData }: { projectId: n
 export const deleteProjectImage = async ({ projectId, imageId }: { projectId: number; imageId: number }): Promise<void> => {
   await apiClient.delete(`/projects/${projectId}/gallery/${imageId}/`);
 };
+
+/**
+ * Удаляет проект по ID.
+ */
+export const deleteProject = async (id: number): Promise<void> => {
+  await apiClient.delete(`/projects/${id}/`);
+};
+
+/**
+ * Удаляет дом по ID.
+ */
+export const deleteBuilding = async ({ projectId, buildingId }: { projectId: number; buildingId: number }): Promise<void> => {
+  await apiClient.delete(`/projects/${projectId}/buildings/${buildingId}/`);
+};
+
 /**
  * Получает плоский список всех домов из всех проектов.
  */

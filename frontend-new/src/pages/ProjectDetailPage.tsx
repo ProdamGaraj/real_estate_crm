@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import {
     getProjectById, createBuilding, getBuildings, updateProject,
-    uploadProjectImage, deleteProjectImage
+    uploadProjectImage, deleteProjectImage, deleteProject, deleteBuilding
 } from '../api/projects';
 import type {
     ProjectDetail, BuildingPayload, BuildingFilters, Building, ProjectUpdatePayload
 } from '../api/projects';
 import {
     Box, Button, CircularProgress, Paper, Tab, Tabs, Typography, Dialog,
-    DialogTitle, DialogContent, TextField, Stack, Link as MuiLink, Grid,
+    DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Stack, Link as MuiLink, Grid,
     Avatar, IconButton, Card, CardMedia, CardActions, Alert, CardContent, CardHeader
 } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
@@ -39,8 +39,12 @@ function TabPanel(props: TabPanelProps) {
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
+  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteProjectDialogOpen, setDeleteProjectDialogOpen] = useState(false);
+  const [deleteBuildingDialogOpen, setDeleteBuildingDialogOpen] = useState(false);
+  const [buildingToDelete, setBuildingToDelete] = useState<Building | null>(null);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,6 +102,23 @@ export default function ProjectDetailPage() {
     },
   });
 
+  const deleteProjectMutation = useMutation({
+    mutationFn: deleteProject,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      navigate('/projects');
+    },
+  });
+
+  const deleteBuildingMutation = useMutation({
+    mutationFn: (buildingId: number) => deleteBuilding({ projectId: Number(projectId), buildingId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['buildings', projectId] });
+      setDeleteBuildingDialogOpen(false);
+      setBuildingToDelete(null);
+    },
+  });
+
   const createBuildingMutation = useMutation({
     mutationFn: createBuilding,
     onSuccess: () => {
@@ -146,19 +167,46 @@ export default function ProjectDetailPage() {
       )
     },
     { field: 'floors_count', headerName: 'Этажей' },
+    {
+      field: 'actions',
+      headerName: 'Действия',
+      width: 100,
+      sortable: false,
+      renderCell: (params) => (
+        <IconButton
+          color="error"
+          onClick={() => {
+            setBuildingToDelete(params.row);
+            setDeleteBuildingDialogOpen(true);
+          }}
+        >
+          <DeleteIcon />
+        </IconButton>
+      ),
+    },
   ];
 
   return (
     <Stack spacing={3}>
       <Paper sx={{ p: 2 }}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar src={project.logo || undefined} sx={{ width: 64, height: 64 }} variant="rounded">
-                {project.name.charAt(0)}
-            </Avatar>
-            <Box>
-                <Typography variant="h4">{project.name}</Typography>
-                <Typography color="text.secondary">{project.address}</Typography>
-            </Box>
+          <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar src={project.logo || undefined} sx={{ width: 64, height: 64 }} variant="rounded">
+                  {project.name.charAt(0)}
+              </Avatar>
+              <Box>
+                  <Typography variant="h4">{project.name}</Typography>
+                  <Typography color="text.secondary">{project.address}</Typography>
+              </Box>
+            </Stack>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={() => setDeleteProjectDialogOpen(true)}
+            >
+              Удалить проект
+            </Button>
           </Stack>
       </Paper>
 
@@ -243,11 +291,56 @@ export default function ProjectDetailPage() {
         </Grid>
       </TabPanel>
 
+      {/* Диалог создания дома */}
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Новый дом</DialogTitle>
         <DialogContent>
           <BuildingForm onSubmit={handleCreateBuilding} isPending={createBuildingMutation.isPending} />
         </DialogContent>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления проекта */}
+      <Dialog open={deleteProjectDialogOpen} onClose={() => setDeleteProjectDialogOpen(false)}>
+        <DialogTitle>Удалить проект?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Вы уверены, что хотите удалить проект "{project.name}"? 
+            Это действие нельзя отменить. Все связанные дома и данные будут удалены.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteProjectDialogOpen(false)}>Отмена</Button>
+          <Button 
+            color="error" 
+            variant="contained"
+            onClick={() => deleteProjectMutation.mutate(Number(projectId))}
+            disabled={deleteProjectMutation.isPending}
+          >
+            {deleteProjectMutation.isPending ? 'Удаление...' : 'Удалить'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления дома */}
+      <Dialog open={deleteBuildingDialogOpen} onClose={() => setDeleteBuildingDialogOpen(false)}>
+        <DialogTitle>Удалить дом?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Вы уверены, что хотите удалить дом "{buildingToDelete?.name}"? 
+            Это действие нельзя отменить. Все связанные планировки и помещения будут удалены.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteBuildingDialogOpen(false)}>Отмена</Button>
+          <Button 
+            color="error" 
+            variant="contained"
+            onClick={() => buildingToDelete && deleteBuildingMutation.mutate(buildingToDelete.id)}
+            disabled={deleteBuildingMutation.isPending}
+          >
+            {deleteBuildingMutation.isPending ? 'Удаление...' : 'Удалить'}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Stack>
   );

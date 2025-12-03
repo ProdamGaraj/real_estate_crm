@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.crm.apps.CrmConfig',
     'apps.deals',
     'apps.finances',
+    'apps.tasks.apps.TasksConfig',  # Система управления задачами
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
@@ -54,6 +55,7 @@ INSTALLED_APPS = [
     'django_filters',
     'apps.reports',
     'permissions',  # Система разрешений и ролей
+    'drf_spectacular',  # OpenAPI/Swagger документация
 ]
 
 MIDDLEWARE = [
@@ -164,7 +166,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5176",  # Дополнительный порт
     'https://5mpxwrp0-5174.euw.devtunnels.ms',
     'https://c0s9w1gq-5173.euw.devtunnels.ms',
-    'https://c0s9w1gq-8000.euw.devtunnels.ms'  # Backend tunnel
+    'https://c0s9w1gq-8000.euw.devtunnels.ms',
+    'https://tws483gv-5173.euw.devtunnels.ms',
+    'https://tws483gv-8000.euw.devtunnels.ms'
+    # Backend tunnel
 ]
 
 # Дополнительные настройки CORS для работы с JWT
@@ -202,6 +207,76 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Rate limiting для защиты от брутфорса
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',      # Анонимные запросы (для /public/ с API-ключом)
+        'user': '1000/hour',     # Аутентифицированные пользователи
+    }
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Real Estate CRM API',
+    'DESCRIPTION': '''
+API для системы управления недвижимостью.
+
+## Аутентификация
+
+### Для внутренних пользователей CRM
+Используйте JWT токены. Получите токен через `/api/token/` и передавайте в заголовке:
+```
+Authorization: Bearer <access_token>
+```
+
+### Для партнёров (публичный API)
+Эндпоинты `/api/public/*` требуют API-ключ партнёра. Передавайте ключ в заголовке:
+```
+X-API-Key: <ваш_api_ключ>
+```
+
+API-ключи выдаются администратором системы и могут иметь ограничения:
+- Срок действия
+- Белый список IP-адресов  
+- Лимиты запросов (в минуту/день)
+- Доступ только к данным определённых компаний
+''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    # Описание схем безопасности
+    'SECURITY': [
+        {'BearerAuth': []},
+    ],
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+                'description': 'JWT токен для внутренних пользователей CRM. Получите через POST /api/token/'
+            },
+            'ApiKeyAuth': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'X-API-Key',
+                'description': 'API-ключ партнёра для доступа к публичному API (/api/public/*)'
+            }
+        }
+    },
+    'TAGS': [
+        {'name': 'Public API', 'description': 'Публичный API для партнёров (требует X-API-Key)'},
+        {'name': 'Auth', 'description': 'Аутентификация и токены'},
+        {'name': 'CRM', 'description': 'Клиенты и заявки'},
+        {'name': 'Deals', 'description': 'Сделки'},
+        {'name': 'Realty', 'description': 'Проекты, здания, квартиры'},
+        {'name': 'Finances', 'description': 'Платежи и финансы'},
+        {'name': 'Tasks', 'description': 'Задачи'},
+        {'name': 'Permissions', 'description': 'Роли и разрешения'},
+    ],
 }
 
 # Кастомный backend для проверки разрешений
@@ -229,3 +304,23 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для ра�
 # EMAIL_HOST_PASSWORD = 'your-app-password'
 DEFAULT_FROM_EMAIL = 'noreply@crm.local'
 FRONTEND_URL = 'http://localhost:5173'  # URL фронтенда для ссылок в письмах
+
+# =============================================================================
+# НАСТРОЙКИ БЕЗОПАСНОСТИ (для продакшена)
+# =============================================================================
+# Включить в продакшене для принудительного использования HTTPS
+if not DEBUG:
+    # Перенаправление HTTP → HTTPS
+    SECURE_SSL_REDIRECT = True
+    
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 год
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Защита cookies
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Прокси-заголовки (если за nginx/load balancer)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

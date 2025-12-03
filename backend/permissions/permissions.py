@@ -87,6 +87,10 @@ class BuildingPermission(BaseResourcePermission):
     resource_type = 'BUILDING'
 
 
+class BuildingTypePermission(BaseResourcePermission):
+    resource_type = 'BUILDING_TYPE'
+
+
 class PropertyPermission(BaseResourcePermission):
     resource_type = 'PROPERTY'
 
@@ -237,3 +241,98 @@ class IsDepartmentManager(permissions.BasePermission):
             ).exists()
         except:
             return False
+
+
+class HasValidPartnerAPIKey(permissions.BasePermission):
+    """
+    Разрешение для партнёров с валидным API-ключом.
+    Проверяет наличие и валидность API-ключа в заголовке X-API-Key.
+    
+    Безопасность:
+    - В продакшене требует HTTPS
+    - Проверяет срок действия ключа
+    - Проверяет белый список IP (если настроен)
+    - Логирует использование ключа
+    
+    Возвращает:
+    - 401 если ключ отсутствует, неверный, деактивирован или истёк
+    - 403 если ключ валидный, но нет нужного scope или IP запрещён
+    """
+    message = "Требуется валидный API-ключ партнёра"
+    required_scope = None  # Переопределяется в наследниках
+    
+    def has_permission(self, request, view):
+        from django.conf import settings
+        from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+        from .models import PartnerAPIKey
+        
+        # В продакшене требуем HTTPS
+        if not settings.DEBUG:
+            if not request.is_secure():
+                raise PermissionDenied("API-ключи можно использовать только через HTTPS")
+        
+        # Получаем ключ из заголовка (рекомендуется) или query параметра
+        api_key = request.headers.get('X-API-Key') or request.query_params.get('api_key')
+        
+        if not api_key:
+            raise NotAuthenticated("Отсутствует API-ключ. Передайте его в заголовке X-API-Key")
+        
+        # Ищем ключ в базе
+        try:
+            partner_key = PartnerAPIKey.objects.prefetch_related('companies').get(key=api_key)
+        except PartnerAPIKey.DoesNotExist:
+            raise NotAuthenticated("Недействительный API-ключ")
+        
+        # Проверяем валидность (активность + срок действия)
+        if not partner_key.is_valid():
+            raise NotAuthenticated("API-ключ деактивирован или истёк срок действия")
+        
+        # Проверка IP-адреса (если настроен белый список)
+        client_ip = self._get_client_ip(request)
+        if not partner_key.is_ip_allowed(client_ip):
+            raise PermissionDenied(f"Доступ с IP-адреса {client_ip} запрещён для данного ключа")
+        
+        # Проверяем scope (если указан)
+        if self.required_scope and not partner_key.has_scope(self.required_scope):
+            raise PermissionDenied(f"API-ключ не имеет разрешения на действие: {self.required_scope}")
+        
+        # Обновляем время последнего использования
+        partner_key.update_last_used()
+        
+        # Сохраняем партнёра в request для использования во views
+        request.partner_api_key = partner_key
+        request.partner_companies = list(partner_key.companies.all())
+        
+        return True
+    
+    def _get_client_ip(self, request):
+        """Получает IP-адрес клиента (с учётом прокси)"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+
+class HasPartnerViewProjectsScope(HasValidPartnerAPIKey):
+    """Требует API-ключ с правом просмотра проектов"""
+    required_scope = 'VIEW_PROJECTS'
+
+
+class HasPartnerViewBuildingsScope(HasValidPartnerAPIKey):
+    """Требует API-ключ с правом просмотра зданий"""
+    required_scope = 'VIEW_BUILDINGS'
+
+
+class HasPartnerViewLayoutsScope(HasValidPartnerAPIKey):
+    """Требует API-ключ с правом просмотра планировок"""
+    required_scope = 'VIEW_LAYOUTS'
+
+
+class HasPartnerCreateApplicationScope(HasValidPartnerAPIKey):
+    """Требует API-ключ с правом создания заявок"""
+    required_scope = 'CREATE_APPLICATION'
+
+
+class PartnerAPIKeyPermission(BaseResourcePermission):
+    """Разрешение на управление API-ключами партнёров"""
+    resource = 'PARTNER_API_KEY'

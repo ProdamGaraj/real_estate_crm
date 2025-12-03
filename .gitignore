@@ -19,3 +19,5 @@ backend/permissions/migrations/__pycache__/0001_initial.cpython-314.pyc
 backend/permissions/migrations/__pycache__/0002_role_refactor_category_scope.cpython-314.pyc
 backend/apps/realty/migrations/__pycache__/
 frontend-new/node_modules/
+backend/apps/tasks/__pycache__/
+backend/apps/tasks/migrations/__pycache__/

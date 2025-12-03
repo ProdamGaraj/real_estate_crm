@@ -17,10 +17,11 @@ from .filters import PaymentFilter
 import pandas as pd
 from django.http import HttpResponse
 from django.db.models import Sum, Count, Q
+from permissions.permissions import PaymentPermission, PaymentTypePermission, BeneficiaryAccountPermission, ReportPermission
 
 
 class FinanceSummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, ReportPermission]
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'status')
@@ -93,7 +94,7 @@ class FinanceSummaryView(APIView):
 
 class PaymentListView(generics.ListAPIView):
     serializer_class = PaymentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PaymentPermission]
     filterset_class = PaymentFilter
 
     def get_queryset(self):
@@ -108,7 +109,7 @@ class PaymentListView(generics.ListAPIView):
 
 
 class PaymentMarkAsReturnedView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PaymentPermission]
 
     def post(self, request, pk, *args, **kwargs):
         payment = get_object_or_404(Payment, pk=pk)
@@ -130,13 +131,13 @@ class PaymentMarkAsReturnedView(APIView):
 class PaymentTypeListView(generics.ListCreateAPIView):
     queryset = PaymentType.objects.all()
     serializer_class = PaymentTypeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PaymentTypePermission]
 
 
 class BeneficiaryAccountListView(generics.ListCreateAPIView):
     queryset = BeneficiaryAccount.objects.all()
     serializer_class = BeneficiaryAccountSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BeneficiaryAccountPermission]
 
 
 class DealPaymentScheduleCreateView(APIView):
@@ -144,7 +145,7 @@ class DealPaymentScheduleCreateView(APIView):
     Создает график платежей для сделки.
     Принимает список объектов платежей.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PaymentPermission]
 
     def post(self, request, deal_pk, *args, **kwargs):
         try:
@@ -205,13 +206,13 @@ class DealPaymentScheduleCreateView(APIView):
 class PaymentTypeDetailView(generics.DestroyAPIView):
     queryset = PaymentType.objects.all()
     serializer_class = PaymentTypeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PaymentTypePermission]
 
 
 class BeneficiaryAccountDetailView(generics.DestroyAPIView):
     queryset = BeneficiaryAccount.objects.all()
     serializer_class = BeneficiaryAccountSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, BeneficiaryAccountPermission]
 
 
 class PaymentDetailView(generics.RetrieveUpdateAPIView):
@@ -220,7 +221,7 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
     Используется для проставления/отмены даты оплаты.
     """
     queryset = Payment.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PaymentPermission]
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

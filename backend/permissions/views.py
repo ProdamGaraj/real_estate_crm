@@ -10,18 +10,19 @@ from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
-from .models import Company, Department, Permission, Role, UserProfile, PermissionLog
+from .models import Company, Department, Permission, Role, UserProfile, PermissionLog, PartnerAPIKey
 from .serializers import (
     CompanySerializer, DepartmentSerializer,
     PermissionSerializer, RoleListSerializer, RoleDetailSerializer,
     UserProfileListSerializer, UserProfileDetailSerializer,
     PermissionLogSerializer, UserPermissionCheckSerializer,
-    BulkPermissionAssignSerializer
+    BulkPermissionAssignSerializer, PartnerAPIKeySerializer, 
+    PartnerAPIKeyCreateSerializer, PartnerAPIKeyUpdateSerializer
 )
 from .permissions import (
     IsSystemAdmin, IsCompanyAdmin, IsDepartmentManager,
     CompanyPermission, DepartmentPermission, RolePermission,
-    UserPermission
+    UserPermission, PartnerAPIKeyPermission
 )
 from .backends import get_filtered_queryset, can_user_perform_action
 
@@ -395,3 +396,61 @@ class PermissionStatsView(APIView):
         stats['role_distribution'] = role_distribution
         
         return Response(stats)
+
+
+class PartnerAPIKeyViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для управления API-ключами партнёров.
+    Требует разрешение PARTNER_API_KEY.
+    """
+    queryset = PartnerAPIKey.objects.all()
+    permission_classes = [IsAuthenticated, PartnerAPIKeyPermission]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['companies', 'is_active']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at', 'last_used_at']
+    ordering = ['-created_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return PartnerAPIKeyCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return PartnerAPIKeyUpdateSerializer
+        return PartnerAPIKeySerializer
+    
+    def get_queryset(self):
+        """Фильтруем ключи на основе компании пользователя"""
+        user = self.request.user
+        queryset = super().get_queryset().prefetch_related('companies')
+        
+        # Системный админ видит все ключи
+        if hasattr(user, 'profile') and user.profile.is_system_admin:
+            return queryset
+        
+        # Админ компании видит только ключи, связанные с его компанией
+        if hasattr(user, 'profile') and user.profile.company:
+            return queryset.filter(companies=user.profile.company)
+        
+        return queryset.none()
+    
+    @action(detail=True, methods=['post'])
+    def regenerate(self, request, pk=None):
+        """Перегенерировать API-ключ"""
+        import secrets
+        api_key = self.get_object()
+        api_key.key = secrets.token_hex(32)
+        api_key.save()
+        
+        serializer = self.get_serializer(api_key)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        """Включить/выключить ключ"""
+        api_key = self.get_object()
+        api_key.is_active = not api_key.is_active
+        api_key.save()
+        
+        serializer = self.get_serializer(api_key)
+        return Response(serializer.data)
+
