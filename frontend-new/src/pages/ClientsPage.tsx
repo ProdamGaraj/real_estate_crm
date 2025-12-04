@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-    Box, Typography, CircularProgress, Alert, Button, Dialog, DialogTitle,
-    DialogContent, Link as MuiLink, Paper, Grid, TextField, Stack,
-    FormControl, InputLabel, Select, MenuItem
+  Box, Typography, CircularProgress, Alert, Button, Dialog, DialogTitle,
+  DialogContent, Link as MuiLink, Paper, Grid, TextField, Stack,
+  FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -67,7 +67,7 @@ export default function ClientsPage() {
   };
 
   return (
-    <Stack spacing={3}>
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4">Клиенты</Typography>
         <Button variant="contained" onClick={() => setIsModalOpen(true)}>
@@ -121,7 +121,7 @@ export default function ClientsPage() {
       {isLoading && <CircularProgress />}
       {isError && <Alert severity="error">Ошибка загрузки данных: {error instanceof Error ? error.message : 'Произошла ошибка'}</Alert>}
       {!isLoading && !isError && (
-        <Box sx={{ height: 600, width: '100%' }}>
+        <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <DataGrid
             rows={data || []}
             columns={columns}
@@ -134,6 +134,6 @@ export default function ClientsPage() {
           />
         </Box>
       )}
-    </Stack>
+    </Box>
   );
 }

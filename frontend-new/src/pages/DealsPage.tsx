@@ -40,9 +40,9 @@ const columns: GridColDef<DealListItem>[] = [
         headerName: 'ID',
         width: 90,
         renderCell: (params) => (
-          <MuiLink component={RouterLink} to={`/deals/${params.id}`} underline="hover">
-            {params.id}
-          </MuiLink>
+            <MuiLink component={RouterLink} to={`/deals/${params.id}`} underline="hover">
+                {params.id}
+            </MuiLink>
         )
     },
     { field: 'status', headerName: 'Статус', flex: 1 },
@@ -102,18 +102,18 @@ export default function DealsPage() {
     if (isError) return <Alert severity="error">Ошибка загрузки сделок</Alert>;
 
     return (
-        <Stack spacing={3}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Typography variant="h4">Сделки</Typography>
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+                <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
                     <Tab label="Список сделок" />
                     <Tab label="Сводная таблица" />
                 </Tabs>
             </Box>
 
             <TabPanel value={tabValue} index={0}>
-                <Stack spacing={2}>
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
                         <Grid container spacing={2} alignItems="center">
@@ -160,25 +160,25 @@ export default function DealsPage() {
                             </Grid>
                             <Grid size={{ xs: 6, md: 3 }}>
                                 <Controller name="contract_date_before" control={control} render={({ field }) => (
-                                   <TextField {...field} label="Дата договора (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                                    <TextField {...field} label="Дата договора (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )} />
                             </Grid>
                         </Grid>
                     </Paper>
 
-                    <Box sx={{ height: 600, width: '100%' }}>
+                    <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <DataGrid
                             rows={deals || []}
                             columns={columns}
                             loading={isLoading}
                         />
                     </Box>
-                </Stack>
+                </Box>
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
                 <DealSummary />
             </TabPanel>
-        </Stack>
+        </Box>
     );
 }

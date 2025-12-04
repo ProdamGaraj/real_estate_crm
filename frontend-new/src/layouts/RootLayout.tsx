@@ -121,7 +121,7 @@ export default function RootLayout() {
   };
 
   return (
-    <Box sx={{ display: 'flex', bgcolor: 'background.default', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', bgcolor: 'background.default', height: '100vh', overflow: 'hidden' }}>
       {/* AppBar с информацией о пользователе */}
       <AppBar 
         position="fixed" 
@@ -218,7 +218,15 @@ export default function RootLayout() {
       </Drawer>
 
       {/* Основной контент */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3, bgcolor: 'background.default' }}>
+      <Box component="main" sx={{ 
+        flexGrow: 1, 
+        p: 3, 
+        bgcolor: 'background.default',
+        height: 'calc(100vh - 64px)',
+        overflow: 'auto',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         <Toolbar />
         <Outlet />
       </Box>

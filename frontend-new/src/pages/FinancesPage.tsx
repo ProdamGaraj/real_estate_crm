@@ -51,9 +51,9 @@ const columns: GridColDef<Payment>[] = [
         headerName: 'ID',
         width: 80,
         renderCell: (params) => (
-          <MuiLink component={RouterLink} to={`/finances/${params.id}`} underline="hover">
-            {params.id}
-          </MuiLink>
+            <MuiLink component={RouterLink} to={`/finances/${params.id}`} underline="hover">
+                {params.id}
+            </MuiLink>
         )
     },
     {
@@ -72,16 +72,16 @@ const columns: GridColDef<Payment>[] = [
     {
         field: 'deal', headerName: 'Сделка', width: 100,
         renderCell: (params) => params.row.deal ? (
-          <MuiLink component={RouterLink} to={`/deals/${params.row.deal.id}`} underline="hover">
-            №{params.row.deal.id}
-          </MuiLink>
+            <MuiLink component={RouterLink} to={`/deals/${params.row.deal.id}`} underline="hover">
+                №{params.row.deal.id}
+            </MuiLink>
         ) : 'N/A'
     },
     { field: 'amount', headerName: 'Сумма', flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '' },
     { field: 'due_date', headerName: 'К оплате', type: 'date', width: 120, valueGetter: (value) => new Date(value) },
     {
         field: 'status', headerName: 'Статус', width: 150,
-        renderCell: (params) => <Chip label={params.row.status_display} color={getStatusChipColor(params.row.status)} size="small"/>
+        renderCell: (params) => <Chip label={params.row.status_display} color={getStatusChipColor(params.row.status)} size="small" />
     },
     { field: 'payment_type', headerName: 'Тип платежа', flex: 1 },
 ];
@@ -134,7 +134,7 @@ export default function FinancesPage() {
     if (isError) return <Alert severity="error">Ошибка загрузки платежей</Alert>;
 
     return (
-        <Stack spacing={3}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <style>
                 {`
                     .overdue-row {
@@ -148,14 +148,14 @@ export default function FinancesPage() {
             <Typography variant="h4">Финансы</Typography>
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+                <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
                     <Tab label="Список платежей" />
                     <Tab label="Сводная таблица" />
                 </Tabs>
             </Box>
 
             <TabPanel value={tabValue} index={0}>
-                <Stack spacing={2}>
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Paper sx={{ p: 2 }}>
                         <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
                         <Grid container spacing={2} alignItems="center">
@@ -191,13 +191,13 @@ export default function FinancesPage() {
                             </Grid>
                             <Grid size={{ xs: 6, md: 3 }}>
                                 <Controller name="due_date_before" control={control} render={({ field }) => (
-                                   <TextField {...field} label="Дата к оплате (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                                    <TextField {...field} label="Дата к оплате (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
                                 )} />
                             </Grid>
                         </Grid>
                     </Paper>
 
-                    <Box sx={{ height: 600, width: '100%' }}>
+                    <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <DataGrid
                             rows={payments || []}
                             columns={columns}
@@ -205,12 +205,12 @@ export default function FinancesPage() {
                             getRowClassName={getRowClassName}
                         />
                     </Box>
-                </Stack>
+                </Box>
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
                 <FinanceSummary />
             </TabPanel>
-        </Stack>
+        </Box>
     );
 }

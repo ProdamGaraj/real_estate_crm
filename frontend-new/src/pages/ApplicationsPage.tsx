@@ -69,14 +69,14 @@ export default function ApplicationsPage() {
   const [filters, setFilters] = useState<ApplicationFilters>(location.state?.filters || {});
   const queryClient = useQueryClient();
   const { register, watch, control, reset } = useForm<ApplicationFilters>({
-      defaultValues: filters,
+    defaultValues: filters,
   });
 
   useEffect(() => {
     if (location.state) {
-        setTabValue(location.state.tab || 0);
-        setFilters(location.state.filters || {});
-        reset(location.state.filters || {});
+      setTabValue(location.state.tab || 0);
+      setFilters(location.state.filters || {});
+      reset(location.state.filters || {});
     }
   }, [location.state, reset]);
 
@@ -114,84 +114,84 @@ export default function ApplicationsPage() {
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-              <Tab label="Список заявок" />
-              <Tab label="Сводная таблица" />
-          </Tabs>
+        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+          <Tab label="Список заявок" />
+          <Tab label="Сводная таблица" />
+        </Tabs>
       </Box>
 
       <TabPanel value={tabValue} index={0}>
-        <Stack spacing={2}>
-            {/* ПАНЕЛЬ ФИЛЬТРОВ */}
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
-              <Grid container spacing={2} alignItems="center">
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Controller
-                    name="status"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Статус</InputLabel>
-                        <Select {...field} label="Статус">
-                          <MenuItem value=""><em>Все</em></MenuItem>
-                          <MenuItem value="NEW">Новая</MenuItem>
-                          <MenuItem value="IN_PROGRESS">В работе</MenuItem>
-                          <MenuItem value="JUNK">Нецелевая</MenuItem>
-                          <MenuItem value="REJECTED">Отказ</MenuItem>
-                          <MenuItem value="CLOSED_WON">Успешно закрыта</MenuItem>
-                        </Select>
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                   <Controller
-                    name="source"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Источник</InputLabel>
-                        <Select {...field} label="Источник">
-                          <MenuItem value=""><em>Все</em></MenuItem>
-                          <MenuItem value="INTERNET">Интернет</MenuItem>
-                          <MenuItem value="SOCIAL_MEDIA">Соц.сети</MenuItem>
-                          <MenuItem value="OFFICE">Офис</MenuItem>
-                          <MenuItem value="CALL">Звонок</MenuItem>
-                        </Select>
-                      </FormControl>
-                    )}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Клиента" fullWidth size="small" {...register('client_id')} /></Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Проекта" fullWidth size="small" {...register('interested_projects')} /></Grid>
-                 <Grid size={{ xs: 6, sm: 3, md: 3 }}>
-                  <TextField label="Дата создания (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_after')} />
-                </Grid>
-                <Grid size={{ xs: 6, sm: 3, md: 3 }}>
-                  <TextField label="Дата создания (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_before')} />
-                </Grid>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {/* ПАНЕЛЬ ФИЛЬТРОВ */}
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
+            <Grid container spacing={2} alignItems="center">
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="status"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Статус</InputLabel>
+                      <Select {...field} label="Статус">
+                        <MenuItem value=""><em>Все</em></MenuItem>
+                        <MenuItem value="NEW">Новая</MenuItem>
+                        <MenuItem value="IN_PROGRESS">В работе</MenuItem>
+                        <MenuItem value="JUNK">Нецелевая</MenuItem>
+                        <MenuItem value="REJECTED">Отказ</MenuItem>
+                        <MenuItem value="CLOSED_WON">Успешно закрыта</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
               </Grid>
-            </Paper>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Controller
+                  name="source"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Источник</InputLabel>
+                      <Select {...field} label="Источник">
+                        <MenuItem value=""><em>Все</em></MenuItem>
+                        <MenuItem value="INTERNET">Интернет</MenuItem>
+                        <MenuItem value="SOCIAL_MEDIA">Соц.сети</MenuItem>
+                        <MenuItem value="OFFICE">Офис</MenuItem>
+                        <MenuItem value="CALL">Звонок</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Клиента" fullWidth size="small" {...register('client_id')} /></Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Проекта" fullWidth size="small" {...register('interested_projects')} /></Grid>
+              <Grid size={{ xs: 6, sm: 3, md: 3 }}>
+                <TextField label="Дата создания (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_after')} />
+              </Grid>
+              <Grid size={{ xs: 6, sm: 3, md: 3 }}>
+                <TextField label="Дата создания (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_before')} />
+              </Grid>
+            </Grid>
+          </Paper>
 
-            <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-              <DialogTitle>Новая заявка</DialogTitle>
-              <DialogContent>
-                <ApplicationForm onSuccess={handleSuccess} />
-              </DialogContent>
-            </Dialog>
+          <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Новая заявка</DialogTitle>
+            <DialogContent>
+              <ApplicationForm onSuccess={handleSuccess} />
+            </DialogContent>
+          </Dialog>
 
-            <Box sx={{ height: 600, width: '100%' }}>
-              <DataGrid
-                rows={data || []}
-                columns={columns}
-                initialState={{ sorting: { sortModel: [{ field: 'id', sort: 'desc' }] } }}
-                disableRowSelectionOnClick
-              />
-            </Box>
-        </Stack>
+          <Box sx={{ flex: 1, width: '100%', minHeight: 0 }}>
+            <DataGrid
+              rows={data || []}
+              columns={columns}
+              initialState={{ sorting: { sortModel: [{ field: 'id', sort: 'desc' }] } }}
+              disableRowSelectionOnClick
+            />
+          </Box>
+        </Box>
       </TabPanel>
       <TabPanel value={tabValue} index={1}>
         <ApplicationSummary />
