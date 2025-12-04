@@ -149,6 +149,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserProfileListSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    user_full_name = serializers.SerializerMethodField()
     company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
     department_name = serializers.CharField(source='department.name', read_only=True, allow_null=True)
     roles = RoleListSerializer(many=True, read_only=True)
@@ -157,12 +159,22 @@ class UserProfileListSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'user', 'company', 'company_name',
+            'id', 'user', 'user_username', 'user_full_name',
+            'company', 'company_name',
             'department', 'department_name',
             'roles', 'roles_names', 'position', 'phone',
             'is_system_admin', 'is_active',
             'created_at', 'updated_at'
         ]
+    
+    def get_user_full_name(self, obj):
+        """Возвращает ФИО пользователя"""
+        if obj.user:
+            full_name = obj.user.get_full_name()
+            if full_name:
+                return full_name
+            return obj.user.username
+        return None
     
     def get_roles_names(self, obj):
         return [role.name for role in obj.roles.filter(is_active=True)]

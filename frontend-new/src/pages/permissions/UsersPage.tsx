@@ -4,7 +4,7 @@ import {
   Typography,
   Button,
   Paper,
-  Dialog, 
+  Dialog,
   DialogTitle,
   DialogContent,
   Alert,
@@ -35,35 +35,62 @@ const ROLE_NAME_MAPPING: Record<string, string> = {
   'VIEWER': 'Наблюдатель',
 };
 
+// Вспомогательная функция для форматирования ФИО в формат "Фамилия И. О."
+function formatUserFullName(fullName: string | null): string {
+  if (!fullName) return '';
+
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 0) return '';
+
+  // Если только одно слово, возвращаем его
+  if (parts.length === 1) return parts[0];
+
+  // Фамилия
+  const lastName = parts[0];
+  const formatted = [lastName];
+
+  // Инициалы
+  for (let i = 1; i < parts.length; i++) {
+    if (parts[i]) {
+      formatted.push(parts[i][0].toUpperCase() + '.');
+    }
+  }
+
+  return formatted.join(' ');
+}
+
 const columns: GridColDef[] = [
   { field: 'id', headerName: 'ID', width: 70 },
   {
-    field: 'user_username',
+    field: 'user_full_name',
     headerName: 'Пользователь',
-    width: 200,
-    renderCell: (params) => (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <PersonIcon color="primary" fontSize="small" />
-        <Box>
-          <Typography variant="body2">{params.row.user_username}</Typography>
-          {params.row.user_full_name && (
-            <Typography variant="caption" color="text.secondary">
-              {params.row.user_full_name}
-            </Typography>
-          )}
+    width: 250,
+    renderCell: (params) => {
+      const formattedName = formatUserFullName(params.row.user_full_name);
+      const username = params.row.user_username;
+      const displayText = formattedName
+        ? `${formattedName} (${username})`
+        : username || '—';
+
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PersonIcon color="primary" fontSize="small" />
+          <Typography variant="body2" fontWeight="medium">
+            {displayText}
+          </Typography>
         </Box>
-      </Box>
-    ),
+      );
+    },
   },
-  { 
-    field: 'company_name', 
-    headerName: 'Компания', 
+  {
+    field: 'company_name',
+    headerName: 'Компания',
     width: 180,
     renderCell: (params) => params.value || '—',
   },
-  { 
-    field: 'department_name', 
-    headerName: 'Отдел', 
+  {
+    field: 'department_name',
+    headerName: 'Отдел',
     width: 180,
     renderCell: (params) => params.value || '—',
   },
@@ -94,9 +121,9 @@ const columns: GridColDef[] = [
       </Box>
     ),
   },
-  { 
-    field: 'position', 
-    headerName: 'Должность', 
+  {
+    field: 'position',
+    headerName: 'Должность',
     width: 150,
     renderCell: (params) => params.value || '—',
   },
@@ -284,26 +311,26 @@ export default function UsersPage() {
       </Paper>
 
       {/* Модальное окно редактирования */}
-      <Dialog 
-        open={isModalOpen} 
+      <Dialog
+        open={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setSelectedUser(null);
-        }} 
-        maxWidth="md" 
+        }}
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
           {selectedUser ? `Редактировать пользователя: ${selectedUser.user_username}` : 'Создать пользователя'}
         </DialogTitle>
         <DialogContent>
-          <UserForm 
+          <UserForm
             userProfile={selectedUser}
-            onSuccess={handleSuccess} 
+            onSuccess={handleSuccess}
             onCancel={() => {
               setIsModalOpen(false);
               setSelectedUser(null);
-            }} 
+            }}
           />
         </DialogContent>
       </Dialog>
