@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getDiscountById } from '../api/discounts';
 import { Typography, CircularProgress, Alert, Paper, Box, Tabs, Tab } from '@mui/material';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, timelineOppositeContentClasses } from '@mui/lab';
@@ -23,6 +24,12 @@ function TabPanel(props: TabPanelProps) {
 export default function DiscountDetailPage() {
   const { discountId } = useParams<{ discountId: string }>();
   const [tabValue, setTabValue] = useState(0);
+  const { t, i18n } = useTranslation();
+
+  const getDateLocale = () => {
+    const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
+    return localeMap[i18n.language] || 'ru-RU';
+  };
 
   const { data: discount, isLoading, isError } = useQuery({
     queryKey: ['discount', discountId],
@@ -31,26 +38,26 @@ export default function DiscountDetailPage() {
   });
 
   if (isLoading) return <CircularProgress />;
-  if (isError || !discount) return <Alert severity="error">Не удалось загрузить данные скидки.</Alert>;
+  if (isError || !discount) return <Alert severity="error">{t('errors.load_discount_error')}</Alert>;
 
   return (
     <Paper sx={{ width: '100%' }}>
       <Typography variant="h4" sx={{ p: 3, pb: 0 }}>
-        Скидка: {discount.name}
+        {t('pages.discounts.discount_title')}: {discount.name}
       </Typography>
       <Typography color="text.secondary" sx={{ px: 3 }}>
-        Процент: {discount.percentage_value}%
+        {t('pages.discounts.percentage')}: {discount.percentage_value}%
       </Typography>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="Основная информация" />
-          <Tab label={`Логи (${discount.logs?.length || 0})`} />
+          <Tab label={t('pages.discounts.main_info')} />
+          <Tab label={`${t('common.logs')} (${discount.logs?.length || 0})`} />
         </Tabs>
       </Box>
 
       <TabPanel value={tabValue} index={0}>
-        <Typography>Детальная информация о скидке...</Typography>
+        <Typography>{t('pages.discounts.discount_details')}...</Typography>
         {/* Здесь можно будет разместить форму редактирования */}
       </TabPanel>
 
@@ -64,9 +71,9 @@ export default function DiscountDetailPage() {
               </TimelineSeparator>
               <TimelineContent sx={{ py: '12px', px: 2 }}>
                 <Typography variant="body2" color="text.secondary">
-                  {new Date(log.created_at).toLocaleString('ru-RU')}
+                  {new Date(log.created_at).toLocaleString(getDateLocale())}
                 </Typography>
-                <Typography component="span" fontWeight="bold">{log.user || 'Система'}</Typography>
+                <Typography component="span" fontWeight="bold">{log.user || t('common.system')}</Typography>
                 <Typography>{log.action}</Typography>
               </TimelineContent>
             </TimelineItem>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Box, Typography, Paper, Tabs, Tab } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import ProjectReport from '../components/reports/ProjectReport';
 import EmployeeReport from '../components/reports/EmployeeReport';
 
@@ -28,16 +29,17 @@ function TabPanel(props: TabPanelProps) {
 
 
 export default function ReportsPage() {
+    const { t } = useTranslation();
     const [tabValue, setTabValue] = useState(0);
 
     return (
         <Box>
-            <Typography variant="h4" sx={{ mb: 2 }}>Отчеты</Typography>
+            <Typography variant="h4" sx={{ mb: 2 }}>{t('pages.reports.title')}</Typography>
             <Paper>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-                        <Tab label="Отчет по проектам" />
-                        <Tab label="Отчет по сотрудникам" />
+                        <Tab label={t('pages.reports.project_report')} />
+                        <Tab label={t('pages.reports.employee_report')} />
                     </Tabs>
                 </Box>
                 <TabPanel value={tabValue} index={0}>

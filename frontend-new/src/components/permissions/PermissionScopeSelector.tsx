@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   FormControlLabel,
@@ -30,6 +31,7 @@ export default function PermissionScopeSelector({
   departments,
   onChange,
 }: PermissionScopeSelectorProps) {
+  const { t } = useTranslation();
   
   // Обработчик изменения "Мои"
   const handleOwnChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,19 +87,19 @@ export default function PermissionScopeSelector({
               size="small"
             />
           }
-          label="Мои"
+          label={t('pages.settings.permissions.scope_own')}
         />
 
         {/* Отделы - выпадающий список с множественным выбором */}
         {departments.length > 0 && (
           <FormControl fullWidth size="small" sx={{ mt: 1, mb: 1 }}>
-            <InputLabel id="departments-select-label">Отделы</InputLabel>
+            <InputLabel id="departments-select-label">{t('pages.settings.permissions.departments')}</InputLabel>
             <Select
               labelId="departments-select-label"
               multiple
               value={scope.departments}
               onChange={handleDepartmentsChange}
-              input={<OutlinedInput label="Отделы" />}
+              input={<OutlinedInput label={t('pages.settings.permissions.departments')} />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {selected.map((id) => {
@@ -133,13 +135,13 @@ export default function PermissionScopeSelector({
         {/* Компании - выпадающий список с множественным выбором */}
         {companies.length > 0 && (
           <FormControl fullWidth size="small" sx={{ mt: 1, mb: 1 }}>
-            <InputLabel id="companies-select-label">Компании</InputLabel>
+            <InputLabel id="companies-select-label">{t('pages.settings.permissions.companies')}</InputLabel>
             <Select
               labelId="companies-select-label"
               multiple
               value={scope.companies}
               onChange={handleCompaniesChange}
-              input={<OutlinedInput label="Компании" />}
+              input={<OutlinedInput label={t('pages.settings.permissions.companies')} />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {selected.map((id) => {
@@ -178,7 +180,7 @@ export default function PermissionScopeSelector({
               size="small"
             />
           }
-          label="Всей системы"
+          label={t('pages.settings.permissions.scope_system')}
         />
       </FormGroup>
     </Box>

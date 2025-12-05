@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   getTaskById,
   getTaskComments,
@@ -41,15 +42,6 @@ import {
 import { TaskFormDialog } from '../components/tasks/TaskFormDialog';
 import { ReopenTaskDialog } from '../components/tasks/ReopenTaskDialog';
 
-const statusLabels: Record<string, string> = {
-  NEW: 'Новая',
-  IN_PROGRESS: 'В работе',
-  REVIEW: 'На проверке',
-  COMPLETED: 'Завершена',
-  CANCELLED: 'Отменена',
-  BLOCKED: 'Заблокирована',
-};
-
 const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'> = {
   NEW: 'default',
   IN_PROGRESS: 'primary',
@@ -57,13 +49,6 @@ const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'succes
   COMPLETED: 'success',
   CANCELLED: 'error',
   BLOCKED: 'warning',
-};
-
-const priorityLabels: Record<string, string> = {
-  LOW: 'Низкий',
-  NORMAL: 'Обычный',
-  HIGH: 'Высокий',
-  URGENT: 'Срочный',
 };
 
 const priorityColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'> = {
@@ -77,12 +62,23 @@ const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t, i18n } = useTranslation();
 
   const [commentText, setCommentText] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
 
   const taskId = parseInt(id || '0', 10);
+
+  // Get localized date format based on current language
+  const getDateLocale = () => {
+    const localeMap: Record<string, string> = {
+      ru: 'ru-RU',
+      en: 'en-US',
+      uz: 'uz-UZ',
+    };
+    return localeMap[i18n.language] || 'ru-RU';
+  };
 
   // Запросы данных
   const { data: task, isLoading, error } = useQuery({
@@ -163,13 +159,13 @@ const TaskDetailPage: React.FC = () => {
   };
 
   const handleDeleteLog = (logId: number) => {
-    if (window.confirm('Вы уверены, что хотите удалить эту запись из истории?')) {
+    if (window.confirm(t('pages.tasks.confirm_delete_history'))) {
       deleteLogMutation.mutate({ taskId, logId });
     }
   };
 
   const handleDelete = () => {
-    if (window.confirm('Вы уверены, что хотите удалить эту задачу?')) {
+    if (window.confirm(t('pages.tasks.confirm_delete_task'))) {
       deleteMutation.mutate(taskId);
     }
   };
@@ -185,7 +181,7 @@ const TaskDetailPage: React.FC = () => {
   if (error || !task) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="error">Задача не найдена</Alert>
+        <Alert severity="error">{t('pages.tasks.task_not_found')}</Alert>
       </Box>
     );
   }
@@ -198,16 +194,16 @@ const TaskDetailPage: React.FC = () => {
           <IconButton onClick={() => navigate('/tasks')}>
             <BackIcon />
           </IconButton>
-          <Typography variant="h4">Задача #{task.id}</Typography>
+          <Typography variant="h4">{t('pages.tasks.task_number', { id: task.id })}</Typography>
           <Chip
-            label={task.status === 'COMPLETED' && task.completed_with_delay ? 'Просрочено ✓' : statusLabels[task.status]}
+            label={task.status === 'COMPLETED' && task.completed_with_delay ? t('pages.tasks.overdue_completed') : t(`statuses.task.${task.status}`)}
             color={task.status === 'COMPLETED' && task.completed_with_delay ? 'warning' : statusColors[task.status]}
           />
           <Chip
-            label={priorityLabels[task.priority]}
+            label={t(`statuses.task_priority.${task.priority}`)}
             color={priorityColors[task.priority]}
           />
-          {task.is_overdue && task.status !== 'COMPLETED' && <Chip label="Просрочено" color="error" />}
+          {task.is_overdue && task.status !== 'COMPLETED' && <Chip label={t('pages.tasks.overdue')} color="error" />}
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -217,7 +213,7 @@ const TaskDetailPage: React.FC = () => {
               variant="outlined"
               onClick={() => startMutation.mutate(taskId)}
             >
-              Начать
+              {t('pages.tasks.start')}
             </Button>
           )}
           {task.status === 'IN_PROGRESS' && (
@@ -227,7 +223,7 @@ const TaskDetailPage: React.FC = () => {
               color="success"
               onClick={() => completeMutation.mutate(taskId)}
             >
-              Завершить
+              {t('pages.tasks.complete')}
             </Button>
           )}
           {task.status === 'CANCELLED' && (
@@ -237,7 +233,7 @@ const TaskDetailPage: React.FC = () => {
               color="primary"
               onClick={() => setReopenDialogOpen(true)}
             >
-              Вернуть в работу
+              {t('pages.tasks.return_to_work')}
             </Button>
           )}
           {task.status !== 'CANCELLED' && task.status !== 'COMPLETED' && (
@@ -247,7 +243,7 @@ const TaskDetailPage: React.FC = () => {
               color="error"
               onClick={() => cancelMutation.mutate(taskId)}
             >
-              Отменить
+              {t('pages.tasks.cancel_task')}
             </Button>
           )}
           <Button
@@ -255,9 +251,9 @@ const TaskDetailPage: React.FC = () => {
             variant="contained"
             onClick={() => setEditDialogOpen(true)}
           >
-            Редактировать
+            {t('common.edit')}
           </Button>
-          <Tooltip title="Удалить">
+          <Tooltip title={t('common.delete')}>
             <IconButton color="error" onClick={handleDelete}>
               <DeleteIcon />
             </IconButton>
@@ -290,7 +286,7 @@ const TaskDetailPage: React.FC = () => {
           {subtasks.length > 0 && (
             <Paper sx={{ p: 3, mb: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Подзадачи ({subtasks.length})
+                {t('pages.tasks.subtasks')} ({subtasks.length})
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {subtasks.map((subtask) => (
@@ -305,7 +301,7 @@ const TaskDetailPage: React.FC = () => {
                           #{subtask.id} {subtask.title}
                         </Typography>
                         <Chip
-                          label={statusLabels[subtask.status]}
+                          label={t(`statuses.task.${subtask.status}`)}
                           color={statusColors[subtask.status]}
                           size="small"
                         />
@@ -320,7 +316,7 @@ const TaskDetailPage: React.FC = () => {
           {/* Комментарии */}
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Комментарии ({comments.length})
+              {t('pages.tasks.comments')} ({comments.length})
             </Typography>
             
             <Box sx={{ mb: 3 }}>
@@ -328,7 +324,7 @@ const TaskDetailPage: React.FC = () => {
                 fullWidth
                 multiline
                 rows={3}
-                placeholder="Добавить комментарий..."
+                placeholder={t('pages.tasks.add_comment')}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
               />
@@ -338,7 +334,7 @@ const TaskDetailPage: React.FC = () => {
                 onClick={handleAddComment}
                 disabled={!commentText.trim() || addCommentMutation.isPending}
               >
-                Отправить
+                {t('common.send')}
               </Button>
             </Box>
 
@@ -355,7 +351,7 @@ const TaskDetailPage: React.FC = () => {
                           {comment.user.full_name || comment.user.username}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {new Date(comment.created_at).toLocaleString('ru-RU')}
+                          {new Date(comment.created_at).toLocaleString(getDateLocale())}
                         </Typography>
                       </Box>
                     </Box>
@@ -373,14 +369,14 @@ const TaskDetailPage: React.FC = () => {
         <Box>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Детали
+              {t('common.details')}
             </Typography>
             <Divider sx={{ my: 2 }} />
             
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Автор
+                  {t('pages.tasks.author')}
                 </Typography>
                 <Typography variant="body2">
                   {task.creator.full_name || task.creator.username}
@@ -389,7 +385,7 @@ const TaskDetailPage: React.FC = () => {
 
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Исполнитель
+                  {t('pages.tasks.assignee')}
                 </Typography>
                 <Typography variant="body2">
                   {task.assignee.full_name || task.assignee.username}
@@ -398,20 +394,20 @@ const TaskDetailPage: React.FC = () => {
 
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Срок выполнения
+                  {t('pages.tasks.deadline')}
                 </Typography>
                 <Typography variant="body2" color={task.is_overdue ? 'error' : 'inherit'}>
-                  {new Date(task.deadline).toLocaleDateString('ru-RU')}
+                  {new Date(task.deadline).toLocaleDateString(getDateLocale())}
                 </Typography>
               </Box>
 
               {task.started_at && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Начата
+                    {t('pages.tasks.started_at')}
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(task.started_at).toLocaleString('ru-RU')}
+                    {new Date(task.started_at).toLocaleString(getDateLocale())}
                   </Typography>
                 </Box>
               )}
@@ -419,44 +415,44 @@ const TaskDetailPage: React.FC = () => {
               {task.completed_at && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Завершена
+                    {t('pages.tasks.completed_at')}
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(task.completed_at).toLocaleString('ru-RU')}
+                    {new Date(task.completed_at).toLocaleString(getDateLocale())}
                   </Typography>
                 </Box>
               )}
 
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Создана
+                  {t('pages.tasks.created_at')}
                 </Typography>
                 <Typography variant="body2">
-                  {new Date(task.created_at).toLocaleString('ru-RU')}
+                  {new Date(task.created_at).toLocaleString(getDateLocale())}
                 </Typography>
               </Box>
 
               {task.estimated_hours && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Оценка времени
+                    {t('pages.tasks.estimated_hours')}
                   </Typography>
-                  <Typography variant="body2">{task.estimated_hours} ч</Typography>
+                  <Typography variant="body2">{task.estimated_hours} {t('pages.tasks.hours_abbr')}</Typography>
                 </Box>
               )}
 
               {task.actual_hours && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Фактическое время
+                    {t('pages.tasks.actual_hours')}
                   </Typography>
-                  <Typography variant="body2">{task.actual_hours} ч</Typography>
+                  <Typography variant="body2">{task.actual_hours} {t('pages.tasks.hours_abbr')}</Typography>
                 </Box>
               )}
 
               <Box>
                 <Typography variant="caption" color="text.secondary">
-                  Компания
+                  {t('common.company')}
                 </Typography>
                 <Typography variant="body2">{task.company_name}</Typography>
               </Box>
@@ -464,7 +460,7 @@ const TaskDetailPage: React.FC = () => {
               {task.department_name && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Отдел
+                    {t('pages.users.department')}
                   </Typography>
                   <Typography variant="body2">{task.department_name}</Typography>
                 </Box>
@@ -473,7 +469,7 @@ const TaskDetailPage: React.FC = () => {
               {task.watchers.length > 0 && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Наблюдатели
+                    {t('pages.tasks.watchers')}
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
                     {task.watchers.map((watcher) => (
@@ -490,20 +486,20 @@ const TaskDetailPage: React.FC = () => {
           {/* История изменений */}
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              История изменений
+              {t('pages.tasks.history')}
             </Typography>
             <Box sx={{ mt: 2, maxHeight: 400, overflow: 'auto' }}>
               {logs.map((log) => (
                 <Box key={log.id} sx={{ mb: 2, display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="caption" color="text.secondary">
-                      {new Date(log.created_at).toLocaleString('ru-RU')}
+                      {new Date(log.created_at).toLocaleString(getDateLocale())}
                     </Typography>
                     <Typography variant="body2">
-                      {log.user ? (log.user.full_name || log.user.username) : 'Система'}: {log.action}
+                      {log.user ? (log.user.full_name || log.user.username) : t('common.system')}: {log.action}
                     </Typography>
                   </Box>
-                  <Tooltip title="Удалить запись">
+                  <Tooltip title={t('pages.tasks.delete_history_entry')}>
                     <IconButton
                       size="small"
                       onClick={() => handleDeleteLog(log.id)}

@@ -1,6 +1,7 @@
 // real_estate_crm/frontend-new/src/components/deals/DocumentGeneration.tsx
 
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getAvailableTemplates } from '../../api/templates';
 import { Button, CircularProgress, Alert, List, ListItem, ListItemText, ListItemIcon } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -12,6 +13,7 @@ interface DocumentGenerationProps {
 }
 
 export default function DocumentGeneration({ deal }: DocumentGenerationProps) {
+  const { t } = useTranslation();
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ['availableTemplates', deal.id],
@@ -31,7 +33,7 @@ export default function DocumentGeneration({ deal }: DocumentGenerationProps) {
         link.click();
         document.body.removeChild(link);
     } catch (error) {
-        alert('Не удалось сгенерировать документ.');
+        alert(t('documents.generation_failed'));
         console.error(error);
     }
   };
@@ -39,7 +41,7 @@ export default function DocumentGeneration({ deal }: DocumentGenerationProps) {
   if (isLoading) return <CircularProgress />;
 
   if (!templates || templates.length === 0) {
-    return <Alert severity="info">Для этой сделки нет подходящих шаблонов. Проверьте настройки шаблонов.</Alert>;
+    return <Alert severity="info">{t('documents.no_templates')}</Alert>;
   }
 
   return (
@@ -47,7 +49,7 @@ export default function DocumentGeneration({ deal }: DocumentGenerationProps) {
       {templates.map(template => (
         <ListItem key={template.id} secondaryAction={
           <Button variant="contained" onClick={() => handleGenerate(template.id)}>
-            Сгенерировать
+            {t('documents.generate')}
           </Button>
         }>
           <ListItemIcon><DescriptionIcon /></ListItemIcon>

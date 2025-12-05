@@ -2,6 +2,7 @@
 
 import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getProjects } from '../../api/projects';
 import { createTemplate } from '../../api/templates';
 import {
@@ -29,6 +30,7 @@ const propertyTypes = [
 ];
 
 export default function TemplateFormModal({ open, onClose }: TemplateFormModalProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { register, handleSubmit, control, watch, reset } = useForm<FormInputs>({
     defaultValues: {
@@ -50,7 +52,7 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
       onClose();
       reset();
     },
-    onError: (error) => alert(`Ошибка: ${error.message}`),
+    onError: (error) => alert(`${t('common.error')}: ${error.message}`),
   });
 
   const onSubmit = (data: FormInputs) => {
@@ -71,12 +73,12 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Новый шаблон документа</DialogTitle>
+      <DialogTitle>{t('pages.templates.create_template')}</DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField label="Название шаблона" {...register('name', { required: true })} required />
-            <TextField type="file" InputLabelProps={{ shrink: true }} label="Файл шаблона (.docx)" {...register('file', { required: true })} required inputProps={{ accept: ".docx" }} />
+            <TextField label={t('pages.templates.template_name')} {...register('name', { required: true })} required />
+            <TextField type="file" InputLabelProps={{ shrink: true }} label={t('pages.templates.template_file')} {...register('file', { required: true })} required inputProps={{ accept: ".docx" }} />
 
             <Controller
               name="applies_to_projects"
@@ -89,7 +91,7 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
                   value={projects?.filter(p => field.value.includes(p.id)) || []}
                   onChange={(_, data) => field.onChange(data.map(d => d.id))}
                   getOptionLabel={(option) => option.name}
-                  renderInput={(params) => <TextField {...params} label="Применить к проектам (необязательно)" />}
+                  renderInput={(params) => <TextField {...params} label={t('pages.templates.apply_to_projects')} />}
                 />
               )}
             />
@@ -105,7 +107,7 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
                   value={availableBuildings.filter(b => field.value.includes(b.id))}
                   onChange={(_, data) => field.onChange(data.map(d => d.id))}
                   getOptionLabel={(option) => option.name}
-                  renderInput={(params) => <TextField {...params} label="Применить к домам (необязательно)" />}
+                  renderInput={(params) => <TextField {...params} label={t('pages.templates.apply_to_buildings')} />}
                 />
               )}
             />
@@ -115,17 +117,17 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
                 control={control}
                 render={({ field }) => (
                     <FormControl fullWidth>
-                        <InputLabel>Типы недвижимости (необязательно)</InputLabel>
+                        <InputLabel>{t('pages.templates.property_types')}</InputLabel>
                         <Select
                             multiple
                             {...field}
-                            input={<OutlinedInput label="Типы недвижимости (необязательно)" />}
-                            renderValue={(selected) => selected.join(', ')}
+                            input={<OutlinedInput label={t('pages.templates.property_types')} />}
+                            renderValue={(selected) => selected.map(s => t(`property_types.${s}`)).join(', ')}
                         >
                             {propertyTypes.map((type) => (
                                 <MenuItem key={type} value={type}>
                                     <Checkbox checked={field.value.indexOf(type) > -1} />
-                                    <ListItemText primary={type} />
+                                    <ListItemText primary={t(`property_types.${type}`)} />
                                 </MenuItem>
                             ))}
                         </Select>
@@ -135,8 +137,8 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Отмена</Button>
-          <Button type="submit" variant="contained" disabled={mutation.isPending}>Сохранить</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
+          <Button type="submit" variant="contained" disabled={mutation.isPending}>{t('common.save')}</Button>
         </DialogActions>
       </form>
     </Dialog>

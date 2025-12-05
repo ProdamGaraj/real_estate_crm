@@ -5,12 +5,16 @@ import {
     Box, Typography, CircularProgress, Alert, Link as MuiLink,
     Paper, Grid, TextField, FormControl, InputLabel, Select, MenuItem, Stack, Chip, Tabs, Tab
 } from '@mui/material';
-import { DataGrid, type GridColDef, type GridRowClassNameParams } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
+import { translatePaymentStatus } from '../utils/translations';
+import type { GridColDef, GridRowClassNameParams } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import { useQuery } from '@tanstack/react-query';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { getPayments, type Payment, type PaymentFilters } from '../api/finances';
 import FinanceSummary from '../components/finances/FinanceSummary';
+import { LocalizedDateField } from '../components/common/LocalizedDateField';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -45,10 +49,10 @@ const getStatusChipColor = (status: Payment['status']) => {
     }
 }
 
-const columns: GridColDef<Payment>[] = [
+const getColumns = (t: (key: string) => string): GridColDef<Payment>[] => [
     {
         field: 'id',
-        headerName: 'ID',
+        headerName: t('table.id'),
         width: 80,
         renderCell: (params) => (
             <MuiLink component={RouterLink} to={`/finances/${params.id}`} underline="hover">
@@ -57,7 +61,7 @@ const columns: GridColDef<Payment>[] = [
         )
     },
     {
-        field: 'client', headerName: 'Клиент', flex: 1,
+        field: 'client', headerName: t('table.client'), flex: 1,
         renderCell: (params) => {
             if (!params.row.client) {
                 return 'N/A';
@@ -70,26 +74,28 @@ const columns: GridColDef<Payment>[] = [
         }
     },
     {
-        field: 'deal', headerName: 'Сделка', width: 100,
+        field: 'deal', headerName: t('table.deal'), width: 100,
         renderCell: (params) => params.row.deal ? (
             <MuiLink component={RouterLink} to={`/deals/${params.row.deal.id}`} underline="hover">
                 №{params.row.deal.id}
             </MuiLink>
         ) : 'N/A'
     },
-    { field: 'amount', headerName: 'Сумма', flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '' },
-    { field: 'due_date', headerName: 'К оплате', type: 'date', width: 120, valueGetter: (value) => new Date(value) },
+    { field: 'amount', headerName: t('table.amount'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '' },
+    { field: 'due_date', headerName: t('table.due_date'), type: 'date', width: 120, valueGetter: (value) => new Date(value) },
     {
-        field: 'status', headerName: 'Статус', width: 150,
-        renderCell: (params) => <Chip label={params.row.status_display} color={getStatusChipColor(params.row.status)} size="small" />
+        field: 'status', headerName: t('table.status'), width: 150,
+        renderCell: (params) => <Chip label={translatePaymentStatus(params.row.status)} color={getStatusChipColor(params.row.status)} size="small" />
     },
-    { field: 'payment_type', headerName: 'Тип платежа', flex: 1 },
+    { field: 'payment_type', headerName: t('table.payment_type'), flex: 1 },
 ];
 
 
 export default function FinancesPage() {
+    const { t } = useTranslation();
     const location = useLocation();
     const [tabValue, setTabValue] = useState(location.state?.tab || 0);
+    const columns = getColumns(t);
     const [filters, setFilters] = useState<PaymentFilters>(location.state?.filters || {});
     const { control, watch, reset } = useForm<PaymentFilters>({
         defaultValues: filters
@@ -131,7 +137,7 @@ export default function FinancesPage() {
     };
 
     if (isLoading) return <CircularProgress />;
-    if (isError) return <Alert severity="error">Ошибка загрузки платежей</Alert>;
+    if (isError) return <Alert severity="error">{t('errors.load_payments_error')}</Alert>;
 
     return (
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -145,60 +151,68 @@ export default function FinancesPage() {
                     }
                 `}
             </style>
-            <Typography variant="h4">Финансы</Typography>
+            <Typography variant="h4">{t('pages.finances.title')}</Typography>
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-                    <Tab label="Список платежей" />
-                    <Tab label="Сводная таблица" />
+                    <Tab label={t('pages.finances.payment_list')} />
+                    <Tab label={t('pages.finances.summary_table')} />
                 </Tabs>
             </Box>
 
             <TabPanel value={tabValue} index={0}>
                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Paper sx={{ p: 2 }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
+                        <Typography variant="h6" sx={{ mb: 2 }}>{t('common.filters')}</Typography>
                         <Grid container spacing={2} alignItems="center">
                             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="client_name" control={control} render={({ field }) => (
-                                    <TextField {...field} label="Клиент" fullWidth size="small" />
+                                    <TextField {...field} label={t('pages.finances.client_filter')} fullWidth size="small" />
                                 )} />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="deal_id" control={control} render={({ field }) => (
-                                    <TextField {...field} value={field.value || ''} label="ID Сделки" type="number" fullWidth size="small" />
+                                    <TextField {...field} value={field.value || ''} label={t('pages.finances.deal_id_filter')} type="number" fullWidth size="small" />
                                 )} />
                             </Grid>
                             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="status" control={control} defaultValue="" render={({ field }) => (
                                     <FormControl fullWidth size="small">
-                                        <InputLabel>Статус</InputLabel>
-                                        <Select {...field} label="Статус">
-                                            <MenuItem value=""><em>Все</em></MenuItem>
-                                            <MenuItem value="PENDING">К оплате</MenuItem>
-                                            <MenuItem value="PAID">Оплачен</MenuItem>
-                                            <MenuItem value="OVERDUE">Просрочен</MenuItem>
-                                            <MenuItem value="TO_BE_RETURNED">К возврату</MenuItem>
-                                            <MenuItem value="RETURNED">Возвращен</MenuItem>
+                                        <InputLabel>{t('forms.status')}</InputLabel>
+                                        <Select {...field} label={t('forms.status')}>
+                                            <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
+                                            <MenuItem value="PENDING">{t('statuses.payment.pending')}</MenuItem>
+                                            <MenuItem value="PAID">{t('statuses.payment.paid')}</MenuItem>
+                                            <MenuItem value="OVERDUE">{t('statuses.payment.overdue')}</MenuItem>
+                                            <MenuItem value="TO_BE_RETURNED">{t('statuses.payment.to_be_returned')}</MenuItem>
+                                            <MenuItem value="RETURNED">{t('statuses.payment.returned')}</MenuItem>
                                         </Select>
                                     </FormControl>
                                 )} />
                             </Grid>
                             <Grid size={{ xs: 6, md: 3 }}>
                                 <Controller name="due_date_after" control={control} render={({ field }) => (
-                                    <TextField {...field} label="Дата к оплате (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                                    <LocalizedDateField
+                                        label={t('pages.finances.due_date_from')}
+                                        value={field.value || null}
+                                        onChange={field.onChange}
+                                    />
                                 )} />
                             </Grid>
                             <Grid size={{ xs: 6, md: 3 }}>
                                 <Controller name="due_date_before" control={control} render={({ field }) => (
-                                    <TextField {...field} label="Дата к оплате (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                                    <LocalizedDateField
+                                        label={t('pages.finances.due_date_to')}
+                                        value={field.value || null}
+                                        onChange={field.onChange}
+                                    />
                                 )} />
                             </Grid>
                         </Grid>
                     </Paper>
 
                     <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                        <DataGrid
+                        <LocalizedDataGrid
                             rows={payments || []}
                             columns={columns}
                             loading={isLoading}

@@ -1,22 +1,5 @@
 import { Typography, Box, List, ListItem, ListItemText } from '@mui/material';
-
-// Словарь для перевода технических имен полей в человекочитаемые
-const fieldNameMap: Record<string, string> = {
-    full_name: 'ФИО',
-    phone_number: 'Номер телефона',
-    email: 'Email',
-    status: 'Статус',
-    comment: 'Комментарий',
-    notes: 'Заметки',
-    contract_price: 'Стоимость по договору',
-    rejection_reason: 'Причина отказа',
-    name: 'Название',
-    percentage_value: 'Процент',
-    property_type: 'Тип недвижимости',
-    start_date: 'Дата начала',
-    end_date: 'Дата окончания',
-    // Добавляйте другие поля по мере необходимости
-};
+import { useTranslation } from 'react-i18next';
 
 // Тип для лога (универсальный)
 interface Log {
@@ -28,7 +11,26 @@ interface HumanizedLogProps {
 }
 
 export default function HumanizedLog({ log }: HumanizedLogProps) {
+    const { t } = useTranslation();
     const { action } = log;
+
+    // Словарь для перевода технических имен полей в человекочитаемые
+    const fieldNameMap: Record<string, string> = {
+        full_name: t('logs.fields.full_name'),
+        phone_number: t('logs.fields.phone_number'),
+        email: t('logs.fields.email'),
+        status: t('logs.fields.status'),
+        comment: t('logs.fields.comment'),
+        notes: t('logs.fields.notes'),
+        contract_price: t('logs.fields.contract_price'),
+        rejection_reason: t('logs.fields.rejection_reason'),
+        name: t('logs.fields.name'),
+        percentage_value: t('logs.fields.percentage_value'),
+        property_type: t('logs.fields.property_type'),
+        start_date: t('logs.fields.start_date'),
+        end_date: t('logs.fields.end_date'),
+        // Добавляйте другие поля по мере необходимости
+    };
 
     // Разбиваем строку на основное действие и детали
     const parts = action.split('. ');
@@ -48,8 +50,8 @@ export default function HumanizedLog({ log }: HumanizedLogProps) {
         const [, field, from, to] = match;
         return {
             field: fieldNameMap[field] || field, // Используем словарь или оставляем как есть
-            from: from === 'пусто' ? <em>(пусто)</em> : `'${from}'`,
-            to: to === 'пусто' ? <em>(пусто)</em> : `'${to}'`,
+            from: from === 'пусто' ? <em>({t('logs.empty')})</em> : `'${from}'`,
+            to: to === 'пусто' ? <em>({t('logs.empty')})</em> : `'${to}'`,
         };
     }).filter(Boolean); // Убираем null, если что-то не распарсилось
 

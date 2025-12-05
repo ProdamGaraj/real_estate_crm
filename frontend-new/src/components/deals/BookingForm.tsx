@@ -1,10 +1,12 @@
 // src/components/deals/BookingForm.tsx
 import { useForm, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getClients } from '../../api/clients';
 import type { Client } from '../../api/clients';
 import type { DealPayload } from '../../api/deals';
-import { Box, Button, TextField, Stack, Autocomplete, CircularProgress } from '@mui/material';
+import { Box, Button, Stack, Autocomplete, TextField } from '@mui/material';
+import LocalizedDateField from '../common/LocalizedDateField';
 
 interface BookingFormProps {
   onSubmit: (data: DealPayload) => void;
@@ -12,10 +14,11 @@ interface BookingFormProps {
 }
 
 export default function BookingForm({ onSubmit, isPending }: BookingFormProps) {
+  const { t } = useTranslation();
   const { handleSubmit, control } = useForm<DealPayload>();
   const { data: clients, isLoading: isLoadingClients } = useQuery<Client[]>({
     queryKey: ['clients'],
-    queryFn: getClients,
+    queryFn: () => getClients(),
   });
 
   return (
@@ -29,9 +32,9 @@ export default function BookingForm({ onSubmit, isPending }: BookingFormProps) {
             <Autocomplete
               options={clients || []}
               loading={isLoadingClients}
-              getOptionLabel={(option) => `${option.full_name} (${option.phone_number})`}
+              getOptionLabel={(option) => `${option.full_name} (${option.primary_phone_number || ''})`}
               onChange={(_, data) => field.onChange(data?.id)}
-              renderInput={(params) => <TextField {...params} label="Клиент" required />}
+              renderInput={(params) => <TextField {...params} label={t('deals.client')} required />}
             />
           )}
         />
@@ -40,17 +43,15 @@ export default function BookingForm({ onSubmit, isPending }: BookingFormProps) {
             control={control}
             rules={{ required: true }}
             render={({ field }) => (
-                <TextField
-                    {...field}
-                    label="Дата окончания брони"
-                    type="date"
-                    required
-                    InputLabelProps={{ shrink: true }}
+                <LocalizedDateField
+                    label={t('deals.booking_end_date')}
+                    value={field.value || null}
+                    onChange={(date) => field.onChange(date || '')}
                 />
             )}
         />
         <Button type="submit" variant="contained" disabled={isPending}>
-          {isPending ? 'Создание...' : 'Создать сделку'}
+          {isPending ? t('common.creating') : t('deals.create_deal')}
         </Button>
       </Stack>
     </Box>

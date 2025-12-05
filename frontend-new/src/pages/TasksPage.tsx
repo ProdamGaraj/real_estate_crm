@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -50,6 +51,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const TasksPage: React.FC = () => {
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<TaskFilters>({});
@@ -122,7 +124,7 @@ const TasksPage: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">
-          У вас нет прав для просмотра задач
+          {t('pages.tasks.no_view_permission')}
         </Alert>
       </Box>
     );
@@ -133,7 +135,7 @@ const TasksPage: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">
-          Ошибка загрузки данных: {(tasksError as Error)?.message || (kanbanError as Error)?.message || (statsError as Error)?.message}
+          {t('errors.error_prefix')} {(tasksError as Error)?.message || (kanbanError as Error)?.message || (statsError as Error)?.message}
         </Alert>
       </Box>
     );
@@ -145,25 +147,25 @@ const TasksPage: React.FC = () => {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Задачи
+            {t('pages.tasks.title')}
           </Typography>
           {stats && (
             <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-              <Chip label={`Всего: ${stats.total}`} color="default" size="small" />
-              <Chip label={`Мои задачи: ${stats.my_tasks}`} color="primary" size="small" />
+              <Chip label={`${t('pages.tasks.total_count')} ${stats.total}`} color="default" size="small" />
+              <Chip label={`${t('pages.tasks.my_tasks')} ${stats.my_tasks}`} color="primary" size="small" />
               {stats.overdue > 0 && (
-                <Chip label={`Просрочено: ${stats.overdue}`} color="error" size="small" />
+                <Chip label={`${t('pages.tasks.overdue_count')} ${stats.overdue}`} color="error" size="small" />
               )}
             </Box>
           )}
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="Обновить">
+          <Tooltip title={t('common.refresh')}>
             <IconButton onClick={handleRefresh}>
               <RefreshIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Фильтры">
+          <Tooltip title={t('common.filters')}>
             <IconButton
               onClick={() => setShowFilters(!showFilters)}
               color={Object.keys(filters).length > 0 ? 'primary' : 'default'}
@@ -176,7 +178,7 @@ const TasksPage: React.FC = () => {
             startIcon={<AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
           >
-            Создать задачу
+            {t('pages.tasks.create_task')}
           </Button>
         </Box>
       </Box>
@@ -195,9 +197,9 @@ const TasksPage: React.FC = () => {
       {/* Вкладки */}
       <Paper sx={{ mb: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="Список" />
-          <Tab label="Канбан" />
-          <Tab label="Календарь" />
+          <Tab label={t('pages.tasks.list_view')} />
+          <Tab label={t('pages.tasks.kanban_view')} />
+          <Tab label={t('pages.tasks.calendar_view')} />
         </Tabs>
       </Paper>
 

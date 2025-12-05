@@ -2,27 +2,35 @@ import { useState, useMemo, useRef, Fragment } from 'react';
 import { Box, Typography, Paper, Grid, FormControl, InputLabel, Select, MenuItem, Button, Stack, CircularProgress, Alert, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getEmployeePlanFactReport, downloadEmployeePlanTemplate, uploadEmployeePlan, type ReportFilters } from '../../api/reports';
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
-const periods = [
-    { value: 'month', label: 'Месяц' },
-    { value: 'quarter', label: 'Квартал' },
-    { value: 'half_year', label: 'Полугодие' },
-    { value: 'year', label: 'Год' },
-];
-
-const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: new Date(0, i).toLocaleString('ru', { month: 'long' }) }));
-const quarters = [{ value: 1, label: 'Q1' }, { value: 2, label: 'Q2' }, { value: 3, label: 'Q3' }, { value: 4, label: 'Q4' }];
-const halfYears = [{ value: 1, label: '1-е полугодие' }, { value: 2, label: '2-е полугодие' }];
-
-
 export default function EmployeeReport() {
+    const { t } = useTranslation();
     const [filters, setFilters] = useState<ReportFilters | null>(null);
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const periods = useMemo(() => [
+        { value: 'month', label: t('pages.reports.month') },
+        { value: 'quarter', label: t('pages.reports.quarter') },
+        { value: 'half_year', label: t('pages.reports.half_year') },
+        { value: 'year', label: t('pages.reports.year') },
+    ], [t]);
+
+    const months = useMemo(() => Array.from({ length: 12 }, (_, i) => ({ 
+        value: i + 1, 
+        label: t(`months.${i + 1}`)
+    })), [t]);
+
+    const quarters = [{ value: 1, label: 'Q1' }, { value: 2, label: 'Q2' }, { value: 3, label: 'Q3' }, { value: 4, label: 'Q4' }];
+    const halfYears = useMemo(() => [
+        { value: 1, label: t('pages.reports.h1') }, 
+        { value: 2, label: t('pages.reports.h2') }
+    ], [t]);
 
     const { control, handleSubmit, watch } = useForm<ReportFilters>({
         defaultValues: {
@@ -41,7 +49,7 @@ export default function EmployeeReport() {
             case 'year': return [{ value: 1, label: `${watch('year')}` }];
             default: return months;
         }
-    }, [periodType, watch]);
+    }, [periodType, watch, halfYears, months]);
 
 
     const { data: reportData, isLoading: isLoadingReport, isError, error } = useQuery({
@@ -56,7 +64,7 @@ export default function EmployeeReport() {
             alert(data.status);
             queryClient.invalidateQueries({ queryKey: ['employeePlanFactReport'] });
         },
-        onError: (err) => alert(`Ошибка загрузки: ${err.message}`),
+        onError: (err) => alert(`${t('pages.reports.upload_error')} ${err.message}`),
     });
 
     const onGenerateReport = (data: ReportFilters) => {
@@ -82,8 +90,8 @@ export default function EmployeeReport() {
                         <Grid size={{ xs: 12, sm: 4 }}>
                             <Controller name="year" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small">
-                                    <InputLabel>Год</InputLabel>
-                                    <Select {...field} label="Год">
+                                    <InputLabel>{t('pages.reports.year')}</InputLabel>
+                                    <Select {...field} label={t('pages.reports.year')}>
                                         {years.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
                                     </Select>
                                 </FormControl>
@@ -92,8 +100,8 @@ export default function EmployeeReport() {
                         <Grid size={{ xs: 12, sm: 3 }}>
                             <Controller name="period_type" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small">
-                                    <InputLabel>Период</InputLabel>
-                                    <Select {...field} label="Период">
+                                    <InputLabel>{t('pages.reports.period')}</InputLabel>
+                                    <Select {...field} label={t('pages.reports.period')}>
                                         {periods.map(p => <MenuItem key={p.value} value={p.value}>{p.label}</MenuItem>)}
                                     </Select>
                                 </FormControl>
@@ -102,28 +110,28 @@ export default function EmployeeReport() {
                         <Grid size={{ xs: 12, sm: 3 }}>
                            <Controller name="period_value" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small" disabled={periodType === 'year'}>
-                                    <InputLabel>Значение</InputLabel>
-                                    <Select {...field} label="Значение">
+                                    <InputLabel>{t('pages.reports.period_value')}</InputLabel>
+                                    <Select {...field} label={t('pages.reports.period_value')}>
                                         {periodValues.map(v => <MenuItem key={v.value} value={v.value}>{v.label}</MenuItem>)}
                                     </Select>
                                 </FormControl>
                             )} />
                         </Grid>
                         <Grid size={{ xs: 12, sm: 2 }}>
-                            <Button type="submit" variant="contained" fullWidth>Сформировать</Button>
+                            <Button type="submit" variant="contained" fullWidth>{t('pages.reports.generate')}</Button>
                         </Grid>
                     </Grid>
                 </form>
             </Paper>
 
             <Stack direction="row" spacing={2}>
-                <Button onClick={downloadEmployeePlanTemplate} variant="outlined">Скачать шаблон</Button>
+                <Button onClick={downloadEmployeePlanTemplate} variant="outlined">{t('pages.reports.download_template')}</Button>
                 <Button
                     variant="outlined"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadMutation.isPending}
                 >
-                    {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить план'}
+                    {uploadMutation.isPending ? t('pages.reports.uploading') : t('pages.reports.upload_plan')}
                 </Button>
                 <input type="file" ref={fileInputRef} hidden accept=".xlsx, .xls" onChange={handleFileUpload} />
             </Stack>
@@ -135,24 +143,24 @@ export default function EmployeeReport() {
                     <Table stickyHeader>
                         <TableHead>
                             <TableRow>
-                                <TableCell rowSpan={2} sx={{...separatorStyle, verticalAlign: 'bottom'}}>Сотрудник</TableCell>
-                                <TableCell align="center" colSpan={4} sx={separatorStyle}>Кол-во, шт.</TableCell>
-                                <TableCell align="center" colSpan={4} sx={separatorStyle}>Контрактация</TableCell>
-                                <TableCell align="center" colSpan={4}>Поступления</TableCell>
+                                <TableCell rowSpan={2} sx={{...separatorStyle, verticalAlign: 'bottom'}}>{t('pages.reports.employee_column')}</TableCell>
+                                <TableCell align="center" colSpan={4} sx={separatorStyle}>{t('pages.reports.quantity_pcs')}</TableCell>
+                                <TableCell align="center" colSpan={4} sx={separatorStyle}>{t('pages.reports.contracting')}</TableCell>
+                                <TableCell align="center" colSpan={4}>{t('pages.reports.revenue')}</TableCell>
                             </TableRow>
                             <TableRow>
-                                <TableCell align="right">План</TableCell>
-                                <TableCell align="right">Факт</TableCell>
-                                <TableCell align="right">% факт</TableCell>
-                                <TableCell align="right" sx={separatorStyle}>% прогноз</TableCell>
-                                <TableCell align="right">План</TableCell>
-                                <TableCell align="right">Факт</TableCell>
-                                <TableCell align="right">% факт</TableCell>
-                                <TableCell align="right" sx={separatorStyle}>% прогноз</TableCell>
-                                <TableCell align="right">План</TableCell>
-                                <TableCell align="right">Факт</TableCell>
-                                <TableCell align="right">% факт</TableCell>
-                                <TableCell align="right">% прогноз</TableCell>
+                                <TableCell align="right">{t('pages.reports.plan')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.fact')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.fact_percent')}</TableCell>
+                                <TableCell align="right" sx={separatorStyle}>{t('pages.reports.forecast_percent')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.plan')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.fact')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.fact_percent')}</TableCell>
+                                <TableCell align="right" sx={separatorStyle}>{t('pages.reports.forecast_percent')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.plan')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.fact')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.fact_percent')}</TableCell>
+                                <TableCell align="right">{t('pages.reports.forecast_percent')}</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>

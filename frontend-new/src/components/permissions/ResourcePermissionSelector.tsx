@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -41,10 +42,16 @@ interface CrudCheckboxesProps {
   permissions: ScopeLevelPermissions;
   onChange: (action: keyof ScopeLevelPermissions, value: boolean) => void;
   disabled?: boolean;
+  labels: {
+    view: string;
+    add: string;
+    edit: string;
+    delete: string;
+  };
 }
 
 const CrudCheckboxes: React.FC<CrudCheckboxesProps> = React.memo(
-  ({ permissions, onChange, disabled }) => {
+  ({ permissions, onChange, disabled, labels }) => {
     return (
       <Stack direction="row" spacing={2} sx={{ pl: 2 }}>
         <FormControlLabel
@@ -56,7 +63,7 @@ const CrudCheckboxes: React.FC<CrudCheckboxesProps> = React.memo(
               disabled={disabled}
             />
           }
-          label="Просмотр"
+          label={labels.view}
         />
         <FormControlLabel
           control={
@@ -67,7 +74,7 @@ const CrudCheckboxes: React.FC<CrudCheckboxesProps> = React.memo(
               disabled={disabled}
             />
           }
-          label="Добавление"
+          label={labels.add}
         />
         <FormControlLabel
           control={
@@ -78,7 +85,7 @@ const CrudCheckboxes: React.FC<CrudCheckboxesProps> = React.memo(
               disabled={disabled}
             />
           }
-          label="Редактирование"
+          label={labels.edit}
         />
         <FormControlLabel
           control={
@@ -89,7 +96,7 @@ const CrudCheckboxes: React.FC<CrudCheckboxesProps> = React.memo(
               disabled={disabled}
             />
           }
-          label="Удаление"
+          label={labels.delete}
         />
       </Stack>
     );
@@ -107,6 +114,16 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
   onChange,
   userCompanyId,
 }: ResourcePermissionSelectorProps) {
+  const { t } = useTranslation();
+  
+  // Мемоизируем переводы для CRUD операций
+  const crudLabels = useMemo(() => ({
+    view: t('pages.settings.permissions.action_view'),
+    add: t('pages.settings.permissions.action_add'),
+    edit: t('pages.settings.permissions.action_edit'),
+    delete: t('pages.settings.permissions.action_delete'),
+  }), [t]);
+  
   // Используем ref для хранения актуального permissions без пересоздания callbacks
   const permissionsRef = useRef(permissions);
   useEffect(() => {
@@ -252,9 +269,9 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
           {/* 1. МОИ */}
           <Box>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Мои {resourceLabel.toLowerCase()}
+              {t('pages.settings.permissions.my_resource', { resource: resourceLabel.toLowerCase() })}
             </Typography>
-            <CrudCheckboxes permissions={permissions.own} onChange={handleOwnChange} />
+            <CrudCheckboxes permissions={permissions.own} onChange={handleOwnChange} labels={crudLabels} />
           </Box>
 
           <Divider />
@@ -262,7 +279,7 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
           {/* 2. КОМПАНИИ И ОТДЕЛЫ */}
           <Box>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Компании и отделы
+              {t('pages.settings.permissions.companies_and_departments')}
             </Typography>
 
             <Stack spacing={2}>
@@ -292,13 +309,13 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
                             }
                             label={
                               <Typography variant="caption" color="primary">
-                                Выбрать всё
+                                {t('common.select_all')}
                               </Typography>
                             }
                           />
                         </Box>
                         <Chip
-                          label="Удалить"
+                          label={t('common.delete')}
                           size="small"
                           color="error"
                           variant="outlined"
@@ -310,13 +327,14 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
                       {/* CRUD для всей компании */}
                       <Box>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
-                          На уровне компании:
+                          {t('pages.settings.permissions.at_company_level')}:
                         </Typography>
                         <CrudCheckboxes
                           permissions={company.companyLevel}
                           onChange={(action, value) =>
                             handleCompanyCrudChange(company.companyId, action, value)
                           }
+                          labels={crudLabels}
                         />
                       </Box>
 
@@ -324,7 +342,7 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
                       {company.departments.length > 0 && (
                         <Box sx={{ pl: 2 }}>
                           <Typography variant="body2" color="text.secondary" gutterBottom>
-                            Отделы:
+                            {t('pages.settings.permissions.departments')}:
                           </Typography>
                           <Stack spacing={1.5}>
                             {company.departments.map((dept) => {
@@ -346,6 +364,7 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
                                         value
                                       )
                                     }
+                                    labels={crudLabels}
                                   />
                                 </Box>
                               );
@@ -362,7 +381,7 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
               {notAddedCompanies.length > 0 && (
                 <Box sx={{ pl: 2 }}>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Добавить компанию:
+                    {t('pages.settings.permissions.add_company')}:
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap">
                     {notAddedCompanies.map((company) => (
@@ -388,9 +407,9 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
           {!userCompanyId && (
             <Box>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                Вся система
+                {t('pages.settings.permissions.scope_system')}
               </Typography>
-              <CrudCheckboxes permissions={permissions.system} onChange={handleSystemChange} />
+              <CrudCheckboxes permissions={permissions.system} onChange={handleSystemChange} labels={crudLabels} />
             </Box>
           )}
         </Stack>

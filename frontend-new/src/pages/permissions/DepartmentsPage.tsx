@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -56,9 +57,10 @@ function buildDepartmentTree(departments: Department[]): Department[] {
 interface DepartmentTreeNodeProps {
   department: Department;
   onEdit: (dept: Department) => void;
+  t: (key: string) => string;
 }
 
-function DepartmentTreeNode({ department, onEdit }: DepartmentTreeNodeProps) {
+function DepartmentTreeNode({ department, onEdit, t }: DepartmentTreeNodeProps) {
   return (
     <TreeItem
       itemId={String(department.id)}
@@ -82,19 +84,20 @@ function DepartmentTreeNode({ department, onEdit }: DepartmentTreeNodeProps) {
             <Chip label={department.code} size="small" variant="outlined" />
           )}
           {!department.is_active && (
-            <Chip label="Неактивен" size="small" color="default" />
+            <Chip label={t('pages.settings.permissions.inactive_status')} size="small" color="default" />
           )}
         </Box>
       }
     >
       {department.children?.map((child: Department) => (
-        <DepartmentTreeNode key={child.id} department={child} onEdit={onEdit} />
+        <DepartmentTreeNode key={child.id} department={child} onEdit={onEdit} t={t} />
       ))}
     </TreeItem>
   );
 }
 
 export default function DepartmentsPage() {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<number | ''>('');
   const [editingDepartment, setEditingDepartment] = useState<Department | undefined>();
@@ -135,10 +138,10 @@ export default function DepartmentsPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Отделы
+            {t('pages.settings.permissions.departments_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Управление структурой отделов с поддержкой иерархии
+            {t('pages.settings.permissions.departments_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -147,7 +150,7 @@ export default function DepartmentsPage() {
           onClick={handleCreate}
           disabled={!selectedCompany}
         >
-          Создать отдел
+          {t('pages.settings.permissions.create_department')}
         </Button>
       </Box>
 
@@ -155,14 +158,14 @@ export default function DepartmentsPage() {
       <Paper sx={{ p: 2 }}>
         <Box sx={{ maxWidth: 400 }}>
           <FormControl fullWidth size="small">
-            <InputLabel>Компания</InputLabel>
+            <InputLabel>{t('common.company')}</InputLabel>
             <Select
               value={selectedCompany}
               onChange={(e) => setSelectedCompany(e.target.value as number | '')}
-              label="Компания"
+              label={t('common.company')}
             >
               <MenuItem value="">
-                <em>Все компании</em>
+                <em>{t('pages.settings.permissions.all_companies')}</em>
               </MenuItem>
               {companies?.map((company: Company) => (
                 <MenuItem key={company.id} value={company.id}>
@@ -178,13 +181,13 @@ export default function DepartmentsPage() {
       <Paper sx={{ p: 2 }}>
         {isError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            Ошибка загрузки: {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+            {t('errors.load_error')}: {error instanceof Error ? error.message : t('errors.unknown_error')}
           </Alert>
         )}
 
         {!selectedCompany && (
           <Alert severity="info">
-            Выберите компанию для просмотра отделов
+            {t('pages.settings.permissions.select_company_for_departments')}
           </Alert>
         )}
 
@@ -196,14 +199,14 @@ export default function DepartmentsPage() {
 
         {selectedCompany && !isLoading && departments && departments.length === 0 && (
           <Alert severity="info">
-            В этой компании пока нет отделов. Создайте первый отдел.
+            {t('pages.settings.permissions.no_departments')}
           </Alert>
         )}
 
         {selectedCompany && !isLoading && departmentTree.length > 0 && (
           <SimpleTreeView sx={{ flexGrow: 1, overflowY: 'auto' }}>
             {departmentTree.map((dept) => (
-              <DepartmentTreeNode key={dept.id} department={dept} onEdit={handleEdit} />
+              <DepartmentTreeNode key={dept.id} department={dept} onEdit={handleEdit} t={t} />
             ))}
           </SimpleTreeView>
         )}
@@ -220,7 +223,7 @@ export default function DepartmentsPage() {
         fullWidth
       >
         <DialogTitle>
-          {editingDepartment ? 'Редактировать отдел' : 'Создать отдел'}
+          {editingDepartment ? t('pages.settings.permissions.edit_department') : t('pages.settings.permissions.create_department')}
         </DialogTitle>
         <DialogContent>
           <DepartmentForm

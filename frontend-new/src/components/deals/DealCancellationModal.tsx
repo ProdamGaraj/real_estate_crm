@@ -1,11 +1,13 @@
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { Deal, DealCancellationPayload } from '../../api/deals';
 import { cancelOrTerminateDeal } from '../../api/deals';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField,
-  Stack, Typography, Alert
+  Stack, Alert
 } from '@mui/material';
+import LocalizedDateField from '../common/LocalizedDateField';
 
 interface Props {
   open: boolean;
@@ -21,7 +23,8 @@ type FormInputs = {
 }
 
 export default function DealCancellationModal({ open, onClose, onSuccess, deal }: Props) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormInputs>();
+  const { t } = useTranslation();
+  const { register, handleSubmit, control, formState: { errors } } = useForm<FormInputs>();
 
   // Определяем, какой сценарий использовать
   const hasPaidPayments = deal.payments.some(p => p.payment_date);
@@ -51,21 +54,26 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogTitle>{isTermination ? 'Расторжение сделки' : 'Отмена сделки'}</DialogTitle>
+        <DialogTitle>{isTermination ? t('deal_cancellation.termination_title') : t('deal_cancellation.cancellation_title')}</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             {isTermination ? (
               <>
-                <Alert severity="warning">В сделке есть проведенные платежи или подпись клиента. Необходимо расторжение с прикреплением документа.</Alert>
-                <TextField
-                  label="Дата расторжения"
-                  type="date"
-                  required
-                  InputLabelProps={{ shrink: true }}
-                  {...register('date', { required: true })}
+                <Alert severity="warning">{t('deal_cancellation.termination_warning')}</Alert>
+                <Controller
+                  name="date"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <LocalizedDateField
+                      label={t('deal_cancellation.termination_date')}
+                      value={field.value || null}
+                      onChange={(date) => field.onChange(date || '')}
+                    />
+                  )}
                 />
                 <TextField
-                  label="Скан документа-основания"
+                  label={t('deal_cancellation.document_scan')}
                   type="file"
                   required
                   InputLabelProps={{ shrink: true }}
@@ -74,16 +82,16 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
               </>
             ) : (
               <>
-                <Alert severity="info">В сделке нет проведенных платежей. Будет выполнена простая отмена.</Alert>
+                <Alert severity="info">{t('deal_cancellation.simple_cancellation_info')}</Alert>
                 <TextField
-                  label="Причина отмены"
+                  label={t('deal_cancellation.cancellation_reason')}
                   multiline
                   rows={4}
                   required
                   fullWidth
                   {...register('reason', { required: true })}
                   error={!!errors.reason}
-                  helperText={errors.reason ? 'Это поле обязательно' : ''}
+                  helperText={errors.reason ? t('common.required_field') : ''}
                 />
               </>
             )}
@@ -91,9 +99,9 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Закрыть</Button>
+          <Button onClick={onClose}>{t('common.close')}</Button>
           <Button type="submit" variant="contained" color="error" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Обработка...' : (isTermination ? 'Расторгнуть' : 'Отменить сделку')}
+            {mutation.isPending ? t('common.processing') : (isTermination ? t('deal_cancellation.terminate') : t('deal_cancellation.cancel_deal'))}
           </Button>
         </DialogActions>
       </form>

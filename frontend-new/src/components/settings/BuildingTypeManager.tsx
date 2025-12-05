@@ -1,12 +1,15 @@
-import { Box, Typography, Button, TextField } from '@mui/material';
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import { Box, Button, TextField } from '@mui/material';
+import { GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../common/LocalizedDataGrid';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getBuildingTypes, createBuildingType, deleteBuildingType } from '../../api/settings';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useForm } from 'react-hook-form';
 
 export default function BuildingTypeManager() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset } = useForm<{ name: string }>();
 
@@ -29,13 +32,13 @@ export default function BuildingTypeManager() {
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 90 },
-    { field: 'name', headerName: 'Название типа', flex: 1 },
+    { field: 'name', headerName: t('pages.settings.building_type_name'), flex: 1 },
     {
       field: 'actions', type: 'actions',
       getActions: (params) => [
         <GridActionsCellItem
           icon={<DeleteIcon />}
-          label="Удалить"
+          label={t('common.delete')}
           onClick={() => deleteMutation.mutate(params.row.id)}
         />,
       ],
@@ -45,11 +48,11 @@ export default function BuildingTypeManager() {
   return (
     <Box>
       <Box component="form" onSubmit={handleSubmit((data) => createMutation.mutate(data))} sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <TextField label="Новый тип дома" size="small" fullWidth {...register('name', { required: true })} />
-        <Button type="submit" variant="contained">Добавить</Button>
+        <TextField label={t('pages.settings.new_building_type')} size="small" fullWidth {...register('name', { required: true })} />
+        <Button type="submit" variant="contained">{t('common.add')}</Button>
       </Box>
       <Box sx={{ height: 400, width: '100%' }}>
-        <DataGrid rows={data || []} columns={columns} loading={isLoading} />
+        <LocalizedDataGrid rows={data || []} columns={columns} loading={isLoading} />
       </Box>
     </Box>
   );

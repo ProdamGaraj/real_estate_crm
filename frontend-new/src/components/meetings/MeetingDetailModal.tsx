@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { updateMeeting, type Meeting, type MeetingPayload } from '../../api/meetings';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack,
@@ -26,6 +27,7 @@ type CloseFormInputs = {
 };
 
 export default function MeetingDetailModal({ meeting, open, onClose, onUpdate }: Props) {
+  const { t } = useTranslation();
   const { register: registerMain, handleSubmit: handleSubmitMain, reset: resetMain } = useForm<MainFormInputs>();
   const { register: registerClose, handleSubmit: handleSubmitClose, reset: resetClose, formState: { errors: closeErrors } } = useForm<CloseFormInputs>();
 
@@ -39,6 +41,11 @@ export default function MeetingDetailModal({ meeting, open, onClose, onUpdate }:
     }
   }, [meeting, resetMain]);
 
+  // Функция для перевода статусов встреч
+  const translateMeetingStatus = (status: string, isOverdue: boolean) => {
+    if (isOverdue) return t('pages.meetings.overdue');
+    return t(`statuses.meeting.${status}`, status);
+  };
 
   const mutation = useMutation({
     mutationFn: updateMeeting,
@@ -48,7 +55,7 @@ export default function MeetingDetailModal({ meeting, open, onClose, onUpdate }:
       onClose();
       setIsCloseModalOpen(false);
     },
-    onError: (error) => alert(`Ошибка: ${error.message}`)
+    onError: (error) => alert(`${t('common.error')}: ${error.message}`)
   });
 
   if (!meeting) return null;
@@ -83,53 +90,53 @@ export default function MeetingDetailModal({ meeting, open, onClose, onUpdate }:
   return (
     <>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-        <DialogTitle>Встреча №{meeting.id}</DialogTitle>
+        <DialogTitle>{t('pages.meetings.meeting_number', { id: meeting.id })}</DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
               <Grid item xs={12} md={6}>
                   <Stack spacing={2}>
-                      <Typography variant="h6">Детали встречи</Typography>
-                      <Typography><strong>Клиент:</strong> {meeting.client.full_name}</Typography>
-                      <Typography><strong>Статус:</strong> {meeting.is_overdue ? 'Просрочена' : meeting.status}</Typography>
-                      <Typography><strong>План. дата:</strong> {new Date(meeting.planned_date).toLocaleString()}</Typography>
-                      <Typography><strong>Исполнитель:</strong> {meeting.executor}</Typography>
-                      <Typography><strong>Постановщик:</strong> {meeting.creator || 'Система'}</Typography>
-                      {meeting.interested_building && <Typography><strong>Интерес:</strong> {meeting.interested_building.name}</Typography>}
-                      {meeting.comment && <Typography><strong>Комментарий:</strong> {meeting.comment}</Typography>}
+                      <Typography variant="h6">{t('pages.meetings.meeting_details')}</Typography>
+                      <Typography><strong>{t('pages.meetings.client')}:</strong> {meeting.client.full_name}</Typography>
+                      <Typography><strong>{t('forms.status')}:</strong> {translateMeetingStatus(meeting.status, meeting.is_overdue)}</Typography>
+                      <Typography><strong>{t('pages.meetings.planned_date')}:</strong> {new Date(meeting.planned_date).toLocaleString()}</Typography>
+                      <Typography><strong>{t('forms.executor')}:</strong> {meeting.executor}</Typography>
+                      <Typography><strong>{t('table.creator')}:</strong> {meeting.creator || t('common.system')}</Typography>
+                      {meeting.interested_building && <Typography><strong>{t('pages.meetings.interest')}:</strong> {meeting.interested_building.name}</Typography>}
+                      {meeting.comment && <Typography><strong>{t('forms.comment')}:</strong> {meeting.comment}</Typography>}
                   </Stack>
               </Grid>
               <Grid item xs={12} md={6}>
                   <Stack spacing={2}>
-                      <Typography variant="h6">Результат</Typography>
+                      <Typography variant="h6">{t('pages.meetings.result')}</Typography>
                       {/* Показываем форму редактирования, только если встреча уже закрыта */}
                       {meeting.status !== 'NEW' ? (
                            <form onSubmit={handleSubmitMain(handleResultSubmit)}>
                               <Stack spacing={2}>
                                   <TextField
-                                      label="Комментарий по результатам"
+                                      label={t('pages.meetings.result_comment')}
                                       multiline
                                       rows={4}
                                       fullWidth
                                       defaultValue={meeting.result_comment}
                                       {...registerMain('result_comment')}
                                   />
-                                  <Button type="submit" variant="contained" disabled={mutation.isPending}>Сохранить результат</Button>
+                                  <Button type="submit" variant="contained" disabled={mutation.isPending}>{t('pages.meetings.save_result')}</Button>
                               </Stack>
                            </form>
                       ) : (
-                          <Alert severity="info">Заполните результат после завершения встречи.</Alert>
+                          <Alert severity="info">{t('pages.meetings.fill_result_after')}</Alert>
                       )}
                   </Stack>
               </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Закрыть</Button>
+          <Button onClick={onClose}>{t('common.close')}</Button>
           {/* Кнопки видны только для новых встреч */}
           {meeting.status === 'NEW' && (
               <>
-                  <Button onClick={() => handleOpenCloseModal('CANCELLED')} color="warning" disabled={mutation.isPending}>Не состоялась</Button>
-                  <Button onClick={() => handleOpenCloseModal('COMPLETED')} color="success" variant="contained" disabled={mutation.isPending}>Состоялась</Button>
+                  <Button onClick={() => handleOpenCloseModal('CANCELLED')} color="warning" disabled={mutation.isPending}>{t('pages.meetings.not_completed')}</Button>
+                  <Button onClick={() => handleOpenCloseModal('COMPLETED')} color="success" variant="contained" disabled={mutation.isPending}>{t('pages.meetings.completed')}</Button>
               </>
           )}
         </DialogActions>
@@ -138,25 +145,25 @@ export default function MeetingDetailModal({ meeting, open, onClose, onUpdate }:
       {/* Второе модальное окно для ввода результата */}
       <Dialog open={isCloseModalOpen} onClose={() => setIsCloseModalOpen(false)}>
          <form onSubmit={handleSubmitClose(handleCloseSubmit)}>
-            <DialogTitle>Отчет о встрече</DialogTitle>
+            <DialogTitle>{t('pages.meetings.meeting_report')}</DialogTitle>
             <DialogContent>
               <TextField
-                  label="Комментарий по результатам"
+                  label={t('pages.meetings.result_comment')}
                   multiline
                   rows={4}
                   fullWidth
                   autoFocus
                   required
                   sx={{ mt: 1 }}
-                  {...registerClose('result_comment', { required: 'Это поле обязательно' })}
+                  {...registerClose('result_comment', { required: t('common.required_field') })}
                   error={!!closeErrors.result_comment}
                   helperText={closeErrors.result_comment?.message}
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setIsCloseModalOpen(false)}>Отмена</Button>
+              <Button onClick={() => setIsCloseModalOpen(false)}>{t('common.cancel')}</Button>
               <Button type="submit" variant="contained" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Сохранение...' : 'Подтвердить'}
+                {mutation.isPending ? t('common.saving') : t('common.confirm')}
               </Button>
             </DialogActions>
          </form>

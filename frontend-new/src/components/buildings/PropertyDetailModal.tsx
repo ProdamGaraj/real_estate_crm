@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogTitle, DialogContent, Typography, Box, TextField, Button,
   Stack, CircularProgress, MobileStepper, Paper, Grid, Divider
@@ -22,6 +23,7 @@ interface ModalProps {
 }
 
 export default function PropertyDetailModal({ property, buildingId, open, onClose }: ModalProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
@@ -95,7 +97,7 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
   return (
     <>
       <Dialog open={open && !isBookingModalOpen} onClose={onClose} maxWidth="lg" fullWidth>
-        <DialogTitle>Объект №{property.unit_number} ({property.property_type})</DialogTitle>
+        <DialogTitle>{t('pages.properties.property_number', { number: property.unit_number })} ({t(`property_types.${property.property_type}`)})</DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
 
@@ -125,7 +127,7 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                                 overflow: 'hidden',
                             }}
                             src={layoutImages[activeStep]}
-                            alt={`Планировка ${activeStep + 1}`}
+                            alt={`${t('pages.properties.layout')} ${activeStep + 1}`}
                         />
                         <MobileStepper
                             steps={maxSteps}
@@ -133,12 +135,12 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                             activeStep={activeStep}
                             nextButton={
                                 <Button size="small" onClick={handleNext} disabled={activeStep === maxSteps - 1}>
-                                Далее <KeyboardArrowRight />
+                                {t('common.next')} <KeyboardArrowRight />
                                 </Button>
                             }
                             backButton={
                                 <Button size="small" onClick={handleBack} disabled={activeStep === 0}>
-                                <KeyboardArrowLeft /> Назад
+                                <KeyboardArrowLeft /> {t('common.back')}
                                 </Button>
                             }
                         />
@@ -158,22 +160,22 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                             bgcolor: 'grey.200'
                         }}
                         src={'https://placehold.co/600x400/eee/ccc?text=No+Image'}
-                        alt="Нет изображения"
+                        alt={t('pages.properties.no_image')}
                     />
                 )}
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Typography variant="h6">Детали</Typography>
+              <Typography variant="h6">{t('common.details')}</Typography>
               <Stack spacing={1} sx={{mb:2}}>
-                <Typography><b>Статус:</b> {property.status}</Typography>
-                <Typography><b>Площадь:</b> {property.area} м²</Typography>
-                <Typography><b>Цена:</b> {Number(property.price).toLocaleString()} у.е.</Typography>
+                <Typography><b>{t('forms.status')}:</b> {t(`statuses.property.${property.status}`)}</Typography>
+                <Typography><b>{t('pages.properties.area')}:</b> {property.area} {t('pages.properties.sqm')}</Typography>
+                <Typography><b>{t('table.price')}:</b> {Number(property.price).toLocaleString()} {t('common.currency')}</Typography>
                 <Divider/>
-                <Typography><b>Этаж:</b> {property.floor}</Typography>
-                <Typography><b>Подъезд:</b> {property.entrance || 'N/A'}</Typography>
-                <Typography><b>Стояк:</b> {property.riser || 'N/A'}</Typography>
-                <Typography><b>Отделка:</b> {property.has_finishing ? 'Да' : 'Нет'}</Typography>
+                <Typography><b>{t('pages.properties.floor')}:</b> {property.floor}</Typography>
+                <Typography><b>{t('pages.properties.entrance')}:</b> {property.entrance || 'N/A'}</Typography>
+                <Typography><b>{t('pages.properties.riser')}:</b> {property.riser || 'N/A'}</Typography>
+                <Typography><b>{t('pages.properties.finishing')}:</b> {property.has_finishing ? t('common.yes') : t('common.no')}</Typography>
               </Stack>
 
               <Stack direction="row" spacing={2} sx={{ mt: 2, mb: 2, flexWrap: 'wrap' }}>
@@ -183,23 +185,23 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                     component={RouterLink}
                     to={`/deals/${property.active_deal_id}`}
                   >
-                    Перейти в сделку
+                    {t('pages.properties.go_to_deal')}
                   </Button>
                 ) : (
                   <>
                     {property.status === 'SELECTION' &&
-                      <Button variant="contained" onClick={() => handleStatusChange('RESERVE')} disabled={updatePropMutation.isPending}>Резервировать</Button>}
+                      <Button variant="contained" onClick={() => handleStatusChange('RESERVE')} disabled={updatePropMutation.isPending}>{t('pages.properties.reserve')}</Button>}
                     {property.status === 'RESERVE' &&
-                      <Button variant="outlined" onClick={() => handleStatusChange('SELECTION')} disabled={updatePropMutation.isPending}>Снять резерв</Button>}
+                      <Button variant="outlined" onClick={() => handleStatusChange('SELECTION')} disabled={updatePropMutation.isPending}>{t('pages.properties.remove_reserve')}</Button>}
                     {(property.status === 'SELECTION' || property.status === 'RESERVE') &&
-                      <Button variant="contained" color="secondary" onClick={() => setBookingModalOpen(true)}>Забронировать</Button>}
+                      <Button variant="contained" color="secondary" onClick={() => setBookingModalOpen(true)}>{t('pages.properties.book')}</Button>}
                   </>
                 )}
               </Stack>
 
               <Box component="form" onSubmit={handleSubmit(onCommentSave)}>
                 <TextField
-                  label="Комментарий"
+                  label={t('forms.comment')}
                   fullWidth
                   multiline
                   rows={4}
@@ -207,7 +209,7 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                   {...register('description')}
                 />
                 <Button type="submit" sx={{ mt: 1 }} disabled={updatePropMutation.isPending}>
-                  {updatePropMutation.isPending ? <CircularProgress size={24} /> : 'Сохранить комментарий'}
+                  {updatePropMutation.isPending ? <CircularProgress size={24} /> : t('pages.properties.save_comment')}
                 </Button>
               </Box>
             </Grid>
@@ -216,7 +218,7 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
       </Dialog>
 
       <Dialog open={isBookingModalOpen} onClose={() => setBookingModalOpen(false)}>
-          <DialogTitle>Забронировать объект №{property.unit_number}</DialogTitle>
+          <DialogTitle>{t('pages.properties.book_property', { number: property.unit_number })}</DialogTitle>
           <DialogContent>
               <BookingForm onSubmit={onBookingSubmit} isPending={createDealMutation.isPending} />
           </DialogContent>

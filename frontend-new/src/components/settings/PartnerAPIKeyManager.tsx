@@ -1,5 +1,6 @@
 // Компонент для управления API-ключами партнёров
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, IconButton, Chip, Dialog, DialogTitle, DialogContent,
@@ -21,21 +22,13 @@ import { useForm, Controller } from 'react-hook-form';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ru } from 'date-fns/locale';
+import { getDateFnsLocale } from '../../utils/translations';
 import {
   getPartnerAPIKeys, createPartnerAPIKey, deletePartnerAPIKey,
   regeneratePartnerAPIKey, togglePartnerAPIKey, updatePartnerAPIKey,
   type PartnerAPIKeyPayload, type PartnerAPIKey, type AllowedScope
 } from '../../api/partnerApiKeys';
 import { getCompanies, type Company } from '../../api/permissions';
-
-// Локализация scopes
-const SCOPE_LABELS: Record<AllowedScope, string> = {
-  VIEW_PROJECTS: 'Просмотр проектов',
-  VIEW_BUILDINGS: 'Просмотр зданий',
-  VIEW_LAYOUTS: 'Просмотр планировок',
-  CREATE_APPLICATION: 'Создание заявок'
-};
 
 interface FormData {
   name: string;
@@ -49,8 +42,17 @@ interface FormData {
 }
 
 export default function PartnerAPIKeyManager() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Локализация scopes
+  const SCOPE_LABELS: Record<AllowedScope, string> = {
+    VIEW_PROJECTS: t('pages.api_keys.view_projects'),
+    VIEW_BUILDINGS: t('pages.api_keys.view_buildings'),
+    VIEW_LAYOUTS: t('pages.api_keys.view_layouts'),
+    CREATE_APPLICATION: t('pages.api_keys.create_application')
+  };
   const [editingKey, setEditingKey] = useState<PartnerAPIKey | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<Set<number>>(new Set());
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -211,35 +213,35 @@ export default function PartnerAPIKeyManager() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">API-ключи партнёров</Typography>
+        <Typography variant="h6">{t('pages.api_keys.title')}</Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateModal}>
-          Создать ключ
+          {t('pages.api_keys.create_key')}
         </Button>
       </Box>
 
       <Alert severity="info" sx={{ mb: 2 }}>
-        API-ключи используются партнёрами для доступа к публичному API. Передавайте ключ в заголовке <code>X-API-Key</code>.
+        {t('pages.api_keys.subtitle')}
       </Alert>
 
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Название</TableCell>
-              <TableCell>Компания</TableCell>
-              <TableCell>Разрешения</TableCell>
-              <TableCell>API-ключ</TableCell>
-              <TableCell>Статус</TableCell>
-              <TableCell>Последнее использование</TableCell>
-              <TableCell>Срок действия</TableCell>
-              <TableCell align="right">Действия</TableCell>
+              <TableCell>{t('pages.api_keys.name')}</TableCell>
+              <TableCell>{t('pages.api_keys.company')}</TableCell>
+              <TableCell>{t('pages.api_keys.permissions')}</TableCell>
+              <TableCell>{t('pages.api_keys.api_key')}</TableCell>
+              <TableCell>{t('common.status')}</TableCell>
+              <TableCell>{t('pages.api_keys.last_used')}</TableCell>
+              <TableCell>{t('pages.api_keys.expires_at')}</TableCell>
+              <TableCell align="right">{t('common.actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {apiKeys?.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
-                  <Typography color="text.secondary">Нет API-ключей</Typography>
+                  <Typography color="text.secondary">{t('pages.api_keys.no_keys')}</Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -258,7 +260,7 @@ export default function PartnerAPIKeyManager() {
                         <Chip key={company.id} label={company.name} size="small" variant="outlined" />
                       ))
                     ) : (
-                      <Typography variant="body2" color="text.secondary">Все</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('common.all')}</Typography>
                     )}
                   </Box>
                 </TableCell>
@@ -275,7 +277,7 @@ export default function PartnerAPIKeyManager() {
                         />
                       ))
                     ) : (
-                      <Typography variant="body2" color="text.secondary">Нет доступа</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('pages.api_keys.no_access')}</Typography>
                     )}
                   </Box>
                 </TableCell>
@@ -284,12 +286,12 @@ export default function PartnerAPIKeyManager() {
                     <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
                       {visibleKeys.has(apiKey.id) ? apiKey.key : maskKey(apiKey.key)}
                     </Typography>
-                    <Tooltip title={visibleKeys.has(apiKey.id) ? "Скрыть" : "Показать"}>
+                    <Tooltip title={visibleKeys.has(apiKey.id) ? t('common.hide') : t('common.show')}>
                       <IconButton size="small" onClick={() => toggleKeyVisibility(apiKey.id)}>
                         {visibleKeys.has(apiKey.id) ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={copiedId === apiKey.id ? "Скопировано!" : "Копировать"}>
+                    <Tooltip title={copiedId === apiKey.id ? t('pages.api_keys.key_copied') : t('common.copy')}>
                       <IconButton size="small" onClick={() => copyToClipboard(apiKey.key, apiKey.id)}>
                         <CopyIcon fontSize="small" color={copiedId === apiKey.id ? "success" : "inherit"} />
                       </IconButton>
@@ -298,11 +300,11 @@ export default function PartnerAPIKeyManager() {
                 </TableCell>
                 <TableCell>
                   {apiKey.is_expired ? (
-                    <Chip label="Истёк" color="error" size="small" />
+                    <Chip label={t('pages.api_keys.expired')} color="error" size="small" />
                   ) : apiKey.is_active ? (
-                    <Chip label="Активен" color="success" size="small" />
+                    <Chip label={t('common.active')} color="success" size="small" />
                   ) : (
-                    <Chip label="Отключен" color="default" size="small" />
+                    <Chip label={t('common.inactive')} color="default" size="small" />
                   )}
                 </TableCell>
                 <TableCell>
@@ -312,12 +314,12 @@ export default function PartnerAPIKeyManager() {
                   <Typography variant="body2">{formatDate(apiKey.expires_at)}</Typography>
                 </TableCell>
                 <TableCell align="right">
-                  <Tooltip title="Редактировать">
+                  <Tooltip title={t('common.edit')}>
                     <IconButton size="small" onClick={() => openEditModal(apiKey)}>
                       <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={apiKey.is_active ? "Отключить" : "Включить"}>
+                  <Tooltip title={apiKey.is_active ? t('common.disable') : t('common.enable')}>
                     <IconButton 
                       size="small" 
                       onClick={() => toggleMutation.mutate(apiKey.id)}
@@ -326,11 +328,11 @@ export default function PartnerAPIKeyManager() {
                       <PowerIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Перегенерировать ключ">
+                  <Tooltip title={t('pages.api_keys.regenerate_key')}>
                     <IconButton 
                       size="small" 
                       onClick={() => {
-                        if (confirm('Перегенерировать ключ? Старый ключ перестанет работать.')) {
+                        if (confirm(t('pages.api_keys.confirm_regenerate'))) {
                           regenerateMutation.mutate(apiKey.id);
                         }
                       }}
@@ -338,12 +340,12 @@ export default function PartnerAPIKeyManager() {
                       <RefreshIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Удалить">
+                  <Tooltip title={t('common.delete')}>
                     <IconButton 
                       size="small" 
                       color="error"
                       onClick={() => {
-                        if (confirm('Удалить API-ключ? Это действие необратимо.')) {
+                        if (confirm(t('pages.api_keys.confirm_delete'))) {
                           deleteMutation.mutate(apiKey.id);
                         }
                       }}
@@ -361,17 +363,17 @@ export default function PartnerAPIKeyManager() {
       {/* Модалка создания/редактирования */}
       <Dialog open={isModalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogTitle>{editingKey ? 'Редактировать API-ключ' : 'Создать API-ключ'}</DialogTitle>
+          <DialogTitle>{editingKey ? t('pages.api_keys.edit_key') : t('pages.api_keys.create_key')}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <Controller
                 name="name"
                 control={control}
-                rules={{ required: 'Обязательное поле' }}
+                rules={{ required: t('common.required_field') }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Название партнёра"
+                    label={t('pages.api_keys.partner_name')}
                     fullWidth
                     error={!!errors.name}
                     helperText={errors.name?.message}
@@ -385,7 +387,7 @@ export default function PartnerAPIKeyManager() {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Описание"
+                    label={t('common.description')}
                     fullWidth
                     multiline
                     rows={2}
@@ -407,9 +409,9 @@ export default function PartnerAPIKeyManager() {
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Компании (доступ к данным)"
-                        placeholder="Выберите компании"
-                        helperText="Оставьте пустым, если партнёр должен видеть все компании"
+                        label={t('pages.api_keys.companies_access')}
+                        placeholder={t('pages.api_keys.select_companies')}
+                        helperText={t('pages.api_keys.companies_hint')}
                       />
                     )}
                     renderTags={(value, getTagProps) =>
@@ -428,7 +430,7 @@ export default function PartnerAPIKeyManager() {
 
               {/* Выбор разрешений (scopes) */}
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>Разрешённые действия</Typography>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>{t('pages.api_keys.allowed_actions')}</Typography>
                 <Controller
                   name="allowed_scopes"
                   control={control}
@@ -456,18 +458,18 @@ export default function PartnerAPIKeyManager() {
                   )}
                 />
                 <Typography variant="caption" color="text.secondary">
-                  Выберите, какие операции может выполнять партнёр
+                  {t('pages.api_keys.scope_hint')}
                 </Typography>
               </Box>
 
-              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ru}>
+              <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={getDateFnsLocale()}>
                 <Controller
                   name="expires_at"
                   control={control}
                   render={({ field }) => (
                     <DateTimePicker
                       {...field}
-                      label="Срок действия (опционально)"
+                      label={t('pages.api_keys.expires_at_optional')}
                       slotProps={{ textField: { fullWidth: true } }}
                     />
                   )}
@@ -480,10 +482,10 @@ export default function PartnerAPIKeyManager() {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Разрешённые IP (через запятую)"
+                    label={t('pages.api_keys.allowed_ips')}
                     fullWidth
                     placeholder="192.168.1.1, 10.0.0.1"
-                    helperText="Оставьте пустым для доступа с любых IP"
+                    helperText={t('pages.api_keys.allowed_ips_hint')}
                   />
                 )}
               />
@@ -496,7 +498,7 @@ export default function PartnerAPIKeyManager() {
                     <TextField
                       {...field}
                       type="number"
-                      label="Запросов в минуту"
+                      label={t('pages.api_keys.requests_per_minute')}
                       fullWidth
                     />
                   )}
@@ -508,7 +510,7 @@ export default function PartnerAPIKeyManager() {
                     <TextField
                       {...field}
                       type="number"
-                      label="Запросов в день"
+                      label={t('pages.api_keys.requests_per_day')}
                       fullWidth
                     />
                   )}
@@ -517,21 +519,21 @@ export default function PartnerAPIKeyManager() {
 
               {editingKey && (
                 <Alert severity="info" sx={{ mt: 1 }}>
-                  Изменение настроек не пересоздаёт API-ключ. Для генерации нового ключа используйте кнопку «Перегенерировать».
+                  {t('pages.api_keys.edit_info')}
                 </Alert>
               )}
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeModal}>Отмена</Button>
+            <Button onClick={closeModal}>{t('common.cancel')}</Button>
             <Button 
               type="submit" 
               variant="contained" 
               disabled={createMutation.isPending || updateMutation.isPending}
             >
               {createMutation.isPending || updateMutation.isPending 
-                ? (editingKey ? 'Сохранение...' : 'Создание...') 
-                : (editingKey ? 'Сохранить' : 'Создать')}
+                ? (editingKey ? t('common.saving') : t('common.creating')) 
+                : (editingKey ? t('common.save') : t('common.create'))}
             </Button>
           </DialogActions>
         </form>

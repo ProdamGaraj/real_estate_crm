@@ -2,6 +2,7 @@
 
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getPaymentById, updatePayment, markPaymentAsReturned } from '../api/finances';
 import {
     Typography, CircularProgress, Alert, Paper, Grid, Box, Button,
@@ -25,6 +26,12 @@ const getStatusChipColor = (status: string) => {
 export default function PaymentDetailPage() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const queryClient = useQueryClient();
+  const { t, i18n } = useTranslation();
+
+  const getDateLocale = () => {
+    const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
+    return localeMap[i18n.language] || 'ru-RU';
+  };
 
   const { data: payment, isLoading, isError } = useQuery({
     queryKey: ['payment', paymentId],
@@ -52,7 +59,7 @@ export default function PaymentDetailPage() {
   };
 
   if (isLoading) return <CircularProgress />;
-  if (isError || !payment) return <Alert severity="error">Не удалось загрузить данные платежа.</Alert>;
+  if (isError || !payment) return <Alert severity="error">{t('errors.load_payment_error')}</Alert>;
 
   const isDealTerminated = payment.deal?.status === 'TERMINATED';
 
@@ -65,45 +72,45 @@ export default function PaymentDetailPage() {
             </Avatar>
             <Box>
                 <Typography variant="h4" gutterBottom>
-                    Платеж №{payment.id} <Chip label={payment.status_display} color={getStatusChipColor(payment.status)} size="small" />
+                    {t('pages.payments.payment_number', { id: payment.id })} <Chip label={payment.status_display} color={getStatusChipColor(payment.status)} size="small" />
                 </Typography>
                 <Typography color="text.secondary">
-                    Клиент: <MuiLink component={RouterLink} to={`/clients/${payment.client.id}`}>{payment.client.full_name}</MuiLink>
+                    {t('pages.deals.client')}: <MuiLink component={RouterLink} to={`/clients/${payment.client.id}`}>{payment.client.full_name}</MuiLink>
                 </Typography>
             </Box>
         </Stack>
       </Paper>
 
        <Card variant="outlined">
-        <CardHeader title="Детали платежа" />
+        <CardHeader title={t('pages.finances.payment_details')} />
         <CardContent>
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography><b>Сумма:</b> {Number(payment.amount).toLocaleString()} {payment.currency}</Typography>
-                    <Typography><b>Тип:</b> {payment.payment_type}</Typography>
-                    <Typography><b>Метод:</b> {payment.method}</Typography>
+                    <Typography><b>{t('pages.finances.amount')}:</b> {Number(payment.amount).toLocaleString()} {payment.currency}</Typography>
+                    <Typography><b>{t('pages.finances.payment_type')}:</b> {payment.payment_type}</Typography>
+                    <Typography><b>{t('pages.payments.method')}:</b> {payment.method}</Typography>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography><b>К оплате:</b> {new Date(payment.due_date).toLocaleDateString()}</Typography>
-                    <Typography><b>Фактически оплачен:</b> {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString() : 'Нет'}</Typography>
-                    {payment.deal && <Typography><b>Сделка:</b> <MuiLink component={RouterLink} to={`/deals/${payment.deal.id}`}>№{payment.deal.id}</MuiLink></Typography>}
+                    <Typography><b>{t('pages.finances.due_date')}:</b> {new Date(payment.due_date).toLocaleDateString(getDateLocale())}</Typography>
+                    <Typography><b>{t('pages.payments.actually_paid')}:</b> {payment.payment_date ? new Date(payment.payment_date).toLocaleDateString(getDateLocale()) : t('common.no')}</Typography>
+                    {payment.deal && <Typography><b>{t('pages.deals.title')}:</b> <MuiLink component={RouterLink} to={`/deals/${payment.deal.id}`}>№{payment.deal.id}</MuiLink></Typography>}
                 </Grid>
             </Grid>
         </CardContent>
        </Card>
 
         <Card variant="outlined">
-            <CardHeader title="Действия"/>
+            <CardHeader title={t('common.actions')}/>
             <CardContent>
                  <Stack direction="row" spacing={2}>
                     {!isDealTerminated && (payment.status === 'PENDING' || payment.status === 'OVERDUE') ? (
-                        <Button startIcon={<CheckCircleOutlineIcon />} onClick={handleMarkAsPaid} disabled={updatePaymentMutation.isPending}>Отметить как оплаченный</Button>
+                        <Button startIcon={<CheckCircleOutlineIcon />} onClick={handleMarkAsPaid} disabled={updatePaymentMutation.isPending}>{t('pages.payments.mark_as_paid')}</Button>
                     ) : null}
                      {!isDealTerminated && payment.status === 'PAID' ? (
-                        <Button startIcon={<CloseIcon />} color="secondary" onClick={handleCancelPayment} disabled={updatePaymentMutation.isPending}>Отменить оплату</Button>
+                        <Button startIcon={<CloseIcon />} color="secondary" onClick={handleCancelPayment} disabled={updatePaymentMutation.isPending}>{t('pages.payments.cancel_payment')}</Button>
                     ) : null}
                     {payment.status === 'TO_BE_RETURNED' ? (
-                        <Button startIcon={<UndoIcon />} color="warning" onClick={() => returnPaymentMutation.mutate(payment.id)} disabled={returnPaymentMutation.isPending}>Отметить как возвращенный</Button>
+                        <Button startIcon={<UndoIcon />} color="warning" onClick={() => returnPaymentMutation.mutate(payment.id)} disabled={returnPaymentMutation.isPending}>{t('pages.payments.mark_as_returned')}</Button>
                     ) : null}
                  </Stack>
             </CardContent>

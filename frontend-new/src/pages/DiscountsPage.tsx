@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, CircularProgress, Link as MuiLink } from '@mui/material';
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import { GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { getDiscounts, createDiscount, updateDiscount } from '../api/discounts';
 import type { Discount, DiscountPayload } from '../api/discounts';
@@ -10,6 +12,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { Link as RouterLink } from 'react-router-dom'; // <-- Добавляем импорт
 
 export default function DiscountsPage() {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
   const queryClient = useQueryClient();
@@ -48,7 +51,7 @@ export default function DiscountsPage() {
     { field: 'id', headerName: 'ID', width: 90 },
     {
       field: 'name',
-      headerName: 'Название',
+      headerName: t('table.name'),
       flex: 1,
       // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
       // Превращаем ячейку в ссылку, ведущую на карточку
@@ -58,20 +61,20 @@ export default function DiscountsPage() {
         </MuiLink>
       )
     },
-    { field: 'percentage_value', headerName: 'Процент', width: 100 },
-    { field: 'property_type', headerName: 'Тип объекта', flex: 1 },
-    { field: 'buildings_info', headerName: 'Применено к домам', flex: 2,
-      valueGetter: (value: string[]) => value.join(', ') || 'Все'
+    { field: 'percentage_value', headerName: t('pages.discounts.percentage'), width: 100 },
+    { field: 'property_type', headerName: t('pages.discounts.property_type'), flex: 1 },
+    { field: 'buildings_info', headerName: t('pages.discounts.applied_to_buildings'), flex: 2,
+      valueGetter: (value: string[]) => value.join(', ') || t('common.all')
     },
-    { field: 'start_date', headerName: 'Начало', type: 'date', width: 120, valueGetter: (value) => value ? new Date(value) : null },
-    { field: 'end_date', headerName: 'Окончание', type: 'date', width: 120, valueGetter: (value) => value ? new Date(value) : null },
+    { field: 'start_date', headerName: t('table.start_date'), type: 'date', width: 120, valueGetter: (value) => value ? new Date(value) : null },
+    { field: 'end_date', headerName: t('table.end_date'), type: 'date', width: 120, valueGetter: (value) => value ? new Date(value) : null },
     {
       field: 'actions',
       type: 'actions',
       getActions: (params) => [
         <GridActionsCellItem
           icon={<EditIcon />}
-          label="Редактировать"
+          label={t('actions.edit')}
           onClick={() => handleOpenEdit(params.row)}
         />,
       ],
@@ -83,12 +86,12 @@ export default function DiscountsPage() {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Скидки</Typography>
-        <Button variant="contained" onClick={handleOpenCreate}>Создать скидку</Button>
+        <Typography variant="h4">{t('pages.discounts.title')}</Typography>
+        <Button variant="contained" onClick={handleOpenCreate}>{t('pages.discounts.create_discount')}</Button>
       </Box>
 
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingDiscount ? 'Редактировать скидку' : 'Новая скидка'}</DialogTitle>
+        <DialogTitle>{editingDiscount ? t('pages.discounts.edit_discount') : t('pages.discounts.new_discount')}</DialogTitle>
         <DialogContent>
           <DiscountForm
             onSubmit={handleFormSubmit}
@@ -99,7 +102,7 @@ export default function DiscountsPage() {
       </Dialog>
 
       <Box sx={{ height: 600, width: '100%' }}>
-        <DataGrid rows={data || []} columns={columns} />
+        <LocalizedDataGrid rows={data || []} columns={columns} />
       </Box>
     </Box>
   );

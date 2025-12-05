@@ -4,20 +4,23 @@ import {
   DialogContent, Link as MuiLink, Paper, Grid, TextField, Stack,
   FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 import { getClients } from '../api/clients';
 import type { ClientFilters } from '../api/clients';
 import ClientForm from '../components/clients/ClientForm';
 import { useForm, Controller } from 'react-hook-form';
+import { LocalizedDateField } from '../components/common/LocalizedDateField';
 
-// Колонки для таблицы
-const columns: GridColDef[] = [
+// Колонки для таблицы - теперь функция для поддержки i18n
+const getColumns = (t: (key: string) => string): GridColDef[] => [
   { field: 'id', headerName: 'ID', width: 90 },
   {
     field: 'full_name',
-    headerName: 'Полное имя',
+    headerName: t('pages.clients.full_name'),
     width: 250,
     renderCell: (params) => (
       <MuiLink component={RouterLink} to={`/clients/${params.id}`} underline="hover">
@@ -27,13 +30,13 @@ const columns: GridColDef[] = [
   },
   {
     field: 'primary_phone_number', // Используем новое поле из сериализатора
-    headerName: 'Телефон',
+    headerName: t('pages.clients.phone'),
     width: 200
   },
-  { field: 'email', headerName: 'Email', width: 250 },
+  { field: 'email', headerName: t('forms.email'), width: 250 },
   {
     field: 'created_at',
-    headerName: 'Дата создания',
+    headerName: t('table.created_at'),
     width: 200,
     type: 'dateTime',
     valueGetter: (value) => value ? new Date(value) : null,
@@ -41,6 +44,7 @@ const columns: GridColDef[] = [
 ];
 
 export default function ClientsPage() {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filters, setFilters] = useState<ClientFilters>({});
   const queryClient = useQueryClient();
@@ -69,19 +73,19 @@ export default function ClientsPage() {
   return (
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4">Клиенты</Typography>
+        <Typography variant="h4">{t('pages.clients.title')}</Typography>
         <Button variant="contained" onClick={() => setIsModalOpen(true)}>
-          Создать клиента
+          {t('pages.clients.create_client')}
         </Button>
       </Box>
 
       {/* РАСШИРЕННАЯ ПАНЕЛЬ ФИЛЬТРОВ */}
       <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
+        <Typography variant="h6" sx={{ mb: 2 }}>{t('common.filters')}</Typography>
         <Grid container spacing={2} alignItems="center">
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Поиск по ФИО" fullWidth size="small" {...register('full_name')} /></Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Поиск по телефону" fullWidth size="small" {...register('phone_number')} /></Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Поиск по Email" fullWidth size="small" {...register('email')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.clients.search_by_name')} fullWidth size="small" {...register('full_name')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.clients.search_by_phone')} fullWidth size="small" {...register('phone_number')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.clients.search_by_email')} fullWidth size="small" {...register('email')} /></Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Controller
               name="status"
@@ -89,42 +93,62 @@ export default function ClientsPage() {
               defaultValue=""
               render={({ field }) => (
                 <FormControl fullWidth size="small">
-                  <InputLabel>Статус</InputLabel>
-                  <Select {...field} label="Статус">
-                    <MenuItem value=""><em>Все</em></MenuItem>
-                    <MenuItem value="ACTIVE">Активный</MenuItem>
-                    <MenuItem value="INACTIVE">Неактивный</MenuItem>
-                    <MenuItem value="ARCHIVED">В архиве</MenuItem>
+                  <InputLabel>{t('forms.status')}</InputLabel>
+                  <Select {...field} label={t('forms.status')}>
+                    <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
+                    <MenuItem value="ACTIVE">{t('statuses.client.ACTIVE')}</MenuItem>
+                    <MenuItem value="INACTIVE">{t('statuses.client.INACTIVE')}</MenuItem>
+                    <MenuItem value="ARCHIVED">{t('statuses.client.ARCHIVED')}</MenuItem>
                   </Select>
                 </FormControl>
               )}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="ИНН" fullWidth size="small" {...register('inn')} /></Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="ПИНФЛ" fullWidth size="small" {...register('pinfl')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.clients.inn')} fullWidth size="small" {...register('inn')} /></Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.clients.pinfl')} fullWidth size="small" {...register('pinfl')} /></Grid>
           <Grid size={{ xs: 6, sm: 3, md: 3 }}>
-            <TextField label="Дата создания (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_after')} />
+            <Controller
+              name="created_at_after"
+              control={control}
+              render={({ field }) => (
+                <LocalizedDateField
+                  label={t('pages.clients.date_from')}
+                  value={field.value || null}
+                  onChange={field.onChange}
+                />
+              )}
+            />
           </Grid>
           <Grid size={{ xs: 6, sm: 3, md: 3 }}>
-            <TextField label="Дата создания (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_before')} />
+            <Controller
+              name="created_at_before"
+              control={control}
+              render={({ field }) => (
+                <LocalizedDateField
+                  label={t('pages.clients.date_to')}
+                  value={field.value || null}
+                  onChange={field.onChange}
+                />
+              )}
+            />
           </Grid>
         </Grid>
       </Paper>
 
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Новый клиент</DialogTitle>
+        <DialogTitle>{t('pages.clients.new_client')}</DialogTitle>
         <DialogContent>
           <ClientForm onSuccess={handleSuccess} />
         </DialogContent>
       </Dialog>
 
       {isLoading && <CircularProgress />}
-      {isError && <Alert severity="error">Ошибка загрузки данных: {error instanceof Error ? error.message : 'Произошла ошибка'}</Alert>}
+      {isError && <Alert severity="error">{t('errors.load_clients_error')}</Alert>}
       {!isLoading && !isError && (
         <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <DataGrid
+          <LocalizedDataGrid
             rows={data || []}
-            columns={columns}
+            columns={getColumns(t)}
             initialState={{
               pagination: { paginationModel: { pageSize: 10 } },
               sorting: { sortModel: [{ field: 'id', sort: 'desc' }] },

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getClientFiles, uploadClientFile } from '../../api/clients';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
     Box,
     Button,
@@ -11,7 +12,8 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../common/LocalizedDataGrid';
 
 interface ClientFilesTabProps {
     clientId: number;
@@ -22,22 +24,23 @@ type FormInputs = {
     comment: string;
 };
 
-const columns: GridColDef[] = [
+// Функция для создания колонок с переводами
+const getColumns = (t: (key: string) => string): GridColDef[] => [
     {
         field: 'file',
-        headerName: 'Файл',
+        headerName: t('files.file'),
         flex: 1,
         renderCell: (params) => (
             <MuiLink href={params.value} target="_blank" rel="noopener noreferrer">
-                Скачать
+                {t('common.download')}
             </MuiLink>
         ),
     },
-    { field: 'comment', headerName: 'Комментарий', flex: 2 },
-    { field: 'uploaded_by', headerName: 'Кем загружен', flex: 1 },
+    { field: 'comment', headerName: t('forms.comment'), flex: 2 },
+    { field: 'uploaded_by', headerName: t('files.uploaded_by'), flex: 1 },
     {
         field: 'uploaded_at',
-        headerName: 'Дата загрузки',
+        headerName: t('files.uploaded_at'),
         type: 'dateTime',
         flex: 1,
         valueGetter: (value) => new Date(value),
@@ -45,6 +48,7 @@ const columns: GridColDef[] = [
 ];
 
 export default function ClientFilesTab({ clientId }: ClientFilesTabProps) {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset } = useForm<FormInputs>();
 
@@ -75,7 +79,7 @@ export default function ClientFilesTab({ clientId }: ClientFilesTabProps) {
         <Stack spacing={3}>
             <Paper component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 2 }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>
-                    Загрузить новый файл
+                    {t('files.upload_new_file')}
                 </Typography>
                 <Stack spacing={2}>
                     <TextField
@@ -85,14 +89,14 @@ export default function ClientFilesTab({ clientId }: ClientFilesTabProps) {
                         {...register('file', { required: true })}
                     />
                     <TextField
-                        label="Комментарий"
+                        label={t('forms.comment')}
                         multiline
                         rows={2}
                         {...register('comment')}
                     />
                     <Box>
                         <Button type="submit" variant="contained" disabled={mutation.isPending}>
-                            {mutation.isPending ? 'Загрузка...' : 'Загрузить'}
+                            {mutation.isPending ? t('files.uploading') : t('common.upload')}
                         </Button>
                     </Box>
                 </Stack>
@@ -102,7 +106,7 @@ export default function ClientFilesTab({ clientId }: ClientFilesTabProps) {
                 {isLoading ? (
                     <CircularProgress />
                 ) : (
-                    <DataGrid rows={files || []} columns={columns} />
+                    <LocalizedDataGrid rows={files || []} columns={getColumns(t)} />
                 )}
             </Box>
         </Stack>

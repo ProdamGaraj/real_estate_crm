@@ -13,6 +13,8 @@ import {
   CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { translateTaskStatus } from '../../utils/translations';
 import type { KanbanColumn, TaskListItem } from '../../api/tasks';
 
 interface TaskKanbanViewProps {
@@ -30,6 +32,7 @@ const priorityColors: Record<string, string> = {
 
 const TaskCard: React.FC<{ task: TaskListItem }> = ({ task }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   return (
     <Card
@@ -70,7 +73,7 @@ const TaskCard: React.FC<{ task: TaskListItem }> = ({ task }) => {
             {(task.assignee?.full_name || task.assignee?.username || '?')[0].toUpperCase()}
           </Avatar>
           <Typography variant="caption" color="text.secondary">
-            {task.assignee?.full_name || task.assignee?.username || 'Не назначен'}
+            {task.assignee?.full_name || task.assignee?.username || t('pages.tasks.not_assigned')}
           </Typography>
         </Box>
 
@@ -89,10 +92,10 @@ const TaskCard: React.FC<{ task: TaskListItem }> = ({ task }) => {
               {new Date(task.deadline).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' })}
             </Typography>
             {task.is_overdue && task.status !== 'COMPLETED' && (
-              <Chip label="Просрочено" color="error" size="small" sx={{ ml: 0.5, height: 18 }} />
+              <Chip label={t('pages.tasks.overdue')} color="error" size="small" sx={{ ml: 0.5, height: 18 }} />
             )}
             {task.completed_with_delay && task.status === 'COMPLETED' && (
-              <Chip label="Просрочено ✓" color="warning" size="small" sx={{ ml: 0.5, height: 18 }} />
+              <Chip label={t('pages.tasks.overdue_completed')} color="warning" size="small" sx={{ ml: 0.5, height: 18 }} />
             )}
           </Box>
         )}
@@ -102,6 +105,8 @@ const TaskCard: React.FC<{ task: TaskListItem }> = ({ task }) => {
 };
 
 const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({ columns, loading }) => {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -134,7 +139,7 @@ const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({ columns, loading }) => 
         >
           <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {column.status_label}
+              {translateTaskStatus(column.status)}
             </Typography>
             <Chip label={column.count} color="primary" size="small" />
           </Box>
@@ -150,7 +155,7 @@ const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({ columns, loading }) => 
                   borderRadius: 1,
                 }}
               >
-                <Typography variant="body2">Нет задач</Typography>
+                <Typography variant="body2">{t('pages.tasks.no_tasks')}</Typography>
               </Box>
             ) : (
               column.tasks.map((task) => <TaskCard key={task.id} task={task} />)

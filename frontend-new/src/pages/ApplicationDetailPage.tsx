@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getApplicationById, updateApplication, getRejectionReasons, deleteApplication } from '../api/applications';
 import type { ApplicationPayload, RejectionReason } from '../api/applications';
 import {
@@ -8,7 +9,8 @@ import {
     Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, TextField, Chip, Link as MuiLink,
     Stack, FormControl, InputLabel, Select, MenuItem, Card, CardHeader, CardContent, Avatar
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid'; // <-- Импорт DataGrid
+import type { GridColDef } from '@mui/x-data-grid'; // <-- Импорт GridColDef
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, timelineOppositeContentClasses } from '@mui/lab';
 import { Controller, useForm } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -35,23 +37,29 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-// Колонки для таблицы встреч
-const meetingColumns: GridColDef<Meeting>[] = [
-    { field: 'id', headerName: 'ID', width: 80 },
-    { field: 'status', headerName: 'Статус', width: 150 },
-    { field: 'planned_date', headerName: 'План. дата', type: 'dateTime', width: 180, valueGetter: (value) => value ? new Date(value) : null },
-    { field: 'executor', headerName: 'Исполнитель', width: 150 },
-];
-
 
 export default function ApplicationDetailPage() {
   const { applicationId } = useParams<{ applicationId: string }>();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [isReasonModalOpen, setIsReasonModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false); // <-- Состояние для модального окна встречи
   const [targetStatus, setTargetStatus] = useState<'JUNK' | 'REJECTED' | null>(null);
+
+  const getDateLocale = () => {
+    const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
+    return localeMap[i18n.language] || 'ru-RU';
+  };
+
+  // Колонки для таблицы встреч
+  const meetingColumns: GridColDef<Meeting>[] = [
+      { field: 'id', headerName: 'ID', width: 80 },
+      { field: 'status', headerName: t('common.status'), width: 150 },
+      { field: 'planned_date', headerName: t('pages.meetings.planned_date'), type: 'dateTime', width: 180, valueGetter: (value) => value ? new Date(value) : null },
+      { field: 'executor', headerName: t('pages.meetings.executor'), width: 150 },
+  ];
   const queryClient = useQueryClient();
 
   const { data: app, isLoading, isError } = useQuery({
@@ -112,7 +120,7 @@ export default function ApplicationDetailPage() {
   };
 
   if (isLoading) return <CircularProgress />;
-  if (isError || !app) return <Alert severity="error">Не удалось загрузить данные заявки.</Alert>;
+  if (isError || !app) return <Alert severity="error">{t('errors.load_application')}</Alert>;
 
   const isEditable = app.status === 'NEW' || app.status === 'IN_PROGRESS';
 
@@ -125,22 +133,22 @@ export default function ApplicationDetailPage() {
             </Avatar>
             <Box>
                 <Typography variant="h4" gutterBottom>
-                    Заявка №{app.id} <Chip label={app.status} color="primary" size="small" />
+                    {t('pages.applications.application_number', { number: app.id })} <Chip label={t(`statuses.application.${app.status}`)} color="primary" size="small" />
                 </Typography>
                 <Typography color="text.secondary">
-                    Клиент: <MuiLink component={RouterLink} to={`/clients/${app.client.id}`}>{app.client.full_name}</MuiLink>
+                    {t('pages.applications.client')}: <MuiLink component={RouterLink} to={`/clients/${app.client.id}`}>{app.client.full_name}</MuiLink>
                 </Typography>
             </Box>
             <Box sx={{ flexGrow: 1 }} />
             <Stack direction="row" spacing={2}>
                 {app.status === 'IN_PROGRESS' && (
                     <>
-                    <Button variant="outlined" color="error" onClick={() => handleOpenReasonModal('JUNK')}>Нецелевая</Button>
-                    <Button variant="outlined" color="warning" onClick={() => handleOpenReasonModal('REJECTED')}>Отказ</Button>
+                    <Button variant="outlined" color="error" onClick={() => handleOpenReasonModal('JUNK')}>{t('pages.applications.junk')}</Button>
+                    <Button variant="outlined" color="warning" onClick={() => handleOpenReasonModal('REJECTED')}>{t('pages.applications.rejected')}</Button>
                     </>
                 )}
                 <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setIsDeleteDialogOpen(true)}>
-                    Удалить
+                    {t('common.delete')}
                 </Button>
             </Stack>
         </Stack>
@@ -149,9 +157,9 @@ export default function ApplicationDetailPage() {
 
       <Box>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="Детали заявки" />
-          <Tab label={`Встречи (${app.meetings?.length || 0})`} />
-          <Tab label={`Логи (${app.logs.length})`} />
+          <Tab label={t('pages.applications.details_tab')} />
+          <Tab label={`${t('pages.applications.meetings_tab')} (${app.meetings?.length || 0})`} />
+          <Tab label={`${t('pages.applications.logs_tab')} (${app.logs.length})`} />
         </Tabs>
       </Box>
 
@@ -159,7 +167,7 @@ export default function ApplicationDetailPage() {
             <form onSubmit={handleSubmit(onFormSubmit)}>
                 <Stack spacing={3}>
                     <Card variant="outlined">
-                        <CardHeader avatar={<InterestsIcon />} title="Интересы клиента" />
+                        <CardHeader avatar={<InterestsIcon />} title={t('pages.applications.client_interests')} />
                         <CardContent>
                             <Grid container spacing={2}>
                               <Grid size={{ xs: 12, sm: 6 }}>
@@ -169,30 +177,30 @@ export default function ApplicationDetailPage() {
                                   defaultValue=""
                                   render={({ field }) => (
                                     <FormControl fullWidth disabled={!isEditable}>
-                                      <InputLabel>Тип недвижимости</InputLabel>
-                                      <Select {...field} label="Тип недвижимости">
-                                        <MenuItem value="APARTMENT">Квартира</MenuItem>
-                                        <MenuItem value="COMMERCIAL">Коммерция</MenuItem>
-                                        <MenuItem value="PARKING">Парковка</MenuItem>
-                                        <MenuItem value="STORAGE">Кладовка</MenuItem>
-                                        <MenuItem value="COTTAGE">Коттедж</MenuItem>
+                                      <InputLabel>{t('pages.applications.property_type')}</InputLabel>
+                                      <Select {...field} label={t('pages.applications.property_type')}>
+                                        <MenuItem value="APARTMENT">{t('pages.applications.property_types.apartment')}</MenuItem>
+                                        <MenuItem value="COMMERCIAL">{t('pages.applications.property_types.commercial')}</MenuItem>
+                                        <MenuItem value="PARKING">{t('pages.applications.property_types.parking')}</MenuItem>
+                                        <MenuItem value="STORAGE">{t('pages.applications.property_types.storage')}</MenuItem>
+                                        <MenuItem value="COTTAGE">{t('pages.applications.property_types.cottage')}</MenuItem>
                                       </Select>
                                     </FormControl>
                                   )}
                                 />
                               </Grid>
                               <Grid size={{ xs: 12, sm: 6 }}>
-                                <TextField label="Причина отказа/нецелевой" fullWidth disabled value={app.rejection_reason?.name || ''} />
+                                <TextField label={t('pages.applications.rejection_reason')} fullWidth disabled value={app.rejection_reason?.name || ''} />
                               </Grid>
-                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Площадь от (м²)" type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
-                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Площадь до (м²)" type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
-                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Этаж от" type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
-                              <Grid size={{ xs: 12, sm: 3 }}><TextField label="Этаж до" type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label={t('pages.applications.min_area')} type="number" fullWidth disabled={!isEditable} {...register('min_area')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label={t('pages.applications.max_area')} type="number" fullWidth disabled={!isEditable} {...register('max_area')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label={t('pages.applications.min_floor')} type="number" fullWidth disabled={!isEditable} {...register('min_floor')} /></Grid>
+                              <Grid size={{ xs: 12, sm: 3 }}><TextField label={t('pages.applications.max_floor')} type="number" fullWidth disabled={!isEditable} {...register('max_floor')} /></Grid>
                             </Grid>
                         </CardContent>
                     </Card>
                     <Card variant="outlined">
-                        <CardHeader avatar={<NotesIcon />} title="Заметки" />
+                        <CardHeader avatar={<NotesIcon />} title={t('pages.applications.notes')} />
                         <CardContent>
                             <TextField fullWidth multiline rows={4} disabled={!isEditable} {...register('notes')} />
                         </CardContent>
@@ -201,7 +209,7 @@ export default function ApplicationDetailPage() {
                     {isEditable && (
                       <Box>
                           <Button type="submit" variant="contained" disabled={updateMutation.isPending}>
-                            {updateMutation.isPending ? 'Сохранение...' : 'Сохранить и взять в работу'}
+                            {updateMutation.isPending ? t('common.saving') : t('pages.applications.save_and_process')}
                           </Button>
                       </Box>
                     )}
@@ -211,10 +219,10 @@ export default function ApplicationDetailPage() {
 
         <TabPanel value={tabValue} index={1}>
             <Button variant="contained" sx={{ mb: 2 }} onClick={() => setIsMeetingModalOpen(true)}>
-                Назначить встречу
+                {t('pages.applications.schedule_meeting')}
             </Button>
             <Box sx={{ height: 400, width: '100%' }}>
-              <DataGrid
+              <LocalizedDataGrid
                 rows={app.meetings || []}
                 columns={meetingColumns}
                 disableRowSelectionOnClick
@@ -228,8 +236,8 @@ export default function ApplicationDetailPage() {
             <TimelineItem key={log.id}>
               <TimelineSeparator><TimelineDot color="grey" /><TimelineConnector /></TimelineSeparator>
               <TimelineContent sx={{ py: '12px', px: 2 }}>
-                <Typography variant="body2" color="text.secondary">{new Date(log.created_at).toLocaleString('ru-RU')}</Typography>
-                <Typography component="span" fontWeight="bold">{log.user || 'Система'}</Typography>
+                <Typography variant="body2" color="text.secondary">{new Date(log.created_at).toLocaleString(getDateLocale())}</Typography>
+                <Typography component="span" fontWeight="bold">{log.user || t('common.system')}</Typography>
                 <HumanizedLog log={log} />
               </TimelineContent>
             </TimelineItem>
@@ -239,47 +247,47 @@ export default function ApplicationDetailPage() {
 
       <Dialog open={isReasonModalOpen} onClose={() => setIsReasonModalOpen(false)} fullWidth maxWidth="xs">
         <form onSubmit={handleSubmit(onReasonSubmit)}>
-          <DialogTitle>Укажите причину</DialogTitle>
+          <DialogTitle>{t('pages.applications.specify_reason')}</DialogTitle>
           <DialogContent>
             <Controller
               name="rejection_reason_id"
               control={control}
-              rules={{ required: "Необходимо выбрать причину" }}
+              rules={{ required: t('pages.applications.reason_required') }}
               render={({ field }) => (
                 <Autocomplete
                   options={reasons || []}
                   loading={isLoadingReasons}
                   getOptionLabel={(option) => option.name}
                   onChange={(_, data) => field.onChange(data?.id)}
-                  renderInput={(params) => <TextField {...params} sx={{ mt: 1 }} label="Причина" required error={!!errors.rejection_reason_id} helperText={errors.rejection_reason_id?.message} />}
+                  renderInput={(params) => <TextField {...params} sx={{ mt: 1 }} label={t('pages.applications.reason')} required error={!!errors.rejection_reason_id} helperText={errors.rejection_reason_id?.message} />}
                 />
               )}
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsReasonModalOpen(false)}>Отмена</Button>
+            <Button onClick={() => setIsReasonModalOpen(false)}>{t('common.cancel')}</Button>
             <Button type="submit" variant="contained" disabled={updateMutation.isPending}>
-              Подтвердить
+              {t('common.confirm')}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)}>
-        <DialogTitle>Подтвердите удаление</DialogTitle>
+        <DialogTitle>{t('common.confirm_delete')}</DialogTitle>
         <DialogContent>
-          <Typography>Вы уверены, что хотите удалить заявку №{app.id}? Это действие необратимо.</Typography>
+          <Typography>{t('pages.applications.delete_confirmation', { number: app.id })}</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsDeleteDialogOpen(false)}>Отмена</Button>
+          <Button onClick={() => setIsDeleteDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button onClick={() => deleteMutation.mutate(Number(applicationId))} color="error" disabled={deleteMutation.isPending}>
-            {deleteMutation.isPending ? 'Удаление...' : 'Удалить'}
+            {deleteMutation.isPending ? t('common.deleting') : t('common.delete')}
           </Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={isMeetingModalOpen} onClose={() => setIsMeetingModalOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Новая встреча по заявке №{app.id}</DialogTitle>
+          <DialogTitle>{t('pages.applications.new_meeting_for', { number: app.id })}</DialogTitle>
           <DialogContent>
               {app && (
                   <MeetingForm

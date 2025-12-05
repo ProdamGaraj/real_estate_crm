@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { getDealById, updateDeal } from '../api/deals';
 import type { DealUpdatePayload, Deal } from '../api/deals';
 import DiscountsModal from '../components/deals/DiscountsModal';
@@ -9,6 +10,7 @@ import PaymentSchedule from '../components/deals/PaymentSchedule';
 import DocumentGeneration from '../components/deals/DocumentGeneration';
 import HumanizedLog from '../components/logs/HumanizedLog';
 import DealCancellationModal from '../components/deals/DealCancellationModal';
+import LocalizedDateField from '../components/common/LocalizedDateField';
 
 import {
   Typography, CircularProgress, Alert, Paper, Grid, Box, TextField, Button,
@@ -40,6 +42,7 @@ function TabPanel(props: TabPanelProps) {
 export default function DealDetailPage() {
   const { dealId } = useParams<{ dealId: string }>();
   const queryClient = useQueryClient();
+  const { t, i18n } = useTranslation();
 
   const [isDiscountModalOpen, setDiscountModalOpen] = useState(false);
   const [mainTabValue, setMainTabValue] = useState(0); // Для главных вкладок
@@ -47,13 +50,18 @@ export default function DealDetailPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCancellationModalOpen, setCancellationModalOpen] = useState(false);
 
+  const getDateLocale = () => {
+    const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
+    return localeMap[i18n.language] || 'ru-RU';
+  };
+
   const { data: deal, isLoading, isError } = useQuery({
     queryKey: ['deal', dealId],
     queryFn: () => getDealById(Number(dealId)),
     enabled: !!dealId,
   });
 
-  const { register, handleSubmit, reset, watch, setValue } = useForm<DealFormInputs>();
+  const { register, handleSubmit, reset, watch, setValue, control } = useForm<DealFormInputs>();
 
   useEffect(() => {
     if (deal && !isInitialized) {
@@ -82,11 +90,11 @@ export default function DealDetailPage() {
     mutationFn: updateDeal,
     onSuccess: (updatedDeal) => {
       queryClient.setQueryData(['deal', dealId], updatedDeal);
-      alert('Изменения сохранены!');
+      alert(t('common.changes_saved'));
     },
     onError: (error: any) => {
         const serverError = error.response?.data?.contract_number?.[0] || error.response?.data?.detail;
-        alert(`Ошибка обновления: ${serverError || error.message}`);
+        alert(`${t('errors.update_error')}: ${serverError || error.message}`);
     }
   });
 
@@ -118,7 +126,7 @@ export default function DealDetailPage() {
   };
 
   if (isLoading) return <CircularProgress />;
-  if (isError || !deal) return <Alert severity="error">Не удалось загрузить данные сделки.</Alert>;
+  if (isError || !deal) return <Alert severity="error">{t('errors.load_deal')}</Alert>;
 
   const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status);
   const isDealTerminated = deal.status === 'TERMINATED';
@@ -126,7 +134,7 @@ export default function DealDetailPage() {
   return (
     <>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="h4">Сделка №{deal.id} (Статус: {deal.status})</Typography>
+        <Typography variant="h4">{t('pages.deals.deal_title', { id: deal.id, status: t(`statuses.deal.${deal.status}`) })}</Typography>
         {!isDealReadOnly && (
             <Button
                 variant="outlined"
@@ -134,21 +142,21 @@ export default function DealDetailPage() {
                 startIcon={<ErrorOutlineIcon />}
                 onClick={() => setCancellationModalOpen(true)}
             >
-                Отменить / Расторгнуть
+                {t('pages.deals.cancel_terminate')}
             </Button>
         )}
       </Stack>
       {/* --- НОВЫЙ БЛОК ИНФОРМАЦИИ --- */}
             {(deal.status === 'CANCELLED' || deal.status === 'TERMINATED') && (
                 <Alert severity="error" sx={{ mb: 2 }}>
-                    <Typography fontWeight="bold">Сделка завершена ({deal.status === 'CANCELLED' ? 'Отменена' : 'Расторгнута'})</Typography>
-                    {deal.status === 'CANCELLED' && <Typography>Причина: {deal.cancellation_reason}</Typography>}
+                    <Typography fontWeight="bold">{t('pages.deals.deal_closed', { status: deal.status === 'CANCELLED' ? t('pages.deals.cancelled') : t('pages.deals.terminated') })}</Typography>
+                    {deal.status === 'CANCELLED' && <Typography>{t('pages.deals.reason')}: {deal.cancellation_reason}</Typography>}
                     {deal.status === 'TERMINATED' && (
                         <>
-                            <Typography>Дата расторжения: {deal.termination_date}</Typography>
+                            <Typography>{t('pages.deals.termination_date')}: {deal.termination_date}</Typography>
                             {deal.termination_document_scan && (
                                 <Typography>
-                                    Документ-основание: <MuiLink href={deal.termination_document_scan} target="_blank" rel="noopener noreferrer">Посмотреть</MuiLink>
+                                    {t('pages.deals.termination_document')}: <MuiLink href={deal.termination_document_scan} target="_blank" rel="noopener noreferrer">{t('common.view')}</MuiLink>
                                 </Typography>
                             )}
                         </>
@@ -159,8 +167,8 @@ export default function DealDetailPage() {
         <Paper>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={mainTabValue} onChange={(_, newValue) => setMainTabValue(newValue)}>
-                  <Tab label="Шаги сделки" />
-                  <Tab label={`Логи (${deal.logs?.length || 0})`} />
+                  <Tab label={t('pages.deals.deal_steps')} />
+                  <Tab label={`${t('pages.deals.logs_tab')} (${deal.logs?.length || 0})`} />
               </Tabs>
           </Box>
 
@@ -169,37 +177,37 @@ export default function DealDetailPage() {
               <Stepper activeStep={activeStep} orientation="vertical">
                   {/* === ШАГ 1: ИНФОРМАЦИЯ О СДЕЛКЕ === */}
                   <Step>
-                    <StepLabel onClick={() => setActiveStep(0)} sx={{cursor: 'pointer'}}>Информация о сделке</StepLabel>
+                    <StepLabel onClick={() => setActiveStep(0)} sx={{cursor: 'pointer'}}>{t('pages.deals.step_info')}</StepLabel>
                     <StepContent>
                       <Grid container spacing={2}>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                              <Typography><b>Клиент:</b> <MuiLink component={RouterLink} to={`/clients/${deal.client.id}`}>{deal.client.full_name}</MuiLink></Typography>
-                              <Typography><b>Объект:</b> {deal.property.property_type} №{deal.property.unit_number}, {deal.property.area} м²</Typography>
+                              <Typography><b>{t('pages.deals.client')}:</b> <MuiLink component={RouterLink} to={`/clients/${deal.client.id}`}>{deal.client.full_name}</MuiLink></Typography>
+                              <Typography><b>{t('pages.deals.property')}:</b> {deal.property.property_type} №{deal.property.unit_number}, {deal.property.area} {t('common.sqm')}</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                              <Typography><b>Начало брони:</b> {new Date(deal.booking_start_date).toLocaleString()}</Typography>
-                              <Typography><b>Окончание брони:</b> {new Date(deal.booking_end_date).toLocaleString()}</Typography>
+                              <Typography><b>{t('pages.deals.booking_start')}:</b> {new Date(deal.booking_start_date).toLocaleString(getDateLocale())}</Typography>
+                              <Typography><b>{t('pages.deals.booking_end')}:</b> {new Date(deal.booking_end_date).toLocaleString(getDateLocale())}</Typography>
                           </Grid>
                       </Grid>
-                      <Button onClick={() => setActiveStep(1)} variant="contained" sx={{mt: 2}} disabled={isDealReadOnly}>Далее</Button>
+                      <Button onClick={() => setActiveStep(1)} variant="contained" sx={{mt: 2}} disabled={isDealReadOnly}>{t('common.next')}</Button>
                     </StepContent>
                   </Step>
 
                   {/* === ШАГ 2: УСЛОВИЯ СДЕЛКИ === */}
                   <Step>
-                    <StepLabel onClick={() => setActiveStep(1)} sx={{cursor: 'pointer'}}>Условия сделки</StepLabel>
+                    <StepLabel onClick={() => setActiveStep(1)} sx={{cursor: 'pointer'}}>{t('pages.deals.step_terms')}</StepLabel>
                     <StepContent>
                       <form onSubmit={handleSubmit(handleFormSubmit)}>
                         <Grid container spacing={3}>
-                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Стоимость (начальная)" value={Number(deal.initial_price).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
-                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Цена за м² (начальная)" value={Number(deal.initial_price_per_sqm).toLocaleString()} fullWidth InputProps={{ readOnly: true }}/></Grid>
-                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label="Стоимость по договору" type="number" fullWidth {...register('contract_price')} disabled={isDealReadOnly} /></Grid>
-                          <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>Применить скидки</Button> <Typography component="span">Применено: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || 'нет'}</Typography></Grid>
-                          <Grid size={{ xs: 12 }}><TextField label="Примечание к сделке" multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.deals.initial_price')} value={Number(deal.initial_price).toLocaleString(getDateLocale())} fullWidth InputProps={{ readOnly: true }}/></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.deals.initial_price_per_sqm')} value={Number(deal.initial_price_per_sqm).toLocaleString(getDateLocale())} fullWidth InputProps={{ readOnly: true }}/></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.deals.contract_price')} type="number" fullWidth {...register('contract_price')} disabled={isDealReadOnly} /></Grid>
+                          <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>{t('pages.deals.apply_discounts')}</Button> <Typography component="span">{t('pages.deals.applied')}: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || t('common.none')}</Typography></Grid>
+                          <Grid size={{ xs: 12 }}><TextField label={t('pages.deals.deal_notes')} multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
                         </Grid>
                         <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                          <Button type="submit" variant="contained" disabled={updateDealMutation.isPending || isDealReadOnly}>Сохранить и перейти к графику</Button>
-                          <Button onClick={() => setActiveStep(0)} disabled={isDealReadOnly}>Назад</Button>
+                          <Button type="submit" variant="contained" disabled={updateDealMutation.isPending || isDealReadOnly}>{t('pages.deals.save_and_schedule')}</Button>
+                          <Button onClick={() => setActiveStep(0)} disabled={isDealReadOnly}>{t('common.back')}</Button>
                         </Stack>
                       </form>
                     </StepContent>
@@ -207,7 +215,7 @@ export default function DealDetailPage() {
 
                   {/* === ШАГ 3: ГРАФИК ПЛАТЕЖЕЙ === */}
                   <Step>
-                    <StepLabel onClick={() => deal.contract_price && setActiveStep(2)} error={!deal.contract_price} sx={{cursor: 'pointer'}}>График платежей</StepLabel>
+                    <StepLabel onClick={() => deal.contract_price && setActiveStep(2)} error={!deal.contract_price} sx={{cursor: 'pointer'}}>{t('pages.deals.step_payments')}</StepLabel>
                     <StepContent>
                        {deal.contract_price ? (
                         <PaymentSchedule
@@ -217,44 +225,74 @@ export default function DealDetailPage() {
                             isDealTerminated={isDealTerminated}
                             isReadOnly={isDealReadOnly}
                         />
-                        ) : <Alert severity="warning">Сначала сохраните "Стоимость по договору" на предыдущем шаге.</Alert>}
+                        ) : <Alert severity="warning">{t('pages.deals.save_price_first')}</Alert>}
                       <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                          <Button onClick={() => setActiveStep(1)} disabled={isDealReadOnly}>Назад</Button>
-                          <Button variant="contained" onClick={() => setActiveStep(3)} disabled={!deal.payments || deal.payments.length === 0 || isDealReadOnly}>Далее</Button>
+                          <Button onClick={() => setActiveStep(1)} disabled={isDealReadOnly}>{t('common.back')}</Button>
+                          <Button variant="contained" onClick={() => setActiveStep(3)} disabled={!deal.payments || deal.payments.length === 0 || isDealReadOnly}>{t('common.next')}</Button>
                       </Stack>
                     </StepContent>
                   </Step>
 
                   {/* === ШАГ 4: ДОКУМЕНТЫ === */}
                   <Step>
-                    <StepLabel onClick={() => deal.payments?.length > 0 && setActiveStep(3)} error={!deal.payments || deal.payments.length === 0} sx={{cursor: 'pointer'}}>Документы</StepLabel>
+                    <StepLabel onClick={() => deal.payments?.length > 0 && setActiveStep(3)} error={!deal.payments || deal.payments.length === 0} sx={{cursor: 'pointer'}}>{t('pages.deals.step_documents')}</StepLabel>
                     <StepContent>
                       <form onSubmit={handleSubmit(handleFormSubmit)}>
-                          <Typography variant="h6" gutterBottom>Данные договора</Typography>
+                          <Typography variant="h6" gutterBottom>{t('pages.deals.contract_data')}</Typography>
                           <Grid container spacing={2} sx={{mb: 2}}>
-                              <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Номер договора" {...register('contract_number')} disabled={isDealReadOnly} /></Grid>
-                              <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Дата договора" type="date" InputLabelProps={{ shrink: true }} {...register('contract_date')} disabled={isDealReadOnly}/></Grid>
+                              <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.deals.contract_number')} {...register('contract_number')} disabled={isDealReadOnly} /></Grid>
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <Controller name="contract_date" control={control} render={({ field }) => (
+                                  <LocalizedDateField
+                                    label={t('pages.deals.contract_date')}
+                                    value={field.value || null}
+                                    onChange={(date) => field.onChange(date || '')}
+                                    fullWidth
+                                    disabled={isDealReadOnly}
+                                  />
+                                )}/>
+                              </Grid>
                           </Grid>
                           <Divider sx={{my: 3}}/>
 
-                          <Typography variant="h6" gutterBottom>Генерация</Typography>
-                          {deal.contract_number && deal.contract_date ? (<DocumentGeneration deal={deal} />) : (<Alert severity="info">Сохраните номер и дату договора, чтобы сгенерировать документы.</Alert>)}
+                          <Typography variant="h6" gutterBottom>{t('pages.deals.generation')}</Typography>
+                          {deal.contract_number && deal.contract_date ? (<DocumentGeneration deal={deal} />) : (<Alert severity="info">{t('pages.deals.save_contract_first')}</Alert>)}
 
                           {deal.contract_number && deal.contract_date && (
                               <>
                                   <Divider sx={{my: 3}}/>
-                                  <Typography variant="h6" gutterBottom>Подписанные документы</Typography>
-                                  {deal.signed_document_scan && (<Alert severity="success" sx={{mb: 2}}>Подписанный документ загружен. <MuiLink href={deal.signed_document_scan} target="_blank" rel="noopener noreferrer">Посмотреть</MuiLink></Alert>)}
+                                  <Typography variant="h6" gutterBottom>{t('pages.deals.signed_documents')}</Typography>
+                                  {deal.signed_document_scan && (<Alert severity="success" sx={{mb: 2}}>{t('pages.deals.signed_uploaded')} <MuiLink href={deal.signed_document_scan} target="_blank" rel="noopener noreferrer">{t('common.view')}</MuiLink></Alert>)}
                                   <Grid container spacing={2} sx={{mb: 2}}>
-                                      <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Загрузить скан" type="file" InputLabelProps={{ shrink: true }} {...register('signed_document_scan')} disabled={isDealReadOnly} /></Grid>
-                                      <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Дата подписания клиентом" type="date" InputLabelProps={{ shrink: true }} {...register('client_signature_date')} disabled={isDealReadOnly} /></Grid>
-                                      <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Дата подписания компанией" type="date" InputLabelProps={{ shrink: true }} {...register('company_signature_date')} disabled={isDealReadOnly} /></Grid>
+                                      <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.deals.upload_scan')} type="file" InputLabelProps={{ shrink: true }} {...register('signed_document_scan')} disabled={isDealReadOnly} /></Grid>
+                                      <Grid size={{ xs: 12, md: 4 }}>
+                                        <Controller name="client_signature_date" control={control} render={({ field }) => (
+                                          <LocalizedDateField
+                                            label={t('pages.deals.client_signature_date')}
+                                            value={field.value || null}
+                                            onChange={(date) => field.onChange(date || '')}
+                                            fullWidth
+                                            disabled={isDealReadOnly}
+                                          />
+                                        )}/>
+                                      </Grid>
+                                      <Grid size={{ xs: 12, md: 4 }}>
+                                        <Controller name="company_signature_date" control={control} render={({ field }) => (
+                                          <LocalizedDateField
+                                            label={t('pages.deals.company_signature_date')}
+                                            value={field.value || null}
+                                            onChange={(date) => field.onChange(date || '')}
+                                            fullWidth
+                                            disabled={isDealReadOnly}
+                                          />
+                                        )}/>
+                                      </Grid>
                                   </Grid>
                               </>
                           )}
                           <Stack direction="row" spacing={2} sx={{mt: 2}}>
-                             <Button type="submit" variant="contained" disabled={updateDealMutation.isPending || isDealReadOnly}>{updateDealMutation.isPending ? 'Сохранение...' : 'Сохранить данные'}</Button>
-                             <Button onClick={() => setActiveStep(2)} disabled={isDealReadOnly}>Назад</Button>
+                             <Button type="submit" variant="contained" disabled={updateDealMutation.isPending || isDealReadOnly}>{updateDealMutation.isPending ? t('common.saving') : t('common.save_data')}</Button>
+                             <Button onClick={() => setActiveStep(2)} disabled={isDealReadOnly}>{t('common.back')}</Button>
                           </Stack>
                       </form>
                     </StepContent>
@@ -273,7 +311,7 @@ export default function DealDetailPage() {
                           </TimelineSeparator>
                           <TimelineContent sx={{ py: '12px', px: 2 }}>
                               <Typography variant="body2" color="text.secondary">
-                                  {new Date(log.created_at).toLocaleString()} - {log.user || 'Система'}
+                                  {new Date(log.created_at).toLocaleString(getDateLocale())} - {log.user || t('common.system')}
                               </Typography>
                               <HumanizedLog log={log} />
                           </TimelineContent>
@@ -308,3 +346,4 @@ export default function DealDetailPage() {
     </>
   );
 }
+

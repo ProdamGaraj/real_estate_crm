@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   createRole,
   updateRole,
@@ -35,35 +36,6 @@ interface RoleFormProps {
   onCancel: () => void;
 }
 
-// Русские названия ресурсов
-const RESOURCE_LABELS: Record<string, string> = {
-  CLIENT: 'Клиенты',
-  APPLICATION: 'Заявки',
-  MEETING: 'Встречи',
-  DEAL: 'Сделки',
-  PAYMENT: 'Платежи',
-  REFUND: 'Возвраты',
-  PROJECT: 'Проекты',
-  BUILDING: 'Здания',
-  PROPERTY: 'Объекты недвижимости',
-  LAYOUT: 'Планировки',
-  DISCOUNT: 'Скидки',
-  DOCUMENT: 'Документы',
-  REPORT: 'Отчеты',
-  COMPANY: 'Компании',
-  DEPARTMENT: 'Отделы',
-  ROLE: 'Роли',
-  USER: 'Пользователи',
-  BENEFICIARY_ACCOUNT: 'Счета получателей',
-  DASHBOARD: 'Дашборд',
-  PAYMENT_TYPE: 'Типы платежей',
-  PERMISSION: 'Разрешения',
-  PLAN: 'Планы',
-  SETTINGS: 'Настройки',
-  TEMPLATE: 'Шаблоны',
-  OTHER: 'Прочее',
-};
-
 // Группировка разрешений по ресурсам
 const groupPermissionsByResource = (permissions: any[]) => {
   const grouped: Record<string, any[]> = {};
@@ -80,12 +52,18 @@ const groupPermissionsByResource = (permissions: any[]) => {
 };
 
 export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: role?.name || '',
     code: role?.code || '',
     description: role?.description || '',
     is_active: role?.is_active ?? true,
   });
+
+  // Функция для получения локализованного названия ресурса
+  const getResourceLabel = (resource: string): string => {
+    return t(`permissions.resources.${resource}`, resource);
+  };
 
   // Иерархическая структура разрешений V2
   const [permissionsHierarchy, setPermissionsHierarchy] = useState<PermissionsHierarchyV2>({});
@@ -250,7 +228,7 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
         {/* Основная информация */}
         <TextField
-          label="Название роли"
+          label={t('permissions.form.role_name')}
           value={formData.name}
           onChange={handleNameChange}
           required
@@ -258,16 +236,16 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
         />
 
         <TextField
-          label="Код роли"
+          label={t('permissions.form.role_code')}
           value={formData.code}
           onChange={handleCodeChange}
           required
           fullWidth
-          helperText="Уникальный код роли (например: MANAGER, ADMIN)"
+          helperText={t('permissions.form.role_code_hint')}
         />
 
         <TextField
-          label="Описание"
+          label={t('common.description')}
           value={formData.description}
           onChange={handleDescriptionChange}
           multiline
@@ -277,24 +255,24 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
         <FormControlLabel
           control={<Checkbox checked={formData.is_active} onChange={handleIsActiveChange} />}
-          label="Активная роль"
+          label={t('permissions.form.is_active')}
         />
 
         {/* Разрешения */}
         <Box>
           <Typography variant="h6" gutterBottom>
-            Разрешения {selectedPermissionsCount > 0 && `(${selectedPermissionsCount} выбрано)`}
+            {t('permissions.permissions_title')} {selectedPermissionsCount > 0 && `(${selectedPermissionsCount} ${t('permissions.selected')})`}
           </Typography>
 
           {isLoading ? (
-            <Alert severity="info">Загрузка разрешений...</Alert>
+            <Alert severity="info">{t('permissions.loading')}</Alert>
           ) : (
             <Stack spacing={2}>
               {resources.map((resource) => (
                 <ResourcePermissionSelector
                   key={resource}
                   resourceName={resource}
-                  resourceLabel={RESOURCE_LABELS[resource] || resource}
+                  resourceLabel={getResourceLabel(resource)}
                   permissions={permissionsHierarchy[resource] || emptyResourcePermissions()}
                   companies={accessibleCompanies}
                   departments={accessibleDepartments}
@@ -309,14 +287,14 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
         {/* Кнопки */}
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button onClick={onCancel} disabled={mutation.isPending}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button
             type="submit"
             variant="contained"
             disabled={mutation.isPending || !formData.name || !formData.code}
           >
-            {mutation.isPending ? 'Сохранение...' : role ? 'Обновить' : 'Создать'}
+            {mutation.isPending ? t('common.saving') : role ? t('common.update') : t('common.create')}
           </Button>
         </Stack>
       </Stack>

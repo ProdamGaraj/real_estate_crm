@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getAvailableDiscounts } from '../../api/deals';
 import type { Discount } from '../../api/discounts';
 import {
@@ -18,6 +19,7 @@ interface DiscountsModalProps {
 }
 
 export default function DiscountsModal({ open, dealId, basePrice, appliedDiscountIds, onClose, onSave }: DiscountsModalProps) {
+  const { t } = useTranslation();
   const [selectedIds, setSelectedIds] = useState<number[]>(appliedDiscountIds);
   const [shouldRound, setShouldRound] = useState(false); // Состояние для округления
 
@@ -68,10 +70,10 @@ export default function DiscountsModal({ open, dealId, basePrice, appliedDiscoun
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Применение скидок</DialogTitle>
+      <DialogTitle>{t('pages.discounts.apply_discounts')}</DialogTitle>
       <DialogContent>
         {isLoading && <CircularProgress />}
-        {isError && <Alert severity="error">Не удалось загрузить скидки</Alert>}
+        {isError && <Alert severity="error">{t('pages.discounts.load_error')}</Alert>}
         {availableDiscounts && (
           <>
             <List>
@@ -97,14 +99,14 @@ export default function DiscountsModal({ open, dealId, basePrice, appliedDiscoun
                   onChange={(e) => setShouldRound(e.target.checked)}
                 />
               }
-              label="Округлить результат до целого числа"
+              label={t('pages.discounts.round_result')}
             />
           </>
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Отмена</Button>
-        <Button onClick={handleSave} variant="contained">Применить</Button>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
+        <Button onClick={handleSave} variant="contained">{t('common.apply')}</Button>
       </DialogActions>
     </Dialog>
   );

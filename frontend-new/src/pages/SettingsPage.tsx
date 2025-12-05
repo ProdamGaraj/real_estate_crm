@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Box, Typography, Grid, Paper, Tabs, Tab } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import ReasonManager from '../components/settings/ReasonManager';
 import BuildingTypeManager from '../components/settings/BuildingTypeManager';
@@ -32,18 +33,19 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const TABS = [
-  { id: 'companies', label: 'Компании' },
-  { id: 'departments', label: 'Отделы' },
-  { id: 'roles', label: 'Роли' },
-  { id: 'users', label: 'Пользователи' },
-  { id: 'applications', label: 'Заявки' },
-  { id: 'realty', label: 'Недвижимость' },
-  { id: 'finances', label: 'Финансы' },
-  { id: 'templates', label: 'Шаблоны' },
-  { id: 'api-keys', label: 'API-ключи' },
+  { id: 'companies', labelKey: 'pages.settings.companies_tab' },
+  { id: 'departments', labelKey: 'pages.settings.departments_tab' },
+  { id: 'roles', labelKey: 'pages.settings.roles_tab' },
+  { id: 'users', labelKey: 'pages.settings.users_tab' },
+  { id: 'applications', labelKey: 'pages.settings.applications_tab' },
+  { id: 'realty', labelKey: 'pages.settings.realty_tab' },
+  { id: 'finances', labelKey: 'pages.settings.finances_tab' },
+  { id: 'templates', labelKey: 'pages.settings.templates_tab' },
+  { id: 'api-keys', labelKey: 'pages.settings.api_keys_tab' },
 ];
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   
@@ -68,7 +70,7 @@ export default function SettingsPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 2 }}>Настройки</Typography>
+      <Typography variant="h4" sx={{ mb: 2 }}>{t('pages.settings.title')}</Typography>
       <Paper>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs 
@@ -78,7 +80,7 @@ export default function SettingsPage() {
             scrollButtons="auto"
           >
             {TABS.map((tab) => (
-              <Tab key={tab.id} label={tab.label} />
+              <Tab key={tab.id} label={t(tab.labelKey)} />
             ))}
           </Tabs>
         </Box>
@@ -105,20 +107,20 @@ export default function SettingsPage() {
 
         {/* Вкладка "Заявки" */}
         <TabPanel value={tabValue} index={4}>
-          <Typography variant="h6" sx={{ mb: 2 }}>Причины отказа / нецелевых заявок</Typography>
+          <Typography variant="h6" sx={{ mb: 2 }}>{t('pages.settings.rejection_reasons_title')}</Typography>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 6 }}>
-              <ReasonManager title="Причины для статуса «Нецелевая»" reasonType="JUNK" />
+              <ReasonManager title={t('pages.settings.junk_reasons')} reasonType="JUNK" />
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <ReasonManager title="Причины для статуса «Отказ»" reasonType="REJECTED" />
+              <ReasonManager title={t('pages.settings.rejection_reasons')} reasonType="REJECTED" />
             </Grid>
           </Grid>
         </TabPanel>
 
         {/* Вкладка "Недвижимость" */}
         <TabPanel value={tabValue} index={5}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Типы домов</Typography>
+            <Typography variant="h6" sx={{ mb: 2 }}>{t('pages.settings.building_types')}</Typography>
             <BuildingTypeManager />
         </TabPanel>
 

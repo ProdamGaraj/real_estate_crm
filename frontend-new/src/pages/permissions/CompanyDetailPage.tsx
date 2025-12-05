@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -26,6 +27,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import InfoIcon from '@mui/icons-material/Info';
 
 export default function CompanyDetailPage() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -66,13 +68,13 @@ export default function CompanyDetailPage() {
   if (isError) {
     return (
       <Alert severity="error">
-        Ошибка загрузки: {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+        {t('errors.load_error')}: {error instanceof Error ? error.message : t('errors.unknown_error')}
       </Alert>
     );
   }
 
   if (!company) {
-    return <Alert severity="warning">Компания не найдена</Alert>;
+    return <Alert severity="warning">{t('pages.settings.permissions.company_not_found')}</Alert>;
   }
 
   return (
@@ -86,7 +88,7 @@ export default function CompanyDetailPage() {
         <Box sx={{ flex: 1 }}>
           <Typography variant="h4">{company.name}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Код: {company.code}
+            {t('pages.settings.permissions.code')}: {company.code}
           </Typography>
         </Box>
         <Button
@@ -94,7 +96,7 @@ export default function CompanyDetailPage() {
           startIcon={<EditIcon />}
           onClick={() => setIsEditModalOpen(true)}
         >
-          Редактировать
+          {t('common.edit')}
         </Button>
         <Button
           variant="outlined"
@@ -102,7 +104,7 @@ export default function CompanyDetailPage() {
           startIcon={<DeleteIcon />}
           onClick={() => setIsDeleteDialogOpen(true)}
         >
-          Удалить
+          {t('common.delete')}
         </Button>
       </Box>
 
@@ -113,37 +115,37 @@ export default function CompanyDetailPage() {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <InfoIcon color="primary" />
-                <Typography variant="h6">Основная информация</Typography>
+                <Typography variant="h6">{t('pages.settings.permissions.basic_info')}</Typography>
               </Box>
               <Divider sx={{ mb: 2 }} />
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Название
+                    {t('pages.settings.permissions.name')}
                   </Typography>
                   <Typography variant="body1">{company.name}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Код
+                    {t('pages.settings.permissions.code')}
                   </Typography>
                   <Typography variant="body1">{company.code}</Typography>
                 </Box>
                 {company.description && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">
-                      Описание
+                      {t('common.description')}
                     </Typography>
                     <Typography variant="body1">{company.description}</Typography>
                   </Box>
                 )}
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Статус
+                    {t('common.status')}
                   </Typography>
                   <Box sx={{ mt: 0.5 }}>
                     <Chip
-                      label={company.is_active ? 'Активна' : 'Неактивна'}
+                      label={company.is_active ? t('pages.settings.permissions.active_status') : t('pages.settings.permissions.inactive_status')}
                       color={company.is_active ? 'success' : 'default'}
                       size="small"
                     />
@@ -158,24 +160,24 @@ export default function CompanyDetailPage() {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Статистика
+                {t('pages.settings.permissions.statistics')}
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Дата создания
+                    {t('common.created_at')}
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(company.created_at).toLocaleString('ru-RU')}
+                    {new Date(company.created_at).toLocaleString(i18n.language === 'ru' ? 'ru-RU' : i18n.language === 'uz' ? 'uz-UZ' : 'en-US')}
                   </Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Последнее обновление
+                    {t('common.updated_at')}
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(company.updated_at).toLocaleString('ru-RU')}
+                    {new Date(company.updated_at).toLocaleString(i18n.language === 'ru' ? 'ru-RU' : i18n.language === 'uz' ? 'uz-UZ' : 'en-US')}
                   </Typography>
                 </Box>
               </Stack>
@@ -191,7 +193,7 @@ export default function CompanyDetailPage() {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Редактировать компанию</DialogTitle>
+        <DialogTitle>{t('pages.settings.permissions.edit_company')}</DialogTitle>
         <DialogContent>
           <CompanyForm
             company={company}
@@ -207,13 +209,13 @@ export default function CompanyDetailPage() {
         onClose={() => setIsDeleteDialogOpen(false)}
         maxWidth="xs"
       >
-        <DialogTitle>Удалить компанию?</DialogTitle>
+        <DialogTitle>{t('pages.settings.permissions.delete_company')}?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" gutterBottom>
-            Вы уверены, что хотите удалить компанию "{company.name}"?
+            {t('pages.settings.permissions.confirm_delete_company', { name: company.name })}
           </Typography>
           <Typography variant="body2" color="error">
-            Это действие нельзя отменить.
+            {t('common.action_irreversible')}
           </Typography>
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
             <Button
@@ -221,7 +223,7 @@ export default function CompanyDetailPage() {
               onClick={() => setIsDeleteDialogOpen(false)}
               fullWidth
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               variant="contained"
@@ -230,7 +232,7 @@ export default function CompanyDetailPage() {
               disabled={deleteMutation.isPending}
               fullWidth
             >
-              {deleteMutation.isPending ? 'Удаление...' : 'Удалить'}
+              {deleteMutation.isPending ? t('common.deleting') : t('common.delete')}
             </Button>
           </Stack>
         </DialogContent>

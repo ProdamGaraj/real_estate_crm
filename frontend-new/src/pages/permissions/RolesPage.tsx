@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -13,36 +13,22 @@ import {
   Stack,
   Chip,
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getRoles } from '../../api/permissions';
 import RoleForm from '../../components/permissions/RoleForm';
 import AddIcon from '@mui/icons-material/Add';
 import SecurityIcon from '@mui/icons-material/Security';
+import { translateRoleScope, translateRoleCategory } from '../../utils/translations';
 
-// Области действия роли
-const ROLE_SCOPE_LABELS: Record<string, string> = {
-  SYSTEM: 'Вся система',
-  COMPANY: 'Компания',
-  DEPARTMENT: 'Отдел',
-  OWN: 'Только свои',
-};
-
-// Категории ролей
-const ROLE_CATEGORY_LABELS: Record<string, string> = {
-  ADMINISTRATIVE: 'Административная',
-  MANAGEMENT: 'Управленческая',
-  OPERATIONAL: 'Операционная',
-  READONLY: 'Только просмотр',
-  CUSTOM: 'Пользовательская',
-};
-
-const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID', width: 70 },
+const getColumns = (t: (key: string) => string): GridColDef[] => [
+  { field: 'id', headerName: t('table.id'), width: 70 },
   {
     field: 'name',
-    headerName: 'Название',
+    headerName: t('table.name'),
     width: 250,
     renderCell: (params) => {
       return (
@@ -59,14 +45,14 @@ const columns: GridColDef[] = [
       );
     },
   },
-  { field: 'code', headerName: 'Код', width: 150 },
+  { field: 'code', headerName: t('table.code'), width: 150 },
   {
     field: 'scope',
-    headerName: 'Область действия',
+    headerName: t('pages.settings.permissions.scope'),
     width: 150,
     renderCell: (params) => (
       <Chip
-        label={params.row.scope_display || ROLE_SCOPE_LABELS[params.value] || params.value}
+        label={translateRoleScope(params.value)}
         color="primary"
         size="small"
         variant="outlined"
@@ -75,11 +61,11 @@ const columns: GridColDef[] = [
   },
   {
     field: 'category',
-    headerName: 'Категория',
+    headerName: t('table.category'),
     width: 150,
     renderCell: (params) => (
       <Chip
-        label={params.row.category_display || ROLE_CATEGORY_LABELS[params.value] || params.value}
+        label={translateRoleCategory(params.value)}
         color="info"
         size="small"
         variant="outlined"
@@ -88,7 +74,7 @@ const columns: GridColDef[] = [
   },
   {
     field: 'permissions_count',
-    headerName: 'Разрешений',
+    headerName: t('pages.settings.permissions.permissions_count'),
     width: 120,
     type: 'number',
     renderCell: (params) => (
@@ -99,14 +85,14 @@ const columns: GridColDef[] = [
       />
     ),
   },
-  { field: 'description', headerName: 'Описание', width: 300 },
+  { field: 'description', headerName: t('table.description'), width: 300 },
   {
     field: 'is_active',
-    headerName: 'Статус',
+    headerName: t('table.status'),
     width: 120,
     renderCell: (params) => (
       <Chip
-        label={params.value ? 'Активна' : 'Неактивна'}
+        label={params.value ? t('common.active') : t('common.inactive')}
         color={params.value ? 'success' : 'default'}
         size="small"
       />
@@ -115,8 +101,10 @@ const columns: GridColDef[] = [
 ];
 
 export default function RolesPage() {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
+  const columns = getColumns(t);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['roles'],
@@ -134,10 +122,10 @@ export default function RolesPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Роли
+            {t('pages.settings.permissions.roles_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Управление ролями и разрешениями системы
+            {t('pages.settings.permissions.roles_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -145,7 +133,7 @@ export default function RolesPage() {
           startIcon={<AddIcon />}
           onClick={() => setIsModalOpen(true)}
         >
-          Создать роль
+          {t('pages.settings.permissions.create_role')}
         </Button>
       </Box>
 
@@ -153,7 +141,7 @@ export default function RolesPage() {
       <Paper sx={{ p: 2 }}>
         {isError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            Ошибка загрузки: {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+            {t('common.loading_error')}: {error instanceof Error ? error.message : t('common.unknown_error')}
           </Alert>
         )}
 
@@ -162,7 +150,7 @@ export default function RolesPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <DataGrid
+          <LocalizedDataGrid
             rows={data || []}
             columns={columns}
             initialState={{
@@ -177,7 +165,7 @@ export default function RolesPage() {
 
       {/* Модальное окно создания */}
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Создать роль</DialogTitle>
+        <DialogTitle>{t('pages.settings.permissions.create_role')}</DialogTitle>
         <DialogContent>
           <RoleForm onSuccess={handleSuccess} onCancel={() => setIsModalOpen(false)} />
         </DialogContent>

@@ -1,4 +1,5 @@
 import { Box, Paper, Tooltip, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import type { Property } from '../../api/buildings'; // Убедитесь, что этот тип экспортируется из api/buildings.ts
 
 interface ChessboardProps {
@@ -36,11 +37,12 @@ const getStatusColor = (status: string) => {
 };
 
 export default function Chessboard({ properties, onCellClick }: ChessboardProps) {
+  const { t } = useTranslation();
   const propertiesByEntrance = groupProperties(properties);
   const entrances = Object.keys(propertiesByEntrance).map(Number).sort((a, b) => a - b);
 
   if (entrances.length === 0) {
-    return <Typography sx={{ p: 2, color: 'text.secondary' }}>Нет объектов для отображения в шахматке.</Typography>
+    return <Typography sx={{ p: 2, color: 'text.secondary' }}>{t('buildings.chessboard.no_properties')}</Typography>
   }
 
   return (
@@ -50,7 +52,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
         return (
           <Paper key={entrance} sx={{ p: 1, minWidth: 300, flexShrink: 0 }} variant="outlined">
             <Typography variant="h6" align="center" sx={{ mb: 1 }}>
-              Подъезд {entrance}
+              {t('buildings.chessboard.entrance')} {entrance}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
               {floors.map((floor) => (

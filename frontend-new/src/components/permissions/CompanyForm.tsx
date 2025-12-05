@@ -1,4 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -26,6 +27,7 @@ interface FormData {
 }
 
 export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFormProps) {
+  const { t } = useTranslation();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const isEdit = !!company;
 
@@ -58,7 +60,7 @@ export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFor
         error.response?.data?.detail ||
         error.response?.data?.message ||
         error.message ||
-        'Произошла ошибка';
+        t('errors.unknown_error');
       setErrorMsg(message);
     },
   });
@@ -75,11 +77,11 @@ export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFor
         <Controller
           name="name"
           control={control}
-          rules={{ required: 'Название обязательно' }}
+          rules={{ required: t('validation.required') }}
           render={({ field }) => (
             <TextField
               {...field}
-              label="Название компании"
+              label={t('pages.settings.permissions.company_name')}
               fullWidth
               error={!!errors.name}
               helperText={errors.name?.message}
@@ -91,15 +93,15 @@ export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFor
         <Controller
           name="code"
           control={control}
-          rules={{ required: 'Код обязателен' }}
+          rules={{ required: t('validation.required') }}
           render={({ field }) => (
             <TextField
               {...field}
-              label="Код компании"
+              label={t('pages.settings.permissions.company_code')}
               fullWidth
               error={!!errors.code}
-              helperText={errors.code?.message || 'Уникальный идентификатор компании'}
-              disabled={isEdit} // Код нельзя изменить после создания
+              helperText={errors.code?.message || t('pages.settings.permissions.code_help')}
+              disabled={isEdit}
             />
           )}
         />
@@ -110,11 +112,11 @@ export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFor
           render={({ field }) => (
             <TextField
               {...field}
-              label="Описание"
+              label={t('common.description')}
               fullWidth
               multiline
               rows={3}
-              helperText="Необязательное поле"
+              helperText={t('pages.settings.permissions.optional_field')}
             />
           )}
         />
@@ -125,17 +127,17 @@ export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFor
           render={({ field }) => (
             <FormControlLabel
               control={<Switch {...field} checked={field.value} />}
-              label="Активна"
+              label={t('pages.settings.permissions.active')}
             />
           )}
         />
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button onClick={onCancel} disabled={mutation.isPending}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button type="submit" variant="contained" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Сохранение...' : isEdit ? 'Обновить' : 'Создать'}
+            {mutation.isPending ? t('common.saving') : isEdit ? t('common.update') : t('common.create')}
           </Button>
         </Box>
       </Stack>

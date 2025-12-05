@@ -45,8 +45,22 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await apiLogin({ username, password });
+          // Преобразуем данные из API в формат User интерфейса
+          const userData = response.user;
+          const user = {
+            id: userData.id,
+            user_username: userData.user?.username || username,
+            user_full_name: userData.user?.full_name || userData.user?.username || username,
+            email: userData.user?.email,
+            is_system_admin: userData.is_system_admin,
+            company: userData.company?.id,
+            company_name: userData.company?.name,
+            department: userData.department?.id,
+            department_name: userData.department?.name,
+            roles: userData.roles || [],
+          };
           set({
-            user: response.user,
+            user,
             accessToken: response.access,
             refreshToken: response.refresh,
             isAuthenticated: true,

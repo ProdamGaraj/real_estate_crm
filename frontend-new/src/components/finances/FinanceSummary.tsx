@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getFinanceSummary, downloadFinanceSummary, type FinanceSummaryFilters } from '../../api/finances';
 import { Link as RouterLink } from 'react-router-dom';
 import {
@@ -17,10 +18,11 @@ import {
     Paper,
     Card,
     CardContent,
-    TextField,
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../common/LocalizedDataGrid';
 import { useForm, Controller } from 'react-hook-form';
+import { LocalizedDateField } from '../common/LocalizedDateField';
 
 type GroupBy = 'status' | 'project' | 'manager';
 
@@ -36,6 +38,7 @@ const KpiCard = ({ title, value, color = 'text.primary', linkTo }: { title: stri
 );
 
 export default function FinanceSummary() {
+    const { t } = useTranslation();
     const [filters, setFilters] = useState<FinanceSummaryFilters>({ group_by: 'status' });
 
     const { control, watch } = useForm<FinanceSummaryFilters>({
@@ -67,8 +70,8 @@ export default function FinanceSummary() {
     });
 
     const columns: GridColDef[] = [
-        { field: Object.keys(data?.summary[0] || {})[0], headerName: 'Группа', flex: 1 },
-        { field: 'Total Amount', headerName: 'Общая сумма', flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '0' },
+        { field: Object.keys(data?.summary[0] || {})[0], headerName: t('pages.finances.summary_group'), flex: 1 },
+        { field: 'Total Amount', headerName: t('pages.finances.total_amount'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '0' },
     ];
 
     const handleDownload = () => {
@@ -76,14 +79,14 @@ export default function FinanceSummary() {
     };
 
     if (isLoading) return <CircularProgress />;
-    if (isError) return <Alert severity="error">Ошибка загрузки сводки</Alert>;
+    if (isError) return <Alert severity="error">{t('errors.load_summary_error')}</Alert>;
 
     return (
         <Stack spacing={2}>
             <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                     <KpiCard
-                        title="Просроченные платежи"
+                        title={t('pages.finances.overdue_payments')}
                         value={data?.widgets.overdue_sum || 0}
                         color="error.main"
                         linkTo={{ tab: 0, filters: { status: 'OVERDUE' } }}
@@ -91,7 +94,7 @@ export default function FinanceSummary() {
                 </Grid>
                 <Grid item xs={12} md={6}>
                     <KpiCard
-                        title="Оплаченные платежи"
+                        title={t('pages.finances.paid_payments')}
                         value={data?.widgets.paid_sum || 0}
                         color="success.main"
                         linkTo={{ tab: 0, filters: { status: 'PAID' } }}
@@ -100,7 +103,7 @@ export default function FinanceSummary() {
             </Grid>
 
             <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
+                <Typography variant="h6" sx={{ mb: 2 }}>{t('common.filters')}</Typography>
                 <Grid container spacing={2} alignItems="center">
                      <Grid item xs={12} sm={6}>
                         <Controller
@@ -108,11 +111,11 @@ export default function FinanceSummary() {
                             control={control}
                             render={({ field }) => (
                                 <FormControl size="small" fullWidth>
-                                    <InputLabel>Группировать по</InputLabel>
-                                    <Select {...field} label="Группировать по">
-                                        <MenuItem value="status">Статусу</MenuItem>
-                                        <MenuItem value="project">Проекту</MenuItem>
-                                        <MenuItem value="manager">Менеджеру</MenuItem>
+                                    <InputLabel>{t('pages.finances.group_by')}</InputLabel>
+                                    <Select {...field} label={t('pages.finances.group_by')}>
+                                        <MenuItem value="status">{t('pages.finances.by_status')}</MenuItem>
+                                        <MenuItem value="project">{t('pages.finances.by_project')}</MenuItem>
+                                        <MenuItem value="manager">{t('pages.finances.by_manager')}</MenuItem>
                                     </Select>
                                 </FormControl>
                             )}
@@ -120,34 +123,50 @@ export default function FinanceSummary() {
                     </Grid>
                     <Grid item xs={6} sm={3}>
                         <Controller name="due_date_after" control={control} render={({ field }) => (
-                            <TextField {...field} label="К оплате от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                            <LocalizedDateField
+                                label={t('pages.finances.due_date_from')}
+                                value={field.value || null}
+                                onChange={field.onChange}
+                            />
                         )}/>
                     </Grid>
                     <Grid item xs={6} sm={3}>
                         <Controller name="due_date_before" control={control} render={({ field }) => (
-                            <TextField {...field} label="К оплате до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                            <LocalizedDateField
+                                label={t('pages.finances.due_date_to')}
+                                value={field.value || null}
+                                onChange={field.onChange}
+                            />
                         )}/>
                     </Grid>
                     <Grid item xs={6} sm={3}>
                         <Controller name="payment_date_after" control={control} render={({ field }) => (
-                            <TextField {...field} label="Факт оплаты от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                            <LocalizedDateField
+                                label={t('pages.finances.payment_date_from')}
+                                value={field.value || null}
+                                onChange={field.onChange}
+                            />
                         )}/>
                     </Grid>
                     <Grid item xs={6} sm={3}>
                         <Controller name="payment_date_before" control={control} render={({ field }) => (
-                            <TextField {...field} label="Факт оплаты до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} />
+                            <LocalizedDateField
+                                label={t('pages.finances.payment_date_to')}
+                                value={field.value || null}
+                                onChange={field.onChange}
+                            />
                         )}/>
                     </Grid>
                      <Grid item xs={12} sm={6}>
                         <Button variant="contained" onClick={handleDownload} fullWidth>
-                            Выгрузить в Excel
+                            {t('pages.finances.export_excel')}
                         </Button>
                     </Grid>
                 </Grid>
             </Paper>
 
             <Box sx={{ height: 500, width: '100%' }}>
-                <DataGrid
+                <LocalizedDataGrid
                     rows={data?.summary.map((row, index) => ({ id: index, ...row })) || []}
                     columns={columns}
                 />

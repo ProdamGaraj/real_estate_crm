@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -15,7 +16,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ru } from 'date-fns/locale';
+import { getDateFnsLocale } from '../../utils/translations';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { reopenTask, getTaskById, updateTask } from '../../api/tasks';
 import { getUsers } from '../../api/users';
@@ -40,9 +41,17 @@ const getDefaultStartTime = (): Date => {
 };
 
 export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClose, taskId }) => {
+  const { t } = useTranslation();
   const [startedAt, setStartedAt] = useState<Date | null>(getDefaultStartTime());
   const [deadline, setDeadline] = useState<Date | null>(null);
   const [title, setTitle] = useState('');
+
+  const priorityOptions = useMemo(() => [
+    { value: 'LOW', label: t('pages.tasks.priority_low') },
+    { value: 'NORMAL', label: t('pages.tasks.priority_normal') },
+    { value: 'HIGH', label: t('pages.tasks.priority_high') },
+    { value: 'URGENT', label: t('pages.tasks.priority_urgent') },
+  ], [t]);
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('NORMAL');
   const [assigneeId, setAssigneeId] = useState<number | null>(null);
@@ -233,14 +242,14 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
   const minDateTime = new Date();
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ru}>
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={getDateFnsLocale()}>
       <Dialog 
         open={open} 
         onClose={handleClose} 
         maxWidth="md" 
         fullWidth
       >
-        <DialogTitle>Вернуть задачу в работу и редактировать</DialogTitle>
+        <DialogTitle>{t('pages.tasks.return_task_and_edit')}</DialogTitle>
         <DialogContent>
           {apiError && (
             <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>
@@ -249,7 +258,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
           <Stack spacing={2} sx={{ mt: 2 }}>
             {/* Название - полная ширина */}
             <TextField
-              label="Название"
+              label={t('pages.tasks.task_title')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               fullWidth
@@ -258,7 +267,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
 
             {/* Описание - полная ширина */}
             <TextField
-              label="Описание"
+              label={t('common.description')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               fullWidth
@@ -278,7 +287,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Исполнитель"
+                  label={t('pages.tasks.assignee')}
                   required
                 />
               )}
@@ -288,7 +297,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Box sx={{ flex: 2 }}>
                 <DatePicker
-                  label="Дата начала"
+                  label={t('pages.tasks.start_date')}
                   value={startedAt}
                   onChange={(newValue) => {
                     if (newValue && startedAt) {
@@ -344,7 +353,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Час"
+                      label={t('pages.tasks.hour')}
                       placeholder="--"
                       error={startTimeError}
                       required
@@ -392,7 +401,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Минуты"
+                      label={t('pages.tasks.minutes')}
                       placeholder="--"
                       error={startTimeError}
                       required
@@ -411,7 +420,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Box sx={{ flex: 2 }}>
                 <DatePicker
-                  label="Дата дедлайна"
+                  label={t('pages.tasks.deadline_date')}
                   value={deadline}
                   onChange={(newValue) => {
                     if (newValue && deadline) {
@@ -468,7 +477,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Час"
+                      label={t('pages.tasks.hour')}
                       placeholder="--"
                       error={deadlineTimeError}
                       required
@@ -516,7 +525,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Минуты"
+                      label={t('pages.tasks.minutes')}
                       placeholder="--"
                       error={deadlineTimeError}
                       required
@@ -536,19 +545,20 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 select
-                label="Приоритет"
+                label={t('pages.tasks.priority')}
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
                 fullWidth
               >
-                <MenuItem value="LOW">Низкий</MenuItem>
-                <MenuItem value="NORMAL">Средний</MenuItem>
-                <MenuItem value="HIGH">Высокий</MenuItem>
-                <MenuItem value="URGENT">Срочный</MenuItem>
+                {priorityOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
               </TextField>
 
               <TextField
-                label="Теги"
+                label={t('pages.tasks.tags')}
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 fullWidth
@@ -567,14 +577,14 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
               value={users.filter((u) => watcherIds.includes(u.id))}
               onChange={(_, newValue) => setWatcherIds(newValue.map((u) => u.id))}
               renderInput={(params) => (
-                <TextField {...params} label="Наблюдатели" placeholder="Выберите наблюдателей" />
+                <TextField {...params} label={t('pages.tasks.watchers')} placeholder={t('pages.tasks.select_watchers')} />
               )}
             />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose} disabled={reopenMutation.isPending}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={handleReopen}
@@ -589,7 +599,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
               (startedAt && (startedAt.getHours() === null || startedAt.getMinutes() === null))
             }
           >
-            {reopenMutation.isPending ? 'Возврат...' : 'Вернуть в работу'}
+            {reopenMutation.isPending ? t('pages.tasks.returning') : t('pages.tasks.return_to_work')}
           </Button>
         </DialogActions>
       </Dialog>

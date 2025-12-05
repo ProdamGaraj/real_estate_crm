@@ -1,4 +1,5 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -18,7 +19,8 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
 import { getUserProfiles, getCompanies, getDepartments } from '../../api/permissions';
@@ -26,14 +28,6 @@ import UserForm from '../../components/permissions/UserForm';
 import AddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import FilterListIcon from '@mui/icons-material/FilterList';
-
-const ROLE_NAME_MAPPING: Record<string, string> = {
-  'SYSTEM_ADMIN': 'Системный администратор',
-  'COMPANY_ADMIN': 'Администратор компании',
-  'DEPARTMENT_MANAGER': 'Руководитель отдела',
-  'MANAGER': 'Менеджер',
-  'VIEWER': 'Наблюдатель',
-};
 
 // Вспомогательная функция для форматирования ФИО в формат "Фамилия И. О."
 function formatUserFullName(fullName: string | null): string {
@@ -59,101 +53,110 @@ function formatUserFullName(fullName: string | null): string {
   return formatted.join(' ');
 }
 
-const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID', width: 70 },
-  {
-    field: 'user_full_name',
-    headerName: 'Пользователь',
-    width: 250,
-    renderCell: (params) => {
-      const formattedName = formatUserFullName(params.row.user_full_name);
-      const username = params.row.user_username;
-      const displayText = formattedName
-        ? `${formattedName} (${username})`
-        : username || '—';
-
-      return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PersonIcon color="primary" fontSize="small" />
-          <Typography variant="body2" fontWeight="medium">
-            {displayText}
-          </Typography>
-        </Box>
-      );
-    },
-  },
-  {
-    field: 'company_name',
-    headerName: 'Компания',
-    width: 180,
-    renderCell: (params) => params.value || '—',
-  },
-  {
-    field: 'department_name',
-    headerName: 'Отдел',
-    width: 180,
-    renderCell: (params) => params.value || '—',
-  },
-  {
-    field: 'roles',
-    headerName: 'Роли',
-    width: 250,
-    renderCell: (params) => (
-      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-        {params.value?.length > 0 ? (
-          params.value.map((role: any) => {
-            const displayName = role.name || ROLE_NAME_MAPPING[role.code] || role.code;
-            return (
-              <Chip
-                key={role.id}
-                label={displayName}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            );
-          })
-        ) : (
-          <Typography variant="caption" color="text.secondary">
-            Нет ролей
-          </Typography>
-        )}
-      </Box>
-    ),
-  },
-  {
-    field: 'position',
-    headerName: 'Должность',
-    width: 150,
-    renderCell: (params) => params.value || '—',
-  },
-  {
-    field: 'is_system_admin',
-    headerName: 'Системный админ',
-    width: 140,
-    renderCell: (params) => (
-      params.value ? (
-        <Chip label="Да" color="error" size="small" />
-      ) : (
-        <Chip label="Нет" size="small" variant="outlined" />
-      )
-    ),
-  },
-  {
-    field: 'is_active',
-    headerName: 'Статус',
-    width: 120,
-    renderCell: (params) => (
-      <Chip
-        label={params.value ? 'Активен' : 'Неактивен'}
-        color={params.value ? 'success' : 'default'}
-        size="small"
-      />
-    ),
-  },
-];
-
 export default function UsersPage() {
+  const { t } = useTranslation();
+
+  const ROLE_NAME_MAPPING: Record<string, string> = {
+    'SYSTEM_ADMIN': t('pages.settings.permissions.role_system_admin'),
+    'COMPANY_ADMIN': t('pages.settings.permissions.role_company_admin'),
+    'DEPARTMENT_MANAGER': t('pages.settings.permissions.role_department_manager'),
+    'MANAGER': t('pages.settings.permissions.role_manager'),
+    'VIEWER': t('pages.settings.permissions.role_viewer'),
+  };
+
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    {
+      field: 'user_full_name',
+      headerName: t('pages.settings.permissions.user'),
+      width: 250,
+      renderCell: (params) => {
+        const formattedName = formatUserFullName(params.row.user_full_name);
+        const username = params.row.user_username;
+        const displayText = formattedName
+          ? `${formattedName} (${username})`
+          : username || '—';
+
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonIcon color="primary" fontSize="small" />
+            <Typography variant="body2" fontWeight="medium">
+              {displayText}
+            </Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'company_name',
+      headerName: t('pages.settings.permissions.company'),
+      width: 180,
+      renderCell: (params) => params.value || '—',
+    },
+    {
+      field: 'department_name',
+      headerName: t('pages.settings.permissions.department'),
+      width: 180,
+      renderCell: (params) => params.value || '—',
+    },
+    {
+      field: 'roles',
+      headerName: t('pages.settings.permissions.roles'),
+      width: 250,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          {params.value?.length > 0 ? (
+            params.value.map((role: any) => {
+              const displayName = role.name || ROLE_NAME_MAPPING[role.code] || role.code;
+              return (
+                <Chip
+                  key={role.id}
+                  label={displayName}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+              );
+            })
+          ) : (
+            <Typography variant="caption" color="text.secondary">
+              {t('pages.settings.permissions.no_roles')}
+            </Typography>
+          )}
+        </Box>
+      ),
+    },
+    {
+      field: 'position',
+      headerName: t('pages.settings.permissions.position'),
+      width: 150,
+      renderCell: (params) => params.value || '—',
+    },
+    {
+      field: 'is_system_admin',
+      headerName: t('pages.settings.permissions.system_admin'),
+      width: 140,
+      renderCell: (params) => (
+        params.value ? (
+          <Chip label={t('common.yes')} color="error" size="small" />
+        ) : (
+          <Chip label={t('common.no')} size="small" variant="outlined" />
+        )
+      ),
+    },
+    {
+      field: 'is_active',
+      headerName: t('pages.settings.permissions.status'),
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? t('pages.settings.permissions.active_status') : t('pages.settings.permissions.inactive_status')}
+          color={params.value ? 'success' : 'default'}
+          size="small"
+        />
+      ),
+    },
+  ];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [filters, setFilters] = useState({
@@ -206,10 +209,10 @@ export default function UsersPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Пользователи
+            {t('pages.settings.permissions.users_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Управление профилями пользователей и назначение ролей
+            {t('pages.settings.permissions.users_description')}
           </Typography>
         </Box>
         <Button
@@ -220,7 +223,7 @@ export default function UsersPage() {
             setIsModalOpen(true);
           }}
         >
-          Добавить пользователя
+          {t('pages.settings.permissions.add_user')}
         </Button>
       </Box>
 
@@ -228,17 +231,17 @@ export default function UsersPage() {
       <Paper sx={{ p: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <FilterListIcon color="action" />
-          <Typography variant="h6">Фильтры</Typography>
+          <Typography variant="h6">{t('pages.settings.permissions.filters')}</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <FormControl sx={{ minWidth: 200 }}>
-            <InputLabel>Компания</InputLabel>
+            <InputLabel>{t('pages.settings.permissions.company')}</InputLabel>
             <Select
               value={filters.company}
               onChange={(e) => setFilters({ ...filters, company: e.target.value, department: '' })}
-              label="Компания"
+              label={t('pages.settings.permissions.company')}
             >
-              <MenuItem value="">Все компании</MenuItem>
+              <MenuItem value="">{t('pages.settings.permissions.all_companies')}</MenuItem>
               {companies?.map((company) => (
                 <MenuItem key={company.id} value={company.id}>
                   {company.name}
@@ -248,13 +251,13 @@ export default function UsersPage() {
           </FormControl>
 
           <FormControl sx={{ minWidth: 200 }} disabled={!filters.company}>
-            <InputLabel>Отдел</InputLabel>
+            <InputLabel>{t('pages.settings.permissions.department')}</InputLabel>
             <Select
               value={filters.department}
               onChange={(e) => setFilters({ ...filters, department: e.target.value })}
-              label="Отдел"
+              label={t('pages.settings.permissions.department')}
             >
-              <MenuItem value="">Все отделы</MenuItem>
+              <MenuItem value="">{t('pages.settings.permissions.all_departments')}</MenuItem>
               {departments?.map((dept) => (
                 <MenuItem key={dept.id} value={dept.id}>
                   {dept.name}
@@ -264,15 +267,15 @@ export default function UsersPage() {
           </FormControl>
 
           <FormControl sx={{ minWidth: 150 }}>
-            <InputLabel>Статус</InputLabel>
+            <InputLabel>{t('pages.settings.permissions.status')}</InputLabel>
             <Select
               value={filters.is_active}
               onChange={(e) => setFilters({ ...filters, is_active: e.target.value })}
-              label="Статус"
+              label={t('pages.settings.permissions.status')}
             >
-              <MenuItem value="all">Все</MenuItem>
-              <MenuItem value="true">Активные</MenuItem>
-              <MenuItem value="false">Неактивные</MenuItem>
+              <MenuItem value="all">{t('pages.settings.permissions.all')}</MenuItem>
+              <MenuItem value="true">{t('pages.settings.permissions.active_plural')}</MenuItem>
+              <MenuItem value="false">{t('pages.settings.permissions.inactive_plural')}</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -282,7 +285,7 @@ export default function UsersPage() {
       <Paper sx={{ p: 2 }}>
         {isError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            Ошибка загрузки: {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+            {t('common.load_error')}: {error instanceof Error ? error.message : t('common.unknown_error')}
           </Alert>
         )}
 
@@ -291,7 +294,7 @@ export default function UsersPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <DataGrid
+          <LocalizedDataGrid
             rows={users || []}
             columns={columns}
             initialState={{
@@ -321,7 +324,7 @@ export default function UsersPage() {
         fullWidth
       >
         <DialogTitle>
-          {selectedUser ? `Редактировать пользователя: ${selectedUser.user_username}` : 'Создать пользователя'}
+          {selectedUser ? `${t('pages.settings.permissions.edit_user')}: ${selectedUser.user_username}` : t('pages.settings.permissions.create_user')}
         </DialogTitle>
         <DialogContent>
           <UserForm

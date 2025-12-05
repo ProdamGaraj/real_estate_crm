@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
     getProjectById, createBuilding, getBuildings, updateProject,
     uploadProjectImage, deleteProjectImage, deleteProject, deleteBuilding
@@ -14,7 +15,9 @@ import {
     DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Stack, Link as MuiLink, Grid,
     Avatar, IconButton, Card, CardMedia, CardActions, Alert, CardContent, CardHeader
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
+import LocalizedDateField from '../components/common/LocalizedDateField';
 import BuildingForm from '../components/buildings/BuildingForm';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -40,6 +43,7 @@ function TabPanel(props: TabPanelProps) {
 export default function ProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteProjectDialogOpen, setDeleteProjectDialogOpen] = useState(false);
@@ -63,7 +67,7 @@ export default function ProjectDetailPage() {
     enabled: !!projectId,
   });
 
-  const { register, handleSubmit, reset } = useForm<ProjectUpdatePayload>();
+  const { register, handleSubmit, reset, control } = useForm<ProjectUpdatePayload>();
 
   useEffect(() => {
     if (project) {
@@ -84,7 +88,7 @@ export default function ProjectDetailPage() {
     mutationFn: (data: ProjectUpdatePayload) => updateProject({ id: Number(projectId), payload: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      alert('Проект обновлен!');
+      alert(t('pages.projects.project_updated'));
     },
   });
 
@@ -153,23 +157,23 @@ export default function ProjectDetailPage() {
   }
 
   if (isError || !project) {
-    return <Alert severity="error">Не удалось загрузить данные проекта.</Alert>;
+    return <Alert severity="error">{t('errors.load_project_error')}</Alert>;
   }
 
   const buildingColumns: GridColDef<Building>[] = [
     { field: 'id', headerName: 'ID', width: 90 },
     {
-      field: 'name', headerName: 'Название/Номер', flex: 1,
+      field: 'name', headerName: t('pages.buildings.building_name'), flex: 1,
       renderCell: (params) => (
         <MuiLink component={RouterLink} to={`/projects/${projectId}/buildings/${params.id}`} underline="hover">
           {params.value}
         </MuiLink>
       )
     },
-    { field: 'floors_count', headerName: 'Этажей' },
+    { field: 'floors_count', headerName: t('pages.buildings.floors_count') },
     {
       field: 'actions',
-      headerName: 'Действия',
+      headerName: t('common.actions'),
       width: 100,
       sortable: false,
       renderCell: (params) => (
@@ -205,16 +209,16 @@ export default function ProjectDetailPage() {
               startIcon={<DeleteIcon />}
               onClick={() => setDeleteProjectDialogOpen(true)}
             >
-              Удалить проект
+              {t('pages.projects.delete_project')}
             </Button>
           </Stack>
       </Paper>
 
       <Box>
         <Tabs value={tabValue} onChange={(_, newVal) => setTabValue(newVal)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="Детали проекта" />
-          <Tab label={`Дома (${buildings?.length ?? 0})`} />
-          <Tab label={`Галерея (${project.gallery_images.length})`} />
+          <Tab label={t('pages.projects.project_details')} />
+          <Tab label={`${t('pages.projects.buildings')} (${buildings?.length ?? 0})`} />
+          <Tab label={`${t('pages.projects.gallery')} (${project.gallery_images.length})`} />
         </Tabs>
       </Box>
 
@@ -222,39 +226,48 @@ export default function ProjectDetailPage() {
         <form onSubmit={handleSubmit(onUpdateSubmit)}>
           <Stack spacing={3}>
             <Card variant="outlined">
-                <CardHeader title="Основная информация" avatar={<BusinessIcon />} />
+                <CardHeader title={t('pages.projects.main_info')} avatar={<BusinessIcon />} />
                 <CardContent>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Название проекта" {...register('name')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Адрес" {...register('address')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
-                        <Grid size={{ xs: 12 }}><TextField fullWidth multiline rows={4} label="Описание" {...register('description')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.projects.project_name')} {...register('name')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.projects.address')} {...register('address')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <Controller name="cadastre_date_plan" control={control} render={({ field }) => (
+                            <LocalizedDateField
+                              label={t('pages.projects.cadastre_date_plan')}
+                              value={field.value || null}
+                              onChange={(date) => field.onChange(date || '')}
+                              fullWidth
+                            />
+                          )}/>
+                        </Grid>
+                        <Grid size={{ xs: 12 }}><TextField fullWidth multiline rows={4} label={t('pages.projects.description')} {...register('description')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
 
             <Card variant="outlined">
-                <CardHeader title="Уникальные торговые предложения (УТП)" avatar={<StarIcon />} />
+                <CardHeader title={t('pages.projects.usp_title')} avatar={<StarIcon />} />
                 <CardContent>
                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="УТП 3" {...register('usp_3')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.projects.usp_1')} {...register('usp_1')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.projects.usp_2')} {...register('usp_2')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.projects.usp_3')} {...register('usp_3')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
 
             <Card variant="outlined">
-                <CardHeader title="Юридическая информация" avatar={<ArticleIcon />} />
+                <CardHeader title={t('pages.projects.legal_info')} avatar={<ArticleIcon />} />
                 <CardContent>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12 }}><TextField fullWidth multiline rows={3} label="Реквизиты застройщика" {...register('developer_details')} /></Grid>
+                        <Grid size={{ xs: 12 }}><TextField fullWidth multiline rows={3} label={t('pages.projects.developer_details')} {...register('developer_details')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
 
             <Box>
-                <Button type="submit" variant="contained" disabled={updateProjectMutation.isPending}>Сохранить изменения</Button>
+                <Button type="submit" variant="contained" disabled={updateProjectMutation.isPending}>{t('common.save')}</Button>
             </Box>
           </Stack>
         </form>
@@ -262,17 +275,17 @@ export default function ProjectDetailPage() {
 
       <TabPanel value={tabValue} index={1}>
         <Stack spacing={2} sx={{ mb: 2 }}>
-            <Button variant="contained" onClick={() => setIsModalOpen(true)}>Добавить дом</Button>
-            <TextField label="Поиск по названию дома" fullWidth size="small" {...registerBuildingFilter('search')} />
+            <Button variant="contained" onClick={() => setIsModalOpen(true)}>{t('pages.projects.add_building')}</Button>
+            <TextField label={t('pages.projects.search_building')} fullWidth size="small" {...registerBuildingFilter('search')} />
         </Stack>
         <Box sx={{ height: 400, width: '100%' }}>
-          <DataGrid rows={buildings || []} columns={buildingColumns} loading={isLoadingBuildings} />
+          <LocalizedDataGrid rows={buildings || []} columns={buildingColumns} loading={isLoadingBuildings} />
         </Box>
       </TabPanel>
 
       <TabPanel value={tabValue} index={2}>
         <Button variant="contained" component="label" startIcon={<PhotoCamera />} sx={{ mb: 2 }}>
-            Загрузить изображение
+            {t('pages.projects.upload_image')}
             <input type="file" hidden accept="image/*" ref={fileInputRef} onChange={handleFileSelect} />
         </Button>
         <Grid container spacing={2}>
@@ -293,7 +306,7 @@ export default function ProjectDetailPage() {
 
       {/* Диалог создания дома */}
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Новый дом</DialogTitle>
+        <DialogTitle>{t('pages.buildings.new_building')}</DialogTitle>
         <DialogContent>
           <BuildingForm onSubmit={handleCreateBuilding} isPending={createBuildingMutation.isPending} />
         </DialogContent>
@@ -301,44 +314,42 @@ export default function ProjectDetailPage() {
 
       {/* Диалог подтверждения удаления проекта */}
       <Dialog open={deleteProjectDialogOpen} onClose={() => setDeleteProjectDialogOpen(false)}>
-        <DialogTitle>Удалить проект?</DialogTitle>
+        <DialogTitle>{t('pages.projects.delete_project')}?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Вы уверены, что хотите удалить проект "{project.name}"? 
-            Это действие нельзя отменить. Все связанные дома и данные будут удалены.
+            {t('pages.projects.delete_project_confirm', { name: project.name })}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteProjectDialogOpen(false)}>Отмена</Button>
+          <Button onClick={() => setDeleteProjectDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button 
             color="error" 
             variant="contained"
             onClick={() => deleteProjectMutation.mutate(Number(projectId))}
             disabled={deleteProjectMutation.isPending}
           >
-            {deleteProjectMutation.isPending ? 'Удаление...' : 'Удалить'}
+            {deleteProjectMutation.isPending ? t('common.deleting') : t('common.delete')}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Диалог подтверждения удаления дома */}
       <Dialog open={deleteBuildingDialogOpen} onClose={() => setDeleteBuildingDialogOpen(false)}>
-        <DialogTitle>Удалить дом?</DialogTitle>
+        <DialogTitle>{t('pages.buildings.delete_building')}?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Вы уверены, что хотите удалить дом "{buildingToDelete?.name}"? 
-            Это действие нельзя отменить. Все связанные планировки и помещения будут удалены.
+            {t('pages.buildings.delete_building_confirm', { name: buildingToDelete?.name })}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteBuildingDialogOpen(false)}>Отмена</Button>
+          <Button onClick={() => setDeleteBuildingDialogOpen(false)}>{t('common.cancel')}</Button>
           <Button 
             color="error" 
             variant="contained"
             onClick={() => buildingToDelete && deleteBuildingMutation.mutate(buildingToDelete.id)}
             disabled={deleteBuildingMutation.isPending}
           >
-            {deleteBuildingMutation.isPending ? 'Удаление...' : 'Удалить'}
+            {deleteBuildingMutation.isPending ? t('common.deleting') : t('common.delete')}
           </Button>
         </DialogActions>
       </Dialog>

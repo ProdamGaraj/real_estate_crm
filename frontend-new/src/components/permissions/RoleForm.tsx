@@ -10,6 +10,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { translateResource } from '../../utils/translations';
 import {
   createRole,
   updateRole,
@@ -35,35 +37,6 @@ interface RoleFormProps {
   onCancel: () => void;
 }
 
-// Русские названия ресурсов
-const RESOURCE_LABELS: Record<string, string> = {
-  CLIENT: 'Клиенты',
-  APPLICATION: 'Заявки',
-  MEETING: 'Встречи',
-  DEAL: 'Сделки',
-  PAYMENT: 'Платежи',
-  REFUND: 'Возвраты',
-  PROJECT: 'Проекты',
-  BUILDING: 'Здания',
-  PROPERTY: 'Объекты недвижимости',
-  LAYOUT: 'Планировки',
-  DISCOUNT: 'Скидки',
-  DOCUMENT: 'Документы',
-  REPORT: 'Отчеты',
-  COMPANY: 'Компании',
-  DEPARTMENT: 'Отделы',
-  ROLE: 'Роли',
-  USER: 'Пользователи',
-  BENEFICIARY_ACCOUNT: 'Счета получателей',
-  DASHBOARD: 'Дашборд',
-  PAYMENT_TYPE: 'Типы платежей',
-  PERMISSION: 'Разрешения',
-  PLAN: 'Планы',
-  SETTINGS: 'Настройки',
-  TEMPLATE: 'Шаблоны',
-  OTHER: 'Прочее',
-};
-
 // Группировка разрешений по ресурсам
 const groupPermissionsByResource = (permissions: any[]) => {
   const grouped: Record<string, any[]> = {};
@@ -80,6 +53,7 @@ const groupPermissionsByResource = (permissions: any[]) => {
 };
 
 export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: role?.name || '',
     code: role?.code || '',
@@ -186,7 +160,7 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
       onSuccess();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.detail || err.message || 'Ошибка при сохранении роли');
+      setError(err.response?.data?.detail || err.message || t('errors.save_role_error'));
     },
   });
 
@@ -272,7 +246,7 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
         {/* Основная информация */}
         <TextField
-          label="Название роли"
+          label={t('pages.settings.permissions.role_name')}
           value={formData.name}
           onChange={handleNameChange}
           required
@@ -280,16 +254,16 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
         />
 
         <TextField
-          label="Код роли"
+          label={t('pages.settings.permissions.role_code')}
           value={formData.code}
           onChange={handleCodeChange}
           required
           fullWidth
-          helperText="Уникальный код роли (например: MANAGER, ADMIN)"
+          helperText={t('pages.settings.permissions.role_code_help')}
         />
 
         <TextField
-          label="Описание"
+          label={t('common.description')}
           value={formData.description}
           onChange={handleDescriptionChange}
           multiline
@@ -299,24 +273,24 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
         <FormControlLabel
           control={<Checkbox checked={formData.is_active} onChange={handleIsActiveChange} />}
-          label="Активная роль"
+          label={t('pages.settings.permissions.active_role')}
         />
 
         {/* Разрешения */}
         <Box>
           <Typography variant="h6" gutterBottom>
-            Разрешения {selectedPermissionsCount > 0 && `(${selectedPermissionsCount} выбрано)`}
+            {t('pages.permissions.permissions_matrix')} {selectedPermissionsCount > 0 && `(${selectedPermissionsCount} ${t('common.selected')})`}
           </Typography>
 
           {isLoading ? (
-            <Alert severity="info">Загрузка разрешений...</Alert>
+            <Alert severity="info">{t('common.loading')}</Alert>
           ) : (
             <Stack spacing={2}>
               {resources.map((resource) => (
                 <ResourcePermissionSelector
                   key={resource}
                   resourceName={resource}
-                  resourceLabel={RESOURCE_LABELS[resource] || resource}
+                  resourceLabel={translateResource(resource)}
                   permissions={permissionsHierarchy[resource] || emptyPermissionsMap[resource]}
                   companies={memoizedCompanies}
                   departments={memoizedDepartments}
@@ -331,14 +305,14 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
         {/* Кнопки */}
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button onClick={onCancel} disabled={mutation.isPending}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button
             type="submit"
             variant="contained"
             disabled={mutation.isPending || !formData.name || !formData.code}
           >
-            {mutation.isPending ? 'Сохранение...' : role ? 'Обновить' : 'Создать'}
+            {mutation.isPending ? t('common.saving') : role ? t('common.update') : t('common.create')}
           </Button>
         </Stack>
       </Stack>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -26,14 +27,6 @@ import {
   type UserProfile 
 } from '../../api/permissions';
 
-const ROLE_NAME_MAPPING: Record<string, string> = {
-  'SYSTEM_ADMIN': 'Системный администратор',
-  'COMPANY_ADMIN': 'Администратор компании',
-  'DEPARTMENT_MANAGER': 'Руководитель отдела',
-  'MANAGER': 'Менеджер',
-  'VIEWER': 'Наблюдатель',
-};
-
 interface UserFormProps {
   userProfile?: UserProfile | null;
   onSuccess: () => void;
@@ -41,6 +34,7 @@ interface UserFormProps {
 }
 
 export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormProps) {
+  const { t } = useTranslation();
   const isCreating = !userProfile;
   
   const [formData, setFormData] = useState({
@@ -114,7 +108,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
       } else {
         // Обновление существующего профиля
         if (!userProfile?.id) {
-          throw new Error('ID пользователя не найден');
+          throw new Error(t('errors.user_not_found'));
         }
         
         const payload: any = {
@@ -170,7 +164,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
       // Fallback сообщение
       const errorMessage = err.response?.data?.detail 
         || err.message 
-        || `Ошибка при ${isCreating ? 'создании' : 'сохранении'} пользователя`;
+        || t(isCreating ? 'errors.create_user_error' : 'errors.save_user_error');
       setError(errorMessage);
     },
   });
@@ -182,15 +176,15 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
     // Валидация для создания
     if (isCreating) {
       if (!formData.username.trim()) {
-        setError('Имя пользователя обязательно');
+        setError(t('validation.username_required'));
         return;
       }
       if (!formData.password.trim()) {
-        setError('Пароль обязателен');
+        setError(t('validation.password_required'));
         return;
       }
       if (formData.password.length < 8) {
-        setError('Пароль должен содержать минимум 8 символов');
+        setError(t('validation.password_min_length'));
         return;
       }
     }
@@ -207,30 +201,30 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
           <>
             {/* Поля для создания нового пользователя */}
             <Typography variant="h6" gutterBottom>
-              Данные пользователя
+              {t('pages.settings.permissions.user_data')}
             </Typography>
 
             <TextField
-              label="Имя пользователя (Username)"
+              label={t('pages.settings.permissions.username')}
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               required
               fullWidth
-              helperText="Используется для входа в систему"
+              helperText={t('pages.settings.permissions.username_help')}
             />
 
             <TextField
-              label="Пароль"
+              label={t('pages.settings.permissions.password')}
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
               fullWidth
-              helperText="Минимум 8 символов"
+              helperText={t('pages.settings.permissions.password_help')}
             />
 
             <TextField
-              label="Email"
+              label={t('common.email')}
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -238,14 +232,14 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
             />
 
             <TextField
-              label="Имя"
+              label={t('pages.settings.permissions.first_name')}
               value={formData.first_name}
               onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
               fullWidth
             />
 
             <TextField
-              label="Фамилия"
+              label={t('pages.settings.permissions.last_name')}
               value={formData.last_name}
               onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
               fullWidth
@@ -254,7 +248,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
             <Divider />
 
             <Typography variant="h6" gutterBottom>
-              Данные профиля
+              {t('pages.settings.permissions.profile_data')}
             </Typography>
           </>
         ) : (
@@ -262,7 +256,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
             {/* Информация о существующем пользователе */}
             <Box>
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Пользователь
+                {t('pages.settings.permissions.user')}
               </Typography>
               <Typography variant="h6">{userProfile?.user_username}</Typography>
               {userProfile?.user_full_name && (
@@ -278,13 +272,13 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
 
         {/* Компания */}
         <FormControl fullWidth>
-          <InputLabel>Компания</InputLabel>
+          <InputLabel>{t('common.company')}</InputLabel>
           <Select
             value={formData.company || ''}
             onChange={(e) => setFormData({ ...formData, company: e.target.value ? Number(e.target.value) : null })}
-            label="Компания"
+            label={t('common.company')}
           >
-            <MenuItem value="">Не назначена</MenuItem>
+            <MenuItem value="">{t('common.not_assigned')}</MenuItem>
             {companies?.map((company) => (
               <MenuItem key={company.id} value={company.id}>
                 {company.name}
@@ -295,13 +289,13 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
 
         {/* Отдел */}
         <FormControl fullWidth disabled={!formData.company}>
-          <InputLabel>Отдел</InputLabel>
+          <InputLabel>{t('pages.settings.permissions.department')}</InputLabel>
           <Select
             value={formData.department || ''}
             onChange={(e) => setFormData({ ...formData, department: e.target.value ? Number(e.target.value) : null })}
-            label="Отдел"
+            label={t('pages.settings.permissions.department')}
           >
-            <MenuItem value="">Не назначен</MenuItem>
+            <MenuItem value="">{t('common.not_assigned')}</MenuItem>
             {departments?.map((dept) => (
               <MenuItem key={dept.id} value={dept.id}>
                 {dept.name}
@@ -314,7 +308,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
         <Autocomplete
           multiple
           options={roles || []}
-          getOptionLabel={(option) => option.name || ROLE_NAME_MAPPING[option.code] || option.code}
+          getOptionLabel={(option) => option.name || option.code}
           value={roles?.filter(r => formData.roles.includes(r.id)) || []}
           onChange={(_, newValue) => {
             setFormData({ ...formData, roles: newValue.map(r => r.id) });
@@ -322,13 +316,13 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Роли"
-              placeholder="Выберите роли"
+              label={t('pages.settings.permissions.roles')}
+              placeholder={t('pages.settings.permissions.select_roles')}
             />
           )}
           renderTags={(value, getTagProps) =>
             value.map((option, index) => {
-              const displayName = option.name || ROLE_NAME_MAPPING[option.code] || option.code;
+              const displayName = option.name || option.code;
               const { key, ...chipProps } = getTagProps({ index });
               return (
                 <Chip
@@ -345,7 +339,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
 
         {/* Должность */}
         <TextField
-          label="Должность"
+          label={t('pages.settings.permissions.position')}
           value={formData.position}
           onChange={(e) => setFormData({ ...formData, position: e.target.value })}
           fullWidth
@@ -353,7 +347,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
 
         {/* Телефон */}
         <TextField
-          label="Телефон"
+          label={t('common.phone')}
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           fullWidth
@@ -373,9 +367,9 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
             }
             label={
               <Box>
-                <Typography variant="body2">Системный администратор</Typography>
+                <Typography variant="body2">{t('pages.settings.permissions.system_admin')}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Полный доступ ко всем функциям системы
+                  {t('pages.settings.permissions.system_admin_desc')}
                 </Typography>
               </Box>
             }
@@ -390,21 +384,21 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
               />
             }
-            label="Активный пользователь"
+            label={t('pages.settings.permissions.active_user')}
           />
         </Box>
 
         {/* Кнопки */}
         <Stack direction="row" spacing={2} justifyContent="flex-end">
           <Button onClick={onCancel} disabled={mutation.isPending}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button
             type="submit"
             variant="contained"
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Сохранение...' : 'Сохранить'}
+            {mutation.isPending ? t('common.saving') : t('common.save')}
           </Button>
         </Stack>
       </Stack>

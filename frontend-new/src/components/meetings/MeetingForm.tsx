@@ -1,10 +1,11 @@
 import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getBuildings } from '../../api/projects';
 import { getUsers } from '../../api/users';
 import { createMeeting, type MeetingPayload } from '../../api/meetings';
 import {
-  Box, Button, TextField, Stack, Autocomplete, CircularProgress
+  Box, Button, TextField, Stack, Autocomplete
 } from '@mui/material';
 
 interface MeetingFormProps {
@@ -16,6 +17,7 @@ interface MeetingFormProps {
 type FormInputs = Omit<MeetingPayload, 'client_id' | 'application_id'>;
 
 export default function MeetingForm({ clientId, applicationId, onSuccess }: MeetingFormProps) {
+  const { t } = useTranslation();
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormInputs>();
 
   const { data: users, isLoading: isLoadingUsers } = useQuery({
@@ -49,19 +51,19 @@ export default function MeetingForm({ clientId, applicationId, onSuccess }: Meet
         <Controller
           name="executor_id"
           control={control}
-          rules={{ required: 'Выберите исполнителя' }}
+          rules={{ required: t('pages.meetings.select_executor') }}
           render={({ field }) => (
             <Autocomplete
               options={users || []}
               loading={isLoadingUsers}
               getOptionLabel={(option) => `${option.first_name} ${option.last_name}`.trim() || option.username}
               onChange={(_, data) => field.onChange(data?.id)}
-              renderInput={(params) => <TextField {...params} label="Исполнитель" required error={!!errors.executor_id} />}
+              renderInput={(params) => <TextField {...params} label={t('forms.executor')} required error={!!errors.executor_id} />}
             />
           )}
         />
         <TextField
-          label="Плановая дата и время"
+          label={t('pages.meetings.planned_datetime')}
           type="datetime-local"
           required
           InputLabelProps={{ shrink: true }}
@@ -77,18 +79,18 @@ export default function MeetingForm({ clientId, applicationId, onSuccess }: Meet
               loading={isLoadingBuildings}
               getOptionLabel={(option) => option.name}
               onChange={(_, data) => field.onChange(data?.id)}
-              renderInput={(params) => <TextField {...params} label="Интересующий дом (необязательно)" />}
+              renderInput={(params) => <TextField {...params} label={t('pages.meetings.interested_building')} />}
             />
           )}
         />
         <TextField
-          label="Комментарий"
+          label={t('forms.comment')}
           multiline
           rows={3}
           {...register('comment')}
         />
         <Button type="submit" variant="contained" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Создание...' : 'Создать встречу'}
+          {mutation.isPending ? t('common.processing') : t('pages.meetings.create_meeting')}
         </Button>
       </Stack>
     </Box>

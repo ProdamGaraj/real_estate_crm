@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -32,74 +33,75 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SecurityIcon from '@mui/icons-material/Security';
 import InfoIcon from '@mui/icons-material/Info';
 
-// Области действия роли
-const ROLE_SCOPE_LABELS: Record<string, string> = {
-  SYSTEM: 'Вся система',
-  COMPANY: 'Компания',
-  DEPARTMENT: 'Отдел',
-  OWN: 'Только свои данные',
-};
-
-// Категории ролей
-const ROLE_CATEGORY_LABELS: Record<string, string> = {
-  ADMINISTRATIVE: 'Административная',
-  MANAGEMENT: 'Управленческая',
-  OPERATIONAL: 'Операционная',
-  READONLY: 'Только просмотр',
-  CUSTOM: 'Пользовательская',
-};
-
-// Русские названия для action
-const ACTION_LABELS: Record<string, string> = {
-  VIEW: 'Просмотр',
-  ADD: 'Создание',
-  EDIT: 'Редактирование',
-  DELETE: 'Удаление',
-};
-
-// Русские названия для scope
-const SCOPE_LABELS: Record<string, string> = {
-  OWN: 'Свои',
-  DEPARTMENT: 'Отдел',
-  COMPANY: 'Компания',
-  SYSTEM: 'Система',
-};
-
-// Русские названия для resource
-const RESOURCE_LABELS: Record<string, string> = {
-  CLIENT: 'Клиенты',
-  APPLICATION: 'Заявки',
-  MEETING: 'Встречи',
-  DEAL: 'Сделки',
-  PAYMENT: 'Платежи',
-  REFUND: 'Возвраты',
-  PROJECT: 'Проекты',
-  BUILDING: 'Здания',
-  PROPERTY: 'Объекты недвижимости',
-  LAYOUT: 'Планировки',
-  DISCOUNT: 'Скидки',
-  DOCUMENT: 'Документы',
-  REPORT: 'Отчеты',
-  COMPANY: 'Компании',
-  DEPARTMENT: 'Отделы',
-  ROLE: 'Роли',
-  USER: 'Пользователи',
-  BENEFICIARY_ACCOUNT: 'Счета получателей',
-  DASHBOARD: 'Дашборд',
-  PAYMENT_TYPE: 'Типы платежей',
-  PERMISSION: 'Разрешения',
-  PLAN: 'Планы',
-  SETTINGS: 'Настройки',
-  TEMPLATE: 'Шаблоны',
-  OTHER: 'Прочее',
-};
-
 export default function RoleDetailPage() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Области действия роли
+  const ROLE_SCOPE_LABELS = useMemo(() => ({
+    SYSTEM: t('pages.settings.permissions.scope_system'),
+    COMPANY: t('pages.settings.permissions.scope_company'),
+    DEPARTMENT: t('pages.settings.permissions.scope_department'),
+    OWN: t('pages.settings.permissions.scope_own'),
+  }), [t]);
+
+  // Категории ролей
+  const ROLE_CATEGORY_LABELS = useMemo(() => ({
+    ADMINISTRATIVE: t('pages.settings.permissions.category_administrative'),
+    MANAGEMENT: t('pages.settings.permissions.category_management'),
+    OPERATIONAL: t('pages.settings.permissions.category_operational'),
+    READONLY: t('pages.settings.permissions.category_readonly'),
+    CUSTOM: t('pages.settings.permissions.category_custom'),
+  }), [t]);
+
+  // Названия для action
+  const ACTION_LABELS = useMemo(() => ({
+    VIEW: t('pages.settings.permissions.action_view'),
+    ADD: t('pages.settings.permissions.action_add'),
+    EDIT: t('pages.settings.permissions.action_edit'),
+    DELETE: t('pages.settings.permissions.action_delete'),
+  }), [t]);
+
+  // Названия для scope
+  const SCOPE_LABELS = useMemo(() => ({
+    OWN: t('pages.settings.permissions.scope_own_short'),
+    DEPARTMENT: t('pages.settings.permissions.scope_department_short'),
+    COMPANY: t('pages.settings.permissions.scope_company_short'),
+    SYSTEM: t('pages.settings.permissions.scope_system_short'),
+  }), [t]);
+
+  // Названия для resource
+  const RESOURCE_LABELS = useMemo(() => ({
+    CLIENT: t('pages.settings.permissions.resource_client'),
+    APPLICATION: t('pages.settings.permissions.resource_application'),
+    MEETING: t('pages.settings.permissions.resource_meeting'),
+    DEAL: t('pages.settings.permissions.resource_deal'),
+    PAYMENT: t('pages.settings.permissions.resource_payment'),
+    REFUND: t('pages.settings.permissions.resource_refund'),
+    PROJECT: t('pages.settings.permissions.resource_project'),
+    BUILDING: t('pages.settings.permissions.resource_building'),
+    PROPERTY: t('pages.settings.permissions.resource_property'),
+    LAYOUT: t('pages.settings.permissions.resource_layout'),
+    DISCOUNT: t('pages.settings.permissions.resource_discount'),
+    DOCUMENT: t('pages.settings.permissions.resource_document'),
+    REPORT: t('pages.settings.permissions.resource_report'),
+    COMPANY: t('pages.settings.permissions.resource_company'),
+    DEPARTMENT: t('pages.settings.permissions.resource_department'),
+    ROLE: t('pages.settings.permissions.resource_role'),
+    USER: t('pages.settings.permissions.resource_user'),
+    BENEFICIARY_ACCOUNT: t('pages.settings.permissions.resource_beneficiary_account'),
+    DASHBOARD: t('pages.settings.permissions.resource_dashboard'),
+    PAYMENT_TYPE: t('pages.settings.permissions.resource_payment_type'),
+    PERMISSION: t('pages.settings.permissions.resource_permission'),
+    PLAN: t('pages.settings.permissions.resource_plan'),
+    SETTINGS: t('pages.settings.permissions.resource_settings'),
+    TEMPLATE: t('pages.settings.permissions.resource_template'),
+    OTHER: t('pages.settings.permissions.resource_other'),
+  }), [t]);
 
   const { data: role, isLoading, isError, error } = useQuery({
     queryKey: ['role', id],
@@ -151,13 +153,13 @@ export default function RoleDetailPage() {
   if (isError) {
     return (
       <Alert severity="error">
-        Ошибка загрузки: {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+        {t('errors.load_error')}: {error instanceof Error ? error.message : t('errors.unknown_error')}
       </Alert>
     );
   }
 
   if (!role) {
-    return <Alert severity="warning">Роль не найдена</Alert>;
+    return <Alert severity="warning">{t('pages.settings.permissions.role_not_found')}</Alert>;
   }
 
   const groupedPermissions = groupPermissionsByResource();
@@ -175,7 +177,7 @@ export default function RoleDetailPage() {
             {role.name}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Код: {role.code} • Область: {role.scope_display || ROLE_SCOPE_LABELS[role.scope]} • Категория: {role.category_display || ROLE_CATEGORY_LABELS[role.category]}
+            {t('pages.settings.permissions.code')}: {role.code} • {t('pages.settings.permissions.scope_label')} {role.scope_display || ROLE_SCOPE_LABELS[role.scope as keyof typeof ROLE_SCOPE_LABELS]} • {t('pages.settings.permissions.category_label')} {role.category_display || ROLE_CATEGORY_LABELS[role.category as keyof typeof ROLE_CATEGORY_LABELS]}
           </Typography>
         </Box>
         <Button
@@ -184,7 +186,7 @@ export default function RoleDetailPage() {
           onClick={() => setIsEditModalOpen(true)}
           disabled={role.is_system}
         >
-          Редактировать
+          {t('common.edit')}
         </Button>
         <Button
           variant="outlined"
@@ -193,14 +195,14 @@ export default function RoleDetailPage() {
           onClick={() => setIsDeleteDialogOpen(true)}
           disabled={role.is_system}
         >
-          Удалить
+          {t('common.delete')}
         </Button>
       </Box>
 
       {/* Системная роль предупреждение */}
       {role.is_system && (
         <Alert severity="info">
-          Это системная роль. Она не может быть изменена или удалена.
+          {t('pages.settings.permissions.system_role_warning')}
         </Alert>
       )}
 
@@ -211,13 +213,13 @@ export default function RoleDetailPage() {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <InfoIcon color="primary" />
-                <Typography variant="h6">Основная информация</Typography>
+                <Typography variant="h6">{t('pages.settings.permissions.basic_info')}</Typography>
               </Box>
               <Divider sx={{ mb: 2 }} />
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Название
+                    {t('pages.settings.permissions.name')}
                   </Typography>
                   <Typography variant="body1">
                     {role.name}
@@ -225,17 +227,17 @@ export default function RoleDetailPage() {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Код
+                    {t('pages.settings.permissions.code')}
                   </Typography>
                   <Typography variant="body1">{role.code}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Область действия
+                    {t('pages.settings.permissions.scope')}
                   </Typography>
                   <Typography variant="body1" component="div">
                     <Chip
-                      label={role.scope_display || ROLE_SCOPE_LABELS[role.scope]}
+                      label={role.scope_display || ROLE_SCOPE_LABELS[role.scope as keyof typeof ROLE_SCOPE_LABELS]}
                       color="primary"
                       size="small"
                     />
@@ -243,11 +245,11 @@ export default function RoleDetailPage() {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Категория
+                    {t('pages.settings.permissions.category')}
                   </Typography>
                   <Typography variant="body1" component="div">
                     <Chip
-                      label={role.category_display || ROLE_CATEGORY_LABELS[role.category]}
+                      label={role.category_display || ROLE_CATEGORY_LABELS[role.category as keyof typeof ROLE_CATEGORY_LABELS]}
                       color="info"
                       size="small"
                       variant="outlined"
@@ -257,18 +259,18 @@ export default function RoleDetailPage() {
                 {role.description && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">
-                      Описание
+                      {t('common.description')}
                     </Typography>
                     <Typography variant="body1">{role.description}</Typography>
                   </Box>
                 )}
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Статус
+                    {t('common.status')}
                   </Typography>
                   <Box sx={{ mt: 0.5 }}>
                     <Chip
-                      label={role.is_active ? 'Активна' : 'Неактивна'}
+                      label={role.is_active ? t('pages.settings.permissions.active_status') : t('pages.settings.permissions.inactive_status')}
                       color={role.is_active ? 'success' : 'default'}
                       size="small"
                     />
@@ -283,13 +285,13 @@ export default function RoleDetailPage() {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Статистика
+                {t('pages.settings.permissions.statistics')}
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <Stack spacing={2}>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Разрешений
+                    {t('pages.settings.permissions.permissions_count')}
                   </Typography>
                   <Typography variant="h4" color="primary">
                     {role.permissions?.length || 0}
@@ -297,18 +299,18 @@ export default function RoleDetailPage() {
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Дата создания
+                    {t('common.created_at')}
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(role.created_at).toLocaleString('ru-RU')}
+                    {new Date(role.created_at).toLocaleString(i18n.language === 'ru' ? 'ru-RU' : i18n.language === 'uz' ? 'uz-UZ' : 'en-US')}
                   </Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    Последнее обновление
+                    {t('common.updated_at')}
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(role.updated_at).toLocaleString('ru-RU')}
+                    {new Date(role.updated_at).toLocaleString(i18n.language === 'ru' ? 'ru-RU' : i18n.language === 'uz' ? 'uz-UZ' : 'en-US')}
                   </Typography>
                 </Box>
               </Stack>
@@ -321,23 +323,23 @@ export default function RoleDetailPage() {
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Матрица разрешений
+            {t('pages.settings.permissions.permissions_matrix')}
           </Typography>
           <Divider sx={{ mb: 2 }} />
           
           {Object.entries(groupedPermissions).map(([resource, perms]) => (
             <Box key={resource} sx={{ mb: 3 }}>
               <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-                {RESOURCE_LABELS[resource] || resource}
+                {RESOURCE_LABELS[resource as keyof typeof RESOURCE_LABELS] || resource}
                 <Chip label={perms.length} size="small" sx={{ ml: 1 }} />
               </Typography>
               <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Действие</TableCell>
-                      <TableCell>Область</TableCell>
-                      <TableCell>Описание</TableCell>
+                      <TableCell>{t('pages.settings.permissions.action')}</TableCell>
+                      <TableCell>{t('pages.settings.permissions.scope')}</TableCell>
+                      <TableCell>{t('common.description')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -345,7 +347,7 @@ export default function RoleDetailPage() {
                       <TableRow key={perm.id}>
                         <TableCell>
                           <Chip 
-                            label={ACTION_LABELS[perm.action] || perm.action}
+                            label={ACTION_LABELS[perm.action as keyof typeof ACTION_LABELS] || perm.action}
                             size="small"
                             color="primary"
                             variant="outlined"
@@ -353,7 +355,7 @@ export default function RoleDetailPage() {
                         </TableCell>
                         <TableCell>
                           <Chip 
-                            label={SCOPE_LABELS[perm.scope] || perm.scope}
+                            label={SCOPE_LABELS[perm.scope as keyof typeof SCOPE_LABELS] || perm.scope}
                             size="small"
                             color="secondary"
                             variant="outlined"
@@ -381,7 +383,7 @@ export default function RoleDetailPage() {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Редактировать роль</DialogTitle>
+        <DialogTitle>{t('pages.settings.permissions.edit_role')}</DialogTitle>
         <DialogContent>
           <RoleForm
             role={role}
@@ -397,13 +399,13 @@ export default function RoleDetailPage() {
         onClose={() => setIsDeleteDialogOpen(false)}
         maxWidth="xs"
       >
-        <DialogTitle>Удалить роль?</DialogTitle>
+        <DialogTitle>{t('pages.settings.permissions.delete_role')}?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" gutterBottom>
-            Вы уверены, что хотите удалить роль "{role.name}"?
+            {t('pages.settings.permissions.confirm_delete_role', { name: role.name })}
           </Typography>
           <Typography variant="body2" color="error">
-            Это действие нельзя отменить.
+            {t('common.action_irreversible')}
           </Typography>
           <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
             <Button
@@ -411,7 +413,7 @@ export default function RoleDetailPage() {
               onClick={() => setIsDeleteDialogOpen(false)}
               fullWidth
             >
-              Отмена
+              {t('common.cancel')}
             </Button>
             <Button
               variant="contained"
@@ -420,7 +422,7 @@ export default function RoleDetailPage() {
               disabled={deleteMutation.isPending}
               fullWidth
             >
-              {deleteMutation.isPending ? 'Удаление...' : 'Удалить'}
+              {deleteMutation.isPending ? t('common.deleting') : t('common.delete')}
             </Button>
           </Stack>
         </DialogContent>

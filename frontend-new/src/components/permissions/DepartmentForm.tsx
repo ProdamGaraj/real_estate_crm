@@ -1,4 +1,5 @@
 import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -44,6 +45,7 @@ export default function DepartmentForm({
   onSuccess,
   onCancel,
 }: DepartmentFormProps) {
+  const { t } = useTranslation();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const isEdit = !!department;
 
@@ -95,7 +97,7 @@ export default function DepartmentForm({
         error.response?.data?.detail ||
         error.response?.data?.message ||
         error.message ||
-        'Произошла ошибка';
+        t('errors.unknown_error');
       setErrorMsg(message);
     },
   });
@@ -116,11 +118,11 @@ export default function DepartmentForm({
         <Controller
           name="company"
           control={control}
-          rules={{ required: 'Компания обязательна' }}
+          rules={{ required: t('validation.required') }}
           render={({ field }) => (
             <FormControl fullWidth error={!!errors.company}>
-              <InputLabel>Компания</InputLabel>
-              <Select {...field} label="Компания" disabled={isEdit || !!companyId}>
+              <InputLabel>{t('common.company')}</InputLabel>
+              <Select {...field} label={t('common.company')} disabled={isEdit || !!companyId}>
                 {companies?.map((company) => (
                   <MenuItem key={company.id} value={company.id}>
                     {company.name}
@@ -134,11 +136,11 @@ export default function DepartmentForm({
         <Controller
           name="name"
           control={control}
-          rules={{ required: 'Название обязательно' }}
+          rules={{ required: t('validation.required') }}
           render={({ field }) => (
             <TextField
               {...field}
-              label="Название отдела"
+              label={t('pages.settings.permissions.department_name')}
               fullWidth
               error={!!errors.name}
               helperText={errors.name?.message}
@@ -153,9 +155,9 @@ export default function DepartmentForm({
           render={({ field }) => (
             <TextField
               {...field}
-              label="Код отдела"
+              label={t('pages.settings.permissions.code')}
               fullWidth
-              helperText="Необязательное поле. Уникальный идентификатор"
+              helperText={t('pages.settings.permissions.code_help')}
             />
           )}
         />
@@ -165,16 +167,16 @@ export default function DepartmentForm({
           control={control}
           render={({ field }) => (
             <FormControl fullWidth>
-              <InputLabel>Родительский отдел</InputLabel>
+              <InputLabel>{t('pages.settings.permissions.parent_department')}</InputLabel>
               <Select
                 {...field}
                 value={field.value || ''}
                 onChange={(e) => field.onChange(e.target.value || null)}
-                label="Родительский отдел"
+                label={t('pages.settings.permissions.parent_department')}
                 disabled={!selectedCompany}
               >
                 <MenuItem value="">
-                  <em>Нет (корневой отдел)</em>
+                  <em>{t('pages.settings.permissions.no_parent')}</em>
                 </MenuItem>
                 {availableParentDepartments.map((dept) => (
                   <MenuItem key={dept.id} value={dept.id}>
@@ -192,11 +194,11 @@ export default function DepartmentForm({
           render={({ field }) => (
             <TextField
               {...field}
-              label="Описание"
+              label={t('common.description')}
               fullWidth
               multiline
               rows={3}
-              helperText="Необязательное поле"
+              helperText={t('pages.settings.permissions.optional_field')}
             />
           )}
         />
@@ -207,17 +209,17 @@ export default function DepartmentForm({
           render={({ field }) => (
             <FormControlLabel
               control={<Switch {...field} checked={field.value} />}
-              label="Активен"
+              label={t('pages.settings.permissions.active')}
             />
           )}
         />
 
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button onClick={onCancel} disabled={mutation.isPending}>
-            Отмена
+            {t('common.cancel')}
           </Button>
           <Button type="submit" variant="contained" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Сохранение...' : isEdit ? 'Обновить' : 'Создать'}
+            {mutation.isPending ? t('common.saving') : isEdit ? t('common.update') : t('common.create')}
           </Button>
         </Box>
       </Stack>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Paper,
@@ -16,6 +17,7 @@ import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import { passwordResetConfirm } from '../../api/auth';
 
 export default function PasswordResetConfirmPage() {
+  const { t } = useTranslation();
   const { uid, token } = useParams<{ uid: string; token: string }>();
   const navigate = useNavigate();
 
@@ -35,22 +37,22 @@ export default function PasswordResetConfirmPage() {
 
     // Валидация
     if (!formData.password.trim() || !formData.confirmPassword.trim()) {
-      setError('Заполните все поля');
+      setError(t('auth.password_reset.fill_all_fields'));
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('Пароль должен содержать минимум 8 символов');
+      setError(t('validation.password_min_length'));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Пароли не совпадают');
+      setError(t('validation.passwords_not_match'));
       return;
     }
 
     if (!uid || !token) {
-      setError('Недействительная ссылка восстановления');
+      setError(t('auth.password_reset.invalid_link'));
       return;
     }
 
@@ -67,7 +69,7 @@ export default function PasswordResetConfirmPage() {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Ошибка при смене пароля. Возможно, ссылка устарела.');
+      setError(err.response?.data?.error || t('auth.password_reset.change_error'));
     } finally {
       setIsLoading(false);
     }
@@ -97,18 +99,17 @@ export default function PasswordResetConfirmPage() {
         >
           <CheckCircle sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
           <Typography variant="h5" gutterBottom fontWeight="bold">
-            Пароль успешно изменён
+            {t('auth.password_reset.success_title')}
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Вы можете войти в систему с новым паролем.
-            Через 3 секунды вы будете перенаправлены на страницу входа.
+            {t('auth.password_reset.success_message')}
           </Typography>
           <Button
             component={RouterLink}
             to="/login"
             variant="contained"
           >
-            Перейти к входу
+            {t('auth.password_reset.go_to_login')}
           </Button>
         </Paper>
       </Box>
@@ -138,10 +139,10 @@ export default function PasswordResetConfirmPage() {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <LockReset sx={{ fontSize: 60, color: 'primary.main', mb: 1 }} />
           <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-            Новый пароль
+            {t('auth.password_reset.new_password_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Введите новый пароль для вашей учётной записи
+            {t('auth.password_reset.new_password_subtitle')}
           </Typography>
         </Box>
 
@@ -153,7 +154,7 @@ export default function PasswordResetConfirmPage() {
 
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
-            label="Новый пароль"
+            label={t('auth.password_reset.new_password')}
             fullWidth
             type={showPassword ? 'text' : 'password'}
             value={formData.password}
@@ -162,7 +163,7 @@ export default function PasswordResetConfirmPage() {
             autoComplete="new-password"
             autoFocus
             disabled={isLoading}
-            helperText="Минимум 8 символов"
+            helperText={t('validation.password_min_length')}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -178,7 +179,7 @@ export default function PasswordResetConfirmPage() {
           />
 
           <TextField
-            label="Подтвердите пароль"
+            label={t('auth.password_reset.confirm_password')}
             fullWidth
             type={showConfirmPassword ? 'text' : 'password'}
             value={formData.confirmPassword}
@@ -211,7 +212,7 @@ export default function PasswordResetConfirmPage() {
             {isLoading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Сохранить новый пароль'
+              t('auth.password_reset.save_password')
             )}
           </Button>
 
@@ -222,7 +223,7 @@ export default function PasswordResetConfirmPage() {
               variant="body2"
               sx={{ textDecoration: 'none' }}
             >
-              Вернуться к входу
+              {t('auth.password_reset.back_to_login')}
             </Link>
           </Box>
         </Box>

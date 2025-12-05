@@ -1,9 +1,9 @@
 // src/components/buildings/BuildingForm.tsx
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getBuildingTypes } from '../../api/projects';
-import type { BuildingType } from '../../api/projects';
-import { Box, Button, TextField, Stack, Autocomplete, CircularProgress } from '@mui/material';
+import { Box, Button, TextField, Stack, Autocomplete } from '@mui/material';
 
 // Тип данных, которые мы отправляем для создания дома
 export interface BuildingPayload {
@@ -18,6 +18,7 @@ interface BuildingFormProps {
 }
 
 export default function BuildingForm({ onSubmit, isPending }: BuildingFormProps) {
+  const { t } = useTranslation();
   const { register, handleSubmit, control, formState: { errors } } = useForm<BuildingPayload>();
 
   const { data: buildingTypes, isLoading: isLoadingTypes } = useQuery({
@@ -29,19 +30,19 @@ export default function BuildingForm({ onSubmit, isPending }: BuildingFormProps)
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
       <Stack spacing={2}>
         <TextField
-          label="Название/Номер дома"
+          label={t('buildings.form.name')}
           fullWidth
           required
-          {...register('name', { required: 'Это поле обязательно' })}
+          {...register('name', { required: t('common.required_field') })}
           error={!!errors.name}
           helperText={errors.name?.message}
         />
         <TextField
-          label="Количество этажей"
+          label={t('buildings.form.floors_count')}
           fullWidth
           required
           type="number"
-          {...register('floors_count', { required: 'Это поле обязательно' })}
+          {...register('floors_count', { required: t('common.required_field') })}
           error={!!errors.floors_count}
           helperText={errors.floors_count?.message}
         />
@@ -55,12 +56,12 @@ export default function BuildingForm({ onSubmit, isPending }: BuildingFormProps)
               loading={isLoadingTypes}
               getOptionLabel={(option) => option.name}
               onChange={(_, data) => field.onChange(data?.id)}
-              renderInput={(params) => <TextField {...params} label="Тип дома" required error={!!errors.building_type_id} />}
+              renderInput={(params) => <TextField {...params} label={t('buildings.form.building_type')} required error={!!errors.building_type_id} />}
             />
           )}
         />
         <Button type="submit" variant="contained" disabled={isPending}>
-          {isPending ? 'Сохранение...' : 'Сохранить'}
+          {isPending ? t('common.saving') : t('common.save')}
         </Button>
       </Stack>
     </Box>

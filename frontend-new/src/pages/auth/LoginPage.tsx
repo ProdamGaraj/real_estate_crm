@@ -13,9 +13,12 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff, Login as LoginIcon } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, isLoading, error, clearError } = useAuthStore();
   
@@ -32,7 +35,7 @@ export default function LoginPage() {
     clearError();
 
     if (!formData.username.trim() || !formData.password.trim()) {
-      setLocalError('Заполните все поля');
+      setLocalError(t('auth.fill_all_fields'));
       return;
     }
 
@@ -55,8 +58,14 @@ export default function LoginPage() {
         justifyContent: 'center',
         background: 'var(--gradient-auth)',
         padding: 2,
+        position: 'relative',
       }}
     >
+      {/* Language Switcher */}
+      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <LanguageSwitcher />
+      </Box>
+      
       <Paper
         elevation={24}
         sx={{
@@ -69,10 +78,10 @@ export default function LoginPage() {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <LoginIcon sx={{ fontSize: 60, color: 'primary.main', mb: 1 }} />
           <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-            Вход в систему
+            {t('auth.login_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            CRM для управления недвижимостью
+            {t('auth.login_subtitle')}
           </Typography>
         </Box>
 
@@ -84,7 +93,7 @@ export default function LoginPage() {
 
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
-            label="Имя пользователя"
+            label={t('auth.username')}
             fullWidth
             value={formData.username}
             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -95,7 +104,7 @@ export default function LoginPage() {
           />
 
           <TextField
-            label="Пароль"
+            label={t('auth.password')}
             fullWidth
             type={showPassword ? 'text' : 'password'}
             value={formData.password}
@@ -124,7 +133,7 @@ export default function LoginPage() {
               variant="body2"
               sx={{ textDecoration: 'none' }}
             >
-              Забыли пароль?
+              {t('auth.forgot_password')}
             </Link>
           </Box>
 
@@ -139,22 +148,9 @@ export default function LoginPage() {
             {isLoading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Войти'
+              t('auth.login_button')
             )}
           </Button>
-        </Box>
-
-        <Box sx={{ textAlign: 'center', mt: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Нет учётной записи?{' '}
-            <Link
-              component={RouterLink}
-              to="/contact"
-              sx={{ textDecoration: 'none' }}
-            >
-              Свяжитесь с администратором
-            </Link>
-          </Typography>
         </Box>
       </Paper>
     </Box>

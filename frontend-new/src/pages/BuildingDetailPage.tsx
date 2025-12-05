@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   getBuildingById, uploadProperties, getPropertyTemplateUrl, updateBuilding,
   uploadBuildingImage, deleteBuildingImage
@@ -17,7 +18,9 @@ import {
     Stack, Button, Tabs, Tab, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
     Card, CardMedia, CardActions, IconButton, CardHeader, CardContent
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
+import LocalizedDateField from '../components/common/LocalizedDateField';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -63,12 +66,18 @@ const VisuallyHiddenInput = styled('input')({
 
 export default function BuildingDetailPage() {
   const { projectId, buildingId } = useParams<{ projectId: string; buildingId: string }>();
+  const { t, i18n } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [viewMode, setViewMode] = useState<'table' | 'chessboard'>('chessboard');
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const queryClient = useQueryClient();
   const [propertyFilters, setPropertyFilters] = useState({ unit_number: '', status: '' });
+
+  const getDateLocale = () => {
+    const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
+    return localeMap[i18n.language] || 'ru-RU';
+  };
   // const fileInputRef = useRef<HTMLInputElement>(null); // <-- ЭТОТ REF БОЛЬШЕ НЕ НУЖЕН
 
   const { data: building, isLoading, isError } = useQuery({
@@ -97,7 +106,7 @@ export default function BuildingDetailPage() {
     mutationFn: (data: BuildingUpdatePayload) => updateBuilding({ projectId: Number(projectId), buildingId: Number(buildingId), payload: data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['building', buildingId] });
-      alert('Данные дома обновлены');
+      alert(t('pages.buildings.update_success'));
     },
   });
 
@@ -108,7 +117,7 @@ export default function BuildingDetailPage() {
       alert(data.status);
     },
     onError: (error) => {
-      alert(`Ошибка загрузки: ${error.message}`);
+      alert(`${t('pages.buildings.upload_error')}: ${error.message}`);
     }
   });
 
@@ -160,8 +169,8 @@ export default function BuildingDetailPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
-      console.error("Ошибка при скачивании файла:", error);
-      alert("Не удалось скачать шаблон.");
+      console.error("Error downloading file:", error);
+      alert(t('pages.buildings.download_error'));
     }
   };
 
@@ -194,14 +203,14 @@ export default function BuildingDetailPage() {
 
 
   if (isLoading) return <CircularProgress />;
-  if (isError || !building) return <Alert severity="error">Не удалось загрузить данные о доме.</Alert>;
+  if (isError || !building) return <Alert severity="error">{t('errors.load_building')}</Alert>;
 
   const propertyColumns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 90 },
-    { field: 'unit_number', headerName: 'Номер объекта', flex: 1 },
-    { field: 'status', headerName: 'Статус', flex: 1 },
-    { field: 'area', headerName: 'Площадь (м²)', type: 'number' },
-    { field: 'price', headerName: 'Цена', type: 'number', flex: 1 },
+    { field: 'unit_number', headerName: t('pages.buildings.unit_number'), flex: 1 },
+    { field: 'status', headerName: t('common.status'), flex: 1 },
+    { field: 'area', headerName: t('pages.buildings.area'), type: 'number' },
+    { field: 'price', headerName: t('pages.buildings.price'), type: 'number', flex: 1 },
   ];
 
   return (
@@ -209,17 +218,17 @@ export default function BuildingDetailPage() {
       <Paper sx={{ p: 2 }}>
         <Typography variant="h4">{building.name}</Typography>
         <Typography color="text.secondary">
-          Проект: <MuiLink component={RouterLink} to={`/projects/${projectId}`} underline="hover">{building.project.name}</MuiLink>
+          {t('pages.buildings.project')}: <MuiLink component={RouterLink} to={`/projects/${projectId}`} underline="hover">{building.project.name}</MuiLink>
         </Typography>
       </Paper>
 
       <Box>
         <Tabs value={tabValue} onChange={(_, newVal) => setTabValue(newVal)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tab label="Детали дома" />
-          <Tab label={`Объекты (${building?.properties?.length ?? 0})`} />
-          <Tab label="Планировки" />
-          <Tab label={`Галерея (${building?.gallery_images?.length ?? 0})`} />
-          <Tab label={`Логи (${building?.logs?.length ?? 0})`} />
+          <Tab label={t('pages.buildings.details_tab')} />
+          <Tab label={`${t('pages.buildings.properties_tab')} (${building?.properties?.length ?? 0})`} />
+          <Tab label={t('pages.buildings.layouts_tab')} />
+          <Tab label={`${t('pages.buildings.gallery_tab')} (${building?.gallery_images?.length ?? 0})`} />
+          <Tab label={`${t('pages.buildings.logs_tab')} (${building?.logs?.length ?? 0})`} />
         </Tabs>
       </Box>
 
@@ -228,50 +237,68 @@ export default function BuildingDetailPage() {
         <form onSubmit={handleSubmit((data) => updateMutation.mutate(data))}>
           <Stack spacing={3}>
             <Card variant="outlined">
-                <CardHeader title="Основная информация" avatar={<BusinessIcon />} />
+                <CardHeader title={t('pages.buildings.main_info')} avatar={<BusinessIcon />} />
                 <CardContent>
                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Название/Номер" {...register('name')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Плановая дата кадастра" type="date" InputLabelProps={{ shrink: true }} {...register('cadastre_date_plan')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.name_number')} {...register('name')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <Controller name="cadastre_date_plan" control={control} render={({ field }) => (
+                            <LocalizedDateField
+                              label={t('pages.buildings.cadastre_date_plan')}
+                              value={field.value || null}
+                              onChange={(date) => field.onChange(date || '')}
+                              fullWidth
+                            />
+                          )}/>
+                        </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
                             <Controller name="status" control={control} defaultValue={building.status || ''} render={({ field }) => (
-                                <FormControl fullWidth><InputLabel>Статус</InputLabel>
-                                <Select {...field} label="Статус">
-                                    <MenuItem value="UNDER_REVIEW">На проверке</MenuItem>
-                                    <MenuItem value="FOR_SALE">В продаже</MenuItem>
-                                    <MenuItem value="COMPLETED">Сдан</MenuItem>
-                                    <MenuItem value="ARCHIVED">В архиве</MenuItem>
+                                <FormControl fullWidth><InputLabel>{t('common.status')}</InputLabel>
+                                <Select {...field} label={t('common.status')}>
+                                    <MenuItem value="UNDER_REVIEW">{t('statuses.building.UNDER_REVIEW')}</MenuItem>
+                                    <MenuItem value="FOR_SALE">{t('statuses.building.FOR_SALE')}</MenuItem>
+                                    <MenuItem value="COMPLETED">{t('statuses.building.COMPLETED')}</MenuItem>
+                                    <MenuItem value="ARCHIVED">{t('statuses.building.ARCHIVED')}</MenuItem>
                                 </Select></FormControl>
                             )}/>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
                             <Controller name="building_type_id" control={control} defaultValue={building.building_type?.id || ''} render={({ field }) => (
-                                <FormControl fullWidth><InputLabel>Тип дома</InputLabel>
-                                <Select {...field} label="Тип дома">
+                                <FormControl fullWidth><InputLabel>{t('pages.buildings.building_type')}</InputLabel>
+                                <Select {...field} label={t('pages.buildings.building_type')}>
                                     {buildingTypes?.map(bt => <MenuItem key={bt.id} value={bt.id}>{bt.name}</MenuItem>)}
                                 </Select></FormControl>
                             )}/>
                         </Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Кол-во этажей" type="number" {...register('floors_count')} /></Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Высота потолков (м)" {...register('ceiling_height')} /></Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label="Материал" {...register('material')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="Дата старта продаж" type="date" InputLabelProps={{ shrink: true }} {...register('sales_start_date')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.floors_count')} type="number" {...register('floors_count')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.ceiling_height')} {...register('ceiling_height')} /></Grid>
+                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.material')} {...register('material')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <Controller name="sales_start_date" control={control} render={({ field }) => (
+                            <LocalizedDateField
+                              label={t('pages.buildings.sales_start_date')}
+                              value={field.value || null}
+                              onChange={(date) => field.onChange(date || '')}
+                              fullWidth
+                            />
+                          )}/>
+                        </Grid>
                     </Grid>
                 </CardContent>
             </Card>
 
             <Card variant="outlined">
-                <CardHeader title="Уникальные торговые предложения (УТП)" avatar={<StarIcon />} />
+                <CardHeader title={t('pages.buildings.usp_title')} avatar={<StarIcon />} />
                 <CardContent>
                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="УТП 1" {...register('usp_1')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label="УТП 2" {...register('usp_2')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.buildings.usp_1')} {...register('usp_1')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.buildings.usp_2')} {...register('usp_2')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
 
             <Box>
-                <Button type="submit" variant="contained" disabled={updateMutation.isPending}>Сохранить</Button>
+                <Button type="submit" variant="contained" disabled={updateMutation.isPending}>{t('common.save')}</Button>
             </Box>
           </Stack>
         </form>
@@ -302,31 +329,31 @@ export default function BuildingDetailPage() {
 
             <Stack direction="row" spacing={2} alignItems="center">
                 <TextField
-                    label="Поиск по номеру"
+                    label={t('pages.buildings.search_by_number')}
                     size="small"
                     value={propertyFilters.unit_number}
                     onChange={(e) => setPropertyFilters(prev => ({ ...prev, unit_number: e.target.value }))}
                 />
                 <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <InputLabel>Статус</InputLabel>
+                    <InputLabel>{t('common.status')}</InputLabel>
                     <Select
                         value={propertyFilters.status}
-                        label="Статус"
+                        label={t('common.status')}
                         onChange={(e) => setPropertyFilters(prev => ({ ...prev, status: e.target.value }))}
                     >
-                        <MenuItem value=""><em>Все</em></MenuItem>
-                        <MenuItem value="SELECTION">Подбор</MenuItem>
-                        <MenuItem value="RESERVE">Резерв</MenuItem>
-                        <MenuItem value="BOOKING">Бронь</MenuItem>
-                        <MenuItem value="IN_DEAL">Сделка в работе</MenuItem>
-                        <MenuItem value="SOLD">Сделка проведена</MenuItem>
+                        <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
+                        <MenuItem value="SELECTION">{t('statuses.property.SELECTION')}</MenuItem>
+                        <MenuItem value="RESERVE">{t('statuses.property.RESERVE')}</MenuItem>
+                        <MenuItem value="BOOKING">{t('statuses.property.BOOKING')}</MenuItem>
+                        <MenuItem value="IN_DEAL">{t('statuses.property.IN_DEAL')}</MenuItem>
+                        <MenuItem value="SOLD">{t('statuses.property.SOLD')}</MenuItem>
                     </Select>
                 </FormControl>
             </Stack>
 
             <Stack direction="row" spacing={2}>
                 <Button variant="outlined" onClick={handleDownload}>
-                    Скачать шаблон
+                    {t('pages.buildings.download_template')}
                 </Button>
                 {/* === ОБНОВЛЕННАЯ КНОПКА ЗАГРУЗКИ === */}
                 <Button
@@ -337,7 +364,7 @@ export default function BuildingDetailPage() {
                     startIcon={<UploadFileIcon />}
                     disabled={uploadMutation.isPending}
                 >
-                    {uploadMutation.isPending ? 'Загрузка...' : 'Загрузить Excel'}
+                    {uploadMutation.isPending ? t('common.uploading') : t('pages.buildings.upload_excel')}
                     <VisuallyHiddenInput
                         type="file"
                         onChange={handleFileChange}
@@ -350,7 +377,7 @@ export default function BuildingDetailPage() {
         <Box sx={{ mt: 2 }}>
           {viewMode === 'table' ? (
             <Box sx={{ height: 500, width: '100%' }}>
-              <DataGrid rows={filteredProperties} columns={propertyColumns} />
+              <LocalizedDataGrid rows={filteredProperties} columns={propertyColumns} />
             </Box>
           ) : (
             <Chessboard
@@ -369,7 +396,7 @@ export default function BuildingDetailPage() {
       {/* ВКЛАДКА "ГАЛЕРЕЯ" */}
       <TabPanel value={tabValue} index={3}>
         <Button variant="contained" component="label" startIcon={<PhotoCamera />} sx={{ mb: 2 }}>
-            Загрузить фото
+            {t('pages.buildings.upload_photo')}
             <input type="file" hidden accept="image/*" onChange={handleGalleryFileChange} />
         </Button>
         <Grid container spacing={2}>
@@ -399,7 +426,7 @@ export default function BuildingDetailPage() {
                         </TimelineSeparator>
                         <TimelineContent sx={{ py: '12px', px: 2 }}>
                             <Typography variant="body2" color="text.secondary">
-                                {new Date(log.created_at).toLocaleString()} - {log.user || 'Система'}
+                                {new Date(log.created_at).toLocaleString(getDateLocale())} - {log.user || t('common.system')}
                             </Typography>
                             <HumanizedLog log={log} />
                         </TimelineContent>
@@ -417,3 +444,4 @@ export default function BuildingDetailPage() {
     </Stack>
   );
 }
+

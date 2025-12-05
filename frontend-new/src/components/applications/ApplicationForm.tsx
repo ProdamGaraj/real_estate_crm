@@ -2,21 +2,20 @@
 
 import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getClients } from '../../api/clients';
-import type { Client } from '../../api/clients';// Нам нужен список клиентов
+import type { Client } from '../../api/clients';
 import { createApplication } from '../../api/applications';
 import type { ApplicationPayload } from '../../api/applications';
-import {
-  Box, Button, TextField, Stack, Autocomplete, CircularProgress,
-  FormControl, InputLabel, Select, MenuItem
-} from '@mui/material';
+import { Box, Button, TextField, Stack, Autocomplete, CircularProgress } from '@mui/material';
 
 interface ApplicationFormProps {
   onSuccess: () => void;
 }
 
 export default function ApplicationForm({ onSuccess }: ApplicationFormProps) {
-  const { register, handleSubmit, control, formState: { errors } } = useForm<ApplicationPayload>({
+  const { t } = useTranslation();
+  const { handleSubmit, control, formState: { errors } } = useForm<ApplicationPayload>({
     defaultValues: {
       source: 'OFFICE',
     }
@@ -25,7 +24,7 @@ export default function ApplicationForm({ onSuccess }: ApplicationFormProps) {
   // Запрос на получение списка клиентов для выпадающего списка
   const { data: clients, isLoading: isLoadingClients } = useQuery<Client[]>({
     queryKey: ['clients'],
-    queryFn: getClients,
+    queryFn: () => getClients(),
   });
 
   const mutation = useMutation({
@@ -43,7 +42,7 @@ export default function ApplicationForm({ onSuccess }: ApplicationFormProps) {
         <Controller
           name="client_id" // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
           control={control}
-          rules={{ required: 'Необходимо выбрать клиента' }}
+          rules={{ required: t('applications.client_required') }}
           render={({ field }) => (
             <Autocomplete
               {...field}
@@ -54,9 +53,9 @@ export default function ApplicationForm({ onSuccess }: ApplicationFormProps) {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Клиент"
+                  label={t('applications.client')}
                   required
-                  error={!!errors.client}
+                  error={!!errors.client_id}
                   InputProps={{
                     ...params.InputProps,
                     endAdornment: (
@@ -74,7 +73,7 @@ export default function ApplicationForm({ onSuccess }: ApplicationFormProps) {
         {/* TODO: Добавить остальные поля (статус, интересы и т.д.) */}
 
         <Button type="submit" variant="contained" disabled={mutation.isPending}>
-          Создать заявку
+          {t('applications.create_application')}
         </Button>
       </Stack>
     </Box>

@@ -11,9 +11,11 @@ import {
 } from '@mui/material';
 import { MailOutline, ArrowBack } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { passwordResetRequest } from '../../api/auth';
 
 export default function PasswordResetRequestPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,14 +26,14 @@ export default function PasswordResetRequestPage() {
     setError(null);
 
     if (!email.trim()) {
-      setError('Введите email');
+      setError(t('auth.password_reset.enter_email_error'));
       return;
     }
 
     // Простая валидация email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Введите корректный email');
+      setError(t('auth.password_reset.invalid_email'));
       return;
     }
 
@@ -41,7 +43,7 @@ export default function PasswordResetRequestPage() {
       await passwordResetRequest({ email });
       setSuccess(true);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Ошибка при отправке запроса');
+      setError(err.response?.data?.error || t('auth.password_reset.request_error'));
     } finally {
       setIsLoading(false);
     }
@@ -71,11 +73,10 @@ export default function PasswordResetRequestPage() {
         >
           <MailOutline sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
           <Typography variant="h5" gutterBottom fontWeight="bold">
-            Письмо отправлено
+            {t('auth.password_reset.email_sent_title')}
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Инструкции по восстановлению пароля отправлены на указанный email.
-            Проверьте почту и следуйте инструкциям в письме.
+            {t('auth.password_reset.email_sent_message')}
           </Typography>
           <Button
             component={RouterLink}
@@ -83,7 +84,7 @@ export default function PasswordResetRequestPage() {
             variant="contained"
             startIcon={<ArrowBack />}
           >
-            Вернуться к входу
+            {t('auth.password_reset.back_to_login')}
           </Button>
         </Paper>
       </Box>
@@ -113,10 +114,10 @@ export default function PasswordResetRequestPage() {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <MailOutline sx={{ fontSize: 60, color: 'primary.main', mb: 1 }} />
           <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-            Восстановление пароля
+            {t('auth.password_reset.restoration_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Введите email, указанный при регистрации
+            {t('auth.password_reset.enter_email_hint')}
           </Typography>
         </Box>
 
@@ -128,7 +129,7 @@ export default function PasswordResetRequestPage() {
 
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
-            label="Email"
+            label={t('auth.email')}
             fullWidth
             type="email"
             value={email}
@@ -150,7 +151,7 @@ export default function PasswordResetRequestPage() {
             {isLoading ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              'Отправить инструкции'
+              t('auth.password_reset.send_instructions')
             )}
           </Button>
 
@@ -162,7 +163,7 @@ export default function PasswordResetRequestPage() {
               sx={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}
             >
               <ArrowBack fontSize="small" />
-              Вернуться к входу
+              {t('auth.password_reset.back_to_login')}
             </Link>
           </Box>
         </Box>

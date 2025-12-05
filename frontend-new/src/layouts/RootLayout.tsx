@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import EventIcon from '@mui/icons-material/Event';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 // Иконки
@@ -34,11 +35,12 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuthStore } from '../store/authStore';
 import { hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
 import type { ResourceType } from '../utils/permissions';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const drawerWidth = 240;
 
 interface NavItem {
-  text: string;
+  textKey: string; // i18n key for translation
   icon: React.ReactElement;
   path: string;
   resource?: ResourceType; // Ресурс для проверки прав
@@ -46,20 +48,21 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { text: 'Дашборд', icon: <DashboardIcon />, path: '/' },
-  { text: 'Клиенты', icon: <PeopleIcon />, path: '/clients', resource: 'CLIENT' },
-  { text: 'Заявки', icon: <AssignmentIcon />, path: '/applications', resource: 'APPLICATION' },
-  { text: 'Встречи', icon: <EventIcon />, path: '/meetings', resource: 'MEETING' },
-  { text: 'Задачи', icon: <ChecklistIcon />, path: '/tasks', resource: 'TASK' },
-  { text: 'Сделки', icon: <BusinessCenterIcon />, path: '/deals', resource: 'DEAL' },
-  { text: 'Проекты', icon: <AccountBalanceIcon />, path: '/projects', resource: 'PROJECT' },
-  { text: 'Финансы', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },
-  { text: 'Отчеты', icon: <AssessmentIcon />, path: '/reports' },
-  { text: 'Скидки', icon: <LocalOfferIcon />, path: '/discounts', resource: 'DISCOUNT' },
-  { text: 'Настройки', icon: <SettingsIcon />, path: '/settings?tab=companies', requireAdmin: true },
+  { textKey: 'nav.dashboard', icon: <DashboardIcon />, path: '/' },
+  { textKey: 'nav.clients', icon: <PeopleIcon />, path: '/clients', resource: 'CLIENT' },
+  { textKey: 'nav.applications', icon: <AssignmentIcon />, path: '/applications', resource: 'APPLICATION' },
+  { textKey: 'nav.meetings', icon: <EventIcon />, path: '/meetings', resource: 'MEETING' },
+  { textKey: 'nav.tasks', icon: <ChecklistIcon />, path: '/tasks', resource: 'TASK' },
+  { textKey: 'nav.deals', icon: <BusinessCenterIcon />, path: '/deals', resource: 'DEAL' },
+  { textKey: 'nav.projects', icon: <AccountBalanceIcon />, path: '/projects', resource: 'PROJECT' },
+  { textKey: 'nav.finances', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },
+  { textKey: 'nav.reports', icon: <AssessmentIcon />, path: '/reports' },
+  { textKey: 'nav.discounts', icon: <LocalOfferIcon />, path: '/discounts', resource: 'DISCOUNT' },
+  { textKey: 'nav.settings', icon: <SettingsIcon />, path: '/settings?tab=companies', requireAdmin: true },
 ];
 
 export default function RootLayout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -103,7 +106,7 @@ export default function RootLayout() {
     if (user?.user_full_name) {
       return user.user_full_name;
     }
-    return user?.user_username || 'Пользователь';
+    return user?.user_username || t('common.user');
   };
 
   const getUserInitials = () => {
@@ -134,8 +137,11 @@ export default function RootLayout() {
       >
         <Toolbar>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            CRM Недвижимость
+            {t('nav.app_title')}
           </Typography>
+
+          {/* Language Switcher */}
+          <LanguageSwitcher />
 
           {/* Информация о пользователе */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -165,26 +171,26 @@ export default function RootLayout() {
           >
             <MenuItem disabled>
               <AccountCircleIcon sx={{ mr: 1 }} />
-              {user?.email || 'Нет email'}
+              {user?.email || t('nav.no_email')}
             </MenuItem>
             {user?.company_name && (
               <MenuItem disabled>
                 <Typography variant="body2" color="text.secondary">
-                  Компания: {user.company_name}
+                  {t('nav.company_label')} {user.company_name}
                 </Typography>
               </MenuItem>
             )}
             {user?.department_name && (
               <MenuItem disabled>
                 <Typography variant="body2" color="text.secondary">
-                  Отдел: {user.department_name}
+                  {t('nav.department_label')} {user.department_name}
                 </Typography>
               </MenuItem>
             )}
             <Divider />
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
-              Выйти
+              {t('nav.logout')}
             </MenuItem>
           </Menu>
         </Toolbar>
@@ -206,10 +212,10 @@ export default function RootLayout() {
         <Box sx={{ overflow: 'auto' }}>
           <List>
             {visibleNavItems.map((item) => (
-              <ListItem key={item.text} disablePadding>
+              <ListItem key={item.textKey} disablePadding>
                 <ListItemButton component={Link} to={item.path}>
                   <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} />
+                  <ListItemText primary={t(item.textKey)} />
                 </ListItemButton>
               </ListItem>
             ))}

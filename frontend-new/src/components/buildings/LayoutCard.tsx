@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Box, Paper, Typography, Button, Stack, Card, CardContent, CardMedia } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import { Paper, Typography, Button, Stack, Card, CardContent, CardMedia } from '@mui/material';
 import { updateLayoutImage } from '../../api/layouts';
 import type { Layout } from '../../api/layouts';
 import UploadIcon from '@mui/icons-material/Upload';
@@ -11,7 +12,7 @@ interface LayoutCardProps {
 }
 
 // Вспомогательный компонент для одного загрузчика
-const ImageUploader = ({ title, imageUrl, onFileSelect }: { title: string, imageUrl: string | null, onFileSelect: (file: File) => void }) => {
+const ImageUploader = ({ title, imageUrl, onFileSelect, replaceLabel, uploadLabel }: { title: string, imageUrl: string | null, onFileSelect: (file: File) => void, replaceLabel: string, uploadLabel: string }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -27,7 +28,7 @@ const ImageUploader = ({ title, imageUrl, onFileSelect }: { title: string, image
           startIcon={<UploadIcon />}
           onClick={() => inputRef.current?.click()}
         >
-          {imageUrl ? 'Заменить' : 'Загрузить'}
+          {imageUrl ? replaceLabel : uploadLabel}
         </Button>
         <input
           type="file"
@@ -46,6 +47,7 @@ const ImageUploader = ({ title, imageUrl, onFileSelect }: { title: string, image
 };
 
 export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -55,7 +57,7 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
       queryClient.invalidateQueries({ queryKey: ['layouts', buildingId] });
     },
     onError: () => {
-      alert('Ошибка при загрузке изображения.');
+      alert(t('buildings.image_upload_error'));
     }
   });
 
@@ -65,14 +67,17 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
     mutation.mutate({ buildingId, layoutId: layout.id, formData });
   };
 
+  const replaceLabel = t('buildings.replace');
+  const uploadLabel = t('common.upload');
+
   return (
     <Paper sx={{ p: 2, mb: 2 }} variant="outlined">
       <Typography variant="h6" sx={{ mb: 2 }}>{layout.name}</Typography>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <ImageUploader title="Планировка" imageUrl={layout.main_layout_image} onFileSelect={(file) => handleFileUpdate('main_layout_image', file)} />
-        <ImageUploader title="Доп. планировка" imageUrl={layout.extra_layout_image} onFileSelect={(file) => handleFileUpdate('extra_layout_image', file)} />
-        <ImageUploader title="Расположение на этаже" imageUrl={layout.floor_plan_image} onFileSelect={(file) => handleFileUpdate('floor_plan_image', file)} />
-        <ImageUploader title="УТП фото" imageUrl={layout.usp_image} onFileSelect={(file) => handleFileUpdate('usp_image', file)} />
+        <ImageUploader title={t('buildings.layout_main')} imageUrl={layout.main_layout_image} onFileSelect={(file) => handleFileUpdate('main_layout_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
+        <ImageUploader title={t('buildings.layout_extra')} imageUrl={layout.extra_layout_image} onFileSelect={(file) => handleFileUpdate('extra_layout_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
+        <ImageUploader title={t('buildings.layout_floor')} imageUrl={layout.floor_plan_image} onFileSelect={(file) => handleFileUpdate('floor_plan_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
+        <ImageUploader title={t('buildings.layout_usp')} imageUrl={layout.usp_image} onFileSelect={(file) => handleFileUpdate('usp_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
       </Stack>
     </Paper>
   );

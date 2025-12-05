@@ -5,7 +5,10 @@ import {
   CircularProgress, Alert, Link as MuiLink, Paper, Grid, TextField, Stack,
   FormControl, InputLabel, Select, MenuItem, Tabs, Tab
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
+import { translateApplicationStatus, translateApplicationSource } from '../utils/translations';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getApplications } from '../api/applications';
 import type { ApplicationFilters } from '../api/applications'; // Импортируем тип
@@ -13,6 +16,7 @@ import ApplicationForm from '../components/applications/ApplicationForm';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form'; // Импортируем useForm
 import ApplicationSummary from '../components/applications/ApplicationSummary';
+import { LocalizedDateField } from '../components/common/LocalizedDateField';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -38,10 +42,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 
-const columns: GridColDef[] = [
+const getColumns = (t: (key: string) => string): GridColDef[] => [
   {
     field: 'id',
-    headerName: 'ID',
+    headerName: t('table.id'),
     width: 90,
     renderCell: (params) => (
       <MuiLink component={RouterLink} to={`/applications/${params.id}`} underline="hover">
@@ -49,13 +53,13 @@ const columns: GridColDef[] = [
       </MuiLink>
     )
   },
-  { field: 'status', headerName: 'Статус', width: 150 },
-  { field: 'source', headerName: 'Источник', width: 150 },
-  { field: 'client', headerName: 'Клиент', width: 250 },
-  { field: 'created_by', headerName: 'Кем создана', width: 200 },
+  { field: 'status', headerName: t('table.status'), width: 150, valueFormatter: (value) => translateApplicationStatus(value) },
+  { field: 'source', headerName: t('table.source'), width: 150, valueFormatter: (value) => translateApplicationSource(value) },
+  { field: 'client', headerName: t('table.client'), width: 250 },
+  { field: 'created_by', headerName: t('table.created_by'), width: 200 },
   {
     field: 'created_at',
-    headerName: 'Дата создания',
+    headerName: t('table.created_at'),
     type: 'dateTime',
     width: 200,
     valueGetter: (value) => new Date(value),
@@ -63,6 +67,8 @@ const columns: GridColDef[] = [
 ];
 
 export default function ApplicationsPage() {
+  const { t } = useTranslation();
+  const columns = getColumns(t);
   const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tabValue, setTabValue] = useState(location.state?.tab || 0);
@@ -102,21 +108,21 @@ export default function ApplicationsPage() {
   };
 
   if (isLoading) return <CircularProgress />;
-  if (isError) return <Alert severity="error">Ошибка загрузки заявок</Alert>;
+  if (isError) return <Alert severity="error">{t('errors.load_applications_error')}</Alert>;
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">Заявки</Typography>
+        <Typography variant="h4">{t('pages.applications.title')}</Typography>
         <Button variant="contained" onClick={() => setIsModalOpen(true)}>
-          Создать заявку
+          {t('pages.applications.create_application')}
         </Button>
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="Список заявок" />
-          <Tab label="Сводная таблица" />
+          <Tab label={t('pages.applications.application_list')} />
+          <Tab label={t('pages.applications.summary_table')} />
         </Tabs>
       </Box>
 
@@ -124,7 +130,7 @@ export default function ApplicationsPage() {
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* ПАНЕЛЬ ФИЛЬТРОВ */}
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
+            <Typography variant="h6" sx={{ mb: 2 }}>{t('common.filters')}</Typography>
             <Grid container spacing={2} alignItems="center">
               <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Controller
@@ -133,14 +139,14 @@ export default function ApplicationsPage() {
                   defaultValue=""
                   render={({ field }) => (
                     <FormControl fullWidth size="small">
-                      <InputLabel>Статус</InputLabel>
-                      <Select {...field} label="Статус">
-                        <MenuItem value=""><em>Все</em></MenuItem>
-                        <MenuItem value="NEW">Новая</MenuItem>
-                        <MenuItem value="IN_PROGRESS">В работе</MenuItem>
-                        <MenuItem value="JUNK">Нецелевая</MenuItem>
-                        <MenuItem value="REJECTED">Отказ</MenuItem>
-                        <MenuItem value="CLOSED_WON">Успешно закрыта</MenuItem>
+                      <InputLabel>{t('forms.status')}</InputLabel>
+                      <Select {...field} label={t('forms.status')}>
+                        <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
+                        <MenuItem value="NEW">{t('statuses.application.new')}</MenuItem>
+                        <MenuItem value="IN_PROGRESS">{t('statuses.application.in_progress')}</MenuItem>
+                        <MenuItem value="JUNK">{t('statuses.application.junk')}</MenuItem>
+                        <MenuItem value="REJECTED">{t('statuses.application.rejected')}</MenuItem>
+                        <MenuItem value="CLOSED_WON">{t('statuses.application.closed_won')}</MenuItem>
                       </Select>
                     </FormControl>
                   )}
@@ -153,38 +159,58 @@ export default function ApplicationsPage() {
                   defaultValue=""
                   render={({ field }) => (
                     <FormControl fullWidth size="small">
-                      <InputLabel>Источник</InputLabel>
-                      <Select {...field} label="Источник">
-                        <MenuItem value=""><em>Все</em></MenuItem>
-                        <MenuItem value="INTERNET">Интернет</MenuItem>
-                        <MenuItem value="SOCIAL_MEDIA">Соц.сети</MenuItem>
-                        <MenuItem value="OFFICE">Офис</MenuItem>
-                        <MenuItem value="CALL">Звонок</MenuItem>
+                      <InputLabel>{t('pages.applications.source')}</InputLabel>
+                      <Select {...field} label={t('pages.applications.source')}>
+                        <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
+                        <MenuItem value="INTERNET">{t('statuses.application_source.internet')}</MenuItem>
+                        <MenuItem value="SOCIAL_MEDIA">{t('statuses.application_source.social_media')}</MenuItem>
+                        <MenuItem value="OFFICE">{t('statuses.application_source.office')}</MenuItem>
+                        <MenuItem value="CALL">{t('statuses.application_source.call')}</MenuItem>
                       </Select>
                     </FormControl>
                   )}
                 />
               </Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Клиента" fullWidth size="small" {...register('client_id')} /></Grid>
-              <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label="ID Проекта" fullWidth size="small" {...register('interested_projects')} /></Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label={t('pages.applications.client_id')} fullWidth size="small" {...register('client_id')} /></Grid>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField type="number" label={t('pages.applications.project_id')} fullWidth size="small" {...register('interested_projects')} /></Grid>
               <Grid size={{ xs: 6, sm: 3, md: 3 }}>
-                <TextField label="Дата создания (от)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_after')} />
+                <Controller
+                  name="created_at_after"
+                  control={control}
+                  render={({ field }) => (
+                    <LocalizedDateField
+                      label={t('pages.applications.date_from')}
+                      value={field.value || null}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
               </Grid>
               <Grid size={{ xs: 6, sm: 3, md: 3 }}>
-                <TextField label="Дата создания (до)" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('created_at_before')} />
+                <Controller
+                  name="created_at_before"
+                  control={control}
+                  render={({ field }) => (
+                    <LocalizedDateField
+                      label={t('pages.applications.date_to')}
+                      value={field.value || null}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
               </Grid>
             </Grid>
           </Paper>
 
           <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle>Новая заявка</DialogTitle>
+            <DialogTitle>{t('pages.applications.new_application')}</DialogTitle>
             <DialogContent>
               <ApplicationForm onSuccess={handleSuccess} />
             </DialogContent>
           </Dialog>
 
           <Box sx={{ flex: 1, width: '100%', minHeight: 0 }}>
-            <DataGrid
+            <LocalizedDataGrid
               rows={data || []}
               columns={columns}
               initialState={{ sorting: { sortModel: [{ field: 'id', sort: 'desc' }] } }}

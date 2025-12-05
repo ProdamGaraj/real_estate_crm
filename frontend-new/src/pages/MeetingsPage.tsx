@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
     Box, Typography, CircularProgress, Alert, Chip, Link as MuiLink,
     Paper, Grid, TextField, FormControl, InputLabel, Select, MenuItem, Autocomplete, Stack, Tabs, Tab
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { useTranslation } from 'react-i18next';
+import { translateMeetingStatus } from '../utils/translations';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
+import LocalizedDateField from '../components/common/LocalizedDateField';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getMeetings, type Meeting, type MeetingFilters } from '../api/meetings';
 import MeetingDetailModal from '../components/meetings/MeetingDetailModal';
@@ -36,6 +40,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function MeetingsPage() {
+    const { t } = useTranslation();
     const location = useLocation();
     const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
     const [tabValue, setTabValue] = useState(location.state?.tab || 0);
@@ -80,9 +85,9 @@ export default function MeetingsPage() {
     });
 
     const columns: GridColDef<Meeting>[] = [
-        { field: 'id', headerName: 'ID', width: 80 },
+        { field: 'id', headerName: t('table.id'), width: 80 },
         {
-            field: 'client', headerName: 'Клиент', width: 220,
+            field: 'client', headerName: t('table.client'), width: 220,
             renderCell: (params) => (
                 <MuiLink component={RouterLink} to={`/clients/${params.row.client.id}`} underline="hover">
                     {params.row.client.full_name}
@@ -91,54 +96,54 @@ export default function MeetingsPage() {
         },
         {
             field: 'status',
-            headerName: 'Статус',
+            headerName: t('forms.status'),
             width: 180,
             renderCell: (params) => {
                 const needsResult = params.row.is_auto_created && !params.row.result_comment;
-                let label = params.row.status;
+                let label = translateMeetingStatus(params.row.status);
                 let color: "default" | "success" | "warning" | "error" | "info" = "default";
 
                 if (needsResult) {
-                    label = "Нужен результат";
+                    label = t('pages.meetings.needs_result');
                     color = "info";
                 } else if (params.row.is_overdue) {
-                    label = 'Просрочена';
+                    label = t('pages.meetings.overdue');
                     color = 'error';
                 } else if (params.value === 'COMPLETED') {
                     color = 'success';
                 } else if (params.value === 'CANCELLED') {
                     color = 'warning';
                 }
-                return <Chip label={label} color={color} size="small" variant={needsResult ? "outlined" : "filled"}/>;
+                return <Chip label={label} color={color} size="small" variant={needsResult ? "outlined" : "filled"} />;
             },
         },
-        { field: 'planned_date', headerName: 'План. дата', width: 180, type: 'dateTime', valueGetter: (value) => new Date(value) },
-        { field: 'executor', headerName: 'Исполнитель', width: 150 },
-        { field: 'creator', headerName: 'Постановщик', width: 150, valueGetter: (value) => value || 'Система' },
+        { field: 'planned_date', headerName: t('pages.meetings.planned_date'), width: 180, type: 'dateTime', valueGetter: (value) => new Date(value) },
+        { field: 'executor', headerName: t('pages.meetings.executor'), width: 150 },
+        { field: 'creator', headerName: t('pages.meetings.creator'), width: 150, valueGetter: (value) => value || t('common.system') },
     ];
 
     if (isLoading) return <CircularProgress />;
-    if (isError) return <Alert severity="error">Ошибка загрузки встреч</Alert>;
+    if (isError) return <Alert severity="error">{t('errors.load_meetings_error')}</Alert>;
 
     return (
         <Stack spacing={3}>
-            <Typography variant="h4">Встречи</Typography>
+            <Typography variant="h4">{t('pages.meetings.title')}</Typography>
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-                    <Tab label="Список встреч" />
-                    <Tab label="Сводная таблица" />
+                    <Tab label={t('pages.meetings.meeting_list')} />
+                    <Tab label={t('pages.meetings.summary_table')} />
                 </Tabs>
             </Box>
 
             <TabPanel value={tabValue} index={0}>
                 <Stack spacing={2}>
                     <Paper sx={{ p: 2 }}>
-                        <Typography variant="h6" sx={{ mb: 2 }}>Фильтры</Typography>
+                        <Typography variant="h6" sx={{ mb: 2 }}>{t('common.filters')}</Typography>
                         <Grid container spacing={2} alignItems="center">
                             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                 <Controller name="client_name" control={control} render={({ field }) => (
-                                        <TextField {...field} onChange={field.onChange} value={field.value || ''} label="Поиск по клиенту" fullWidth size="small" />
+                                        <TextField {...field} onChange={field.onChange} value={field.value || ''} label={t('pages.meetings.search_by_client')} fullWidth size="small" />
                                     )}
                                 />
                             </Grid>
@@ -149,7 +154,7 @@ export default function MeetingsPage() {
                                             loading={isLoadingUsers}
                                             getOptionLabel={(option) => `${option.first_name} ${option.last_name}`.trim() || option.username}
                                             onChange={(_, data) => field.onChange(data?.id || null)}
-                                            renderInput={(params) => <TextField {...params} label="Исполнитель" size="small" />}
+                                            renderInput={(params) => <TextField {...params} label={t('pages.meetings.executor')} size="small" />}
                                         />
                                     )}
                                 />
@@ -157,28 +162,44 @@ export default function MeetingsPage() {
                             <Grid size={{ xs: 12, sm: 6, md: 2 }}>
                                 <Controller name="status" control={control} render={({ field }) => (
                                     <FormControl fullWidth size="small">
-                                      <InputLabel>Статус</InputLabel>
-                                      <Select {...field} value={field.value || ''} label="Статус">
-                                        <MenuItem value=""><em>Все</em></MenuItem>
-                                        <MenuItem value="NEW">Новая</MenuItem>
-                                        <MenuItem value="COMPLETED">Состоялась</MenuItem>
-                                        <MenuItem value="CANCELLED">Не состоялась</MenuItem>
+                                      <InputLabel>{t('forms.status')}</InputLabel>
+                                      <Select {...field} value={field.value || ''} label={t('forms.status')}>
+                                        <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
+                                        <MenuItem value="NEW">{t('statuses.meeting.new')}</MenuItem>
+                                        <MenuItem value="COMPLETED">{t('statuses.meeting.completed')}</MenuItem>
+                                        <MenuItem value="CANCELLED">{t('statuses.meeting.cancelled')}</MenuItem>
                                       </Select>
                                     </FormControl>
                                   )}
                                 />
                             </Grid>
                             <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                                <TextField label="План от" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_after')} />
+                                <Controller name="planned_date_after" control={control} render={({ field }) => (
+                                    <LocalizedDateField
+                                        label={t('pages.meetings.plan_from')}
+                                        value={field.value || null}
+                                        onChange={(date) => field.onChange(date || '')}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                )} />
                             </Grid>
                             <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                                <TextField label="План до" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} {...register('planned_date_before')} />
+                                <Controller name="planned_date_before" control={control} render={({ field }) => (
+                                    <LocalizedDateField
+                                        label={t('pages.meetings.plan_to')}
+                                        value={field.value || null}
+                                        onChange={(date) => field.onChange(date || '')}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                )} />
                             </Grid>
                         </Grid>
                     </Paper>
 
                     <Box sx={{ height: 600, width: '100%' }}>
-                        <DataGrid
+                        <LocalizedDataGrid
                             rows={sortedMeetings}
                             columns={columns}
                             onRowClick={(params) => setSelectedMeeting(params.row)}
@@ -201,3 +222,4 @@ export default function MeetingsPage() {
         </Stack>
     );
 }
+

@@ -13,6 +13,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getCalendarData } from '../../api/tasks';
 import type { TaskFilters, TaskListItem } from '../../api/tasks';
 
@@ -21,6 +22,7 @@ interface TaskCalendarViewProps {
 }
 
 const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({ filters }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -68,10 +70,14 @@ const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({ filters }) => {
 
   const daysInMonth = getDaysInMonth();
   const firstDay = getFirstDayOfMonth();
-  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const monthNames = [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+  const weekDays = [
+    t('weekdays.short.mon'),
+    t('weekdays.short.tue'),
+    t('weekdays.short.wed'),
+    t('weekdays.short.thu'),
+    t('weekdays.short.fri'),
+    t('weekdays.short.sat'),
+    t('weekdays.short.sun')
   ];
 
   return (
@@ -81,7 +87,7 @@ const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({ filters }) => {
           <ChevronLeft />
         </IconButton>
         <Typography variant="h5">
-          {monthNames[month - 1]} {year}
+          {t(`months.${month}`)} {year}
         </Typography>
         <IconButton onClick={handleNextMonth}>
           <ChevronRight />
@@ -170,7 +176,7 @@ const TaskCalendarView: React.FC<TaskCalendarViewProps> = ({ filters }) => {
                 ))}
                 {dayTasks.length > 3 && (
                   <Typography variant="caption" color="text.secondary">
-                    +{dayTasks.length - 3} ещё
+                    {t('calendar.more', { count: dayTasks.length - 3 })}
                   </Typography>
                 )}
               </Box>

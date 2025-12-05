@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   Chip,
@@ -8,10 +8,12 @@ import {
 import {
   Edit as EditIcon,
 } from '@mui/icons-material';
-import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../common/LocalizedDataGrid';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import type { TaskListItem } from '../../api/tasks';
+import { translateStatus } from '../../utils/translations';
 
 interface TaskListViewProps {
   tasks: TaskListItem[];
@@ -19,15 +21,6 @@ interface TaskListViewProps {
   onRefresh: () => void;
   onEdit: (task: TaskListItem) => void;
 }
-
-const statusLabels: Record<string, string> = {
-  NEW: 'Новая',
-  IN_PROGRESS: 'В работе',
-  REVIEW: 'На проверке',
-  COMPLETED: 'Завершена',
-  CANCELLED: 'Отменена',
-  BLOCKED: 'Заблокирована',
-};
 
 const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'> = {
   NEW: 'default',
@@ -38,13 +31,6 @@ const statusColors: Record<string, 'default' | 'primary' | 'secondary' | 'succes
   BLOCKED: 'warning',
 };
 
-const priorityLabels: Record<string, string> = {
-  LOW: 'Низкий',
-  NORMAL: 'Обычный',
-  HIGH: 'Высокий',
-  URGENT: 'Срочный',
-};
-
 const priorityColors: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info'> = {
   LOW: 'default',
   NORMAL: 'info',
@@ -53,9 +39,10 @@ const priorityColors: Record<string, 'default' | 'primary' | 'secondary' | 'succ
 };
 
 const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const columns: GridColDef[] = [
+  const columns: GridColDef[] = useMemo(() => [
     {
       field: 'id',
       headerName: 'ID',
@@ -63,7 +50,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
     },
     {
       field: 'title',
-      headerName: 'Название',
+      headerName: t('common.name'),
       flex: 1,
       minWidth: 200,
       renderCell: (params: GridRenderCellParams<TaskListItem>) => (
@@ -82,14 +69,14 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
     },
     {
       field: 'status',
-      headerName: 'Статус',
+      headerName: t('common.status'),
       width: 140,
       renderCell: (params: GridRenderCellParams<TaskListItem>) => {
         // Если задача завершена с просрочкой - показываем особый статус
         if (params.row.status === 'COMPLETED' && params.row.completed_with_delay) {
           return (
             <Chip
-              label="Просрочено ✓"
+              label={t('pages.tasks.overdue_completed')}
               color="warning"
               size="small"
             />
@@ -98,7 +85,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
         
         return (
           <Chip
-            label={statusLabels[params.row.status] || params.row.status}
+            label={translateStatus(params.row.status, 'task')}
             color={statusColors[params.row.status] || 'default'}
             size="small"
           />
@@ -107,11 +94,11 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
     },
     {
       field: 'priority',
-      headerName: 'Приоритет',
+      headerName: t('pages.tasks.priority'),
       width: 120,
       renderCell: (params: GridRenderCellParams<TaskListItem>) => (
         <Chip
-          label={priorityLabels[params.row.priority] || params.row.priority}
+          label={translateStatus(params.row.priority, 'task_priority')}
           color={priorityColors[params.row.priority] || 'default'}
           size="small"
         />
@@ -119,19 +106,19 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
     },
     {
       field: 'assignee',
-      headerName: 'Исполнитель',
+      headerName: t('pages.tasks.assignee'),
       width: 180,
       valueGetter: (_value, row) => row.assignee?.full_name || row.assignee?.username || '-',
     },
     {
       field: 'creator',
-      headerName: 'Автор',
+      headerName: t('pages.tasks.author'),
       width: 180,
       valueGetter: (_value, row) => row.creator?.full_name || row.creator?.username || '-',
     },
     {
       field: 'deadline',
-      headerName: 'Срок',
+      headerName: t('pages.tasks.deadline'),
       width: 120,
       renderCell: (params: GridRenderCellParams<TaskListItem>) => {
         if (!params.row.deadline) return '-';
@@ -145,7 +132,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
     },
     {
       field: 'created_at',
-      headerName: 'Создана',
+      headerName: t('common.created_at'),
       width: 120,
       renderCell: (params: GridRenderCellParams<TaskListItem>) => {
         const createdAt = new Date(params.row.created_at);
@@ -154,12 +141,12 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
     },
     {
       field: 'company_name',
-      headerName: 'Компания',
+      headerName: t('common.company'),
       width: 150,
     },
     {
       field: 'tags',
-      headerName: 'Теги',
+      headerName: t('pages.tasks.tags'),
       width: 150,
       renderCell: (params: GridRenderCellParams<TaskListItem>) => {
         if (!params.row.tags) return '-';
@@ -176,12 +163,12 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
     },
     {
       field: 'actions',
-      headerName: 'Действия',
+      headerName: t('common.actions'),
       width: 120,
       sortable: false,
       renderCell: (params: GridRenderCellParams<TaskListItem>) => (
         <Box>
-          <Tooltip title="Редактировать">
+          <Tooltip title={t('common.edit')}>
             <IconButton
               size="small"
               onClick={(e) => {
@@ -195,11 +182,11 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
         </Box>
       ),
     },
-  ];
+  ], [t, navigate, onEdit]);
 
   return (
     <Box sx={{ width: '100%' }}>
-      <DataGrid
+      <LocalizedDataGrid
         rows={tasks}
         columns={columns}
         loading={loading}

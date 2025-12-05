@@ -1,40 +1,43 @@
 // real_estate_crm/frontend-new/src/components/settings/TemplateTagsCheatSheet.tsx
 
 import { Box, Paper, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
-
-const tags = {
-  "Клиент": [
-    { tag: '{{client.full_name}}', desc: 'ФИО клиента' },
-    { tag: '{{client.phone_number}}', desc: 'Основной номер телефона' },
-    { tag: '{{client.email}}', desc: 'Email' },
-    { tag: '{{client.passport_series}}', desc: 'Серия паспорта' },
-    { tag: '{{client.passport_number}}', desc: 'Номер паспорта' },
-  ],
-  "Сделка": [
-    { tag: '{{deal.id}}', desc: 'ID сделки' },
-    { tag: '{{deal.contract_number}}', desc: 'Номер договора' },
-    { tag: '{{deal.contract_date}}', desc: 'Дата договора' },
-    { tag: '{{deal.contract_price}}', desc: 'Стоимость по договору' },
-    { tag: '{{deal.booking_end_date}}', desc: 'Дата окончания брони' },
-  ],
-  "Объект": [
-    { tag: '{{property.unit_number}}', desc: 'Номер объекта' },
-    { tag: '{{property.floor}}', desc: 'Этаж' },
-    { tag: '{{property.area}}', desc: 'Площадь' },
-    { tag: '{{property.price}}', desc: 'Стоимость (начальная)' },
-  ],
-  "Дом и Проект": [
-    { tag: '{{building.name}}', desc: 'Название дома/корпуса' },
-    { tag: '{{project.name}}', desc: 'Название ЖК' },
-  ]
-};
+import { useTranslation } from 'react-i18next';
 
 export default function TemplateTagsCheatSheet() {
+  const { t } = useTranslation();
+
+  const tags = {
+    [t('template_tags.client')]: [
+      { tag: '{{client.full_name}}', desc: t('template_tags.client_full_name') },
+      { tag: '{{client.phone_number}}', desc: t('template_tags.client_phone') },
+      { tag: '{{client.email}}', desc: t('template_tags.client_email') },
+      { tag: '{{client.passport_series}}', desc: t('template_tags.client_passport_series') },
+      { tag: '{{client.passport_number}}', desc: t('template_tags.client_passport_number') },
+    ],
+    [t('template_tags.deal')]: [
+      { tag: '{{deal.id}}', desc: t('template_tags.deal_id') },
+      { tag: '{{deal.contract_number}}', desc: t('template_tags.deal_contract_number') },
+      { tag: '{{deal.contract_date}}', desc: t('template_tags.deal_contract_date') },
+      { tag: '{{deal.contract_price}}', desc: t('template_tags.deal_contract_price') },
+      { tag: '{{deal.booking_end_date}}', desc: t('template_tags.deal_booking_end') },
+    ],
+    [t('template_tags.property')]: [
+      { tag: '{{property.unit_number}}', desc: t('template_tags.property_number') },
+      { tag: '{{property.floor}}', desc: t('template_tags.property_floor') },
+      { tag: '{{property.area}}', desc: t('template_tags.property_area') },
+      { tag: '{{property.price}}', desc: t('template_tags.property_price') },
+    ],
+    [t('template_tags.building_project')]: [
+      { tag: '{{building.name}}', desc: t('template_tags.building_name') },
+      { tag: '{{project.name}}', desc: t('template_tags.project_name') },
+    ]
+  };
+
   return (
     <Paper>
       <Box sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>Шпаргалка по меткам</Typography>
-        <Typography variant="body2" color="text.secondary">Используйте эти метки в .docx файле. Они будут автоматически заменены на реальные данные при генерации документа.</Typography>
+        <Typography variant="h6" gutterBottom>{t('template_tags.cheatsheet_title')}</Typography>
+        <Typography variant="body2" color="text.secondary">{t('template_tags.cheatsheet_description')}</Typography>
       </Box>
       <List>
         {Object.entries(tags).map(([category, items]) => (

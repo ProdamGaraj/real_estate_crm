@@ -13,7 +13,9 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import type { TaskFilters } from '../../api/tasks';
+import LocalizedDateField from '../common/LocalizedDateField';
 
 interface TaskFilterFormProps {
   filters: TaskFilters;
@@ -21,26 +23,27 @@ interface TaskFilterFormProps {
   onReset: () => void;
 }
 
-const statusOptions = [
-  { value: 'NEW', label: 'Новая' },
-  { value: 'IN_PROGRESS', label: 'В работе' },
-  { value: 'REVIEW', label: 'На проверке' },
-  { value: 'COMPLETED', label: 'Завершена' },
-  { value: 'CANCELLED', label: 'Отменена' },
-  { value: 'BLOCKED', label: 'Заблокирована' },
-];
-
-const priorityOptions = [
-  { value: 'LOW', label: 'Низкий' },
-  { value: 'NORMAL', label: 'Обычный' },
-  { value: 'HIGH', label: 'Высокий' },
-  { value: 'URGENT', label: 'Срочный' },
-];
-
 const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onReset }) => {
+  const { t } = useTranslation();
   const { control, handleSubmit, reset } = useForm<TaskFilters>({
     defaultValues: filters,
   });
+
+  const statusOptions = [
+    { value: 'NEW', label: t('statuses.task.NEW') },
+    { value: 'IN_PROGRESS', label: t('statuses.task.IN_PROGRESS') },
+    { value: 'REVIEW', label: t('statuses.task.REVIEW') },
+    { value: 'COMPLETED', label: t('statuses.task.COMPLETED') },
+    { value: 'CANCELLED', label: t('statuses.task.CANCELLED') },
+    { value: 'BLOCKED', label: t('statuses.task.BLOCKED') },
+  ];
+
+  const priorityOptions = [
+    { value: 'LOW', label: t('statuses.task_priority.LOW') },
+    { value: 'NORMAL', label: t('statuses.task_priority.NORMAL') },
+    { value: 'HIGH', label: t('statuses.task_priority.HIGH') },
+    { value: 'URGENT', label: t('statuses.task_priority.URGENT') },
+  ];
 
   const onSubmit = (data: TaskFilters) => {
     // Удаляем пустые значения
@@ -68,11 +71,11 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
             defaultValue={[]}
             render={({ field }) => (
               <FormControl fullWidth size="small">
-                <InputLabel>Статус</InputLabel>
+                <InputLabel>{t('common.status')}</InputLabel>
                 <Select
                   {...field}
                   multiple
-                  input={<OutlinedInput label="Статус" />}
+                  input={<OutlinedInput label={t('common.status')} />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {(selected as string[]).map((value) => {
@@ -103,11 +106,11 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
             defaultValue={[]}
             render={({ field }) => (
               <FormControl fullWidth size="small">
-                <InputLabel>Приоритет</InputLabel>
+                <InputLabel>{t('pages.tasks.priority')}</InputLabel>
                 <Select
                   {...field}
                   multiple
-                  input={<OutlinedInput label="Приоритет" />}
+                  input={<OutlinedInput label={t('pages.tasks.priority')} />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {(selected as string[]).map((value) => {
@@ -136,13 +139,12 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
             name="deadline_from"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label="Срок от"
-                type="date"
+              <LocalizedDateField
+                label={t('pages.tasks.deadline_from')}
+                value={field.value || null}
+                onChange={(date) => field.onChange(date || '')}
                 size="small"
                 fullWidth
-                InputLabelProps={{ shrink: true }}
               />
             )}
           />
@@ -153,13 +155,12 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
             name="deadline_to"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                label="Срок до"
-                type="date"
+              <LocalizedDateField
+                label={t('pages.tasks.deadline_to')}
+                value={field.value || null}
+                onChange={(date) => field.onChange(date || '')}
                 size="small"
                 fullWidth
-                InputLabelProps={{ shrink: true }}
               />
             )}
           />
@@ -172,10 +173,10 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Поиск"
+                label={t('common.search')}
                 size="small"
                 fullWidth
-                placeholder="Название или описание"
+                placeholder={t('pages.tasks.search_placeholder')}
               />
             )}
           />
@@ -188,10 +189,10 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Теги"
+                label={t('pages.tasks.tags')}
                 size="small"
                 fullWidth
-                placeholder="Введите теги через запятую"
+                placeholder={t('pages.tasks.tags_placeholder')}
               />
             )}
           />
@@ -203,19 +204,19 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
             control={control}
             render={({ field }) => (
               <FormControl fullWidth size="small">
-                <InputLabel>Просрочено</InputLabel>
+                <InputLabel>{t('pages.tasks.overdue')}</InputLabel>
                 <Select
                   {...field}
-                  label="Просрочено"
+                  label={t('pages.tasks.overdue')}
                   value={field.value === undefined ? '' : field.value ? 'true' : 'false'}
                   onChange={(e) => {
                     const val = e.target.value;
                     field.onChange(val === '' ? undefined : val === 'true');
                   }}
                 >
-                  <MenuItem value="">Все</MenuItem>
-                  <MenuItem value="true">Да</MenuItem>
-                  <MenuItem value="false">Нет</MenuItem>
+                  <MenuItem value="">{t('common.all')}</MenuItem>
+                  <MenuItem value="true">{t('common.yes')}</MenuItem>
+                  <MenuItem value="false">{t('common.no')}</MenuItem>
                 </Select>
               </FormControl>
             )}
@@ -225,10 +226,10 @@ const TaskFilterForm: React.FC<TaskFilterFormProps> = ({ filters, onApply, onRes
         <Grid item xs={12} sm={6} md={2}>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button type="submit" variant="contained" fullWidth>
-              Применить
+              {t('common.apply')}
             </Button>
             <Button onClick={handleReset} variant="outlined" fullWidth>
-              Сбросить
+              {t('common.reset')}
             </Button>
           </Box>
         </Grid>

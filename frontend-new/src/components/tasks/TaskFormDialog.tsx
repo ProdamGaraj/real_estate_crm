@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -21,7 +22,7 @@ import { getUsers } from '../../api/users';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ru } from 'date-fns/locale';
+import { getDateFnsLocale } from '../../utils/translations';
 
 interface TaskFormDialogProps {
   open: boolean;
@@ -40,16 +41,17 @@ interface TaskFormData {
   watcher_ids: number[];
 }
 
-const priorityOptions: { value: Task['priority']; label: string }[] = [
-  { value: 'LOW', label: 'Низкий' },
-  { value: 'NORMAL', label: 'Средний' },
-  { value: 'HIGH', label: 'Высокий' },
-  { value: 'URGENT', label: 'Срочный' },
-];
-
 export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, task }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [apiError, setApiError] = React.useState<string | null>(null);
+
+  const priorityOptions = useMemo(() => [
+    { value: 'LOW' as Task['priority'], label: t('pages.tasks.priority_low') },
+    { value: 'NORMAL' as Task['priority'], label: t('pages.tasks.priority_normal') },
+    { value: 'HIGH' as Task['priority'], label: t('pages.tasks.priority_high') },
+    { value: 'URGENT' as Task['priority'], label: t('pages.tasks.priority_urgent') },
+  ], [t]);
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ['users'],
@@ -213,9 +215,9 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
   const now = new Date();
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ru}>
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={getDateFnsLocale()}>
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle>{task ? 'Редактировать задачу' : 'Создать задачу'}</DialogTitle>
+        <DialogTitle>{task ? t('pages.tasks.edit_task') : t('pages.tasks.create_task')}</DialogTitle>
         <DialogContent sx={{ pb: 2 }}>
           <Box component="form" sx={{ mt: 2 }}>
             {apiError && (
@@ -229,11 +231,11 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
               <Controller
                 name="title"
                 control={control}
-                rules={{ required: 'Название обязательно' }}
+                rules={{ required: t('validation.title_required') }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Название"
+                    label={t('pages.tasks.task_title')}
                     fullWidth
                     required
                     disabled={!isEditable}
@@ -247,11 +249,11 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
               <Controller
                 name="description"
                 control={control}
-                rules={{ required: 'Описание обязательно' }}
+                rules={{ required: t('validation.description_required') }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Описание"
+                    label={t('common.description')}
                     fullWidth
                     required
                     multiline
@@ -267,7 +269,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
               <Controller
                 name="assignee_id"
                 control={control}
-                rules={{ required: 'Исполнитель обязателен' }}
+                rules={{ required: t('validation.assignee_required') }}
                 render={({ field: { onChange, value } }) => (
                   <Autocomplete
                     options={users}
@@ -280,7 +282,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Исполнитель"
+                        label={t('pages.tasks.assignee')}
                         required
                         error={!!errors.assignee_id}
                         helperText={errors.assignee_id?.message}
@@ -298,7 +300,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                     control={control}
                     render={({ field }) => (
                       <DatePicker
-                        label="Дата начала"
+                        label={t('pages.tasks.start_date')}
                         value={field.value}
                         onChange={(newValue) => {
                           if (newValue && field.value) {
@@ -360,7 +362,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Час"
+                            label={t('pages.tasks.hour')}
                             placeholder="--"
                             inputProps={{
                               ...params.inputProps,
@@ -411,7 +413,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Минуты"
+                            label={t('pages.tasks.minutes')}
                             placeholder="--"
                             inputProps={{
                               ...params.inputProps,
@@ -432,10 +434,10 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                   <Controller
                     name="deadline"
                     control={control}
-                    rules={{ required: 'Дедлайн обязателен' }}
+                    rules={{ required: t('validation.deadline_required') }}
                     render={({ field }) => (
                       <DatePicker
-                        label="Дата дедлайна"
+                        label={t('pages.tasks.deadline_date')}
                         value={field.value}
                         onChange={(newValue) => {
                           if (newValue && field.value) {
@@ -466,7 +468,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                   <Controller
                     name="deadline"
                     control={control}
-                    rules={{ required: 'Дедлайн обязателен' }}
+                    rules={{ required: t('validation.deadline_required') }}
                     render={({ field }) => (
                       <Autocomplete
                         freeSolo
@@ -499,7 +501,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Час"
+                            label={t('pages.tasks.hour')}
                             placeholder="--"
                             required
                             inputProps={{
@@ -518,7 +520,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                   <Controller
                     name="deadline"
                     control={control}
-                    rules={{ required: 'Дедлайн обязателен' }}
+                    rules={{ required: t('validation.deadline_required') }}
                     render={({ field }) => (
                       <Autocomplete
                         freeSolo
@@ -551,7 +553,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                         renderInput={(params) => (
                           <TextField
                             {...params}
-                            label="Минуты"
+                            label={t('pages.tasks.minutes')}
                             placeholder="--"
                             required
                             inputProps={{
@@ -574,7 +576,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                   name="priority"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} select label="Приоритет" fullWidth disabled={!isEditable}>
+                    <TextField {...field} select label={t('pages.tasks.priority')} fullWidth disabled={!isEditable}>
                       {priorityOptions.map((option) => (
                         <MenuItem key={option.value} value={option.value}>
                           {option.label}
@@ -590,10 +592,10 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Теги"
+                      label={t('pages.tasks.tags')}
                       fullWidth
-                      placeholder="Разделяйте теги запятыми"
-                      helperText="Введите теги через запятую"
+                      placeholder={t('pages.tasks.tags_placeholder')}
+                      helperText={t('pages.tasks.tags_help')}
                     />
                   )}
                 />
@@ -613,7 +615,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
                     value={users.filter((u) => value.includes(u.id))}
                     onChange={(_, newValue) => onChange(newValue.map((u) => u.id))}
                     renderInput={(params) => (
-                      <TextField {...params} label="Наблюдатели" placeholder="Выберите наблюдателей" />
+                      <TextField {...params} label={t('pages.tasks.watchers')} placeholder={t('pages.tasks.select_watchers')} />
                     )}
                   />
                 )}
@@ -622,13 +624,13 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Отмена</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button
             onClick={handleSubmit(onSubmit)}
             variant="contained"
             disabled={createMutation.isPending || updateMutation.isPending}
           >
-            {task ? 'Сохранить' : 'Создать'}
+            {task ? t('common.save') : t('common.create')}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,13 +1,15 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import type { SubmitHandler } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { getProjects } from '../../api/projects';
 import type { Project } from '../../api/projects';
 import { Box, Button, TextField, Stack, Autocomplete, Checkbox, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import type { Discount, DiscountPayload } from '../../api/discounts';
+import { translatePropertyType } from '../../utils/translations';
+import LocalizedDateField from '../common/LocalizedDateField';
 
 interface DiscountFormProps {
   onSubmit: (data: DiscountPayload) => void;
@@ -15,15 +17,10 @@ interface DiscountFormProps {
   initialData?: Discount | null; // Данные для редактирования
 }
 
-const propertyTypes = [
-    { value: 'APARTMENT', label: 'Квартира' },
-    { value: 'COMMERCIAL', label: 'Коммерция' },
-    { value: 'PARKING', label: 'Парковка' },
-    { value: 'STORAGE', label: 'Кладовка' },
-    { value: 'COTTAGE', label: 'Коттедж' },
-];
+const propertyTypeKeys = ['APARTMENT', 'COMMERCIAL', 'PARKING', 'STORAGE', 'COTTAGE'];
 
 export default function DiscountForm({ onSubmit, isPending, initialData }: DiscountFormProps) {
+  const { t } = useTranslation();
   const { register, handleSubmit, control, reset } = useForm<DiscountPayload>({
     defaultValues: initialData || {},
   });
@@ -39,19 +36,19 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
       <Stack spacing={3}>
-        <TextField label="Название скидки" required {...register('name')} />
-        <TextField label="Процент (%)" type="number" required {...register('percentage_value')} />
+        <TextField label={t('pages.discounts.discount_name')} required {...register('name')} />
+        <TextField label={t('pages.discounts.percentage')} type="number" required {...register('percentage_value')} />
 
         <FormControl fullWidth>
-          <InputLabel>Тип недвижимости (необязательно)</InputLabel>
+          <InputLabel>{t('pages.discounts.property_type_optional')}</InputLabel>
           <Controller
             name="property_type"
             control={control}
             defaultValue={null}
             render={({ field }) => (
-              <Select {...field} label="Тип недвижимости (необязательно)">
-                <MenuItem value=""><em>Не выбрано</em></MenuItem>
-                {propertyTypes.map(pt => <MenuItem key={pt.value} value={pt.value}>{pt.label}</MenuItem>)}
+              <Select {...field} label={t('pages.discounts.property_type_optional')}>
+                <MenuItem value=""><em>{t('common.none')}</em></MenuItem>
+                {propertyTypeKeys.map(pt => <MenuItem key={pt} value={pt}>{translatePropertyType(pt)}</MenuItem>)}
               </Select>
             )}
           />
@@ -77,19 +74,41 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
                   {option.projectName} - {option.name}
                 </li>
               )}
-              renderInput={(params) => <TextField {...params} label="Применить к домам (необязательно)" />}
+              renderInput={(params) => <TextField {...params} label={t('pages.discounts.apply_to_buildings')} />}
             />
           )}
         />
 
-        <TextField label="Дата начала" type="date" InputLabelProps={{ shrink: true }} required {...register('start_date')} />
-        <TextField label="Дата окончания (пусто=бессрочно)" type="date" InputLabelProps={{ shrink: true }} {...register('end_date')} />
-        <TextField label="Краткое описание" multiline rows={3} {...register('comment')} />
+        <Controller
+          name="start_date"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <LocalizedDateField
+              label={t('pages.discounts.start_date')}
+              value={field.value || null}
+              onChange={(date) => field.onChange(date || '')}
+            />
+          )}
+        />
+        <Controller
+          name="end_date"
+          control={control}
+          render={({ field }) => (
+            <LocalizedDateField
+              label={t('pages.discounts.end_date_optional')}
+              value={field.value || null}
+              onChange={(date) => field.onChange(date || '')}
+            />
+          )}
+        />
+        <TextField label={t('pages.discounts.short_description')} multiline rows={3} {...register('comment')} />
 
         <Button type="submit" variant="contained" disabled={isPending}>
-          {isPending ? 'Сохранение...' : 'Сохранить'}
+          {isPending ? t('common.saving') : t('common.save')}
         </Button>
       </Stack>
     </Box>
   );
 }
+

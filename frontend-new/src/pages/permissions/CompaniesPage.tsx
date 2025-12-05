@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -13,59 +13,62 @@ import {
   Stack,
   Chip,
 } from '@mui/material';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import LocalizedDataGrid from '../../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getCompanies } from '../../api/permissions';
 import CompanyForm from '../../components/permissions/CompanyForm';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
 
-const columns: GridColDef[] = [
-  { field: 'id', headerName: 'ID', width: 70 },
-  {
-    field: 'name',
-    headerName: 'Название',
-    width: 250,
-    renderCell: (params) => (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <BusinessIcon color="primary" fontSize="small" />
-        <MuiLink
-          component={RouterLink}
-          to={`/permissions/companies/${params.row.id}`}
-          underline="hover"
-        >
-          {params.value}
-        </MuiLink>
-      </Box>
-    ),
-  },
-  { field: 'code', headerName: 'Код', width: 150 },
-  { field: 'description', headerName: 'Описание', width: 300 },
-  {
-    field: 'is_active',
-    headerName: 'Статус',
-    width: 120,
-    renderCell: (params) => (
-      <Chip
-        label={params.value ? 'Активна' : 'Неактивна'}
-        color={params.value ? 'success' : 'default'}
-        size="small"
-      />
-    ),
-  },
-  {
-    field: 'created_at',
-    headerName: 'Дата создания',
-    width: 180,
-    type: 'dateTime',
-    valueGetter: (value) => (value ? new Date(value) : null),
-  },
-];
-
 export default function CompaniesPage() {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 70 },
+    {
+      field: 'name',
+      headerName: t('table.name'),
+      width: 250,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <BusinessIcon color="primary" fontSize="small" />
+          <MuiLink
+            component={RouterLink}
+            to={`/permissions/companies/${params.row.id}`}
+            underline="hover"
+          >
+            {params.value}
+          </MuiLink>
+        </Box>
+      ),
+    },
+    { field: 'code', headerName: t('table.code'), width: 150 },
+    { field: 'description', headerName: t('table.description'), width: 300 },
+    {
+      field: 'is_active',
+      headerName: t('table.status'),
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? t('common.active') : t('common.inactive')}
+          color={params.value ? 'success' : 'default'}
+          size="small"
+        />
+      ),
+    },
+    {
+      field: 'created_at',
+      headerName: t('table.created_at'),
+      width: 180,
+      type: 'dateTime',
+      valueGetter: (value) => (value ? new Date(value) : null),
+    },
+  ];
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['companies'],
@@ -83,10 +86,10 @@ export default function CompaniesPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" gutterBottom>
-            Компании
+            {t('pages.settings.permissions.companies_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Управление организационной структурой системы
+            {t('pages.settings.permissions.companies_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -94,7 +97,7 @@ export default function CompaniesPage() {
           startIcon={<AddIcon />}
           onClick={() => setIsModalOpen(true)}
         >
-          Создать компанию
+          {t('pages.settings.permissions.create_company')}
         </Button>
       </Box>
 
@@ -102,7 +105,7 @@ export default function CompaniesPage() {
       <Paper sx={{ p: 2 }}>
         {isError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            Ошибка загрузки: {error instanceof Error ? error.message : 'Неизвестная ошибка'}
+            {t('common.load_error')}: {error instanceof Error ? error.message : t('common.unknown_error')}
           </Alert>
         )}
 
@@ -111,7 +114,7 @@ export default function CompaniesPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <DataGrid
+          <LocalizedDataGrid
             rows={data || []}
             columns={columns}
             initialState={{
@@ -126,7 +129,7 @@ export default function CompaniesPage() {
 
       {/* Модальное окно создания */}
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Создать компанию</DialogTitle>
+        <DialogTitle>{t('pages.settings.permissions.create_company')}</DialogTitle>
         <DialogContent>
           <CompanyForm onSuccess={handleSuccess} onCancel={() => setIsModalOpen(false)} />
         </DialogContent>
