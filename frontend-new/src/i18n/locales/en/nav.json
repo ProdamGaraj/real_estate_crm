@@ -1,0 +1,18 @@
+{
+  "app_title": "Real Estate CRM",
+  "dashboard": "Dashboard",
+  "clients": "Clients",
+  "applications": "Applications",
+  "meetings": "Meetings",
+  "tasks": "Tasks",
+  "deals": "Deals",
+  "projects": "Projects",
+  "finances": "Finances",
+  "reports": "Reports",
+  "discounts": "Discounts",
+  "settings": "Settings",
+  "logout": "Logout",
+  "company_label": "Company:",
+  "department_label": "Department:",
+  "no_email": "No email"
+}

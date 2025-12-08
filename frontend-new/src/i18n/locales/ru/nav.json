@@ -1,0 +1,18 @@
+{
+  "app_title": "CRM Недвижимость",
+  "dashboard": "Дашборд",
+  "clients": "Клиенты",
+  "applications": "Заявки",
+  "meetings": "Встречи",
+  "tasks": "Задачи",
+  "deals": "Сделки",
+  "projects": "Проекты",
+  "finances": "Финансы",
+  "reports": "Отчеты",
+  "discounts": "Скидки",
+  "settings": "Настройки",
+  "logout": "Выйти",
+  "company_label": "Компания:",
+  "department_label": "Отдел:",
+  "no_email": "Нет email"
+}

@@ -1,0 +1,32 @@
+{
+  "title": "Loyihalar",
+  "create_project": "Loyiha yaratish",
+  "new_project": "Yangi loyiha",
+  "edit_project": "Loyihani tahrirlash",
+  "project_name": "Loyiha nomi",
+  "address": "Manzil",
+  "search_by_name_address": "Nom yoki manzil bo'yicha qidirish",
+  "project_details": "Loyiha tafsilotlari",
+  "buildings": "Binolar",
+  "gallery": "Galereya",
+  "main_info": "Asosiy ma'lumotlar",
+  "cadastre_date_plan": "Rejalashtirilgan kadastr sanasi",
+  "description": "Tavsif",
+  "usp_title": "Noyob savdo takliflari (USP)",
+  "usp_1": "USP 1",
+  "usp_2": "USP 2",
+  "usp_3": "USP 3",
+  "legal_info": "Yuridik ma'lumotlar",
+  "developer_details": "Quruvchi rekvizitlari",
+  "add_building": "Bino qo'shish",
+  "search_building": "Bino nomi bo'yicha qidirish",
+  "upload_image": "Rasm yuklash",
+  "delete_project": "Loyihani o'chirish",
+  "delete_project_confirm": "\"{{name}}\" loyihasini o'chirishni xohlaysizmi? Bu amalni qaytarib bo'lmaydi.",
+  "project_updated": "Loyiha yangilandi!",
+  "create_error": "Loyihani yaratishda xatolik yuz berdi.",
+  "form": {
+    "name": "Loyiha nomi",
+    "address": "Manzil"
+  }
+}

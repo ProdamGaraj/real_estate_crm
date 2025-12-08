@@ -1,0 +1,21 @@
+{
+  "title": "Скидки",
+  "create_discount": "Создать скидку",
+  "new_discount": "Новая скидка",
+  "edit_discount": "Редактировать скидку",
+  "discount_name": "Название скидки",
+  "percentage": "Процент (%)",
+  "property_type": "Тип недвижимости",
+  "property_type_optional": "Тип недвижимости (необязательно)",
+  "apply_to_buildings": "Применить к домам (необязательно)",
+  "start_date": "Дата начала",
+  "end_date_optional": "Дата окончания (пусто=бессрочно)",
+  "short_description": "Краткое описание",
+  "applied_to_buildings": "Применено к домам",
+  "all_buildings": "Все",
+  "applying_discounts": "Применение скидок",
+  "round_result": "Округлить результат до целого числа",
+  "discount_details": "Детали скидки",
+  "discount_title": "Скидка",
+  "main_info": "Основная информация"
+}

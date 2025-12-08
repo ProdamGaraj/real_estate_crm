@@ -1,0 +1,140 @@
+{
+  "client": {
+    "ACTIVE": "Активный",
+    "INACTIVE": "Неактивный",
+    "ARCHIVED": "В архиве"
+  },
+  "application": {
+    "NEW": "Новая",
+    "IN_PROGRESS": "В работе",
+    "JUNK": "Нецелевая",
+    "REJECTED": "Отказ",
+    "CLOSED_WON": "Успешно закрыта"
+  },
+  "application_source": {
+    "INTERNET": "Интернет",
+    "SOCIAL_MEDIA": "Соц.сети",
+    "OFFICE": "Офис",
+    "CALL": "Звонок"
+  },
+  "meeting": {
+    "NEW": "Новая",
+    "COMPLETED": "Состоялась",
+    "CANCELLED": "Не состоялась"
+  },
+  "deal": {
+    "BOOKING": "Бронь",
+    "IN_PROGRESS": "В работе",
+    "CLOSED_WON": "Успешно закрыта",
+    "CANCELLED": "Отменена",
+    "TERMINATED": "Расторгнута"
+  },
+  "task": {
+    "NEW": "Новая",
+    "IN_PROGRESS": "В работе",
+    "REVIEW": "На проверке",
+    "COMPLETED": "Завершена",
+    "CANCELLED": "Отменена",
+    "BLOCKED": "Заблокирована"
+  },
+  "task_priority": {
+    "LOW": "Низкий",
+    "NORMAL": "Обычный",
+    "HIGH": "Высокий",
+    "URGENT": "Срочный"
+  },
+  "payment": {
+    "PENDING": "К оплате",
+    "PAID": "Оплачен",
+    "OVERDUE": "Просрочен",
+    "TO_BE_RETURNED": "К возврату",
+    "RETURNED": "Возвращен"
+  },
+  "building": {
+    "UNDER_REVIEW": "На проверке",
+    "FOR_SALE": "В продаже",
+    "COMPLETED": "Сдан",
+    "ARCHIVED": "В архиве"
+  },
+  "property": {
+    "SELECTION": "Подбор",
+    "RESERVE": "Резерв",
+    "BOOKING": "Бронь",
+    "IN_DEAL": "Сделка в работе",
+    "SOLD": "Сделка проведена"
+  },
+  "property_type": {
+    "APARTMENT": "Квартира",
+    "COMMERCIAL": "Коммерция",
+    "PARKING": "Парковка",
+    "STORAGE": "Кладовка",
+    "COTTAGE": "Коттедж"
+  },
+  "role_scope": {
+    "SYSTEM": "Вся система",
+    "COMPANY": "Компания",
+    "DEPARTMENT": "Отдел",
+    "OWN": "Только свои данные"
+  },
+  "role_category": {
+    "ADMINISTRATIVE": "Административная",
+    "MANAGEMENT": "Управленческая",
+    "OPERATIONAL": "Операционная",
+    "READONLY": "Только просмотр",
+    "CUSTOM": "Пользовательская"
+  },
+  "permission_action": {
+    "VIEW": "Просмотр",
+    "ADD": "Создание",
+    "EDIT": "Редактирование",
+    "DELETE": "Удаление"
+  },
+  "permission_scope": {
+    "OWN": "Свои",
+    "DEPARTMENT": "Отдел",
+    "COMPANY": "Компания",
+    "SYSTEM": "Система"
+  },
+  "CLIENT": "Клиенты",
+  "APPLICATION": "Заявки",
+  "MEETING": "Встречи",
+  "DEAL": "Сделки",
+  "PAYMENT": "Платежи",
+  "REFUND": "Возвраты",
+  "PROJECT": "Проекты",
+  "BUILDING": "Здания",
+  "PROPERTY": "Объекты недвижимости",
+  "LAYOUT": "Планировки",
+  "DISCOUNT": "Скидки",
+  "DOCUMENT": "Документы",
+  "REPORT": "Отчеты",
+  "COMPANY": "Компании",
+  "DEPARTMENT": "Отделы",
+  "ROLE": "Роли",
+  "USER": "Пользователи",
+  "BENEFICIARY_ACCOUNT": "Счета получателей",
+  "DASHBOARD": "Дашборд",
+  "PAYMENT_TYPE": "Типы платежей",
+  "PERMISSION": "Разрешения",
+  "PLAN": "Планы",
+  "SETTINGS": "Настройки",
+  "TEMPLATE": "Шаблоны",
+  "TASK": "Задачи",
+  "OTHER": "Прочее",
+  "empty": "пусто",
+  "fields": {
+    "full_name": "ФИО",
+    "phone_number": "Номер телефона",
+    "email": "Email",
+    "status": "Статус",
+    "comment": "Комментарий",
+    "notes": "Заметки",
+    "contract_price": "Стоимость по договору",
+    "rejection_reason": "Причина отказа",
+    "name": "Название",
+    "percentage_value": "Процент",
+    "property_type": "Тип недвижимости",
+    "start_date": "Дата начала",
+    "end_date": "Дата окончания"
+  }
+}

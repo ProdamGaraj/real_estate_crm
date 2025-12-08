@@ -1,0 +1,140 @@
+{
+  "client": {
+    "ACTIVE": "Active",
+    "INACTIVE": "Inactive",
+    "ARCHIVED": "Archived"
+  },
+  "application": {
+    "NEW": "New",
+    "IN_PROGRESS": "In Progress",
+    "JUNK": "Junk",
+    "REJECTED": "Rejected",
+    "CLOSED_WON": "Closed Won"
+  },
+  "application_source": {
+    "INTERNET": "Internet",
+    "SOCIAL_MEDIA": "Social Media",
+    "OFFICE": "Office",
+    "CALL": "Call"
+  },
+  "meeting": {
+    "NEW": "New",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "deal": {
+    "BOOKING": "Booking",
+    "IN_PROGRESS": "In Progress",
+    "CLOSED_WON": "Closed Won",
+    "CANCELLED": "Cancelled",
+    "TERMINATED": "Terminated"
+  },
+  "task": {
+    "NEW": "New",
+    "IN_PROGRESS": "In Progress",
+    "REVIEW": "Under Review",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "BLOCKED": "Blocked"
+  },
+  "task_priority": {
+    "LOW": "Low",
+    "NORMAL": "Normal",
+    "HIGH": "High",
+    "URGENT": "Urgent"
+  },
+  "payment": {
+    "PENDING": "Pending",
+    "PAID": "Paid",
+    "OVERDUE": "Overdue",
+    "TO_BE_RETURNED": "To Be Returned",
+    "RETURNED": "Returned"
+  },
+  "building": {
+    "UNDER_REVIEW": "Under Review",
+    "FOR_SALE": "For Sale",
+    "COMPLETED": "Completed",
+    "ARCHIVED": "Archived"
+  },
+  "property": {
+    "SELECTION": "Selection",
+    "RESERVE": "Reserve",
+    "BOOKING": "Booking",
+    "IN_DEAL": "Deal in Progress",
+    "SOLD": "Sold"
+  },
+  "property_type": {
+    "APARTMENT": "Apartment",
+    "COMMERCIAL": "Commercial",
+    "PARKING": "Parking",
+    "STORAGE": "Storage",
+    "COTTAGE": "Cottage"
+  },
+  "role_scope": {
+    "SYSTEM": "Entire System",
+    "COMPANY": "Company",
+    "DEPARTMENT": "Department",
+    "OWN": "Own Data Only"
+  },
+  "role_category": {
+    "ADMINISTRATIVE": "Administrative",
+    "MANAGEMENT": "Management",
+    "OPERATIONAL": "Operational",
+    "READONLY": "Read Only",
+    "CUSTOM": "Custom"
+  },
+  "permission_action": {
+    "VIEW": "View",
+    "ADD": "Create",
+    "EDIT": "Edit",
+    "DELETE": "Delete"
+  },
+  "permission_scope": {
+    "OWN": "Own",
+    "DEPARTMENT": "Department",
+    "COMPANY": "Company",
+    "SYSTEM": "System"
+  },
+  "CLIENT": "Clients",
+  "APPLICATION": "Applications",
+  "MEETING": "Meetings",
+  "DEAL": "Deals",
+  "PAYMENT": "Payments",
+  "REFUND": "Refunds",
+  "PROJECT": "Projects",
+  "BUILDING": "Buildings",
+  "PROPERTY": "Properties",
+  "LAYOUT": "Layouts",
+  "DISCOUNT": "Discounts",
+  "DOCUMENT": "Documents",
+  "REPORT": "Reports",
+  "COMPANY": "Companies",
+  "DEPARTMENT": "Departments",
+  "ROLE": "Roles",
+  "USER": "Users",
+  "BENEFICIARY_ACCOUNT": "Beneficiary Accounts",
+  "DASHBOARD": "Dashboard",
+  "PAYMENT_TYPE": "Payment Types",
+  "PERMISSION": "Permissions",
+  "PLAN": "Plans",
+  "SETTINGS": "Settings",
+  "TEMPLATE": "Templates",
+  "TASK": "Tasks",
+  "OTHER": "Other",
+  "empty": "empty",
+  "fields": {
+    "full_name": "Full Name",
+    "phone_number": "Phone Number",
+    "email": "Email",
+    "status": "Status",
+    "comment": "Comment",
+    "notes": "Notes",
+    "contract_price": "Contract Price",
+    "rejection_reason": "Rejection Reason",
+    "name": "Name",
+    "percentage_value": "Percentage",
+    "property_type": "Property Type",
+    "start_date": "Start Date",
+    "end_date": "End Date"
+  }
+}

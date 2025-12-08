@@ -1,0 +1,32 @@
+{
+  "title": "Projects",
+  "create_project": "Create Project",
+  "new_project": "New Project",
+  "edit_project": "Edit Project",
+  "project_name": "Project Name",
+  "address": "Address",
+  "search_by_name_address": "Search by name or address",
+  "project_details": "Project Details",
+  "buildings": "Buildings",
+  "gallery": "Gallery",
+  "main_info": "Main Information",
+  "cadastre_date_plan": "Planned Cadastre Date",
+  "description": "Description",
+  "usp_title": "Unique Selling Points (USP)",
+  "usp_1": "USP 1",
+  "usp_2": "USP 2",
+  "usp_3": "USP 3",
+  "legal_info": "Legal Information",
+  "developer_details": "Developer Details",
+  "add_building": "Add Building",
+  "search_building": "Search by building name",
+  "upload_image": "Upload Image",
+  "delete_project": "Delete Project",
+  "delete_project_confirm": "Are you sure you want to delete project \"{{name}}\"? This action cannot be undone.",
+  "project_updated": "Project updated!",
+  "create_error": "An error occurred while creating the project.",
+  "form": {
+    "name": "Project Name",
+    "address": "Address"
+  }
+}

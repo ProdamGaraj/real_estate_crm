@@ -1,0 +1,19 @@
+{
+  "title": "Discounts",
+  "create_discount": "Create Discount",
+  "new_discount": "New Discount",
+  "edit_discount": "Edit Discount",
+  "discount_name": "Discount Name",
+  "percentage": "Percentage (%)",
+  "property_type": "Property Type",
+  "property_type_optional": "Property Type (optional)",
+  "apply_to_buildings": "Apply to Buildings (optional)",
+  "start_date": "Start Date",
+  "end_date_optional": "End Date (empty = indefinite)",
+  "short_description": "Short Description",
+  "applied_to_buildings": "Applied to Buildings",
+  "all_buildings": "All",
+  "applying_discounts": "Applying Discounts",
+  "round_result": "Round result to whole number",
+  "discount_details": "Discount Details"
+}

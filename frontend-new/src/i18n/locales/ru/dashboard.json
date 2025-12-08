@@ -1,0 +1,14 @@
+{
+  "title": "Аналитика",
+  "new_clients_today": "Новых клиентов сегодня",
+  "new_applications_today": "Новых заявок сегодня",
+  "monthly_sales": "Продажи за месяц",
+  "overdue_payments": "Просроченные платежи",
+  "chart_placeholder": "(здесь будет график)",
+  "applications_dynamics": "Динамика заявок за неделю",
+  "application_sources": "Источники заявок",
+  "manager_activity": "Активность менеджеров",
+  "top_sales_month": "Топ по продажам за месяц",
+  "upcoming_meetings": "Ближайшие встречи",
+  "sales_label": "Продажи:"
+}

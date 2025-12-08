@@ -1,0 +1,19 @@
+{
+  "title": "Chegirmalar",
+  "create_discount": "Chegirma yaratish",
+  "new_discount": "Yangi chegirma",
+  "edit_discount": "Chegirmani tahrirlash",
+  "discount_name": "Chegirma nomi",
+  "percentage": "Foiz (%)",
+  "property_type": "Ko'chmas mulk turi",
+  "property_type_optional": "Ko'chmas mulk turi (ixtiyoriy)",
+  "apply_to_buildings": "Binolarga qo'llash (ixtiyoriy)",
+  "start_date": "Boshlanish sanasi",
+  "end_date_optional": "Tugash sanasi (bo'sh=muddatsiz)",
+  "short_description": "Qisqa tavsif",
+  "applied_to_buildings": "Qo'llanilgan binolar",
+  "all_buildings": "Hammasi",
+  "applying_discounts": "Chegirmalarni qo'llash",
+  "round_result": "Natijani butun songa yaxlitlash",
+  "discount_details": "Chegirma tafsilotlari"
+}

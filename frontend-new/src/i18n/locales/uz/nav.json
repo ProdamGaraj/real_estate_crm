@@ -1,0 +1,18 @@
+{
+  "app_title": "Ko'chmas mulk CRM",
+  "dashboard": "Boshqaruv paneli",
+  "clients": "Mijozlar",
+  "applications": "Arizalar",
+  "meetings": "Uchrashuvlar",
+  "tasks": "Vazifalar",
+  "deals": "Bitimlar",
+  "projects": "Loyihalar",
+  "finances": "Moliya",
+  "reports": "Hisobotlar",
+  "discounts": "Chegirmalar",
+  "settings": "Sozlamalar",
+  "logout": "Chiqish",
+  "company_label": "Kompaniya:",
+  "department_label": "Bo'lim:",
+  "no_email": "Email yo'q"
+}
