@@ -5,6 +5,7 @@ django-cors-headers==4.9.0
 django-filter==25.1
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
+drf-spectacular==0.28.0
 docxcompose==1.4.0
 docxtpl==0.20.1
 et_xmlfile==2.0.0

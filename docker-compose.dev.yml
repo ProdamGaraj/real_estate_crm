@@ -1,0 +1,107 @@
+# =============================================================================
+# Docker Compose для разработки
+# =============================================================================
+# Использование: docker-compose -f docker-compose.dev.yml up
+# 
+# В режиме разработки:
+# - Backend код монтируется напрямую (hot reload)
+# - Frontend запускается в dev режиме с HMR
+# - Volumes для медиа файлов доступны для редактирования
+# =============================================================================
+
+services:
+  # =============================================================================
+  # PostgreSQL Database
+  # =============================================================================
+  db:
+    image: postgres:16-alpine
+    container_name: crm_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-real_estate_crm}
+      POSTGRES_USER: ${DB_USER:-crm_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-crm_password_2024}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-crm_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm_network_dev
+
+  # =============================================================================
+  # Backend Django (Development)
+  # =============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: crm_backend_dev
+    restart: unless-stopped
+    volumes:
+      # Исходный код - для hot reload
+      - ./backend:/app
+      # Медиа файлы - bind mount для прямого доступа
+      - ./backend/media/buildings:/app/media/buildings
+      - ./backend/media/deals:/app/media/deals
+      - ./backend/media/layouts:/app/media/layouts
+      - ./backend/media/projects:/app/media/projects
+      - ./backend/media/templates:/app/media/templates
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - USE_SQLITE=False
+      - DB_NAME=${DB_NAME:-real_estate_crm}
+      - DB_USER=${DB_USER:-crm_user}
+      - DB_PASSWORD=${DB_PASSWORD:-crm_password_2024}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DEBUG=True
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-dev-key}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,0.0.0.0
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crm_network_dev
+
+  # =============================================================================
+  # Frontend React/Vite (Development с HMR)
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend-new
+      dockerfile: Dockerfile.dev
+    container_name: crm_frontend_dev
+    restart: unless-stopped
+    volumes:
+      # Исходный код - для hot reload
+      - ./frontend-new:/app
+      # Исключаем node_modules
+      - /app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+    networks:
+      - crm_network_dev
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data_dev:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  crm_network_dev:
+    driver: bridge

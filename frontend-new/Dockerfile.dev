@@ -1,0 +1,16 @@
+# Frontend Dockerfile для разработки (с HMR)
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Копирование package.json
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+
+# Установка зависимостей
+RUN npm install
+
+# Порт Vite dev server
+EXPOSE 5173
+
+# Запуск Vite в dev режиме с host 0.0.0.0 для доступа извне контейнера
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

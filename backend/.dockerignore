@@ -1,0 +1,43 @@
+# Виртуальное окружение
+.venv/
+venv/
+env/
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# SQLite база данных (используем PostgreSQL в Docker)
+*.sqlite3
+db.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Тестовые файлы
+*.log
+*.pot
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Скрипты миграции/тестов
+migrate_*.py
+test_*.py
+check_*.py
+create_*.py
+fix_*.py
+add_*.py
+data_dump*.json

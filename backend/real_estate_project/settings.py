@@ -26,11 +26,14 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-!l5n0q200=_=x@&(n=mo6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
+# Парсинг ALLOWED_HOSTS из переменной окружения
+_allowed_hosts_env = config('ALLOWED_HOSTS', default='')
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'c0s9w1gq-8000.euw.devtunnels.ms'  # Tunnel для бэкенда (на всякий случай)
-]
+    'c0s9w1gq-8000.euw.devtunnels.ms',  # Tunnel для бэкенда (на всякий случай)
+    'backend',  # Docker service name
+] + [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
 
 
 # Application definition
@@ -158,12 +161,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Статические файлы для production (collectstatic)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Ваш фронтенд
     "http://127.0.0.1:5173",  # Альтернативный адрес
     "http://localhost:5174",
     "http://localhost:5175",  # Для друга
     "http://localhost:5176",  # Дополнительный порт
+    "http://localhost",       # Docker frontend (port 80)
+    "http://localhost:80",    # Docker frontend explicit
+    "http://frontend",        # Docker service name
     'https://5mpxwrp0-5174.euw.devtunnels.ms',
     'https://c0s9w1gq-5173.euw.devtunnels.ms',
     'https://c0s9w1gq-8000.euw.devtunnels.ms',

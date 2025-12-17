@@ -1,7 +1,7 @@
-version: '3.8'
-
 services:
+  # =============================================================================
   # PostgreSQL Database
+  # =============================================================================
   db:
     image: postgres:16-alpine
     container_name: crm_postgres
@@ -22,51 +22,115 @@ services:
     networks:
       - crm_network
 
-  # Backend Django (закомментирован для dev режима)
-  # Для запуска в production режиме - раскомментируйте этот сервис
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   container_name: crm_backend
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./backend:/app
-  #     - media_data:/app/media
-  #   ports:
-  #     - "8000:8000"
-  #   env_file:
-  #     - ./backend/.env
-  #   environment:
-  #     - DB_HOST=db
-  #     - DB_PORT=5432
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   networks:
-  #     - crm_network
+  # =============================================================================
+  # Backend Django API
+  # =============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm_backend
+    restart: unless-stopped
+    volumes:
+      # Медиа файлы (изображения, документы) - доступны для изменения
+      - media_buildings:/app/media/buildings
+      - media_deals:/app/media/deals
+      - media_layouts:/app/media/layouts
+      - media_projects:/app/media/projects
+      - media_templates:/app/media/templates
+      # Статические файлы Django
+      - static_files:/app/staticfiles
+      # Логи
+      - backend_logs:/app/logs
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      # База данных
+      - USE_SQLITE=False
+      - DB_NAME=${DB_NAME:-real_estate_crm}
+      - DB_USER=${DB_USER:-crm_user}
+      - DB_PASSWORD=${DB_PASSWORD:-crm_password_2024}
+      - DB_HOST=db
+      - DB_PORT=5432
+      # Django settings
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-change-this-in-production}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      # URLs
+      - SITE_URL=${SITE_URL:-http://localhost:8000}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crm_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # Frontend React (закомментирован для dev режима)
-  # Для запуска в production режиме - раскомментируйте этот сервис
-  # frontend:
-  #   build:
-  #     context: ./frontend-new
-  #     dockerfile: Dockerfile
-  #   container_name: crm_frontend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "80:80"
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - crm_network
+  # =============================================================================
+  # Frontend React/Vite (Production с nginx)
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend-new
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-/api}
+    container_name: crm_frontend
+    restart: unless-stopped
+    volumes:
+      # Логи nginx
+      - frontend_logs:/var/log/nginx
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - crm_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+# =============================================================================
+# Volumes - Персистентное хранилище
+# =============================================================================
 volumes:
+  # База данных PostgreSQL
   postgres_data:
     driver: local
-  media_data:
+  
+  # Медиа файлы backend (изображения, документы)
+  # Каждая папка в отдельном volume для удобства управления
+  media_buildings:
+    driver: local
+  media_deals:
+    driver: local
+  media_layouts:
+    driver: local
+  media_projects:
+    driver: local
+  media_templates:
+    driver: local
+  
+  # Статические файлы Django (CSS, JS для admin)
+  static_files:
+    driver: local
+  
+  # Логи
+  backend_logs:
+    driver: local
+  frontend_logs:
     driver: local
 
+# =============================================================================
+# Networks
+# =============================================================================
 networks:
   crm_network:
     driver: bridge

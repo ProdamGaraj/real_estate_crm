@@ -22,3 +22,15 @@ frontend-new/node_modules/
 backend/apps/tasks/__pycache__/
 backend/apps/tasks/migrations/__pycache__/
 docs/*
+
+# Docker
+.env
+
+# Static files collected
+backend/staticfiles/
+backend/db.sqlite3
+backend/full_dump.json
+backend/full_dump_utf8.json
+backend/full_dump_fixed.json
+backend/full_dump_clean.json
+backend/sqlite_export.json
