@@ -27,9 +27,11 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
   const { register, handleSubmit, control, formState: { errors } } = useForm<FormInputs>();
 
   // Определяем, какой сценарий использовать
+  // Для CLOSED_WON всегда используется расторжение (termination)
   const hasPaidPayments = deal.payments.some(p => p.payment_date);
   const isSigned = !!deal.client_signature_date;
-  const isTermination = hasPaidPayments || isSigned;
+  const isClosedWon = deal.status === 'CLOSED_WON';
+  const isTermination = isClosedWon || hasPaidPayments || isSigned;
 
   const mutation = useMutation({
     mutationFn: (payload: DealCancellationPayload) => cancelOrTerminateDeal({ dealId: deal.id, payload }),
@@ -42,9 +44,13 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
     const payload: DealCancellationPayload = {};
     if (isTermination) {
       payload.termination_date = data.date;
-      if (data.document && data.document.length > 0) {
-        payload.termination_document_scan = data.document[0];
+      // FileList из input type="file"
+      const fileList = data.document;
+      if (fileList && fileList.length > 0) {
+        payload.termination_document_scan = fileList[0];
       }
+      // Отладка - проверим что данные есть
+      console.log('Termination payload:', { date: payload.termination_date, hasFile: !!payload.termination_document_scan });
     } else {
       payload.cancellation_reason = data.reason;
     }

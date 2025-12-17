@@ -10,6 +10,7 @@
   "apply_to_buildings": "Apply to Buildings (optional)",
   "start_date": "Start Date",
   "end_date_optional": "End Date (empty = indefinite)",
+  "end_date_error": "End date must be after start date",
   "short_description": "Short Description",
   "applied_to_buildings": "Applied to Buildings",
   "all_buildings": "All",

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getProjects } from '../../api/projects';
 import type { Project } from '../../api/projects';
-import { Box, Button, TextField, Stack, Autocomplete, Checkbox, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, Button, TextField, Stack, Autocomplete, Checkbox, FormControl, InputLabel, Select, MenuItem, Alert } from '@mui/material';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import type { Discount, DiscountPayload } from '../../api/discounts';
@@ -21,7 +21,7 @@ const propertyTypeKeys = ['APARTMENT', 'COMMERCIAL', 'PARKING', 'STORAGE', 'COTT
 
 export default function DiscountForm({ onSubmit, isPending, initialData }: DiscountFormProps) {
   const { t } = useTranslation();
-  const { register, handleSubmit, control, reset } = useForm<DiscountPayload>({
+  const { register, handleSubmit, control, reset, setError, formState: { errors } } = useForm<DiscountPayload>({
     defaultValues: initialData || {},
   });
 
@@ -33,8 +33,30 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
 
   const buildings = projects?.flatMap(p => p.buildings ? p.buildings.map(b => ({ ...b, projectName: p.name })) : []) || [];
 
+  const handleFormSubmit = (data: DiscountPayload) => {
+    // Проверка дат перед отправкой
+    if (data.start_date && data.end_date) {
+      const start = new Date(data.start_date);
+      const end = new Date(data.end_date);
+      if (end < start) {
+        setError('end_date', { type: 'manual', message: t('pages.discounts.end_date_error') });
+        return;
+      }
+    }
+    
+    // Преобразуем пустые строки в null для необязательных полей
+    const payload: DiscountPayload = {
+      ...data,
+      end_date: data.end_date || null,
+      property_type: data.property_type || null,
+    };
+    
+    console.log('DiscountForm submitting:', payload);
+    onSubmit(payload);
+  };
+
   return (
-    <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
+    <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} sx={{ mt: 1 }}>
       <Stack spacing={3}>
         <TextField label={t('pages.discounts.discount_name')} required {...register('name')} />
         <TextField label={t('pages.discounts.percentage')} type="number" required {...register('percentage_value')} />
@@ -70,7 +92,7 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
               onChange={(_, data) => field.onChange(data.map(d => d.id))}
               renderOption={(props, option, { selected }) => (
                 <li {...props}>
-                  <Checkbox icon={<CheckBoxOutlineBlankIcon/>} checkedIcon={<CheckBoxIcon/>} checked={selected} />
+                  <Checkbox icon={<CheckBoxOutlineBlankIcon />} checkedIcon={<CheckBoxIcon />} checked={selected} />
                   {option.projectName} - {option.name}
                 </li>
               )}
@@ -102,6 +124,9 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
             />
           )}
         />
+        {errors.end_date && (
+          <Alert severity="error">{errors.end_date.message}</Alert>
+        )}
         <TextField label={t('pages.discounts.short_description')} multiline rows={3} {...register('comment')} />
 
         <Button type="submit" variant="contained" disabled={isPending}>

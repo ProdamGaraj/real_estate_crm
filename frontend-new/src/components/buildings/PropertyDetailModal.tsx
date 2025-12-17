@@ -14,6 +14,7 @@ import type { DealPayload } from '../../api/deals';
 import BookingForm from '../deals/BookingForm';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
+import { getMediaUrl } from '../../utils/media';
 
 interface ModalProps {
   property: Property | null;
@@ -34,10 +35,10 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
   const layoutImages = useMemo(() => {
     if (!property?.layout) return [];
     const images = [
-      property.layout.main_layout_image,
-      property.layout.extra_layout_image,
-      property.layout.floor_plan_image,
-      property.layout.usp_image,
+      getMediaUrl(property.layout.main_layout_image),
+      getMediaUrl(property.layout.extra_layout_image),
+      getMediaUrl(property.layout.floor_plan_image),
+      getMediaUrl(property.layout.usp_image),
     ];
     return images.filter(Boolean) as string[];
   }, [property]);

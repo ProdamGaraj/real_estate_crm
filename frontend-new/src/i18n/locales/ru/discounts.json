@@ -10,6 +10,7 @@
   "apply_to_buildings": "Применить к домам (необязательно)",
   "start_date": "Дата начала",
   "end_date_optional": "Дата окончания (пусто=бессрочно)",
+  "end_date_error": "Дата окончания должна быть позже даты начала",
   "short_description": "Краткое описание",
   "applied_to_buildings": "Применено к домам",
   "all_buildings": "Все",

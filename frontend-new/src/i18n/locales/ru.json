@@ -68,7 +68,6 @@
     "sqm": "м²",
     "uploading": "Загрузка..."
   },
-
   "nav": {
     "app_title": "CRM Недвижимость",
     "dashboard": "Дашборд",
@@ -87,7 +86,6 @@
     "department_label": "Отдел:",
     "no_email": "Нет email"
   },
-
   "auth": {
     "login_title": "Вход в систему",
     "login_subtitle": "CRM для управления недвижимостью",
@@ -128,7 +126,6 @@
       "request_error": "Ошибка при отправке запроса"
     }
   },
-
   "pages": {
     "dashboard": {
       "title": "Аналитика",
@@ -144,7 +141,6 @@
       "upcoming_meetings": "Ближайшие встречи",
       "sales_label": "Продажи:"
     },
-
     "clients": {
       "title": "Клиенты",
       "create_client": "Создать клиента",
@@ -180,7 +176,6 @@
       "date_from": "Дата создания (от)",
       "date_to": "Дата создания (до)"
     },
-
     "applications": {
       "title": "Заявки",
       "create_application": "Создать заявку",
@@ -247,7 +242,6 @@
         "cottage": "Коттедж"
       }
     },
-
     "meetings": {
       "title": "Встречи",
       "meeting_number": "Встреча №{{id}}",
@@ -294,7 +288,6 @@
       "completed_meetings": "Завершённые",
       "cancelled_meetings": "Отменённые"
     },
-
     "tasks": {
       "title": "Задачи",
       "total_count": "Всего задач:",
@@ -357,9 +350,16 @@
       "not_assigned": "Не назначен",
       "overdue": "Просрочено",
       "cancel_task": "Отменить",
-      "task_number": "Задача #{{id}}"
+      "task_number": "Задача #{{id}}",
+      "reopen_error": "Произошла ошибка при возврате задачи",
+      "start_time_required": "Необходимо указать время начала",
+      "deadline_required": "Необходимо указать новый дедлайн",
+      "title_required": "Необходимо указать название задачи",
+      "assignee_required": "Необходимо указать исполнителя",
+      "tags_hint": "Введите теги через запятую",
+      "returning": "Возвращаем...",
+      "return_task_and_edit": "Вернуть задачу в работу"
     },
-
     "deals": {
       "title": "Сделки",
       "deal_list": "Список сделок",
@@ -441,7 +441,6 @@
       "booking_end_date": "Дата окончания брони",
       "create_deal": "Создать сделку"
     },
-
     "projects": {
       "title": "Проекты",
       "create_project": "Создать проект",
@@ -466,6 +465,7 @@
       "search_building": "Поиск по названию дома",
       "upload_image": "Загрузить изображение",
       "delete_project": "Удалить проект",
+      "delete_project_confirm": "Вы уверены, что хотите удалить проект \"{{name}}\"? Это действие нельзя отменить.",
       "project_updated": "Проект обновлен!",
       "create_error": "Произошла ошибка при создании проекта.",
       "form": {
@@ -473,7 +473,6 @@
         "address": "Адрес"
       }
     },
-
     "buildings": {
       "title": "Детали дома",
       "building_details": "Детали дома",
@@ -521,6 +520,8 @@
       "replace": "Заменить",
       "upload": "Загрузить",
       "image_upload_error": "Ошибка при загрузке изображения.",
+      "delete_building": "Удалить дом",
+      "delete_building_confirm": "Вы уверены, что хотите удалить дом \"{{name}}\"?",
       "form": {
         "name": "Название/Номер дома",
         "floors_count": "Количество этажей",
@@ -536,7 +537,6 @@
         "upload_hint": "Скачайте шаблон Excel, заполните данные объектов с планировками и загрузите файл на вкладке 'Объекты'."
       }
     },
-
     "properties": {
       "property_number": "Объект №{{number}}",
       "layout": "Планировка",
@@ -554,7 +554,6 @@
       "save_comment": "Сохранить комментарий",
       "book_property": "Забронировать объект №{{number}}"
     },
-
     "finances": {
       "title": "Финансы",
       "payment_list": "Список платежей",
@@ -592,7 +591,6 @@
       "schedule_saved": "График платежей успешно сохранен!",
       "error_prefix": "Ошибка:"
     },
-
     "reports": {
       "title": "Отчеты",
       "project_report": "Отчет по проектам",
@@ -620,7 +618,6 @@
       "fact_percent": "% факт",
       "forecast_percent": "% прогноз"
     },
-
     "discounts": {
       "title": "Скидки",
       "create_discount": "Создать скидку",
@@ -628,10 +625,12 @@
       "edit_discount": "Редактировать скидку",
       "discount_name": "Название скидки",
       "percentage": "Процент (%)",
+      "property_type": "Тип недвижимости",
       "property_type_optional": "Тип недвижимости (необязательно)",
       "apply_to_buildings": "Применить к домам (необязательно)",
       "start_date": "Дата начала",
       "end_date_optional": "Дата окончания (пусто=бессрочно)",
+      "end_date_error": "Дата окончания должна быть позже даты начала",
       "short_description": "Краткое описание",
       "applied_to_buildings": "Применено к домам",
       "all_buildings": "Все",
@@ -639,9 +638,13 @@
       "round_result": "Округлить результат до целого числа",
       "discount_details": "Детали скидки",
       "discount_title": "Скидка",
-      "main_info": "Основная информация"
+      "main_info": "Основная информация",
+      "start_date_label": "Дата начала",
+      "end_date_label": "Дата окончания",
+      "indefinite": "Бессрочно",
+      "no_building_restriction": "Без ограничений (все дома)",
+      "no_comment": "Нет описания"
     },
-
     "settings": {
       "title": "Настройки",
       "companies_tab": "Компании",
@@ -667,160 +670,159 @@
       "payment_type_name": "Название типа платежа",
       "new_account": "Новый счёт",
       "account_name": "Название счёта",
-
       "permissions": {
         "companies_title": "Компании",
         "companies_subtitle": "Управление организационной структурой системы",
         "create_company": "Создать компанию",
-      "edit_company": "Редактирование компании",
-      "delete_company": "Удалить компанию",
-      "confirm_delete_company": "Вы уверены, что хотите удалить компанию \"{{name}}\"?",
-      "company_not_found": "Компания не найдена",
-      "company_name": "Название компании",
-      "company_code": "Код компании",
-      "code_help": "Уникальный идентификатор компании",
-      "description": "Описание",
-      "optional_field": "Необязательное поле",
-      "active": "Активна",
-      "code": "Код",
-      "status": "Статус",
-      "basic_info": "Основная информация",
-      "main_info": "Основная информация",
-      "name": "Название",
-      "name_label": "Название",
-      "statistics": "Статистика",
-      "last_updated": "Последнее обновление",
-      "departments_title": "Отделы",
-      "departments_subtitle": "Управление структурой отделов с поддержкой иерархии",
-      "create_department": "Создать отдел",
-      "edit_department": "Редактирование отдела",
-      "department_name": "Название отдела",
-      "select_company": "Компания",
-      "all_companies": "Все компании",
-      "all_departments": "Все отделы",
-      "select_company_for_departments": "Выберите компанию для просмотра отделов",
-      "no_departments": "В этой компании пока нет отделов. Создайте первый отдел.",
-      "parent_department": "Родительский отдел",
-      "no_parent": "Нет (корневой отдел)",
-      "roles_title": "Роли",
-      "create_role": "Создать роль",
-      "edit_role": "Редактирование роли",
-      "delete_role": "Удалить роль",
-      "confirm_delete_role": "Вы уверены, что хотите удалить роль \"{{name}}\"?",
-      "role_name": "Название роли",
-      "scope": "Область действия",
-      "scope_label": "Область:",
-      "scope_system": "Вся система",
-      "scope_company": "Компания",
-      "scope_department": "Отдел",
-      "scope_own": "Только свои данные",
-      "scope_system_short": "Система",
-      "scope_company_short": "Компания",
-      "scope_department_short": "Отдел",
-      "scope_own_short": "Свои",
-      "category": "Категория",
-      "category_label": "Категория:",
-      "category_administrative": "Административная",
-      "category_management": "Управленческая",
-      "category_operational": "Операционная",
-      "category_readonly": "Только просмотр",
-      "category_custom": "Пользовательская",
-      "action": "Действие",
-      "action_view": "Просмотр",
-      "action_add": "Создание",
-      "action_edit": "Редактирование",
-      "action_delete": "Удаление",
-      "resource_client": "Клиенты",
-      "resource_application": "Заявки",
-      "resource_meeting": "Встречи",
-      "resource_deal": "Сделки",
-      "resource_payment": "Платежи",
-      "resource_refund": "Возвраты",
-      "resource_project": "Проекты",
-      "resource_building": "Здания",
-      "resource_property": "Объекты недвижимости",
-      "resource_layout": "Планировки",
-      "resource_discount": "Скидки",
-      "resource_document": "Документы",
-      "resource_report": "Отчёты",
-      "resource_company": "Компании",
-      "resource_department": "Отделы",
-      "resource_role": "Роли",
-      "resource_user": "Пользователи",
-      "resource_beneficiary_account": "Счета получателей",
-      "resource_dashboard": "Дашборд",
-      "resource_payment_type": "Типы платежей",
-      "resource_permission": "Разрешения",
-      "resource_plan": "Планы",
-      "resource_settings": "Настройки",
-      "resource_template": "Шаблоны",
-      "resource_other": "Прочее",
-      "system_role_warning": "Это системная роль. Она не может быть изменена или удалена.",
-      "role_not_found": "Роль не найдена",
-      "permissions_matrix": "Матрица разрешений",
-      "permissions_count": "Разрешений",
-      "permissions_title": "Разрешения",
-      "selected": "выбрано",
-      "loading": "Загрузка разрешений...",
-      "form": {
+        "edit_company": "Редактирование компании",
+        "delete_company": "Удалить компанию",
+        "confirm_delete_company": "Вы уверены, что хотите удалить компанию \"{{name}}\"?",
+        "company_not_found": "Компания не найдена",
+        "company_name": "Название компании",
+        "company_code": "Код компании",
+        "code_help": "Уникальный идентификатор компании",
+        "description": "Описание",
+        "optional_field": "Необязательное поле",
+        "active": "Активна",
+        "code": "Код",
+        "status": "Статус",
+        "basic_info": "Основная информация",
+        "main_info": "Основная информация",
+        "name": "Название",
+        "name_label": "Название",
+        "statistics": "Статистика",
+        "last_updated": "Последнее обновление",
+        "departments_title": "Отделы",
+        "departments_subtitle": "Управление структурой отделов с поддержкой иерархии",
+        "create_department": "Создать отдел",
+        "edit_department": "Редактирование отдела",
+        "department_name": "Название отдела",
+        "select_company": "Компания",
+        "all_companies": "Все компании",
+        "all_departments": "Все отделы",
+        "select_company_for_departments": "Выберите компанию для просмотра отделов",
+        "no_departments": "В этой компании пока нет отделов. Создайте первый отдел.",
+        "parent_department": "Родительский отдел",
+        "no_parent": "Нет (корневой отдел)",
+        "roles_title": "Роли",
+        "create_role": "Создать роль",
+        "edit_role": "Редактирование роли",
+        "delete_role": "Удалить роль",
+        "confirm_delete_role": "Вы уверены, что хотите удалить роль \"{{name}}\"?",
         "role_name": "Название роли",
+        "scope": "Область действия",
+        "scope_label": "Область:",
+        "scope_system": "Вся система",
+        "scope_company": "Компания",
+        "scope_department": "Отдел",
+        "scope_own": "Только свои данные",
+        "scope_system_short": "Система",
+        "scope_company_short": "Компания",
+        "scope_department_short": "Отдел",
+        "scope_own_short": "Свои",
+        "category": "Категория",
+        "category_label": "Категория:",
+        "category_administrative": "Административная",
+        "category_management": "Управленческая",
+        "category_operational": "Операционная",
+        "category_readonly": "Только просмотр",
+        "category_custom": "Пользовательская",
+        "action": "Действие",
+        "action_view": "Просмотр",
+        "action_add": "Создание",
+        "action_edit": "Редактирование",
+        "action_delete": "Удаление",
+        "resource_client": "Клиенты",
+        "resource_application": "Заявки",
+        "resource_meeting": "Встречи",
+        "resource_deal": "Сделки",
+        "resource_payment": "Платежи",
+        "resource_refund": "Возвраты",
+        "resource_project": "Проекты",
+        "resource_building": "Здания",
+        "resource_property": "Объекты недвижимости",
+        "resource_layout": "Планировки",
+        "resource_discount": "Скидки",
+        "resource_document": "Документы",
+        "resource_report": "Отчёты",
+        "resource_company": "Компании",
+        "resource_department": "Отделы",
+        "resource_role": "Роли",
+        "resource_user": "Пользователи",
+        "resource_beneficiary_account": "Счета получателей",
+        "resource_dashboard": "Дашборд",
+        "resource_payment_type": "Типы платежей",
+        "resource_permission": "Разрешения",
+        "resource_plan": "Планы",
+        "resource_settings": "Настройки",
+        "resource_template": "Шаблоны",
+        "resource_other": "Прочее",
+        "system_role_warning": "Это системная роль. Она не может быть изменена или удалена.",
+        "role_not_found": "Роль не найдена",
+        "permissions_matrix": "Матрица разрешений",
+        "permissions_count": "Разрешений",
+        "permissions_title": "Разрешения",
+        "selected": "выбрано",
+        "loading": "Загрузка разрешений...",
+        "form": {
+          "role_name": "Название роли",
+          "role_code": "Код роли",
+          "role_code_hint": "Уникальный код роли (например: MANAGER, ADMIN)",
+          "is_active": "Активная роль"
+        },
+        "resources": {
+          "CLIENT": "Клиенты",
+          "APPLICATION": "Заявки",
+          "MEETING": "Встречи",
+          "DEAL": "Сделки",
+          "PAYMENT": "Платежи",
+          "REFUND": "Возвраты",
+          "PROJECT": "Проекты",
+          "BUILDING": "Здания",
+          "PROPERTY": "Объекты недвижимости",
+          "LAYOUT": "Планировки",
+          "DISCOUNT": "Скидки",
+          "DOCUMENT": "Документы",
+          "REPORT": "Отчёты",
+          "COMPANY": "Компании",
+          "DEPARTMENT": "Отделы",
+          "ROLE": "Роли",
+          "USER": "Пользователи",
+          "BENEFICIARY_ACCOUNT": "Счета получателей",
+          "DASHBOARD": "Дашборд",
+          "PAYMENT_TYPE": "Типы платежей",
+          "PERMISSION": "Разрешения",
+          "PLAN": "Планы",
+          "SETTINGS": "Настройки",
+          "TEMPLATE": "Шаблоны",
+          "OTHER": "Прочее",
+          "TASK": "Задачи"
+        },
+        "users_title": "Пользователи",
+        "create_user": "Создать пользователя",
+        "edit_user": "Редактирование пользователя",
+        "user": "Пользователь",
+        "user_data": "Данные пользователя",
+        "profile_data": "Данные профиля",
+        "username_help": "Используется для входа в систему",
+        "password": "Пароль",
+        "password_help": "Минимум 8 символов",
+        "position": "Должность",
+        "select_roles": "Выберите роли",
+        "system_admin": "Системный администратор",
+        "system_admin_desc": "Полный доступ ко всем функциям системы",
+        "active_user": "Активный пользователь",
+        "active_status": "Активен",
+        "inactive_status": "Неактивен",
+        "first_name": "Имя",
+        "last_name": "Фамилия",
+        "username": "Имя пользователя",
+        "department": "Отдел",
+        "departments": "Отделы",
+        "companies": "Компании",
+        "roles": "Роли",
         "role_code": "Код роли",
-        "role_code_hint": "Уникальный код роли (например: MANAGER, ADMIN)",
-        "is_active": "Активная роль"
-      },
-      "resources": {
-        "CLIENT": "Клиенты",
-        "APPLICATION": "Заявки",
-        "MEETING": "Встречи",
-        "DEAL": "Сделки",
-        "PAYMENT": "Платежи",
-        "REFUND": "Возвраты",
-        "PROJECT": "Проекты",
-        "BUILDING": "Здания",
-        "PROPERTY": "Объекты недвижимости",
-        "LAYOUT": "Планировки",
-        "DISCOUNT": "Скидки",
-        "DOCUMENT": "Документы",
-        "REPORT": "Отчёты",
-        "COMPANY": "Компании",
-        "DEPARTMENT": "Отделы",
-        "ROLE": "Роли",
-        "USER": "Пользователи",
-        "BENEFICIARY_ACCOUNT": "Счета получателей",
-        "DASHBOARD": "Дашборд",
-        "PAYMENT_TYPE": "Типы платежей",
-        "PERMISSION": "Разрешения",
-        "PLAN": "Планы",
-        "SETTINGS": "Настройки",
-        "TEMPLATE": "Шаблоны",
-        "OTHER": "Прочее",
-        "TASK": "Задачи"
-      },
-      "users_title": "Пользователи",
-      "create_user": "Создать пользователя",
-      "edit_user": "Редактирование пользователя",
-      "user": "Пользователь",
-      "user_data": "Данные пользователя",
-      "profile_data": "Данные профиля",
-      "username_help": "Используется для входа в систему",
-      "password": "Пароль",
-      "password_help": "Минимум 8 символов",
-      "position": "Должность",
-      "select_roles": "Выберите роли",
-      "system_admin": "Системный администратор",
-      "system_admin_desc": "Полный доступ ко всем функциям системы",
-      "active_user": "Активный пользователь",
-      "active_status": "Активен",
-      "inactive_status": "Неактивен",
-      "first_name": "Имя",
-      "last_name": "Фамилия",
-      "username": "Имя пользователя",
-      "department": "Отдел",
-      "departments": "Отделы",
-      "companies": "Компании",
-      "roles": "Роли",
-      "role_code": "Код роли",
-      "role_code_help": "Уникальный код роли (например: MANAGER, ADMIN)",
+        "role_code_help": "Уникальный код роли (например: MANAGER, ADMIN)",
         "active_role": "Активная роль",
         "companies_and_departments": "Компании и отделы",
         "at_company_level": "На уровне компании",
@@ -831,12 +833,9 @@
         "no_roles": "Нет ролей",
         "filters": "Фильтры",
         "all": "Все",
-        "all_companies": "Все компании",
-        "all_departments": "Все отделы",
         "active_plural": "Активные",
         "inactive_plural": "Неактивные",
         "company": "Компания",
-        "status": "Статус",
         "role_system_admin": "Системный администратор",
         "role_company_admin": "Администратор компании",
         "role_department_manager": "Руководитель отдела",
@@ -845,7 +844,6 @@
         "roles_subtitle": "Управление ролями и разрешениями пользователей"
       }
     },
-
     "api_keys": {
       "title": "API-ключи партнёров",
       "subtitle": "Управление API-ключами для партнёрских интеграций",
@@ -889,7 +887,6 @@
       "requests_per_day": "Запросов в день",
       "edit_info": "При редактировании API-ключ не изменится"
     },
-
     "templates": {
       "title": "Шаблоны документов",
       "subtitle": "Управление шаблонами документов для генерации",
@@ -901,7 +898,6 @@
       "no_templates": "Шаблоны не найдены",
       "tags_cheatsheet": "Справка по тегам"
     },
-
     "payments": {
       "payment_number": "Платеж №{{id}}",
       "method": "Метод",
@@ -911,13 +907,11 @@
       "mark_as_returned": "Отметить как возвращенный"
     }
   },
-
   "documents": {
     "no_templates": "Для этой сделки нет подходящих шаблонов. Проверьте настройки шаблонов.",
     "generate": "Сгенерировать",
     "generation_failed": "Не удалось сгенерировать документ."
   },
-
   "files": {
     "file": "Файл",
     "uploaded_by": "Кем загружен",
@@ -925,7 +919,6 @@
     "upload_new_file": "Загрузить новый файл",
     "uploading": "Загрузка..."
   },
-
   "logs": {
     "empty": "пусто",
     "fields": {
@@ -944,7 +937,6 @@
       "end_date": "Дата окончания"
     }
   },
-
   "statuses": {
     "client": {
       "ACTIVE": "Активный",
@@ -956,18 +948,30 @@
       "IN_PROGRESS": "В работе",
       "JUNK": "Нецелевая",
       "REJECTED": "Отказ",
-      "CLOSED_WON": "Успешно закрыта"
+      "CLOSED_WON": "Успешно закрыта",
+      "new": "Новая",
+      "in_progress": "В работе",
+      "junk": "Нецелевая",
+      "rejected": "Отказ",
+      "closed_won": "Успешно закрыта"
     },
     "application_source": {
       "INTERNET": "Интернет",
       "SOCIAL_MEDIA": "Соц.сети",
       "OFFICE": "Офис",
-      "CALL": "Звонок"
+      "CALL": "Звонок",
+      "internet": "Интернет",
+      "social_media": "Соц.сети",
+      "office": "Офис",
+      "call": "Звонок"
     },
     "meeting": {
       "NEW": "Новая",
       "COMPLETED": "Состоялась",
-      "CANCELLED": "Не состоялась"
+      "CANCELLED": "Не состоялась",
+      "new": "Новая",
+      "completed": "Состоялась",
+      "cancelled": "Не состоялась"
     },
     "deal": {
       "BOOKING": "Бронь",
@@ -995,7 +999,12 @@
       "PAID": "Оплачен",
       "OVERDUE": "Просрочен",
       "TO_BE_RETURNED": "К возврату",
-      "RETURNED": "Возвращен"
+      "RETURNED": "Возвращен",
+      "pending": "К оплате",
+      "paid": "Оплачен",
+      "overdue": "Просрочен",
+      "to_be_returned": "К возврату",
+      "returned": "Возвращен"
     },
     "building": {
       "UNDER_REVIEW": "На проверке",
@@ -1043,7 +1052,6 @@
       "SYSTEM": "Система"
     }
   },
-
   "property_types": {
     "APARTMENT": "Квартира",
     "COMMERCIAL": "Коммерция",
@@ -1051,7 +1059,6 @@
     "STORAGE": "Кладовка",
     "COTTAGE": "Коттедж"
   },
-
   "resources": {
     "CLIENT": "Клиенты",
     "APPLICATION": "Заявки",
@@ -1080,7 +1087,6 @@
     "TASK": "Задачи",
     "OTHER": "Прочее"
   },
-
   "template_tags": {
     "cheatsheet_title": "Шпаргалка по меткам",
     "cheatsheet_description": "Используйте эти метки в .docx файле. Они будут автоматически заменены на реальные данные при генерации документа.",
@@ -1105,7 +1111,6 @@
     "building_name": "Название дома/корпуса",
     "project_name": "Название ЖК"
   },
-
   "forms": {
     "full_name": "ФИО",
     "phone_number": "Номер телефона",
@@ -1135,7 +1140,6 @@
     "end_date": "Дата окончания",
     "select_option": "Выберите..."
   },
-
   "validation": {
     "title_required": "Название обязательно",
     "description_required": "Описание обязательно",
@@ -1178,9 +1182,11 @@
     "save_role_error": "Ошибка при сохранении роли",
     "load_discount_error": "Не удалось загрузить данные скидки.",
     "load_payment_error": "Не удалось загрузить данные платежа.",
-    "load_application_error": "Не удалось загрузить данные заявки."
+    "load_application_error": "Не удалось загрузить данные заявки.",
+    "access_denied": "Доступ запрещён",
+    "admin_only": "Эта страница доступна только администраторам системы",
+    "no_view_permission": "У вас нет прав для просмотра этой страницы"
   },
-
   "table": {
     "id": "ID",
     "name": "Название",
@@ -1215,9 +1221,44 @@
     "floors_count": "Этажей",
     "area": "Площадь",
     "unit_number": "Номер объекта",
-    "applied_to_buildings": "Применено к домам"
+    "applied_to_buildings": "Применено к домам",
+    "start_date": "Дата начала",
+    "end_date": "Дата окончания",
+    "category": "Категория",
+    "scope": "Область"
   },
-
+  "finances": {
+    "schedule_saved": "График платежей успешно сохранен!",
+    "error_prefix": "Ошибка:",
+    "edit_schedule": "Редактировать график",
+    "amount": "Сумма",
+    "due_date": "К оплате",
+    "payment_type": "Тип платежа",
+    "account": "Счет",
+    "paid": "Оплачен",
+    "return": "Вернуть",
+    "add_payment": "Добавить платеж",
+    "save_schedule": "Сохранить график",
+    "contract_amount": "Сумма по договору",
+    "distributed": "Распределено",
+    "remaining": "Остаток"
+  },
+  "buildings": {
+    "chessboard": {
+      "no_properties": "Нет объектов для отображения в шахматке.",
+      "entrance": "Подъезд"
+    },
+    "layouts": {
+      "load_error": "Не удалось загрузить планировки.",
+      "not_loaded": "Планировки для этого дома еще не были загружены через Excel.",
+      "upload_hint": "Скачайте шаблон Excel, заполните данные объектов с планировками и загрузите файл на вкладке 'Объекты'."
+    }
+  },
+  "applications": {
+    "client": "Клиент",
+    "client_required": "Выберите клиента",
+    "create_application": "Создать заявку"
+  },
   "deal_cancellation": {
     "termination_title": "Расторжение сделки",
     "cancellation_title": "Отмена сделки",
@@ -1229,7 +1270,6 @@
     "terminate": "Расторгнуть",
     "cancel_deal": "Отменить сделку"
   },
-
   "months": {
     "1": "Январь",
     "2": "Февраль",
@@ -1244,7 +1284,6 @@
     "11": "Ноябрь",
     "12": "Декабрь"
   },
-
   "weekdays": {
     "short": {
       "mon": "Пн",
@@ -1256,11 +1295,9 @@
       "sun": "Вс"
     }
   },
-
   "calendar": {
     "more": "+{{count}} ещё"
   },
-
   "quarters": {
     "1": "1 квартал",
     "2": "2 квартал",
@@ -1268,4 +1305,3 @@
     "4": "4 квартал"
   }
 }
-

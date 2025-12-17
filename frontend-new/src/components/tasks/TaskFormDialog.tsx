@@ -101,7 +101,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
       defaultStartedAt.setMinutes(roundedMinutes);
       defaultStartedAt.setSeconds(0);
       defaultStartedAt.setMilliseconds(0);
-      
+
       reset({
         title: '',
         description: '',
@@ -126,7 +126,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
       onClose();
     },
     onError: (error: any) => {
-      console.error('Ошибка создания задачи:', error);
+      console.error('Create task error:', error);
       const errorMessage = extractErrorMessage(error);
       setApiError(errorMessage);
     },
@@ -142,7 +142,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
       onClose();
     },
     onError: (error: any) => {
-      console.error('Ошибка обновления задачи:', error);
+      console.error('Update task error:', error);
       const errorMessage = extractErrorMessage(error);
       setApiError(errorMessage);
     },
@@ -151,7 +151,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
   const extractErrorMessage = (error: any): string => {
     if (error.response?.data) {
       const data = error.response.data;
-      
+
       // Если это объект с полями ошибок
       if (typeof data === 'object' && !Array.isArray(data)) {
         const messages: string[] = [];
@@ -166,19 +166,19 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
           return messages.join('. ');
         }
       }
-      
+
       // Если это строка
       if (typeof data === 'string') {
         return data;
       }
-      
+
       // Если есть поле detail
       if (data.detail) {
         return data.detail;
       }
     }
-    
-    return 'Произошла ошибка при сохранении задачи';
+
+    return t('pages.tasks.task_save_error');
   };
 
   const onSubmit = (data: TaskFormData) => {
@@ -186,7 +186,7 @@ export const TaskFormDialog: React.FC<TaskFormDialogProps> = ({ open, onClose, t
 
     // Валидация: дедлайн не может быть раньше времени начала
     if (data.started_at && data.deadline && data.deadline < data.started_at) {
-      setApiError('Дедлайн не может быть раньше времени начала задачи');
+      setApiError(t('pages.tasks.deadline_before_start'));
       return;
     }
 

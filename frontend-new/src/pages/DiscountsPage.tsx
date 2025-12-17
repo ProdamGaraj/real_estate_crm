@@ -62,8 +62,12 @@ export default function DiscountsPage() {
       )
     },
     { field: 'percentage_value', headerName: t('pages.discounts.percentage'), width: 100 },
-    { field: 'property_type', headerName: t('pages.discounts.property_type'), flex: 1 },
-    { field: 'buildings_info', headerName: t('pages.discounts.applied_to_buildings'), flex: 2,
+    {
+      field: 'property_type', headerName: t('pages.discounts.property_type'), flex: 1,
+      valueGetter: (value: string) => value ? t(`statuses.property_type.${value}`, value) : ''
+    },
+    {
+      field: 'buildings_info', headerName: t('pages.discounts.applied_to_buildings'), flex: 2,
       valueGetter: (value: string[]) => value.join(', ') || t('common.all')
     },
     { field: 'start_date', headerName: t('table.start_date'), type: 'date', width: 120, valueGetter: (value) => value ? new Date(value) : null },
@@ -74,7 +78,7 @@ export default function DiscountsPage() {
       getActions: (params) => [
         <GridActionsCellItem
           icon={<EditIcon />}
-          label={t('actions.edit')}
+          label={t('common.edit')}
           onClick={() => handleOpenEdit(params.row)}
         />,
       ],

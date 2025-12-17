@@ -10,6 +10,7 @@
   "apply_to_buildings": "Binolarga qo'llash (ixtiyoriy)",
   "start_date": "Boshlanish sanasi",
   "end_date_optional": "Tugash sanasi (bo'sh=muddatsiz)",
+  "end_date_error": "Tugash sanasi boshlanish sanasidan keyin bo'lishi kerak",
   "short_description": "Qisqa tavsif",
   "applied_to_buildings": "Qo'llanilgan binolar",
   "all_buildings": "Hammasi",

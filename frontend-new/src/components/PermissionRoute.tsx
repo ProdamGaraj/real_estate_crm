@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { hasPermission, isSystemAdmin } from '../utils/permissions';
 import type { ActionType, ResourceType, ScopeType } from '../utils/permissions';
 import { Box, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 interface PermissionRouteProps {
   children: React.ReactNode;
@@ -35,6 +36,7 @@ export default function PermissionRoute({
   requireAdmin = false,
 }: PermissionRouteProps) {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
 
   // Если требуется админ
   if (requireAdmin) {
@@ -42,10 +44,10 @@ export default function PermissionRoute({
       return (
         <Box sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="h5" color="error" gutterBottom>
-            Доступ запрещен
+            {t('errors.access_denied')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Эта страница доступна только администраторам системы
+            {t('errors.admin_only')}
           </Typography>
         </Box>
       );
@@ -59,10 +61,10 @@ export default function PermissionRoute({
       return (
         <Box sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="h5" color="error" gutterBottom>
-            Доступ запрещен
+            {t('errors.access_denied')}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            У вас нет прав для просмотра этой страницы
+            {t('errors.no_view_permission')}
           </Typography>
         </Box>
       );

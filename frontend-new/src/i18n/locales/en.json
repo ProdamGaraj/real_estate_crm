@@ -68,7 +68,6 @@
     "sqm": "sq.m.",
     "uploading": "Uploading..."
   },
-
   "nav": {
     "app_title": "Real Estate CRM",
     "dashboard": "Dashboard",
@@ -87,7 +86,6 @@
     "department_label": "Department:",
     "no_email": "No email"
   },
-
   "auth": {
     "login_title": "Login",
     "login_subtitle": "Real Estate Management CRM",
@@ -128,7 +126,6 @@
       "request_error": "Error sending request"
     }
   },
-
   "pages": {
     "dashboard": {
       "title": "Analytics",
@@ -144,7 +141,6 @@
       "upcoming_meetings": "Upcoming meetings",
       "sales_label": "Sales:"
     },
-
     "clients": {
       "title": "Clients",
       "create_client": "Create Client",
@@ -180,7 +176,6 @@
       "date_from": "Created From",
       "date_to": "Created To"
     },
-
     "applications": {
       "title": "Applications",
       "create_application": "Create Application",
@@ -247,7 +242,6 @@
         "cottage": "Cottage"
       }
     },
-
     "meetings": {
       "title": "Meetings",
       "meeting_number": "Meeting #{{id}}",
@@ -294,7 +288,6 @@
       "completed_meetings": "Completed",
       "cancelled_meetings": "Cancelled"
     },
-
     "tasks": {
       "title": "Tasks",
       "total_count": "Total tasks:",
@@ -357,9 +350,16 @@
       "not_assigned": "Not assigned",
       "overdue": "Overdue",
       "cancel_task": "Cancel",
-      "task_number": "Task #{{id}}"
+      "task_number": "Task #{{id}}",
+      "reopen_error": "An error occurred while returning the task",
+      "start_time_required": "Start time is required",
+      "deadline_required": "New deadline is required",
+      "title_required": "Task title is required",
+      "assignee_required": "Assignee is required",
+      "tags_hint": "Enter tags separated by comma",
+      "returning": "Returning...",
+      "return_task_and_edit": "Return Task to Work"
     },
-
     "deals": {
       "title": "Deals",
       "deal_list": "Deal List",
@@ -441,7 +441,6 @@
       "booking_end_date": "Booking End Date",
       "create_deal": "Create Deal"
     },
-
     "projects": {
       "title": "Projects",
       "create_project": "Create Project",
@@ -466,6 +465,7 @@
       "search_building": "Search by building name",
       "upload_image": "Upload Image",
       "delete_project": "Delete Project",
+      "delete_project_confirm": "Are you sure you want to delete project \"{{name}}\"? This action cannot be undone.",
       "project_updated": "Project updated!",
       "create_error": "An error occurred while creating the project.",
       "form": {
@@ -473,7 +473,6 @@
         "address": "Address"
       }
     },
-
     "buildings": {
       "title": "Building Details",
       "building_details": "Building Details",
@@ -521,6 +520,8 @@
       "replace": "Replace",
       "upload": "Upload",
       "image_upload_error": "Error uploading image.",
+      "delete_building": "Delete Building",
+      "delete_building_confirm": "Are you sure you want to delete building \"{{name}}\"?",
       "form": {
         "name": "Building Name/Number",
         "floors_count": "Number of Floors",
@@ -536,7 +537,6 @@
         "upload_hint": "Download the Excel template, fill in the property data with layouts and upload the file on the 'Properties' tab."
       }
     },
-
     "properties": {
       "property_number": "Property #{{number}}",
       "layout": "Layout",
@@ -554,7 +554,6 @@
       "save_comment": "Save Comment",
       "book_property": "Book Property #{{number}}"
     },
-
     "finances": {
       "title": "Finances",
       "payment_list": "Payment List",
@@ -592,7 +591,6 @@
       "schedule_saved": "Payment schedule saved successfully!",
       "error_prefix": "Error:"
     },
-
     "reports": {
       "title": "Reports",
       "project_report": "Project Report",
@@ -620,7 +618,6 @@
       "fact_percent": "% fact",
       "forecast_percent": "% forecast"
     },
-
     "discounts": {
       "title": "Discounts",
       "create_discount": "Create Discount",
@@ -628,6 +625,7 @@
       "edit_discount": "Edit Discount",
       "discount_name": "Discount Name",
       "percentage": "Percentage (%)",
+      "property_type": "Property Type",
       "property_type_optional": "Property Type (optional)",
       "apply_to_buildings": "Apply to Buildings (optional)",
       "start_date": "Start Date",
@@ -637,9 +635,15 @@
       "all_buildings": "All",
       "applying_discounts": "Applying Discounts",
       "round_result": "Round result to whole number",
-      "discount_details": "Discount Details"
+      "discount_details": "Discount Details",
+      "discount_title": "Discount",
+      "main_info": "Main Information",
+      "start_date_label": "Start Date",
+      "end_date_label": "End Date",
+      "indefinite": "Indefinite",
+      "no_building_restriction": "No restriction (all buildings)",
+      "no_comment": "No description"
     },
-
     "settings": {
       "title": "Settings",
       "companies_tab": "Companies",
@@ -665,7 +669,6 @@
       "payment_type_name": "Payment Type Name",
       "new_account": "New Account",
       "account_name": "Account Name",
-
       "permissions": {
         "companies_title": "Companies",
         "companies_subtitle": "Managing organizational structure",
@@ -677,173 +680,168 @@
         "company_name": "Company Name",
         "company_code": "Company Code",
         "code_help": "Unique company identifier",
-      "description": "Description",
-      "optional_field": "Optional field",
-      "active": "Active",
-      "code": "Code",
-      "status": "Status",
-      "basic_info": "Basic Information",
-      "main_info": "Main Information",
-      "name": "Name",
-      "name_label": "Name",
-      "statistics": "Statistics",
-      "last_updated": "Last Updated",
-      "departments_title": "Departments",
-      "departments_subtitle": "Managing department structure with hierarchy support",
-      "create_department": "Create Department",
-      "edit_department": "Edit Department",
-      "department_name": "Department Name",
-      "select_company": "Company",
-      "all_companies": "All Companies",
-      "all_departments": "All Departments",
-      "select_company_for_departments": "Select a company to view departments",
-      "no_departments": "No departments in this company yet. Create the first department.",
-      "parent_department": "Parent Department",
-      "no_parent": "None (root department)",
-      "roles_title": "Roles",
-      "create_role": "Create Role",
-      "edit_role": "Edit Role",
-      "delete_role": "Delete Role",
-      "confirm_delete_role": "Are you sure you want to delete role \"{{name}}\"?",
-      "role_name": "Role Name",
-      "scope": "Scope",
-      "scope_label": "Scope:",
-      "scope_system": "Entire System",
-      "scope_company": "Company",
-      "scope_department": "Department",
-      "scope_own": "Own Data Only",
-      "scope_system_short": "System",
-      "scope_company_short": "Company",
-      "scope_department_short": "Department",
-      "scope_own_short": "Own",
-      "category": "Category",
-      "category_label": "Category:",
-      "category_administrative": "Administrative",
-      "category_management": "Management",
-      "category_operational": "Operational",
-      "category_readonly": "Read Only",
-      "category_custom": "Custom",
-      "action": "Action",
-      "action_view": "View",
-      "action_add": "Create",
-      "action_edit": "Edit",
-      "action_delete": "Delete",
-      "resource_client": "Clients",
-      "resource_application": "Applications",
-      "resource_meeting": "Meetings",
-      "resource_deal": "Deals",
-      "resource_payment": "Payments",
-      "resource_refund": "Refunds",
-      "resource_project": "Projects",
-      "resource_building": "Buildings",
-      "resource_property": "Properties",
-      "resource_layout": "Layouts",
-      "resource_discount": "Discounts",
-      "resource_document": "Documents",
-      "resource_report": "Reports",
-      "resource_company": "Companies",
-      "resource_department": "Departments",
-      "resource_role": "Roles",
-      "resource_user": "Users",
-      "resource_beneficiary_account": "Beneficiary Accounts",
-      "resource_dashboard": "Dashboard",
-      "resource_payment_type": "Payment Types",
-      "resource_permission": "Permissions",
-      "resource_plan": "Plans",
-      "resource_settings": "Settings",
-      "resource_template": "Templates",
-      "resource_other": "Other",
-      "system_role_warning": "This is a system role. It cannot be modified or deleted.",
-      "role_not_found": "Role not found",
-      "permissions_matrix": "Permissions Matrix",
-      "permissions_count": "Permissions",
-      "permissions_title": "Permissions",
-      "selected": "selected",
-      "loading": "Loading permissions...",
-      "form": {
+        "description": "Description",
+        "optional_field": "Optional field",
+        "active": "Active",
+        "code": "Code",
+        "status": "Status",
+        "basic_info": "Basic Information",
+        "main_info": "Main Information",
+        "name": "Name",
+        "name_label": "Name",
+        "statistics": "Statistics",
+        "last_updated": "Last Updated",
+        "departments_title": "Departments",
+        "departments_subtitle": "Managing department structure with hierarchy support",
+        "create_department": "Create Department",
+        "edit_department": "Edit Department",
+        "department_name": "Department Name",
+        "select_company": "Company",
+        "all_companies": "All Companies",
+        "all_departments": "All Departments",
+        "select_company_for_departments": "Select a company to view departments",
+        "no_departments": "No departments in this company yet. Create the first department.",
+        "parent_department": "Parent Department",
+        "no_parent": "None (root department)",
+        "roles_title": "Roles",
+        "create_role": "Create Role",
+        "edit_role": "Edit Role",
+        "delete_role": "Delete Role",
+        "confirm_delete_role": "Are you sure you want to delete role \"{{name}}\"?",
         "role_name": "Role Name",
+        "scope": "Scope",
+        "scope_label": "Scope:",
+        "scope_system": "Entire System",
+        "scope_company": "Company",
+        "scope_department": "Department",
+        "scope_own": "Own Data Only",
+        "scope_system_short": "System",
+        "scope_company_short": "Company",
+        "scope_department_short": "Department",
+        "scope_own_short": "Own",
+        "category": "Category",
+        "category_label": "Category:",
+        "category_administrative": "Administrative",
+        "category_management": "Management",
+        "category_operational": "Operational",
+        "category_readonly": "Read Only",
+        "category_custom": "Custom",
+        "action": "Action",
+        "action_view": "View",
+        "action_add": "Create",
+        "action_edit": "Edit",
+        "action_delete": "Delete",
+        "resource_client": "Clients",
+        "resource_application": "Applications",
+        "resource_meeting": "Meetings",
+        "resource_deal": "Deals",
+        "resource_payment": "Payments",
+        "resource_refund": "Refunds",
+        "resource_project": "Projects",
+        "resource_building": "Buildings",
+        "resource_property": "Properties",
+        "resource_layout": "Layouts",
+        "resource_discount": "Discounts",
+        "resource_document": "Documents",
+        "resource_report": "Reports",
+        "resource_company": "Companies",
+        "resource_department": "Departments",
+        "resource_role": "Roles",
+        "resource_user": "Users",
+        "resource_beneficiary_account": "Beneficiary Accounts",
+        "resource_dashboard": "Dashboard",
+        "resource_payment_type": "Payment Types",
+        "resource_permission": "Permissions",
+        "resource_plan": "Plans",
+        "resource_settings": "Settings",
+        "resource_template": "Templates",
+        "resource_other": "Other",
+        "system_role_warning": "This is a system role. It cannot be modified or deleted.",
+        "role_not_found": "Role not found",
+        "permissions_matrix": "Permissions Matrix",
+        "permissions_count": "Permissions",
+        "permissions_title": "Permissions",
+        "selected": "selected",
+        "loading": "Loading permissions...",
+        "form": {
+          "role_name": "Role Name",
+          "role_code": "Role Code",
+          "role_code_hint": "Unique role code (e.g., MANAGER, ADMIN)",
+          "is_active": "Active Role"
+        },
+        "resources": {
+          "CLIENT": "Clients",
+          "APPLICATION": "Applications",
+          "MEETING": "Meetings",
+          "DEAL": "Deals",
+          "PAYMENT": "Payments",
+          "REFUND": "Refunds",
+          "PROJECT": "Projects",
+          "BUILDING": "Buildings",
+          "PROPERTY": "Properties",
+          "LAYOUT": "Layouts",
+          "DISCOUNT": "Discounts",
+          "DOCUMENT": "Documents",
+          "REPORT": "Reports",
+          "COMPANY": "Companies",
+          "DEPARTMENT": "Departments",
+          "ROLE": "Roles",
+          "USER": "Users",
+          "BENEFICIARY_ACCOUNT": "Beneficiary Accounts",
+          "DASHBOARD": "Dashboard",
+          "PAYMENT_TYPE": "Payment Types",
+          "PERMISSION": "Permissions",
+          "PLAN": "Plans",
+          "SETTINGS": "Settings",
+          "TEMPLATE": "Templates",
+          "OTHER": "Other",
+          "TASK": "Tasks"
+        },
+        "users_title": "Users",
+        "create_user": "Create User",
+        "edit_user": "Edit User",
+        "user": "User",
+        "user_data": "User Data",
+        "profile_data": "Profile Data",
+        "username_help": "Used for system login",
+        "password": "Password",
+        "password_help": "Minimum 8 characters",
+        "position": "Position",
+        "select_roles": "Select roles",
+        "system_admin": "System Administrator",
+        "system_admin_desc": "Full access to all system features",
+        "active_user": "Active User",
+        "active_status": "Active",
+        "inactive_status": "Inactive",
+        "first_name": "First Name",
+        "last_name": "Last Name",
+        "username": "Username",
+        "department": "Department",
+        "departments": "Departments",
+        "companies": "Companies",
+        "roles": "Roles",
         "role_code": "Role Code",
-        "role_code_hint": "Unique role code (e.g., MANAGER, ADMIN)",
-        "is_active": "Active Role"
-      },
-      "resources": {
-        "CLIENT": "Clients",
-        "APPLICATION": "Applications",
-        "MEETING": "Meetings",
-        "DEAL": "Deals",
-        "PAYMENT": "Payments",
-        "REFUND": "Refunds",
-        "PROJECT": "Projects",
-        "BUILDING": "Buildings",
-        "PROPERTY": "Properties",
-        "LAYOUT": "Layouts",
-        "DISCOUNT": "Discounts",
-        "DOCUMENT": "Documents",
-        "REPORT": "Reports",
-        "COMPANY": "Companies",
-        "DEPARTMENT": "Departments",
-        "ROLE": "Roles",
-        "USER": "Users",
-        "BENEFICIARY_ACCOUNT": "Beneficiary Accounts",
-        "DASHBOARD": "Dashboard",
-        "PAYMENT_TYPE": "Payment Types",
-        "PERMISSION": "Permissions",
-        "PLAN": "Plans",
-        "SETTINGS": "Settings",
-        "TEMPLATE": "Templates",
-        "OTHER": "Other",
-        "TASK": "Tasks"
-      },
-      "users_title": "Users",
-      "create_user": "Create User",
-      "edit_user": "Edit User",
-      "user": "User",
-      "user_data": "User Data",
-      "profile_data": "Profile Data",
-      "username_help": "Used for system login",
-      "password": "Password",
-      "password_help": "Minimum 8 characters",
-      "position": "Position",
-      "select_roles": "Select roles",
-      "system_admin": "System Administrator",
-      "system_admin_desc": "Full access to all system features",
-      "active_user": "Active User",
-      "active_status": "Active",
-      "inactive_status": "Inactive",
-      "first_name": "First Name",
-      "last_name": "Last Name",
-      "username": "Username",
-      "department": "Department",
-      "departments": "Departments",
-      "companies": "Companies",
-      "roles": "Roles",
-      "role_code": "Role Code",
-      "role_code_help": "Unique role code (e.g., MANAGER, ADMIN)",
-      "active_role": "Active Role",
-      "companies_and_departments": "Companies and Departments",
-      "at_company_level": "At Company Level",
-      "add_company": "Add Company",
-      "my_resource": "My {{resource}}",
-      "users_description": "Manage system users and their access rights",
-      "add_user": "Add User",
-      "no_roles": "No roles",
-      "filters": "Filters",
-      "all": "All",
-      "all_companies": "All Companies",
-      "all_departments": "All Departments",
-      "active_plural": "Active",
-      "inactive_plural": "Inactive",
-      "company": "Company",
-      "status": "Status",
-      "role_system_admin": "System Administrator",
-      "role_company_admin": "Company Administrator",
-      "role_department_manager": "Department Manager",
-      "role_manager": "Manager",
-      "role_viewer": "Viewer",
-      "roles_subtitle": "Manage user roles and permissions"
+        "role_code_help": "Unique role code (e.g., MANAGER, ADMIN)",
+        "active_role": "Active Role",
+        "companies_and_departments": "Companies and Departments",
+        "at_company_level": "At Company Level",
+        "add_company": "Add Company",
+        "my_resource": "My {{resource}}",
+        "users_description": "Manage system users and their access rights",
+        "add_user": "Add User",
+        "no_roles": "No roles",
+        "filters": "Filters",
+        "all": "All",
+        "active_plural": "Active",
+        "inactive_plural": "Inactive",
+        "role_system_admin": "System Administrator",
+        "role_company_admin": "Company Administrator",
+        "role_department_manager": "Department Manager",
+        "role_manager": "Manager",
+        "role_viewer": "Viewer",
+        "roles_subtitle": "Manage user roles and permissions"
       }
     },
-
     "api_keys": {
       "title": "Partner API Keys",
       "subtitle": "Manage API keys for partner integrations",
@@ -887,7 +885,6 @@
       "requests_per_day": "Requests per day",
       "edit_info": "The API key will not change when editing"
     },
-
     "templates": {
       "title": "Document Templates",
       "subtitle": "Manage document templates for generation",
@@ -900,13 +897,11 @@
       "tags_cheatsheet": "Tags Cheatsheet"
     }
   },
-
   "documents": {
     "no_templates": "No templates available for this deal. Check template settings.",
     "generate": "Generate",
     "generation_failed": "Failed to generate document."
   },
-
   "files": {
     "file": "File",
     "uploaded_by": "Uploaded By",
@@ -914,7 +909,6 @@
     "upload_new_file": "Upload New File",
     "uploading": "Uploading..."
   },
-
   "logs": {
     "empty": "empty",
     "fields": {
@@ -933,7 +927,6 @@
       "end_date": "End Date"
     }
   },
-
   "template_tags": {
     "cheatsheet_title": "Tag Cheatsheet",
     "cheatsheet_description": "Use these tags in your .docx file. They will be automatically replaced with actual data when generating the document.",
@@ -958,7 +951,6 @@
     "building_name": "Building/Block Name",
     "project_name": "Project Name"
   },
-
   "statuses": {
     "client": {
       "ACTIVE": "Active",
@@ -970,18 +962,30 @@
       "IN_PROGRESS": "In Progress",
       "JUNK": "Junk",
       "REJECTED": "Rejected",
-      "CLOSED_WON": "Closed Won"
+      "CLOSED_WON": "Closed Won",
+      "new": "New",
+      "in_progress": "In Progress",
+      "junk": "Junk",
+      "rejected": "Rejected",
+      "closed_won": "Closed Won"
     },
     "application_source": {
       "INTERNET": "Internet",
       "SOCIAL_MEDIA": "Social Media",
       "OFFICE": "Office",
-      "CALL": "Call"
+      "CALL": "Call",
+      "internet": "Internet",
+      "social_media": "Social Media",
+      "office": "Office",
+      "call": "Call"
     },
     "meeting": {
       "NEW": "New",
       "COMPLETED": "Completed",
-      "CANCELLED": "Cancelled"
+      "CANCELLED": "Cancelled",
+      "new": "New",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
     },
     "deal": {
       "BOOKING": "Booking",
@@ -1009,7 +1013,12 @@
       "PAID": "Paid",
       "OVERDUE": "Overdue",
       "TO_BE_RETURNED": "To Be Returned",
-      "RETURNED": "Returned"
+      "RETURNED": "Returned",
+      "pending": "Pending",
+      "paid": "Paid",
+      "overdue": "Overdue",
+      "to_be_returned": "To Be Returned",
+      "returned": "Returned"
     },
     "building": {
       "UNDER_REVIEW": "Under Review",
@@ -1057,7 +1066,6 @@
       "SYSTEM": "System"
     }
   },
-
   "property_types": {
     "APARTMENT": "Apartment",
     "COMMERCIAL": "Commercial",
@@ -1065,7 +1073,6 @@
     "STORAGE": "Storage",
     "COTTAGE": "Cottage"
   },
-
   "resources": {
     "CLIENT": "Clients",
     "APPLICATION": "Applications",
@@ -1094,7 +1101,6 @@
     "TASK": "Tasks",
     "OTHER": "Other"
   },
-
   "forms": {
     "full_name": "Full Name",
     "phone_number": "Phone Number",
@@ -1124,7 +1130,6 @@
     "end_date": "End Date",
     "select_option": "Select..."
   },
-
   "validation": {
     "title_required": "Title is required",
     "description_required": "Description is required",
@@ -1135,7 +1140,6 @@
     "password_min_length": "Password must be at least 8 characters",
     "passwords_not_match": "Passwords do not match"
   },
-
   "errors": {
     "load_data_error": "Failed to load dashboard data.",
     "load_clients_error": "Error loading data:",
@@ -1165,9 +1169,11 @@
     "user_not_found": "User not found",
     "create_user_error": "Error creating user",
     "save_user_error": "Error saving user",
-    "save_role_error": "Error saving role"
+    "save_role_error": "Error saving role",
+    "access_denied": "Access Denied",
+    "admin_only": "This page is only available to system administrators",
+    "no_view_permission": "You do not have permission to view this page"
   },
-
   "table": {
     "id": "ID",
     "name": "Name",
@@ -1202,9 +1208,44 @@
     "floors_count": "Floors",
     "area": "Area",
     "unit_number": "Unit Number",
-    "applied_to_buildings": "Applied to Buildings"
+    "applied_to_buildings": "Applied to Buildings",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "category": "Category",
+    "scope": "Scope"
   },
-
+  "finances": {
+    "schedule_saved": "Payment schedule saved successfully!",
+    "error_prefix": "Error:",
+    "edit_schedule": "Edit Schedule",
+    "amount": "Amount",
+    "due_date": "Due Date",
+    "payment_type": "Payment Type",
+    "account": "Account",
+    "paid": "Paid",
+    "return": "Return",
+    "add_payment": "Add Payment",
+    "save_schedule": "Save Schedule",
+    "contract_amount": "Contract Amount",
+    "distributed": "Distributed",
+    "remaining": "Remaining"
+  },
+  "buildings": {
+    "chessboard": {
+      "no_properties": "No properties to display in the chessboard.",
+      "entrance": "Entrance"
+    },
+    "layouts": {
+      "load_error": "Failed to load layouts.",
+      "not_loaded": "Layouts for this building have not been uploaded via Excel yet.",
+      "upload_hint": "Download the Excel template, fill in the property data with layouts and upload the file on the 'Properties' tab."
+    }
+  },
+  "applications": {
+    "client": "Client",
+    "client_required": "Please select a client",
+    "create_application": "Create Application"
+  },
   "deal_cancellation": {
     "termination_title": "Deal Termination",
     "cancellation_title": "Deal Cancellation",
@@ -1216,7 +1257,6 @@
     "terminate": "Terminate",
     "cancel_deal": "Cancel Deal"
   },
-
   "months": {
     "1": "January",
     "2": "February",
@@ -1231,7 +1271,6 @@
     "11": "November",
     "12": "December"
   },
-
   "weekdays": {
     "short": {
       "mon": "Mon",
@@ -1243,11 +1282,9 @@
       "sun": "Sun"
     }
   },
-
   "calendar": {
     "more": "+{{count}} more"
   },
-
   "quarters": {
     "1": "Q1",
     "2": "Q2",
@@ -1255,4 +1292,3 @@
     "4": "Q4"
   }
 }
-
