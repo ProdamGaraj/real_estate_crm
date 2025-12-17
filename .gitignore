@@ -21,3 +21,4 @@ backend/apps/realty/migrations/__pycache__/
 frontend-new/node_modules/
 backend/apps/tasks/__pycache__/
 backend/apps/tasks/migrations/__pycache__/
+docs/*
