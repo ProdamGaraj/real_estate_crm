@@ -156,17 +156,19 @@ class DealCancelOrTerminateView(APIView):
         except Deal.DoesNotExist:
             return Response({"error": "Сделка не найдена."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Проверка, что сделка еще не в финальном статусе
-        if deal.status in [Deal.DealStatus.CLOSED_WON, Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED]:
-            return Response({"error": "Сделка уже находится в финальном статусе."}, status=status.HTTP_400_BAD_REQUEST)
+        # Проверка, что сделка еще не в финальном статусе (отменена или расторгнута)
+        # CLOSED_WON можно расторгнуть, поэтому не включаем в этот список
+        if deal.status in [Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED]:
+            return Response({"error": "Сделка уже отменена или расторгнута."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Определяем, есть ли финансовые операции или подпись
         has_paid_payments = deal.payments.filter(payment_date__isnull=False).exists()
         is_signed = bool(deal.client_signature_date)
+        is_closed_won = deal.status == Deal.DealStatus.CLOSED_WON
 
         action_log = ""
 
-        if has_paid_payments or is_signed:
+        if is_closed_won or has_paid_payments or is_signed:
             # --- ЛОГИКА РАСТОРЖЕНИЯ ---
             document = request.data.get('termination_document_scan')
             date = request.data.get('termination_date')

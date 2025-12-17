@@ -11,6 +11,7 @@ import type { Property, BuildingUpdatePayload } from '../api/buildings';
 import { getBuildingTypes } from '../api/projects';
 import type { BuildingType } from '../api/projects';
 import apiClient from '../api/axios';
+import { getMediaUrl } from '../utils/media';
 
 import { styled } from '@mui/material/styles';
 import {
@@ -403,7 +404,7 @@ export default function BuildingDetailPage() {
             {building?.gallery_images?.map((image) => (
                 <Grid key={image.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <Card>
-                        <CardMedia component="img" height="160" image={image.image} alt={image.caption} />
+                        <CardMedia component="img" height="160" image={getMediaUrl(image.image) || ''} alt={image.caption} />
                         <CardActions>
                             <IconButton onClick={() => deleteImageMutation.mutate(image.id)} disabled={deleteImageMutation.isPending} size="small">
                                 <DeleteIcon />

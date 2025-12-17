@@ -119,19 +119,27 @@ def get_filtered_queryset(user, queryset, resource_type):
         # Строим фильтр на основе разрешений
         filters = Q()
         
-        # ОСОБАЯ ЛОГИКА ДЛЯ КЛИЕНТОВ: Клиент виден только если на него есть заявка от компании
+        # ОСОБАЯ ЛОГИКА ДЛЯ КЛИЕНТОВ: Клиент виден если:
+        # 1. Клиент создан пользователем/отделом/компанией (через created_by)
+        # 2. ИЛИ на него есть заявка от пользователя/отдела/компании
         if resource_type == 'CLIENT':
             if has_company_view and profile.company:
                 # Клиент виден если:
-                # 1. Хотя бы одна заявка создана пользователем из этой компании
+                # 1. Клиент создан пользователем из этой компании
+                filters |= Q(created_by__profile__company=profile.company)
+                # 2. ИЛИ хотя бы одна заявка создана пользователем из этой компании
                 filters |= Q(applications__created_by__profile__company=profile.company)
             
             if has_department_view and profile.department:
-                # Клиент виден если хотя бы одна заявка создана пользователем из этого отдела
+                # Клиент виден если создан пользователем из этого отдела
+                filters |= Q(created_by__profile__department=profile.department)
+                # ИЛИ хотя бы одна заявка создана пользователем из этого отдела
                 filters |= Q(applications__created_by__profile__department=profile.department)
             
             if has_own_view:
-                # Клиент виден если хотя бы одна заявка создана этим пользователем
+                # Клиент виден если создан этим пользователем
+                filters |= Q(created_by=user)
+                # ИЛИ хотя бы одна заявка создана этим пользователем
                 filters |= Q(applications__created_by=user)
         
         # СТАНДАРТНАЯ ЛОГИКА ДЛЯ ОСТАЛЬНЫХ РЕСУРСОВ

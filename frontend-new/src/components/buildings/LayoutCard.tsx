@@ -5,6 +5,7 @@ import { Paper, Typography, Button, Stack, Card, CardContent, CardMedia } from '
 import { updateLayoutImage } from '../../api/layouts';
 import type { Layout } from '../../api/layouts';
 import UploadIcon from '@mui/icons-material/Upload';
+import { getMediaUrl } from '../../utils/media';
 
 interface LayoutCardProps {
   layout: Layout;
@@ -74,10 +75,10 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
     <Paper sx={{ p: 2, mb: 2 }} variant="outlined">
       <Typography variant="h6" sx={{ mb: 2 }}>{layout.name}</Typography>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <ImageUploader title={t('buildings.layout_main')} imageUrl={layout.main_layout_image} onFileSelect={(file) => handleFileUpdate('main_layout_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
-        <ImageUploader title={t('buildings.layout_extra')} imageUrl={layout.extra_layout_image} onFileSelect={(file) => handleFileUpdate('extra_layout_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
-        <ImageUploader title={t('buildings.layout_floor')} imageUrl={layout.floor_plan_image} onFileSelect={(file) => handleFileUpdate('floor_plan_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
-        <ImageUploader title={t('buildings.layout_usp')} imageUrl={layout.usp_image} onFileSelect={(file) => handleFileUpdate('usp_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
+        <ImageUploader title={t('buildings.layout_main')} imageUrl={getMediaUrl(layout.main_layout_image)} onFileSelect={(file) => handleFileUpdate('main_layout_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
+        <ImageUploader title={t('buildings.layout_extra')} imageUrl={getMediaUrl(layout.extra_layout_image)} onFileSelect={(file) => handleFileUpdate('extra_layout_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
+        <ImageUploader title={t('buildings.layout_floor')} imageUrl={getMediaUrl(layout.floor_plan_image)} onFileSelect={(file) => handleFileUpdate('floor_plan_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
+        <ImageUploader title={t('buildings.layout_usp')} imageUrl={getMediaUrl(layout.usp_image)} onFileSelect={(file) => handleFileUpdate('usp_image', file)} replaceLabel={replaceLabel} uploadLabel={uploadLabel} />
       </Stack>
     </Paper>
   );

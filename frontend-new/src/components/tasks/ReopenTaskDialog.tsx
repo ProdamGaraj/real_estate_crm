@@ -60,7 +60,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
   const [apiError, setApiError] = useState<string | null>(null);
   const [startTimeError, setStartTimeError] = useState(false);
   const [deadlineTimeError, setDeadlineTimeError] = useState(false);
-  
+
   const queryClient = useQueryClient();
 
   // Загружаем пользователей
@@ -85,14 +85,14 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
       setAssigneeId(task.assignee?.id || null);
       setTags(task.tags || '');
       setWatcherIds(task.watchers?.map(w => w.id) || []);
-      
+
       // Устанавливаем время начала - если есть в задаче, иначе умолчание
       if (task.started_at) {
         setStartedAt(new Date(task.started_at));
       } else {
         setStartedAt(getDefaultStartTime());
       }
-      
+
       // Устанавливаем дедлайн - если есть в задаче, иначе null
       if (task.deadline) {
         setDeadline(new Date(task.deadline));
@@ -117,7 +117,7 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
       setApiError(null);
     },
     onError: (error: any) => {
-      console.error('Ошибка возврата задачи:', error);
+      console.error('Reopen task error:', error);
       const errorMessage = extractErrorMessage(error);
       setApiError(errorMessage);
     },
@@ -151,14 +151,14 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
       if (data.detail) {
         return data.detail;
       }
-      
+
       // Если есть поле error
       if (data.error) {
         return data.error;
       }
     }
 
-    return 'Произошла ошибка при возврате задачи';
+    return t('pages.tasks.reopen_error');
   };
 
   const handleReopen = async () => {
@@ -167,30 +167,30 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
     setDeadlineTimeError(false);
 
     if (!startedAt) {
-      setApiError('Необходимо указать время начала');
+      setApiError(t('pages.tasks.start_time_required'));
       setStartTimeError(true);
       return;
     }
 
     if (!deadline) {
-      setApiError('Необходимо указать новый дедлайн');
+      setApiError(t('pages.tasks.deadline_required'));
       setDeadlineTimeError(true);
       return;
     }
 
     if (!title.trim()) {
-      setApiError('Необходимо указать название задачи');
+      setApiError(t('pages.tasks.title_required'));
       return;
     }
 
     if (!assigneeId) {
-      setApiError('Необходимо указать исполнителя');
+      setApiError(t('pages.tasks.assignee_required'));
       return;
     }
 
     // Валидация: дедлайн не может быть раньше времени начала
     if (deadline < startedAt) {
-      setApiError('Дедлайн не может быть раньше времени начала задачи');
+      setApiError(t('pages.tasks.deadline_before_start'));
       return;
     }
 
@@ -243,10 +243,10 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={getDateFnsLocale()}>
-      <Dialog 
-        open={open} 
-        onClose={handleClose} 
-        maxWidth="md" 
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>{t('pages.tasks.return_task_and_edit')}</DialogTitle>
@@ -562,8 +562,8 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 fullWidth
-                placeholder="Разделяйте теги запятыми"
-                helperText="Введите теги через запятую"
+                placeholder={t('pages.tasks.tags_placeholder')}
+                helperText={t('pages.tasks.tags_hint')}
               />
             </Box>
 
@@ -590,10 +590,10 @@ export const ReopenTaskDialog: React.FC<ReopenTaskDialogProps> = ({ open, onClos
             onClick={handleReopen}
             variant="contained"
             disabled={
-              reopenMutation.isPending || 
-              !deadline || 
+              reopenMutation.isPending ||
+              !deadline ||
               !startedAt ||
-              !title.trim() || 
+              !title.trim() ||
               !assigneeId ||
               (deadline && (deadline.getHours() === null || deadline.getMinutes() === null)) ||
               (startedAt && (startedAt.getHours() === null || startedAt.getMinutes() === null))

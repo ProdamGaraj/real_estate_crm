@@ -17,6 +17,8 @@ import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form'; // Импортируем useForm
 import ApplicationSummary from '../components/applications/ApplicationSummary';
 import { LocalizedDateField } from '../components/common/LocalizedDateField';
+import { useAuthStore } from '../store/authStore';
+import { hasPermission } from '../utils/permissions';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -68,6 +70,7 @@ const getColumns = (t: (key: string) => string): GridColDef[] => [
 
 export default function ApplicationsPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const columns = getColumns(t);
   const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,6 +80,8 @@ export default function ApplicationsPage() {
   const { register, watch, control, reset } = useForm<ApplicationFilters>({
     defaultValues: filters,
   });
+
+  const canCreate = hasPermission(user, 'ADD', 'APPLICATION');
 
   useEffect(() => {
     if (location.state) {
@@ -114,9 +119,11 @@ export default function ApplicationsPage() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">{t('pages.applications.title')}</Typography>
-        <Button variant="contained" onClick={() => setIsModalOpen(true)}>
-          {t('pages.applications.create_application')}
-        </Button>
+        {canCreate && (
+          <Button variant="contained" onClick={() => setIsModalOpen(true)}>
+            {t('pages.applications.create_application')}
+          </Button>
+        )}
       </Box>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

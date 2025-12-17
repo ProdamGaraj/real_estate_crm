@@ -2,8 +2,8 @@ import axios from 'axios';
 import { refreshAccessToken } from './auth';
 
 const apiClient = axios.create({
-  baseURL:'https://tws483gv-8000.euw.devtunnels.ms/api',
-  // baseURL: 'http://127.0.0.1:8000/api',
+  // baseURL:'https://tws483gv-8000.euw.devtunnels.ms/api',
+  baseURL: 'http://127.0.0.1:8000/api',
   // baseURL: 'https://c0s9w1gq-8000.euw.devtunnels.ms/api',
   headers: {
     'Content-Type': 'application/json',
@@ -29,11 +29,11 @@ const decodeJWT = (token: string) => {
 const isTokenExpiringSoon = (token: string): boolean => {
   const decoded = decodeJWT(token);
   if (!decoded || !decoded.exp) return true;
-  
+
   const expirationTime = decoded.exp * 1000; // Конвертируем в миллисекунды
   const currentTime = Date.now();
   const timeUntilExpiration = expirationTime - currentTime;
-  
+
   // Обновляем токен за 5 минут до истечения (300000 мс)
   return timeUntilExpiration < 300000;
 };
@@ -79,13 +79,31 @@ const clearAuthTokens = () => {
   }
 };
 
+// Эндпоинты которые не требуют авторизации
+const PUBLIC_ENDPOINTS = [
+  '/permissions/auth/login/',
+  '/permissions/auth/password-reset/',
+  '/token/refresh/',
+];
+
+// Проверка, является ли эндпоинт публичным
+const isPublicEndpoint = (url: string | undefined): boolean => {
+  if (!url) return false;
+  return PUBLIC_ENDPOINTS.some(endpoint => url.includes(endpoint));
+};
+
 // Перехватчик ЗАПРОСОВ (добавляет токен в заголовок и проактивно обновляет его)
 apiClient.interceptors.request.use(
   async (config) => {
+    // Для публичных эндпоинтов (логин и т.д.) не добавляем токен и не обновляем его
+    if (isPublicEndpoint(config.url)) {
+      return config;
+    }
+
     const { accessToken, refreshToken } = getAuthTokens();
-    
+
     // Проверяем, нужно ли обновить токен заранее
-    if (accessToken && refreshToken && isTokenExpiringSoon(accessToken) && !config.url?.includes('/token/refresh/')) {
+    if (accessToken && refreshToken && isTokenExpiringSoon(accessToken)) {
       try {
         console.log('Проактивное обновление токена...');
         const response = await refreshAccessToken(refreshToken);
@@ -97,7 +115,7 @@ apiClient.interceptors.request.use(
         // Продолжаем с текущим токеном, если обновление не удалось
       }
     }
-    
+
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -107,13 +125,6 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
-// Эндпоинты которые не требуют авторизации
-const PUBLIC_ENDPOINTS = [
-  '/permissions/auth/login/',
-  '/permissions/auth/password-reset/',
-  '/token/refresh/',
-];
 
 // Флаг для предотвращения множественных редиректов
 let isRedirecting = false;
@@ -126,7 +137,7 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const requestUrl = originalRequest?.url || '';
-    
+
     // Пропускаем публичные эндпоинты
     if (PUBLIC_ENDPOINTS.some(endpoint => requestUrl.includes(endpoint))) {
       return Promise.reject(error);
@@ -154,7 +165,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // Если refresh токен тоже истек или невалиден, выходим из системы
         clearAuthTokens();
-        
+
         // Редиректим только если ещё не редиректим и не на странице логина
         if (!isRedirecting && !window.location.pathname.includes('/login')) {
           isRedirecting = true;

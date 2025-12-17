@@ -14,6 +14,8 @@ import type { ClientFilters } from '../api/clients';
 import ClientForm from '../components/clients/ClientForm';
 import { useForm, Controller } from 'react-hook-form';
 import { LocalizedDateField } from '../components/common/LocalizedDateField';
+import { useAuthStore } from '../store/authStore';
+import { hasPermission } from '../utils/permissions';
 
 // Колонки для таблицы - теперь функция для поддержки i18n
 const getColumns = (t: (key: string) => string): GridColDef[] => [
@@ -45,10 +47,13 @@ const getColumns = (t: (key: string) => string): GridColDef[] => [
 
 export default function ClientsPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filters, setFilters] = useState<ClientFilters>({});
   const queryClient = useQueryClient();
   const { register, watch, control } = useForm<ClientFilters>();
+
+  const canCreate = hasPermission(user, 'ADD', 'CLIENT');
 
   useEffect(() => {
     const subscription = watch((value) => {
@@ -74,9 +79,11 @@ export default function ClientsPage() {
     <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h4">{t('pages.clients.title')}</Typography>
-        <Button variant="contained" onClick={() => setIsModalOpen(true)}>
-          {t('pages.clients.create_client')}
-        </Button>
+        {canCreate && (
+          <Button variant="contained" onClick={() => setIsModalOpen(true)}>
+            {t('pages.clients.create_client')}
+          </Button>
+        )}
       </Box>
 
       {/* РАСШИРЕННАЯ ПАНЕЛЬ ФИЛЬТРОВ */}

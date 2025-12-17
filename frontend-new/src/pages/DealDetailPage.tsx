@@ -130,12 +130,14 @@ export default function DealDetailPage() {
 
   const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status);
   const isDealTerminated = deal.status === 'TERMINATED';
+  // Кнопка расторжения доступна для сделок в работе и успешно закрытых (но не для уже отменённых/расторгнутых)
+  const canTerminateDeal = !['CANCELLED', 'TERMINATED'].includes(deal.status);
 
   return (
     <>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography variant="h4">{t('pages.deals.deal_title', { id: deal.id, status: t(`statuses.deal.${deal.status}`) })}</Typography>
-        {!isDealReadOnly && (
+        {canTerminateDeal && (
             <Button
                 variant="outlined"
                 color="error"
@@ -325,9 +327,10 @@ export default function DealDetailPage() {
           <DealCancellationModal
               open={isCancellationModalOpen}
               onClose={() => setCancellationModalOpen(false)}
-              onSuccess={() => {
-                  queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+              onSuccess={async () => {
                   setCancellationModalOpen(false);
+                  await queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+                  await queryClient.refetchQueries({ queryKey: ['deal', dealId] });
               }}
               deal={deal}
           />

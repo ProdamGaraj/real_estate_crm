@@ -25,7 +25,7 @@ import {
   hierarchyToPermissionIds,
   countSelectedPermissions,
 } from '../../utils/permissionHierarchyV2';
-import type { 
+import type {
   PermissionsHierarchyV2,
   ResourcePermissions,
 } from '../../utils/permissionHierarchyV2';
@@ -39,7 +39,7 @@ interface RoleFormProps {
 // Группировка разрешений по ресурсам
 const groupPermissionsByResource = (permissions: any[]) => {
   const grouped: Record<string, any[]> = {};
-  
+
   permissions.forEach((perm) => {
     const resource = perm.resource || 'OTHER';
     if (!grouped[resource]) {
@@ -47,7 +47,7 @@ const groupPermissionsByResource = (permissions: any[]) => {
     }
     grouped[resource].push(perm);
   });
-  
+
   return grouped;
 };
 
@@ -98,15 +98,15 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
       // TODO: Преобразовать старую структуру в новую V2
       // Пока оставляем пустым
       const hierarchy: PermissionsHierarchyV2 = {};
-      
+
       // Группируем разрешения по ресурсам
       const grouped = groupPermissionsByResource(role.permissions);
-      
+
       Object.entries(grouped).forEach(([resource]) => {
         hierarchy[resource] = emptyResourcePermissions();
         // TODO: Разобрать permissions и заполнить hierarchy[resource]
       });
-      
+
       setPermissionsHierarchy(hierarchy);
     }
   }, [role, allPermissions]);
@@ -126,8 +126,8 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
       // Проверяем все разрешения в иерархии
       Object.values(permissionsHierarchy).forEach((resourcePerms) => {
-        if (resourcePerms.system.view || resourcePerms.system.add || 
-            resourcePerms.system.edit || resourcePerms.system.delete) {
+        if (resourcePerms.system.view || resourcePerms.system.add ||
+          resourcePerms.system.edit || resourcePerms.system.delete) {
           hasSystem = true;
         }
         if (resourcePerms.companies.length > 0) {
@@ -164,7 +164,7 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
       onSuccess();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.detail || err.message || 'Ошибка при сохранении роли');
+      setError(err.response?.data?.detail || err.message || t('errors.save_role_error'));
     },
   });
 

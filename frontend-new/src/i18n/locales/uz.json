@@ -68,7 +68,6 @@
     "sqm": "kv.m.",
     "uploading": "Yuklanmoqda..."
   },
-
   "nav": {
     "app_title": "Ko'chmas mulk CRM",
     "dashboard": "Boshqaruv paneli",
@@ -87,7 +86,6 @@
     "department_label": "Bo'lim:",
     "no_email": "Email yo'q"
   },
-
   "auth": {
     "login_title": "Tizimga kirish",
     "login_subtitle": "Ko'chmas mulkni boshqarish uchun CRM",
@@ -128,7 +126,6 @@
       "request_error": "So'rov yuborishda xatolik"
     }
   },
-
   "pages": {
     "dashboard": {
       "title": "Tahlil",
@@ -144,7 +141,6 @@
       "upcoming_meetings": "Kelgusi uchrashuvlar",
       "sales_label": "Sotuvlar:"
     },
-
     "clients": {
       "title": "Mijozlar",
       "create_client": "Mijoz yaratish",
@@ -180,7 +176,6 @@
       "date_from": "Yaratilgan sanadan",
       "date_to": "Yaratilgan sanagacha"
     },
-
     "applications": {
       "title": "Arizalar",
       "create_application": "Ariza yaratish",
@@ -247,7 +242,6 @@
         "cottage": "Kottej"
       }
     },
-
     "meetings": {
       "title": "Uchrashuvlar",
       "meeting_number": "Uchrashuv №{{id}}",
@@ -294,7 +288,6 @@
       "completed_meetings": "Bajarilgan uchrashuvlar",
       "cancelled_meetings": "Bekor qilingan uchrashuvlar"
     },
-
     "tasks": {
       "title": "Vazifalar",
       "total_count": "Jami vazifalar:",
@@ -357,9 +350,16 @@
       "not_assigned": "Tayinlanmagan",
       "overdue": "Muddati o'tgan",
       "cancel_task": "Bekor qilish",
-      "task_number": "Vazifa #{{id}}"
+      "task_number": "Vazifa #{{id}}",
+      "reopen_error": "Vazifani qaytarishda xatolik yuz berdi",
+      "start_time_required": "Boshlanish vaqtini belgilash kerak",
+      "deadline_required": "Yangi muddat belgilash kerak",
+      "title_required": "Vazifa nomini belgilash kerak",
+      "assignee_required": "Ijrochini belgilash kerak",
+      "tags_hint": "Teglarni vergul bilan kiriting",
+      "returning": "Qaytarilmoqda...",
+      "return_task_and_edit": "Vazifani ishga qaytarish"
     },
-
     "deals": {
       "title": "Bitimlar",
       "deal_list": "Bitimlar ro'yxati",
@@ -422,9 +422,25 @@
       "status_in_progress": "Jarayonda",
       "status_completed": "Yakunlangan",
       "status_terminated": "Bekor qilingan",
-      "status_cancelled": "Rad etilgan"
+      "status_cancelled": "Rad etilgan",
+      "deal_title": "Bitim №{{id}} (Holat: {{status}})",
+      "cancel_terminate": "Bekor qilish",
+      "deal_closed": "Bitim yakunlandi ({{status}})",
+      "cancelled": "Rad etilgan",
+      "terminated": "Bekor qilingan",
+      "reason": "Sabab",
+      "termination_document": "Asos hujjati",
+      "deal_steps": "Bitim bosqichlari",
+      "logs_tab": "Loglar",
+      "step_info": "Bitim ma'lumotlari",
+      "step_terms": "Bitim shartlari",
+      "step_payments": "To'lov jadvali",
+      "step_documents": "Hujjatlar",
+      "initial_price_per_sqm": "1 m² narxi (boshlang'ich)",
+      "save_and_schedule": "Saqlash va jadvalga o'tish",
+      "save_price_first": "Avval oldingi bosqichda \"Shartnoma narxi\" ni saqlang.",
+      "signed_uploaded": "Imzolangan hujjat yuklandi."
     },
-
     "projects": {
       "title": "Loyihalar",
       "create_project": "Loyiha yaratish",
@@ -449,6 +465,7 @@
       "search_building": "Bino nomi bo'yicha qidirish",
       "upload_image": "Rasm yuklash",
       "delete_project": "Loyihani o'chirish",
+      "delete_project_confirm": "\"{{name}}\" loyihasini o'chirishga ishonchingiz komilmi?",
       "project_updated": "Loyiha yangilandi!",
       "create_error": "Loyihani yaratishda xatolik yuz berdi.",
       "form": {
@@ -456,7 +473,6 @@
         "address": "Manzil"
       }
     },
-
     "buildings": {
       "title": "Bino tafsilotlari",
       "building_details": "Bino tafsilotlari",
@@ -485,6 +501,8 @@
       "layout_usp": "USP rasmi",
       "replace": "Almashtirish",
       "image_upload_error": "Rasmni yuklashda xatolik.",
+      "delete_building": "Binoni o'chirish",
+      "delete_building_confirm": "\"{{name}}\" binosini o'chirishga ishonchingiz komilmi?",
       "form": {
         "name": "Bino nomi/raqami",
         "floors_count": "Qavatlar soni",
@@ -500,7 +518,6 @@
         "upload_hint": "Planlarni yuklash uchun Excel shablonini yuklab oling, to'ldiring va yuklang."
       }
     },
-
     "properties": {
       "property_number": "Ob'ekt №{{number}}",
       "layout": "Plan",
@@ -518,7 +535,6 @@
       "save_comment": "Izohni saqlash",
       "book_property": "Ob'ekt №{{number}} ni bron qilish"
     },
-
     "finances": {
       "title": "Moliya",
       "payment_list": "To'lovlar ro'yxati",
@@ -556,7 +572,6 @@
       "schedule_saved": "To'lov jadvali muvaffaqiyatli saqlandi!",
       "error_prefix": "Xatolik:"
     },
-
     "reports": {
       "title": "Hisobotlar",
       "project_report": "Loyihalar hisoboti",
@@ -584,7 +599,6 @@
       "uploading": "Yuklanmoqda...",
       "upload_error": "Yuklash xatosi:"
     },
-
     "discounts": {
       "title": "Chegirmalar",
       "create_discount": "Chegirma yaratish",
@@ -592,6 +606,7 @@
       "edit_discount": "Chegirmani tahrirlash",
       "discount_name": "Chegirma nomi",
       "percentage": "Foiz (%)",
+      "property_type": "Ko'chmas mulk turi",
       "property_type_optional": "Ko'chmas mulk turi (ixtiyoriy)",
       "apply_to_buildings": "Binolarga qo'llash (ixtiyoriy)",
       "start_date": "Boshlanish sanasi",
@@ -601,9 +616,15 @@
       "all_buildings": "Hammasi",
       "applying_discounts": "Chegirmalarni qo'llash",
       "round_result": "Natijani butun songa yaxlitlash",
-      "discount_details": "Chegirma tafsilotlari"
+      "discount_details": "Chegirma tafsilotlari",
+      "discount_title": "Chegirma",
+      "main_info": "Asosiy ma'lumotlar",
+      "start_date_label": "Boshlanish sanasi",
+      "end_date_label": "Tugash sanasi",
+      "indefinite": "Muddatsiz",
+      "no_building_restriction": "Cheklov yo'q (barcha binolar)",
+      "no_comment": "Tavsif yo'q"
     },
-
     "settings": {
       "title": "Sozlamalar",
       "companies_tab": "Kompaniyalar",
@@ -629,7 +650,6 @@
       "payment_type_name": "To'lov turi nomi",
       "new_account": "Yangi hisob",
       "account_name": "Hisob nomi",
-
       "permissions": {
         "companies_title": "Kompaniyalar",
         "companies_subtitle": "Tizimning tashkiliy tuzilmasini boshqarish",
@@ -642,172 +662,167 @@
         "company_code": "Kompaniya kodi",
         "code_help": "Kompaniyaning noyob identifikatori",
         "description": "Tavsif",
-      "optional_field": "Ixtiyoriy maydon",
-      "active": "Faol",
-      "code": "Kod",
-      "status": "Holat",
-      "basic_info": "Asosiy ma'lumotlar",
-      "main_info": "Asosiy ma'lumotlar",
-      "name": "Nomi",
-      "name_label": "Nomi",
-      "statistics": "Statistika",
-      "last_updated": "Oxirgi yangilanish",
-      "departments_title": "Bo'limlar",
-      "departments_subtitle": "Ierarxiya qo'llab-quvvatlash bilan bo'limlar tuzilmasini boshqarish",
-      "create_department": "Bo'lim yaratish",
-      "edit_department": "Bo'limni tahrirlash",
-      "department_name": "Bo'lim nomi",
-      "select_company": "Kompaniya",
-      "all_companies": "Barcha kompaniyalar",
-      "all_departments": "Barcha bo'limlar",
-      "select_company_for_departments": "Bo'limlarni ko'rish uchun kompaniyani tanlang",
-      "no_departments": "Bu kompaniyada hali bo'limlar yo'q. Birinchi bo'limni yarating.",
-      "parent_department": "Yuqori bo'lim",
-      "no_parent": "Yo'q (asosiy bo'lim)",
-      "roles_title": "Rollar",
-      "create_role": "Rol yaratish",
-      "edit_role": "Rolni tahrirlash",
-      "delete_role": "Rolni o'chirish",
-      "confirm_delete_role": "\"{{name}}\" rolini o'chirishga ishonchingiz komilmi?",
-      "role_name": "Rol nomi",
-      "scope": "Ta'sir doirasi",
-      "scope_label": "Doira:",
-      "scope_system": "Butun tizim",
-      "scope_company": "Kompaniya",
-      "scope_department": "Bo'lim",
-      "scope_own": "Faqat o'z ma'lumotlari",
-      "scope_system_short": "Tizim",
-      "scope_company_short": "Kompaniya",
-      "scope_department_short": "Bo'lim",
-      "scope_own_short": "O'z",
-      "category": "Kategoriya",
-      "category_label": "Kategoriya:",
-      "category_administrative": "Ma'muriy",
-      "category_management": "Boshqaruv",
-      "category_operational": "Operatsion",
-      "category_readonly": "Faqat ko'rish",
-      "category_custom": "Maxsus",
-      "action": "Amal",
-      "action_view": "Ko'rish",
-      "action_add": "Yaratish",
-      "action_edit": "Tahrirlash",
-      "action_delete": "O'chirish",
-      "resource_client": "Mijozlar",
-      "resource_application": "Arizalar",
-      "resource_meeting": "Uchrashuvlar",
-      "resource_deal": "Bitimlar",
-      "resource_payment": "To'lovlar",
-      "resource_refund": "Qaytarishlar",
-      "resource_project": "Loyihalar",
-      "resource_building": "Binolar",
-      "resource_property": "Ko'chmas mulk ob'ektlari",
-      "resource_layout": "Planlar",
-      "resource_discount": "Chegirmalar",
-      "resource_document": "Hujjatlar",
-      "resource_report": "Hisobotlar",
-      "resource_company": "Kompaniyalar",
-      "resource_department": "Bo'limlar",
-      "resource_role": "Rollar",
-      "resource_user": "Foydalanuvchilar",
-      "resource_beneficiary_account": "Qabul qiluvchi hisoblar",
-      "resource_dashboard": "Boshqaruv paneli",
-      "resource_payment_type": "To'lov turlari",
-      "resource_permission": "Ruxsatlar",
-      "resource_plan": "Rejalar",
-      "resource_settings": "Sozlamalar",
-      "resource_template": "Shablonlar",
-      "resource_other": "Boshqalar",
-      "system_role_warning": "Bu tizim roli. Uni o'zgartirish yoki o'chirish mumkin emas.",
-      "role_not_found": "Rol topilmadi",
-      "permissions_matrix": "Ruxsatlar matritsasi",
-      "permissions_count": "Ruxsatlar",
-      "permissions_title": "Ruxsatlar",
-      "selected": "tanlangan",
-      "loading": "Ruxsatlar yuklanmoqda...",
-      "form": {
+        "optional_field": "Ixtiyoriy maydon",
+        "active": "Faol",
+        "code": "Kod",
+        "status": "Holat",
+        "basic_info": "Asosiy ma'lumotlar",
+        "main_info": "Asosiy ma'lumotlar",
+        "name": "Nomi",
+        "name_label": "Nomi",
+        "statistics": "Statistika",
+        "last_updated": "Oxirgi yangilanish",
+        "departments_title": "Bo'limlar",
+        "departments_subtitle": "Ierarxiya qo'llab-quvvatlash bilan bo'limlar tuzilmasini boshqarish",
+        "create_department": "Bo'lim yaratish",
+        "edit_department": "Bo'limni tahrirlash",
+        "department_name": "Bo'lim nomi",
+        "select_company": "Kompaniya",
+        "all_companies": "Barcha kompaniyalar",
+        "all_departments": "Barcha bo'limlar",
+        "select_company_for_departments": "Bo'limlarni ko'rish uchun kompaniyani tanlang",
+        "no_departments": "Bu kompaniyada hali bo'limlar yo'q. Birinchi bo'limni yarating.",
+        "parent_department": "Yuqori bo'lim",
+        "no_parent": "Yo'q (asosiy bo'lim)",
+        "roles_title": "Rollar",
+        "create_role": "Rol yaratish",
+        "edit_role": "Rolni tahrirlash",
+        "delete_role": "Rolni o'chirish",
+        "confirm_delete_role": "\"{{name}}\" rolini o'chirishga ishonchingiz komilmi?",
         "role_name": "Rol nomi",
+        "scope": "Ta'sir doirasi",
+        "scope_label": "Doira:",
+        "scope_system": "Butun tizim",
+        "scope_company": "Kompaniya",
+        "scope_department": "Bo'lim",
+        "scope_own": "Faqat o'z ma'lumotlari",
+        "scope_system_short": "Tizim",
+        "scope_company_short": "Kompaniya",
+        "scope_department_short": "Bo'lim",
+        "scope_own_short": "O'z",
+        "category": "Kategoriya",
+        "category_label": "Kategoriya:",
+        "category_administrative": "Ma'muriy",
+        "category_management": "Boshqaruv",
+        "category_operational": "Operatsion",
+        "category_readonly": "Faqat ko'rish",
+        "category_custom": "Maxsus",
+        "action": "Amal",
+        "action_view": "Ko'rish",
+        "action_add": "Yaratish",
+        "action_edit": "Tahrirlash",
+        "action_delete": "O'chirish",
+        "resource_client": "Mijozlar",
+        "resource_application": "Arizalar",
+        "resource_meeting": "Uchrashuvlar",
+        "resource_deal": "Bitimlar",
+        "resource_payment": "To'lovlar",
+        "resource_refund": "Qaytarishlar",
+        "resource_project": "Loyihalar",
+        "resource_building": "Binolar",
+        "resource_property": "Ko'chmas mulk ob'ektlari",
+        "resource_layout": "Planlar",
+        "resource_discount": "Chegirmalar",
+        "resource_document": "Hujjatlar",
+        "resource_report": "Hisobotlar",
+        "resource_company": "Kompaniyalar",
+        "resource_department": "Bo'limlar",
+        "resource_role": "Rollar",
+        "resource_user": "Foydalanuvchilar",
+        "resource_beneficiary_account": "Qabul qiluvchi hisoblar",
+        "resource_dashboard": "Boshqaruv paneli",
+        "resource_payment_type": "To'lov turlari",
+        "resource_permission": "Ruxsatlar",
+        "resource_plan": "Rejalar",
+        "resource_settings": "Sozlamalar",
+        "resource_template": "Shablonlar",
+        "resource_other": "Boshqalar",
+        "system_role_warning": "Bu tizim roli. Uni o'zgartirish yoki o'chirish mumkin emas.",
+        "role_not_found": "Rol topilmadi",
+        "permissions_matrix": "Ruxsatlar matritsasi",
+        "permissions_count": "Ruxsatlar",
+        "permissions_title": "Ruxsatlar",
+        "selected": "tanlangan",
+        "loading": "Ruxsatlar yuklanmoqda...",
+        "form": {
+          "role_name": "Rol nomi",
+          "role_code": "Rol kodi",
+          "role_code_hint": "Noyob rol kodi (masalan: MANAGER, ADMIN)",
+          "is_active": "Faol rol"
+        },
+        "resources": {
+          "CLIENT": "Mijozlar",
+          "APPLICATION": "Arizalar",
+          "MEETING": "Uchrashuvlar",
+          "DEAL": "Bitimlar",
+          "PAYMENT": "To'lovlar",
+          "REFUND": "Qaytarishlar",
+          "PROJECT": "Loyihalar",
+          "BUILDING": "Binolar",
+          "PROPERTY": "Ko'chmas mulk ob'ektlari",
+          "LAYOUT": "Planlar",
+          "DISCOUNT": "Chegirmalar",
+          "DOCUMENT": "Hujjatlar",
+          "REPORT": "Hisobotlar",
+          "COMPANY": "Kompaniyalar",
+          "DEPARTMENT": "Bo'limlar",
+          "ROLE": "Rollar",
+          "USER": "Foydalanuvchilar",
+          "BENEFICIARY_ACCOUNT": "Qabul qiluvchi hisoblar",
+          "DASHBOARD": "Boshqaruv paneli",
+          "PAYMENT_TYPE": "To'lov turlari",
+          "PERMISSION": "Ruxsatlar",
+          "PLAN": "Rejalar",
+          "SETTINGS": "Sozlamalar",
+          "TEMPLATE": "Shablonlar",
+          "OTHER": "Boshqalar",
+          "TASK": "Vazifalar"
+        },
+        "users_title": "Foydalanuvchilar",
+        "create_user": "Foydalanuvchi yaratish",
+        "edit_user": "Foydalanuvchini tahrirlash",
+        "user": "Foydalanuvchi",
+        "user_data": "Foydalanuvchi ma'lumotlari",
+        "profile_data": "Profil ma'lumotlari",
+        "username_help": "Tizimga kirish uchun ishlatiladi",
+        "password": "Parol",
+        "password_help": "Kamida 8 belgi",
+        "position": "Lavozim",
+        "select_roles": "Rollarni tanlang",
+        "system_admin": "Tizim administratori",
+        "system_admin_desc": "Tizimning barcha funksiyalariga to'liq kirish",
+        "active_user": "Faol foydalanuvchi",
+        "active_status": "Faol",
+        "inactive_status": "Faol emas",
+        "first_name": "Ism",
+        "last_name": "Familiya",
+        "username": "Foydalanuvchi nomi",
+        "department": "Bo'lim",
+        "departments": "Bo'limlar",
+        "companies": "Kompaniyalar",
+        "roles": "Rollar",
         "role_code": "Rol kodi",
-        "role_code_hint": "Noyob rol kodi (masalan: MANAGER, ADMIN)",
-        "is_active": "Faol rol"
-      },
-      "resources": {
-        "CLIENT": "Mijozlar",
-        "APPLICATION": "Arizalar",
-        "MEETING": "Uchrashuvlar",
-        "DEAL": "Bitimlar",
-        "PAYMENT": "To'lovlar",
-        "REFUND": "Qaytarishlar",
-        "PROJECT": "Loyihalar",
-        "BUILDING": "Binolar",
-        "PROPERTY": "Ko'chmas mulk ob'ektlari",
-        "LAYOUT": "Planlar",
-        "DISCOUNT": "Chegirmalar",
-        "DOCUMENT": "Hujjatlar",
-        "REPORT": "Hisobotlar",
-        "COMPANY": "Kompaniyalar",
-        "DEPARTMENT": "Bo'limlar",
-        "ROLE": "Rollar",
-        "USER": "Foydalanuvchilar",
-        "BENEFICIARY_ACCOUNT": "Qabul qiluvchi hisoblar",
-        "DASHBOARD": "Boshqaruv paneli",
-        "PAYMENT_TYPE": "To'lov turlari",
-        "PERMISSION": "Ruxsatlar",
-        "PLAN": "Rejalar",
-        "SETTINGS": "Sozlamalar",
-        "TEMPLATE": "Shablonlar",
-        "OTHER": "Boshqalar",
-        "TASK": "Vazifalar"
-      },
-      "users_title": "Foydalanuvchilar",
-      "create_user": "Foydalanuvchi yaratish",
-      "edit_user": "Foydalanuvchini tahrirlash",
-      "user": "Foydalanuvchi",
-      "user_data": "Foydalanuvchi ma'lumotlari",
-      "profile_data": "Profil ma'lumotlari",
-      "username_help": "Tizimga kirish uchun ishlatiladi",
-      "password": "Parol",
-      "password_help": "Kamida 8 belgi",
-      "position": "Lavozim",
-      "select_roles": "Rollarni tanlang",
-      "system_admin": "Tizim administratori",
-      "system_admin_desc": "Tizimning barcha funksiyalariga to'liq kirish",
-      "active_user": "Faol foydalanuvchi",
-      "active_status": "Faol",
-      "inactive_status": "Faol emas",
-      "first_name": "Ism",
-      "last_name": "Familiya",
-      "username": "Foydalanuvchi nomi",
-      "department": "Bo'lim",
-      "departments": "Bo'limlar",
-      "companies": "Kompaniyalar",
-      "roles": "Rollar",
-      "role_code": "Rol kodi",
-      "role_code_help": "Noyob rol kodi (masalan: MANAGER, ADMIN)",
-      "active_role": "Faol rol",
-      "companies_and_departments": "Kompaniyalar va bo'limlar",
-      "at_company_level": "Kompaniya darajasida",
-      "add_company": "Kompaniya qo'shish",
-      "my_resource": "Mening {{resource}}",
-      "users_description": "Tizim foydalanuvchilarini va ularning kirish huquqlarini boshqarish",
-      "add_user": "Foydalanuvchi qo'shish",
-      "no_roles": "Rollar yo'q",
-      "filters": "Filtrlar",
-      "all": "Hammasi",
-      "all_companies": "Barcha kompaniyalar",
-      "all_departments": "Barcha bo'limlar",
-      "active_plural": "Faollar",
-      "inactive_plural": "Faol emaslar",
-      "company": "Kompaniya",
-      "status": "Holat",
-      "role_system_admin": "Tizim administratori",
-      "role_company_admin": "Kompaniya administratori",
-      "role_department_manager": "Bo'lim boshlig'i",
-      "role_manager": "Menejer",
-      "role_viewer": "Kuzatuvchi",
-      "roles_subtitle": "Foydalanuvchi rollari va ruxsatlarini boshqarish"
+        "role_code_help": "Noyob rol kodi (masalan: MANAGER, ADMIN)",
+        "active_role": "Faol rol",
+        "companies_and_departments": "Kompaniyalar va bo'limlar",
+        "at_company_level": "Kompaniya darajasida",
+        "add_company": "Kompaniya qo'shish",
+        "my_resource": "Mening {{resource}}",
+        "users_description": "Tizim foydalanuvchilarini va ularning kirish huquqlarini boshqarish",
+        "add_user": "Foydalanuvchi qo'shish",
+        "no_roles": "Rollar yo'q",
+        "filters": "Filtrlar",
+        "all": "Hammasi",
+        "active_plural": "Faollar",
+        "inactive_plural": "Faol emaslar",
+        "role_system_admin": "Tizim administratori",
+        "role_company_admin": "Kompaniya administratori",
+        "role_department_manager": "Bo'lim boshlig'i",
+        "role_manager": "Menejer",
+        "role_viewer": "Kuzatuvchi",
+        "roles_subtitle": "Foydalanuvchi rollari va ruxsatlarini boshqarish"
       }
     },
-
     "api_keys": {
       "title": "Hamkor API-kalitlari",
       "subtitle": "Hamkor integratsiyalari uchun API-kalitlarni boshqarish",
@@ -851,7 +866,6 @@
       "requests_per_day": "Kuniga so'rovlar",
       "edit_info": "Tahrirlashda API-kalit o'zgarmaydi"
     },
-
     "templates": {
       "title": "Hujjat shablonlari",
       "subtitle": "Hujjatlar yaratish uchun shablonlarni boshqarish",
@@ -864,13 +878,11 @@
       "tags_cheatsheet": "Teglar bo'yicha yordam"
     }
   },
-
   "documents": {
     "no_templates": "Bu bitim uchun mos shablonlar yo'q. Shablon sozlamalarini tekshiring.",
     "generate": "Yaratish",
     "generation_failed": "Hujjatni yaratishda xatolik."
   },
-
   "files": {
     "file": "Fayl",
     "uploaded_by": "Kim tomonidan yuklangan",
@@ -878,7 +890,6 @@
     "upload_new_file": "Yangi fayl yuklash",
     "uploading": "Yuklanmoqda..."
   },
-
   "statuses": {
     "client": {
       "ACTIVE": "Faol",
@@ -890,18 +901,30 @@
       "IN_PROGRESS": "Jarayonda",
       "JUNK": "Maqsadsiz",
       "REJECTED": "Rad etilgan",
-      "CLOSED_WON": "Muvaffaqiyatli yopilgan"
+      "CLOSED_WON": "Muvaffaqiyatli yopilgan",
+      "new": "Yangi",
+      "in_progress": "Jarayonda",
+      "junk": "Maqsadsiz",
+      "rejected": "Rad etilgan",
+      "closed_won": "Muvaffaqiyatli yopilgan"
     },
     "application_source": {
       "INTERNET": "Internet",
       "SOCIAL_MEDIA": "Ijtimoiy tarmoqlar",
       "OFFICE": "Ofis",
-      "CALL": "Qo'ng'iroq"
+      "CALL": "Qo'ng'iroq",
+      "internet": "Internet",
+      "social_media": "Ijtimoiy tarmoqlar",
+      "office": "Ofis",
+      "call": "Qo'ng'iroq"
     },
     "meeting": {
       "NEW": "Yangi",
       "COMPLETED": "Bo'lib o'tdi",
-      "CANCELLED": "Bo'lib o'tmadi"
+      "CANCELLED": "Bo'lib o'tmadi",
+      "new": "Yangi",
+      "completed": "Bo'lib o'tdi",
+      "cancelled": "Bo'lib o'tmadi"
     },
     "deal": {
       "BOOKING": "Bron",
@@ -929,7 +952,12 @@
       "PAID": "To'langan",
       "OVERDUE": "Muddati o'tgan",
       "TO_BE_RETURNED": "Qaytarilishi kerak",
-      "RETURNED": "Qaytarilgan"
+      "RETURNED": "Qaytarilgan",
+      "pending": "To'lanishi kerak",
+      "paid": "To'langan",
+      "overdue": "Muddati o'tgan",
+      "to_be_returned": "Qaytarilishi kerak",
+      "returned": "Qaytarilgan"
     },
     "building": {
       "UNDER_REVIEW": "Tekshiruvda",
@@ -977,7 +1005,6 @@
       "SYSTEM": "Tizim"
     }
   },
-
   "property_types": {
     "APARTMENT": "Kvartira",
     "COMMERCIAL": "Tijoriy",
@@ -985,7 +1012,6 @@
     "STORAGE": "Omborxona",
     "COTTAGE": "Kottej"
   },
-
   "resources": {
     "CLIENT": "Mijozlar",
     "APPLICATION": "Arizalar",
@@ -1014,7 +1040,6 @@
     "TASK": "Vazifalar",
     "OTHER": "Boshqa"
   },
-
   "forms": {
     "full_name": "F.I.O.",
     "phone_number": "Telefon raqami",
@@ -1044,7 +1069,6 @@
     "end_date": "Tugash sanasi",
     "select_option": "Tanlang..."
   },
-
   "validation": {
     "title_required": "Nom majburiy",
     "description_required": "Tavsif majburiy",
@@ -1055,7 +1079,6 @@
     "password_min_length": "Parol kamida 8 belgidan iborat bo'lishi kerak",
     "passwords_not_match": "Parollar mos kelmaydi"
   },
-
   "errors": {
     "load_data_error": "Boshqaruv paneli ma'lumotlarini yuklab bo'lmadi.",
     "load_clients_error": "Ma'lumotlarni yuklashda xatolik:",
@@ -1084,9 +1107,11 @@
     "user_not_found": "Foydalanuvchi topilmadi",
     "create_user_error": "Foydalanuvchini yaratishda xatolik",
     "save_user_error": "Foydalanuvchini saqlashda xatolik",
-    "save_role_error": "Rolni saqlashda xatolik"
+    "save_role_error": "Rolni saqlashda xatolik",
+    "access_denied": "Kirish taqiqlangan",
+    "admin_only": "Bu sahifa faqat tizim administratorlari uchun mavjud",
+    "no_view_permission": "Sizda ushbu sahifani ko'rish huquqi yo'q"
   },
-
   "table": {
     "id": "ID",
     "name": "Nomi",
@@ -1121,9 +1146,44 @@
     "floors_count": "Qavatlar",
     "area": "Maydon",
     "unit_number": "Ob'ekt raqami",
-    "applied_to_buildings": "Qo'llanilgan binolar"
+    "applied_to_buildings": "Qo'llanilgan binolar",
+    "start_date": "Boshlanish sanasi",
+    "end_date": "Tugash sanasi",
+    "category": "Kategoriya",
+    "scope": "Doira"
   },
-
+  "finances": {
+    "schedule_saved": "To'lov jadvali muvaffaqiyatli saqlandi!",
+    "error_prefix": "Xatolik:",
+    "edit_schedule": "Jadvalni tahrirlash",
+    "amount": "Summa",
+    "due_date": "To'lov sanasi",
+    "payment_type": "To'lov turi",
+    "account": "Hisob",
+    "paid": "To'langan",
+    "return": "Qaytarish",
+    "add_payment": "To'lov qo'shish",
+    "save_schedule": "Jadvalni saqlash",
+    "contract_amount": "Shartnoma summasi",
+    "distributed": "Taqsimlangan",
+    "remaining": "Qoldiq"
+  },
+  "buildings": {
+    "chessboard": {
+      "no_properties": "Shaxmat taxtasida ko'rsatish uchun ob'ektlar yo'q.",
+      "entrance": "Kirish"
+    },
+    "layouts": {
+      "load_error": "Planlarni yuklashda xatolik.",
+      "not_loaded": "Bu bino uchun planlar hali Excel orqali yuklanmagan.",
+      "upload_hint": "Planlarni yuklash uchun Excel shablonini yuklab oling, to'ldiring va yuklang."
+    }
+  },
+  "applications": {
+    "client": "Mijoz",
+    "client_required": "Mijozni tanlang",
+    "create_application": "Ariza yaratish"
+  },
   "deal_cancellation": {
     "termination_title": "Bitimni bekor qilish",
     "cancellation_title": "Bitimni bekor qilish",
@@ -1135,7 +1195,6 @@
     "terminate": "Bekor qilish",
     "cancel_deal": "Bitimni bekor qilish"
   },
-
   "logs": {
     "fields": {
       "full_name": "To'liq ism",
@@ -1167,7 +1226,6 @@
     "empty": "O'zgarishlar tarixi mavjud emas",
     "changed_from_to": "«{{from}}» dan «{{to}}» ga o'zgartirildi"
   },
-
   "template_tags": {
     "title": "Mavjud teglar",
     "description": "Ushbu teglarni hujjat shablonlarida dinamik ma'lumotlarni qo'yish uchun ishlatishingiz mumkin.",
@@ -1197,7 +1255,6 @@
     "building_address": "Bino manzili",
     "project_name": "Loyiha nomi"
   },
-
   "months": {
     "1": "Yanvar",
     "2": "Fevral",
@@ -1212,7 +1269,6 @@
     "11": "Noyabr",
     "12": "Dekabr"
   },
-
   "weekdays": {
     "short": {
       "mon": "Dush",
@@ -1224,11 +1280,9 @@
       "sun": "Yak"
     }
   },
-
   "calendar": {
     "more": "+{{count}} yana"
   },
-
   "quarters": {
     "1": "1-chorak",
     "2": "2-chorak",
@@ -1236,4 +1290,3 @@
     "4": "4-chorak"
   }
 }
-

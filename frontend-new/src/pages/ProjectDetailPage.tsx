@@ -10,6 +10,7 @@ import {
 import type {
     ProjectDetail, BuildingPayload, BuildingFilters, Building, ProjectUpdatePayload
 } from '../api/projects';
+import { getMediaUrl } from '../utils/media';
 import {
     Box, Button, CircularProgress, Paper, Tab, Tabs, Typography, Dialog,
     DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Stack, Link as MuiLink, Grid,
@@ -292,7 +293,7 @@ export default function ProjectDetailPage() {
             {project.gallery_images.map((image) => (
                 <Grid key={image.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                     <Card>
-                        <CardMedia component="img" height="140" image={image.image} alt={image.caption || `Image ${image.id}`} />
+                        <CardMedia component="img" height="140" image={getMediaUrl(image.image) || ''} alt={image.caption || `Image ${image.id}`} />
                         <CardActions>
                             <IconButton onClick={() => deleteImageMutation.mutate(image.id)} disabled={deleteImageMutation.isPending}>
                                 <DeleteIcon />
