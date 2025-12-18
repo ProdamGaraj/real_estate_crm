@@ -7,6 +7,11 @@
 # - Backend код монтируется напрямую (hot reload)
 # - Frontend запускается в dev режиме с HMR
 # - Volumes для медиа файлов доступны для редактирования
+#
+# Сетевое разделение для безопасности:
+# - frontend_network: nginx <-> frontend (только фронтенд)
+# - backend_network: nginx <-> backend <-> db (бэкенд и БД)
+# - Frontend НЕ имеет прямого доступа к базе данных
 # =============================================================================
 
 services:
@@ -21,8 +26,9 @@ services:
       POSTGRES_DB: ${DB_NAME:-real_estate_crm}
       POSTGRES_USER: ${DB_USER:-crm_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-crm_password_2024}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+    # Порт не выставлен наружу - доступ только из backend_network
+    expose:
+      - "5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
@@ -31,7 +37,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - crm_network_dev
+      - backend_network_dev
 
   # =============================================================================
   # Backend Django (Development)
@@ -51,8 +57,9 @@ services:
       - ./backend/media/layouts:/app/media/layouts
       - ./backend/media/projects:/app/media/projects
       - ./backend/media/templates:/app/media/templates
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
+    # Порт не выставлен наружу - доступ только через nginx
+    expose:
+      - "8000"
     environment:
       - USE_SQLITE=False
       - DB_NAME=${DB_NAME:-real_estate_crm}
@@ -62,12 +69,12 @@ services:
       - DB_PORT=5432
       - DEBUG=True
       - SECRET_KEY=${SECRET_KEY:-django-insecure-dev-key}
-      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,0.0.0.0
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,0.0.0.0,nginx
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - crm_network_dev
+      - backend_network_dev
 
   # =============================================================================
   # Frontend React/Vite (Development с HMR)
@@ -83,14 +90,41 @@ services:
       - ./frontend-new:/app
       # Исключаем node_modules
       - /app/node_modules
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+    # Порт не выставлен наружу - доступ только через nginx
+    expose:
+      - "5173"
     environment:
-      - VITE_API_URL=http://localhost:8000/api
+      - VITE_API_URL=/api
+    # Frontend не зависит напрямую от backend (нет доступа к сети backend)
+    networks:
+      - frontend_network_dev
+
+  # =============================================================================
+  # Nginx Reverse Proxy (Development)
+  # Единственная точка входа - имеет доступ к обеим сетям
+  # =============================================================================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: crm_nginx_dev
+    restart: unless-stopped
+    ports:
+      # Единственные порты, доступные снаружи
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    environment:
+      - DEV_MODE=true
+    volumes:
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs_dev:/var/log/nginx
     depends_on:
+      - frontend
       - backend
     networks:
-      - crm_network_dev
+      # Nginx имеет доступ к обеим сетям
+      - frontend_network_dev
+      - backend_network_dev
 
 # =============================================================================
 # Volumes
@@ -98,10 +132,19 @@ services:
 volumes:
   postgres_data_dev:
     driver: local
+  nginx_logs_dev:
+    driver: local
 
 # =============================================================================
-# Networks
+# Networks - Сетевое разделение для безопасности
 # =============================================================================
 networks:
-  crm_network_dev:
+  # Сеть для фронтенда (nginx <-> frontend)
+  frontend_network_dev:
     driver: bridge
+  
+  # Сеть для бэкенда и БД (nginx <-> backend <-> db)
+  # internal: true - нет прямого доступа в интернет
+  backend_network_dev:
+    driver: bridge
+    internal: true

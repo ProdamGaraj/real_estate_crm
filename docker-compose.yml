@@ -10,8 +10,9 @@ services:
       POSTGRES_DB: ${DB_NAME:-real_estate_crm}
       POSTGRES_USER: ${DB_USER:-crm_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-crm_password_2024}
-    ports:
-      - "${DB_PORT:-5432}:5432"
+    # Порт не выставлен наружу - доступ только из backend_network
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,7 +21,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - crm_network
+      - backend_network
 
   # =============================================================================
   # Backend Django API
@@ -42,8 +43,9 @@ services:
       - static_files:/app/staticfiles
       # Логи
       - backend_logs:/app/logs
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
+    # Порт не выставлен наружу - доступ только через nginx
+    expose:
+      - "8000"
     environment:
       # База данных
       - USE_SQLITE=False
@@ -55,15 +57,15 @@ services:
       # Django settings
       - DEBUG=${DEBUG:-False}
       - SECRET_KEY=${SECRET_KEY:-django-insecure-change-this-in-production}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,nginx}
       # URLs
-      - SITE_URL=${SITE_URL:-http://localhost:8000}
+      - SITE_URL=${SITE_URL:-http://localhost}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
     depends_on:
       db:
         condition: service_healthy
     networks:
-      - crm_network
+      - backend_network
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
       interval: 30s
@@ -85,14 +87,49 @@ services:
     volumes:
       # Логи nginx
       - frontend_logs:/var/log/nginx
-    ports:
-      - "${FRONTEND_PORT:-80}:80"
-    depends_on:
-      - backend
+    # Порт не выставлен наружу - доступ только через nginx
+    expose:
+      - "80"
+    # Frontend изолирован в своей сети
     networks:
-      - crm_network
+      - frontend_network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============================================================================
+  # Nginx Reverse Proxy (HTTP/HTTPS)
+  # Единственная точка входа - имеет доступ к обеим сетям
+  # =============================================================================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: crm_nginx
+    restart: unless-stopped
+    ports:
+      # Единственные порты, доступные снаружи
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      # SSL сертификаты (опционально)
+      # Положите fullchain.pem и privkey.pem в ./nginx/ssl/
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      # Для Let's Encrypt (опционально)
+      - certbot_www:/var/www/certbot:ro
+      # Логи
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      # Nginx имеет доступ к обеим сетям
+      - frontend_network
+      - backend_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -127,10 +164,25 @@ volumes:
     driver: local
   frontend_logs:
     driver: local
+  nginx_logs:
+    driver: local
+  
+  # Let's Encrypt (опционально)
+  certbot_www:
+    driver: local
+  certbot_conf:
+    driver: local
 
 # =============================================================================
-# Networks
+# Networks - Сетевое разделение для безопасности
 # =============================================================================
 networks:
-  crm_network:
+  # Сеть для фронтенда (nginx <-> frontend)
+  frontend_network:
     driver: bridge
+  
+  # Сеть для бэкенда и БД (nginx <-> backend <-> db)
+  # internal: true - нет прямого доступа в интернет
+  backend_network:
+    driver: bridge
+    internal: true

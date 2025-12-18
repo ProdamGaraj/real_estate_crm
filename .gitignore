@@ -26,6 +26,11 @@ docs/*
 # Docker
 .env
 
+# SSL сертификаты (не коммитить в репозиторий!)
+nginx/ssl/*.pem
+nginx/ssl/*.crt
+nginx/ssl/*.key
+
 # Static files collected
 backend/staticfiles/
 backend/db.sqlite3

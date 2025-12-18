@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { refreshAccessToken } from './auth';
 
+// Используем переменную окружения или относительный путь для работы через nginx
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
 const apiClient = axios.create({
-  // baseURL:'https://tws483gv-8000.euw.devtunnels.ms/api',
-  baseURL: 'http://127.0.0.1:8000/api',
-  // baseURL: 'https://c0s9w1gq-8000.euw.devtunnels.ms/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
