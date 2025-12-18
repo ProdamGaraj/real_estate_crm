@@ -36,6 +36,9 @@ ALLOWED_HOSTS = [
     'backend',  # Docker service name
 ] + [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
 
+# Парсинг CORS_ORIGINS из переменной окружения (для production сервера)
+_cors_origins_env = config('CORS_ORIGINS', default='')
+
 
 # Application definition
 
@@ -181,7 +184,7 @@ CORS_ALLOWED_ORIGINS = [
     'https://tws483gv-5173.euw.devtunnels.ms',
     'https://tws483gv-8000.euw.devtunnels.ms'
     # Backend tunnel
-]
+] + [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
 
 # Дополнительные настройки CORS для работы с JWT
 CORS_ALLOW_CREDENTIALS = True
@@ -336,3 +339,7 @@ if not DEBUG:
     
     # Прокси-заголовки (если за nginx/load balancer)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# CSRF_TRUSTED_ORIGINS для production (из переменной окружения)
+_csrf_trusted_env = config('CSRF_TRUSTED_ORIGINS', default='')
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_env.split(',') if o.strip()]
