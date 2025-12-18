@@ -320,17 +320,18 @@ FRONTEND_URL = 'http://localhost:5173'  # URL фронтенда для ссыл
 # =============================================================================
 # Включить в продакшене для принудительного использования HTTPS
 if not DEBUG:
-    # Перенаправление HTTP → HTTPS
-    SECURE_SSL_REDIRECT = True
+    # Перенаправление HTTP → HTTPS (отключить если нет SSL)
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
     
-    # HSTS (HTTP Strict Transport Security)
-    SECURE_HSTS_SECONDS = 31536000  # 1 год
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    # HSTS (HTTP Strict Transport Security) - только если есть SSL
+    if SECURE_SSL_REDIRECT:
+        SECURE_HSTS_SECONDS = 31536000  # 1 год
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+        SECURE_HSTS_PRELOAD = True
     
-    # Защита cookies
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    # Защита cookies (только если есть SSL)
+    SESSION_COOKIE_SECURE = SECURE_SSL_REDIRECT
+    CSRF_COOKIE_SECURE = SECURE_SSL_REDIRECT
     
     # Прокси-заголовки (если за nginx/load balancer)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
