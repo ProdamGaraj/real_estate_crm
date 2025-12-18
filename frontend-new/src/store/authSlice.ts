@@ -2,7 +2,17 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-// ... (типы для токенов)
+// Типы для токенов
+export interface AuthTokens {
+  access: string;
+  refresh: string;
+}
+
+export interface AuthState {
+  accessToken: string | null;
+  refreshToken: string | null;
+  isAuthenticated: boolean;
+}
 
 const initialState: AuthState = {
   accessToken: null,

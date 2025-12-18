@@ -8,7 +8,7 @@ import {
     uploadProjectImage, deleteProjectImage, deleteProject, deleteBuilding
 } from '../api/projects';
 import type {
-    ProjectDetail, BuildingPayload, BuildingFilters, Building, ProjectUpdatePayload
+    ProjectDetail, BuildingFilters, Building, ProjectUpdatePayload
 } from '../api/projects';
 import { getMediaUrl } from '../utils/media';
 import {

@@ -10,10 +10,8 @@ import {
   DialogContent,
   Alert,
   CircularProgress,
-  Link as MuiLink,
   Stack,
   Chip,
-  TextField,
   FormControl,
   InputLabel,
   Select,
@@ -22,7 +20,6 @@ import {
 import type { GridColDef } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link as RouterLink } from 'react-router-dom';
 import { getUserProfiles, getCompanies, getDepartments } from '../../api/permissions';
 import UserForm from '../../components/permissions/UserForm';
 import AddIcon from '@mui/icons-material/Add';

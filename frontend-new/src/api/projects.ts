@@ -1,7 +1,14 @@
 // src/api/projects.ts
 import apiClient from './axios';
 
-export interface Building { /* ... опишите поля модели Building ... */ }
+export interface Building {
+  id: number;
+  name: string;
+  floors_count?: number;
+  entrances_count?: number;
+  building_type?: number;
+  project?: number;
+}
 export interface Project {
   id: number;
   name: string;

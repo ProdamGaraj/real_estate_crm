@@ -22,11 +22,17 @@ export interface PasswordResetConfirm {
   new_password: string;
 }
 
+// Тип для формы логина (алиас для совместимости)
+export type LoginPayload = LoginCredentials;
+
 // Вход пользователя
 export const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
   const response = await apiClient.post('/permissions/auth/login/', credentials);
   return response.data;
 };
+
+// Алиас для совместимости
+export const loginUser = login;
 
 // Выход пользователя
 export const logout = async (refreshToken: string): Promise<void> => {

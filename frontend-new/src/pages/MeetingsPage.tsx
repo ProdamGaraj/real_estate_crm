@@ -46,7 +46,7 @@ export default function MeetingsPage() {
     const [tabValue, setTabValue] = useState(location.state?.tab || 0);
     const [filters, setFilters] = useState<MeetingFilters>(location.state?.filters || {});
     const queryClient = useQueryClient();
-    const { control, watch, register, reset } = useForm<MeetingFilters>({
+    const { control, watch, reset } = useForm<MeetingFilters>({
         defaultValues: filters,
     });
 
@@ -130,7 +130,7 @@ export default function MeetingsPage() {
             <Typography variant="h4">{t('pages.meetings.title')}</Typography>
 
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+                <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)}>
                     <Tab label={t('pages.meetings.meeting_list')} />
                     <Tab label={t('pages.meetings.summary_table')} />
                 </Tabs>

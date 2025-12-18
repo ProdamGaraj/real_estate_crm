@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, CircularProgress, Alert, Link as MuiLink, TextField, Stack } from '@mui/material';
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, CircularProgress, Alert, Link as MuiLink, TextField } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

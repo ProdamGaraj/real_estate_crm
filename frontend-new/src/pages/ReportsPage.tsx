@@ -37,7 +37,7 @@ export default function ReportsPage() {
             <Typography variant="h4" sx={{ mb: 2 }}>{t('pages.reports.title')}</Typography>
             <Paper>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                    <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+                    <Tabs value={tabValue} onChange={(_e, newValue) => setTabValue(newValue)}>
                         <Tab label={t('pages.reports.project_report')} />
                         <Tab label={t('pages.reports.employee_report')} />
                     </Tabs>

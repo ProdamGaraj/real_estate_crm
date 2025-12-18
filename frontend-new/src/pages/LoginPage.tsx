@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { loginUser } from '../api/auth';
+import type { LoginPayload } from '../api/auth';
 import { setAuthTokens } from '../store/authSlice';
 import { Container, Box, TextField, Button, Typography, Alert } from '@mui/material';
 
