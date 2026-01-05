@@ -23,6 +23,8 @@ import RoleForm from '../../components/permissions/RoleForm';
 import AddIcon from '@mui/icons-material/Add';
 import SecurityIcon from '@mui/icons-material/Security';
 import { translateRoleScope, translateRoleCategory } from '../../utils/translations';
+import { useAuthStore } from '../../store/authStore';
+import { hasPermission } from '../../utils/permissions';
 
 const getColumns = (t: (key: string) => string): GridColDef[] => [
   { field: 'id', headerName: t('table.id'), width: 70 },
@@ -102,9 +104,11 @@ const getColumns = (t: (key: string) => string): GridColDef[] => [
 
 export default function RolesPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const columns = getColumns(t);
+  const canCreate = hasPermission(user, 'ADD', 'ROLE');
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['roles'],
@@ -128,13 +132,15 @@ export default function RolesPage() {
             {t('pages.settings.permissions.roles_subtitle')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setIsModalOpen(true)}
-        >
-          {t('pages.settings.permissions.create_role')}
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setIsModalOpen(true)}
+          >
+            {t('pages.settings.permissions.create_role')}
+          </Button>
+        )}
       </Box>
 
       {/* Таблица */}

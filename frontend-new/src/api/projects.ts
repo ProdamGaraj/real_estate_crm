@@ -15,6 +15,8 @@ export interface Project {
   address: string;
   created_at: string;
   buildings: BuildingMini[]; // <-- Добавляем это поле
+  company?: number | null;
+  company_name?: string | null;
 }
 export interface ProjectDetail extends Project {
     description: string;
@@ -25,6 +27,8 @@ export interface ProjectDetail extends Project {
     developer_details: string;
     gallery_images: ProjectImage[];
     cadastre_date_plan: string | null;
+    company?: number | null;
+    company_name?: string | null;
 }
 export type ProjectUpdatePayload = Partial<Omit<ProjectDetail, 'id' | 'created_at' | 'buildings' | 'gallery_images'>>;
 export type ProjectPayload = Omit<Project, 'id' | 'created_at' /* ... */>;

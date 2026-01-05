@@ -88,3 +88,12 @@ class DealDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Сделка с таким номером договора уже существует.")
 
         return value
+
+    # ИСПРАВЛЕНИЕ: Добавляем метод для возврата относительных путей к файлам
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.signed_document_scan:
+            representation['signed_document_scan'] = instance.signed_document_scan.url
+        if instance.termination_document_scan:
+            representation['termination_document_scan'] = instance.termination_document_scan.url
+        return representation

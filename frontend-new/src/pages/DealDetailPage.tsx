@@ -91,6 +91,10 @@ export default function DealDetailPage() {
     onSuccess: (updatedDeal) => {
       queryClient.setQueryData(['deal', dealId], updatedDeal);
       alert(t('common.changes_saved'));
+      // Автоматически переходим к графику платежей если цена сохранена
+      if (updatedDeal.contract_price && activeStep === 1) {
+        setActiveStep(2);
+      }
     },
     onError: (error: any) => {
         const serverError = error.response?.data?.contract_number?.[0] || error.response?.data?.detail;

@@ -442,6 +442,19 @@ class PartnerAPIKeySerializer(serializers.ModelSerializer):
         ]
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    """Сериализатор для смены пароля пользователя администратором"""
+    new_password = serializers.CharField(min_length=8, write_only=True)
+    confirm_password = serializers.CharField(min_length=8, write_only=True)
+    
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({
+                'confirm_password': 'Пароли не совпадают'
+            })
+        return data
+
+
 class PartnerAPIKeyCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания API-ключа (без возможности указать ключ вручную)"""
     

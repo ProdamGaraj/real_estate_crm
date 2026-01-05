@@ -114,6 +114,7 @@
   "user_not_found": "User not found",
   "create_user_error": "Error creating user",
   "save_user_error": "Error saving user",
+  "password_change_error": "Error changing password",
   "save_role_error": "Error saving role",
   "id": "ID",
   "full_name": "Full Name",

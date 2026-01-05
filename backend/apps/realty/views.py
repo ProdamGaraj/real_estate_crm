@@ -31,16 +31,45 @@ from .serializers import (
 
 # --- Views for Projects ---
 class ProjectListView(generics.ListCreateAPIView):
-    queryset = Project.objects.all()
     permission_classes = [IsAuthenticated, ProjectPermission]
     filterset_class = ProjectFilter
+    
+    def get_queryset(self):
+        """
+        Фильтрация проектов по компании пользователя.
+        Системные администраторы видят все проекты.
+        """
+        user = self.request.user
+        queryset = Project.objects.all()
+        
+        # Проверяем профиль пользователя
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            # Системный админ видит все проекты
+            if profile.is_system_admin:
+                return queryset
+            # Обычные пользователи видят только проекты своей компании
+            if profile.company:
+                return queryset.filter(company=profile.company)
+            # Если у пользователя нет компании - не видит никаких проектов
+            return queryset.none()
+        
+        return queryset.none()
+    
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return ProjectDetailSerializer
         return ProjectListSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        """
+        При создании проекта автоматически назначаем компанию пользователя.
+        """
+        user = self.request.user
+        company = None
+        if hasattr(user, 'profile') and user.profile.company:
+            company = user.profile.company
+        serializer.save(created_by=user, company=company)
 
 class ProjectImageDetailView(generics.DestroyAPIView):
     """ View для удаления изображения из галереи """
@@ -48,8 +77,22 @@ class ProjectImageDetailView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, ProjectPermission]
 
     def get_queryset(self):
-        # Убедимся, что можно удалить только фото из нужного проекта
-        return ProjectImage.objects.filter(project_id=self.kwargs['project_pk'])
+        """
+        Фильтрация изображений проекта по компании пользователя.
+        """
+        project_pk = self.kwargs['project_pk']
+        user = self.request.user
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return ProjectImage.objects.filter(project_id=project_pk)
+            if profile.company:
+                return ProjectImage.objects.filter(
+                    project_id=project_pk,
+                    project__company=profile.company
+                )
+        return ProjectImage.objects.none()
 
 class ProjectImageCreateView(generics.CreateAPIView):
     """ View для загрузки нового изображения в галерею проекта """
@@ -58,12 +101,40 @@ class ProjectImageCreateView(generics.CreateAPIView):
     parser_classes = [MultiPartParser] # Для обработки загрузки файлов
 
     def perform_create(self, serializer):
-        project = Project.objects.get(pk=self.kwargs['project_pk'])
-        serializer.save(project=project)
+        user = self.request.user
+        project_pk = self.kwargs['project_pk']
+        
+        # Проверяем доступ к проекту через компанию
+        queryset = Project.objects.filter(pk=project_pk)
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if not profile.is_system_admin and profile.company:
+                queryset = queryset.filter(company=profile.company)
+        
+        project = queryset.first()
+        if project:
+            serializer.save(project=project)
+
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
     permission_classes = [IsAuthenticated, ProjectPermission]
+    
+    def get_queryset(self):
+        """
+        Фильтрация проектов по компании пользователя.
+        """
+        user = self.request.user
+        queryset = Project.objects.all()
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return queryset
+            if profile.company:
+                return queryset.filter(company=profile.company)
+            return queryset.none()
+        
+        return queryset.none()
 
 
 # --- Views for Buildings ---
@@ -73,7 +144,24 @@ class BuildingListCreateView(generics.ListCreateAPIView):
     filterset_class = BuildingFilter # <--- ДОБАВЛЕНО
 
     def get_queryset(self):
-        return Building.objects.filter(project_id=self.kwargs['project_pk'])
+        """
+        Фильтрация домов по компании пользователя через родительский проект.
+        """
+        project_id = self.kwargs['project_pk']
+        user = self.request.user
+        
+        # Проверяем доступ к проекту
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return Building.objects.filter(project_id=project_id)
+            if profile.company:
+                # Проверяем, что проект принадлежит компании пользователя
+                return Building.objects.filter(
+                    project_id=project_id,
+                    project__company=profile.company
+                )
+        return Building.objects.none()
 
     def perform_create(self, serializer):
         project = Project.objects.get(pk=self.kwargs['project_pk'])
@@ -85,7 +173,22 @@ class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, BuildingPermission]
 
     def get_queryset(self):
-        return Building.objects.filter(project_id=self.kwargs['project_pk'])
+        """
+        Фильтрация домов по компании пользователя через родительский проект.
+        """
+        project_id = self.kwargs['project_pk']
+        user = self.request.user
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return Building.objects.filter(project_id=project_id)
+            if profile.company:
+                return Building.objects.filter(
+                    project_id=project_id,
+                    project__company=profile.company
+                )
+        return Building.objects.none()
 
     # --- ДОБАВЬТЕ ЭТОТ МЕТОД ДЛЯ ЛОГИРОВАНИЯ ---
     def perform_update(self, serializer):
@@ -253,7 +356,22 @@ class PropertyDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated, PropertyPermission]
 
     def get_queryset(self):
-        return Property.objects.filter(building_id=self.kwargs['building_pk'])
+        """
+        Фильтрация свойств по компании пользователя через цепочку building -> project.
+        """
+        building_pk = self.kwargs['building_pk']
+        user = self.request.user
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return Property.objects.filter(building_id=building_pk)
+            if profile.company:
+                return Property.objects.filter(
+                    building_id=building_pk,
+                    building__project__company=profile.company
+                )
+        return Property.objects.none()
 
 
 # --- Views for Layouts ---
@@ -262,7 +380,22 @@ class LayoutListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, LayoutPermission]
 
     def get_queryset(self):
-        return Layout.objects.filter(building_id=self.kwargs['building_pk'])
+        """
+        Фильтрация планировок по компании пользователя через цепочку building -> project.
+        """
+        building_pk = self.kwargs['building_pk']
+        user = self.request.user
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return Layout.objects.filter(building_id=building_pk)
+            if profile.company:
+                return Layout.objects.filter(
+                    building_id=building_pk,
+                    building__project__company=profile.company
+                )
+        return Layout.objects.none()
 
     def perform_create(self, serializer):
         building = Building.objects.get(pk=self.kwargs['building_pk'])
@@ -274,7 +407,22 @@ class LayoutDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, LayoutPermission]
 
     def get_queryset(self):
-        return Layout.objects.filter(building_id=self.kwargs['building_pk'])
+        """
+        Фильтрация планировок по компании пользователя через цепочку building -> project.
+        """
+        building_pk = self.kwargs['building_pk']
+        user = self.request.user
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return Layout.objects.filter(building_id=building_pk)
+            if profile.company:
+                return Layout.objects.filter(
+                    building_id=building_pk,
+                    building__project__company=profile.company
+                )
+        return Layout.objects.none()
 
 
 # --- Views for Discounts ---
@@ -331,8 +479,20 @@ class BuildingImageCreateView(generics.CreateAPIView):
     parser_classes = [MultiPartParser]
 
     def perform_create(self, serializer):
-        building = Building.objects.get(pk=self.kwargs['building_pk'], project_id=self.kwargs['project_pk'])
-        serializer.save(building=building)
+        user = self.request.user
+        project_pk = self.kwargs['project_pk']
+        building_pk = self.kwargs['building_pk']
+        
+        # Проверяем доступ к проекту через компанию
+        queryset = Building.objects.filter(pk=building_pk, project_id=project_pk)
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if not profile.is_system_admin and profile.company:
+                queryset = queryset.filter(project__company=profile.company)
+        
+        building = queryset.first()
+        if building:
+            serializer.save(building=building)
 
 
 class BuildingImageDetailView(generics.DestroyAPIView):
@@ -341,17 +501,46 @@ class BuildingImageDetailView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, BuildingPermission]
 
     def get_queryset(self):
-        return BuildingImage.objects.filter(building_id=self.kwargs['building_pk'])
+        """
+        Фильтрация изображений зданий по компании пользователя.
+        """
+        building_pk = self.kwargs['building_pk']
+        user = self.request.user
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return BuildingImage.objects.filter(building_id=building_pk)
+            if profile.company:
+                return BuildingImage.objects.filter(
+                    building_id=building_pk,
+                    building__project__company=profile.company
+                )
+        return BuildingImage.objects.none()
 
 # --- ДОБАВЬТЕ ЭТОТ НОВЫЙ КЛАСС В КОНЕЦ ФАЙЛА ---
 class BuildingListViewAll(generics.ListAPIView):
     """
     Возвращает плоский список всех домов для использования в выпадающих списках.
     """
-    queryset = Building.objects.select_related('project').all()
     serializer_class = BuildingMiniSerializer
     permission_classes = [IsAuthenticated, BuildingPermission]
     pagination_class = None # Отключаем пагинацию для этого эндпоинта
+
+    def get_queryset(self):
+        """
+        Фильтрация домов по компании пользователя.
+        """
+        user = self.request.user
+        queryset = Building.objects.select_related('project').all()
+        
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.is_system_admin:
+                return queryset
+            if profile.company:
+                return queryset.filter(project__company=profile.company)
+        return queryset.none()
 
 
 # === PUBLIC API (для партнёров) ===

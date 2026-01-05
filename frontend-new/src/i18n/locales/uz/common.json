@@ -113,6 +113,7 @@
   "user_not_found": "Foydalanuvchi topilmadi",
   "create_user_error": "Foydalanuvchini yaratishda xatolik",
   "save_user_error": "Foydalanuvchini saqlashda xatolik",
+  "password_change_error": "Parolni o'zgartirishda xatolik",
   "save_role_error": "Rolni saqlashda xatolik",
   "id": "ID",
   "full_name": "To'liq ism",

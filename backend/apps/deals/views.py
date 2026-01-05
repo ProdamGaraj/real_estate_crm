@@ -30,6 +30,8 @@ class DealSummaryView(APIView):
         created_at_before = request.query_params.get('created_at_before')
 
         queryset = Deal.objects.all().select_related('created_by', 'property__building__project')
+        # Фильтруем по разрешениям пользователя
+        queryset = get_filtered_queryset(request.user, queryset, 'DEAL')
 
         if created_at_after:
             queryset = queryset.filter(created_at__date__gte=created_at_after)

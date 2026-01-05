@@ -296,6 +296,18 @@ export const deleteUserProfile = async (id: number): Promise<void> => {
   await apiClient.delete(`/permissions/user-profiles/${id}/`);
 };
 
+export const changeUserPassword = async (
+  profileId: number,
+  newPassword: string,
+  confirmPassword: string
+): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.post(
+    `/permissions/user-profiles/${profileId}/change_password/`,
+    { new_password: newPassword, confirm_password: confirmPassword }
+  );
+  return response.data;
+};
+
 export const getCurrentUserProfile = async (): Promise<UserProfile> => {
   const response = await apiClient.get(`/permissions/me/`);
   return response.data;

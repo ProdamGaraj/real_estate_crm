@@ -42,7 +42,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
   const entrances = Object.keys(propertiesByEntrance).map(Number).sort((a, b) => a - b);
 
   if (entrances.length === 0) {
-    return <Typography sx={{ p: 2, color: 'text.secondary' }}>{t('buildings.chessboard.no_properties')}</Typography>
+    return <Typography sx={{ p: 2, color: 'text.secondary' }}>{t('pages.buildings.chessboard.no_properties')}</Typography>
   }
 
   return (
@@ -52,7 +52,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
         return (
           <Paper key={entrance} sx={{ p: 1, minWidth: 300, flexShrink: 0 }} variant="outlined">
             <Typography variant="h6" align="center" sx={{ mb: 1 }}>
-              {t('buildings.chessboard.entrance')} {entrance}
+              {t('pages.buildings.chessboard.entrance')} {entrance}
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
               {floors.map((floor) => (
@@ -62,7 +62,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 1, p: 1 }}>
                     {propertiesByEntrance[entrance][floor]
-                      .sort((a,b) => a.unit_number.localeCompare(b.unit_number, undefined, { numeric: true }))
+                      .sort((a, b) => a.unit_number.localeCompare(b.unit_number, undefined, { numeric: true }))
                       .map((prop) => (
                         <Tooltip key={prop.id} title={`№ ${prop.unit_number} | ${prop.status} | ${prop.area} м²`}>
                           <Box

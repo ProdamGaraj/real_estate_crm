@@ -142,7 +142,24 @@ def get_filtered_queryset(user, queryset, resource_type):
                 # ИЛИ хотя бы одна заявка создана этим пользователем
                 filters |= Q(applications__created_by=user)
         
-        # СТАНДАРТНАЯ ЛОГИКА ДЛЯ ОСТАЛЬНЫХ РЕСУРСОВ
+        # ОСОБАЯ ЛОГИКА ДЛЯ ВСТРЕЧ: Meeting использует поля creator и executor вместо created_by
+        # Встреча видна если пользователь - создатель ИЛИ исполнитель
+        elif resource_type == 'MEETING':
+            if has_company_view and profile.company:
+                # Встреча видна если creator или executor из этой компании
+                filters |= Q(creator__profile__company=profile.company)
+                filters |= Q(executor__profile__company=profile.company)
+            
+            if has_department_view and profile.department:
+                # Встреча видна если creator или executor из этого отдела
+                filters |= Q(creator__profile__department=profile.department)
+                filters |= Q(executor__profile__department=profile.department)
+            
+            if has_own_view:
+                # Встреча видна если пользователь - creator или executor
+                filters |= Q(creator=user)
+                filters |= Q(executor=user)
+        
         else:
             # Разрешение COMPANY - видит объекты своей компании
             if has_company_view and profile.company:
@@ -243,6 +260,11 @@ def _determine_scope(user, obj):
             return 'OWN'
         if hasattr(obj, 'user') and obj.user == user:
             return 'OWN'
+        # Для Meeting проверяем creator и executor
+        if hasattr(obj, 'creator') and obj.creator == user:
+            return 'OWN'
+        if hasattr(obj, 'executor') and obj.executor == user:
+            return 'OWN'
         
         # Проверяем принадлежность отделу
         if profile.department:
@@ -254,8 +276,18 @@ def _determine_scope(user, obj):
         
         # Проверяем принадлежность компании
         if profile.company:
+            # Прямое поле company
             if hasattr(obj, 'company') and obj.company == profile.company:
                 return 'COMPANY'
+            # Через project.company (для Building)
+            if hasattr(obj, 'project') and hasattr(obj.project, 'company'):
+                if obj.project.company == profile.company:
+                    return 'COMPANY'
+            # Через building.project.company (для Property, Layout)
+            if hasattr(obj, 'building') and hasattr(obj.building, 'project'):
+                if obj.building.project.company == profile.company:
+                    return 'COMPANY'
+            # Через created_by
             if hasattr(obj, 'created_by') and hasattr(obj.created_by, 'profile'):
                 if obj.created_by.profile.company == profile.company:
                     return 'COMPANY'
@@ -279,6 +311,11 @@ def _is_object_in_scope(user, obj, scope):
                 return True
             if hasattr(obj, 'user') and obj.user == user:
                 return True
+            # Для Meeting проверяем creator и executor
+            if hasattr(obj, 'creator') and obj.creator == user:
+                return True
+            if hasattr(obj, 'executor') and obj.executor == user:
+                return True
             return False
         
         if scope == 'DEPARTMENT' and profile.department:
@@ -290,8 +327,18 @@ def _is_object_in_scope(user, obj, scope):
             return False
         
         if scope == 'COMPANY' and profile.company:
+            # Прямое поле company
             if hasattr(obj, 'company') and obj.company == profile.company:
                 return True
+            # Через project.company (для Building, Property, Layout и т.д.)
+            if hasattr(obj, 'project') and hasattr(obj.project, 'company'):
+                if obj.project.company == profile.company:
+                    return True
+            # Через building.project.company (для Property, Layout)
+            if hasattr(obj, 'building') and hasattr(obj.building, 'project'):
+                if obj.building.project.company == profile.company:
+                    return True
+            # Через created_by
             if hasattr(obj, 'created_by') and hasattr(obj.created_by, 'profile'):
                 if obj.created_by.profile.company == profile.company:
                     return True

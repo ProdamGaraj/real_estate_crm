@@ -25,6 +25,8 @@ import UserForm from '../../components/permissions/UserForm';
 import AddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import { useAuthStore } from '../../store/authStore';
+import { hasPermission } from '../../utils/permissions';
 
 // Вспомогательная функция для форматирования ФИО в формат "Фамилия И. О."
 function formatUserFullName(fullName: string | null): string {
@@ -154,6 +156,8 @@ export default function UsersPage() {
       ),
     },
   ];
+  const { user } = useAuthStore();
+  const canCreate = hasPermission(user, 'ADD', 'USER');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [filters, setFilters] = useState({
@@ -212,16 +216,18 @@ export default function UsersPage() {
             {t('pages.settings.permissions.users_description')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            setSelectedUser(null);
-            setIsModalOpen(true);
-          }}
-        >
-          {t('pages.settings.permissions.add_user')}
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              setSelectedUser(null);
+              setIsModalOpen(true);
+            }}
+          >
+            {t('pages.settings.permissions.add_user')}
+          </Button>
+        )}
       </Box>
 
       {/* Фильтры */}

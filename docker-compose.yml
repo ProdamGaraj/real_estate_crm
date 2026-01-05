@@ -121,6 +121,12 @@ services:
       - certbot_www:/var/www/certbot:ro
       # Логи
       - nginx_logs:/var/log/nginx
+      # Media volumes для прямой отдачи файлов
+      - media_buildings:/app/media/buildings:ro
+      - media_deals:/app/media/deals:ro
+      - media_layouts:/app/media/layouts:ro
+      - media_projects:/app/media/projects:ro
+      - media_templates:/app/media/templates:ro
     depends_on:
       - frontend
       - backend

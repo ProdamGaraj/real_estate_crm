@@ -9,9 +9,13 @@ import { getProjects } from '../api/projects';
 import type { ProjectFilters } from '../api/projects';
 import ProjectForm from '../components/projects/ProjectForm';
 import { useForm } from 'react-hook-form';
+import { useAuthStore } from '../store/authStore';
+import { hasPermission } from '../utils/permissions';
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const canCreate = hasPermission(user, 'ADD', 'PROJECT');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const columns: GridColDef[] = [
@@ -69,16 +73,18 @@ export default function ProjectsPage() {
         <Typography variant="h4">
           {t('pages.projects.title')}
         </Typography>
-        <Button variant="contained" onClick={() => setIsModalOpen(true)}>
-          {t('pages.projects.create_project')}
-        </Button>
+        {canCreate && (
+          <Button variant="contained" onClick={() => setIsModalOpen(true)}>
+            {t('pages.projects.create_project')}
+          </Button>
+        )}
       </Box>
       {/* Строка поиска */}
       <TextField
-            label={t('pages.projects.search_by_name_address')}
-            fullWidth
-            size="small"
-            {...register('search')}
+        label={t('pages.projects.search_by_name_address')}
+        fullWidth
+        size="small"
+        {...register('search')}
       />
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>{t('pages.projects.new_project')}</DialogTitle>

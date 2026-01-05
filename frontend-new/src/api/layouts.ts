@@ -35,3 +35,14 @@ export const updateLayoutImage = async ({ buildingId, layoutId, formData }: { bu
   });
   return response.data;
 };
+
+/**
+ * Удаляет изображение у планировки (устанавливает поле в null).
+ */
+export const deleteLayoutImage = async ({ buildingId, layoutId, fieldName }: { buildingId: number, layoutId: number, fieldName: string }): Promise<Layout> => {
+  // Отправляем JSON с null для указанного поля
+  const response = await apiClient.patch(`/projects/0/buildings/${buildingId}/layouts/${layoutId}/`, {
+    [fieldName]: null
+  });
+  return response.data;
+};

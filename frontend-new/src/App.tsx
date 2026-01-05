@@ -29,6 +29,7 @@ import RoleDetailPage from './pages/permissions/RoleDetailPage';
 // Auth
 import ProtectedRoute from './components/ProtectedRoute';
 import PermissionRoute from './components/PermissionRoute';
+import SmartRedirect from './components/SmartRedirect';
 
 // Компонент-обертка для защиты маршрутов (используя новую систему авторизации)
 const ProtectedRouteWrapper = () => {
@@ -60,7 +61,15 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRouteWrapper />,
         children: [
-          { index: true, element: <DashboardPage /> },
+          { index: true, element: <SmartRedirect /> },
+          {
+            path: 'dashboard',
+            element: (
+              <PermissionRoute resource="DASHBOARD" action="VIEW">
+                <DashboardPage />
+              </PermissionRoute>
+            )
+          },
           { path: 'clients', element: <ClientsPage /> },
           { path: 'clients/:clientId', element: <ClientDetailPage /> },
           { path: 'applications', element: <ApplicationsPage /> },
@@ -76,29 +85,29 @@ const router = createBrowserRouter([
           { path: 'finances', element: <FinancesPage /> },
           { path: 'finances/:paymentId', element: <PaymentDetailPage /> },
           { path: 'reports', element: <ReportsPage /> },
-          { 
-            path: 'settings', 
+          {
+            path: 'settings',
             element: (
               <PermissionRoute requireAdmin>
                 <SettingsPage />
               </PermissionRoute>
-            ) 
+            )
           },
-          { 
-            path: 'discounts', 
+          {
+            path: 'discounts',
             element: (
               <PermissionRoute resource="DISCOUNT" action="VIEW">
                 <DiscountsPage />
               </PermissionRoute>
-            ) 
+            )
           },
-          { 
-            path: 'discounts/:discountId', 
+          {
+            path: 'discounts/:discountId',
             element: (
               <PermissionRoute resource="DISCOUNT" action="VIEW">
                 <DiscountDetailPage />
               </PermissionRoute>
-            ) 
+            )
           },
           // Permissions routes
           { path: 'permissions/companies/:id', element: <CompanyDetailPage /> },

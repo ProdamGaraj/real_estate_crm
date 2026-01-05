@@ -25,6 +25,7 @@
   "delete_project_confirm": "\"{{name}}\" loyihasini o'chirishni xohlaysizmi? Bu amalni qaytarib bo'lmaydi.",
   "project_updated": "Loyiha yangilandi!",
   "create_error": "Loyihani yaratishda xatolik yuz berdi.",
+  "company": "Kompaniya",
   "form": {
     "name": "Loyiha nomi",
     "address": "Manzil"

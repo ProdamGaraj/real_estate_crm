@@ -17,7 +17,8 @@ from .serializers import (
     UserProfileListSerializer, UserProfileDetailSerializer,
     PermissionLogSerializer, UserPermissionCheckSerializer,
     BulkPermissionAssignSerializer, PartnerAPIKeySerializer, 
-    PartnerAPIKeyCreateSerializer, PartnerAPIKeyUpdateSerializer
+    PartnerAPIKeyCreateSerializer, PartnerAPIKeyUpdateSerializer,
+    ChangePasswordSerializer
 )
 from .permissions import (
     IsSystemAdmin, IsCompanyAdmin, IsDepartmentManager,
@@ -307,6 +308,38 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             'action': action,
             'resource': resource,
             'scope': scope
+        })
+    
+    @action(detail=True, methods=['post'])
+    def change_password(self, request, pk=None):
+        """
+        Смена пароля пользователя администратором
+        """
+        profile = self.get_object()
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Устанавливаем новый пароль
+        user = profile.user
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        
+        # Логируем изменение пароля
+        PermissionLog.objects.create(
+            user=request.user,
+            action='PASSWORD_CHANGE',
+            entity_type='UserProfile',
+            entity_id=profile.id,
+            details={
+                'username': user.username,
+                'changed_by': request.user.username
+            },
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        
+        return Response({
+            'success': True,
+            'message': f'Пароль пользователя {user.username} успешно изменён'
         })
 
 

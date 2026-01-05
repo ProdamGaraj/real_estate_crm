@@ -34,15 +34,52 @@ class BuildingMiniSerializer(serializers.ModelSerializer):
 
 
 class LayoutMiniSerializer(serializers.ModelSerializer):
+    # Возвращаем относительные пути вместо абсолютных URL
+    main_layout_image = serializers.SerializerMethodField()
+    extra_layout_image = serializers.SerializerMethodField()
+    floor_plan_image = serializers.SerializerMethodField()
+    usp_image = serializers.SerializerMethodField()
+
     class Meta:
         model = Layout
         fields = ['id', 'name', 'main_layout_image', 'extra_layout_image', 'floor_plan_image', 'usp_image']
 
+    def get_main_layout_image(self, obj):
+        return obj.main_layout_image.url if obj.main_layout_image else None
+
+    def get_extra_layout_image(self, obj):
+        return obj.extra_layout_image.url if obj.extra_layout_image else None
+
+    def get_floor_plan_image(self, obj):
+        return obj.floor_plan_image.url if obj.floor_plan_image else None
+
+    def get_usp_image(self, obj):
+        return obj.usp_image.url if obj.usp_image else None
+
 
 class LayoutSerializer(serializers.ModelSerializer):
+    # Возвращаем относительные пути вместо абсолютных URL
+    # Фронтенд сам добавит правильный baseUrl
+    main_layout_image = serializers.ImageField(required=False, allow_null=True)
+    extra_layout_image = serializers.ImageField(required=False, allow_null=True)
+    floor_plan_image = serializers.ImageField(required=False, allow_null=True)
+    usp_image = serializers.ImageField(required=False, allow_null=True)
+
     class Meta:
         model = Layout
         fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Возвращаем относительные пути для изображений
+        image_fields = ['main_layout_image', 'extra_layout_image', 'floor_plan_image', 'usp_image']
+        for field in image_fields:
+            file_obj = getattr(instance, field)
+            if file_obj:
+                ret[field] = file_obj.url
+            else:
+                ret[field] = None
+        return ret
 
 
 class DiscountLogSerializer(serializers.ModelSerializer):
@@ -119,10 +156,11 @@ class DiscountDetailSerializer(serializers.ModelSerializer):
 
 class ProjectListSerializer(serializers.ModelSerializer):
     buildings = BuildingMiniSerializer(many=True, read_only=True)
+    company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'address', 'created_at', 'buildings']
+        fields = ['id', 'name', 'address', 'created_at', 'buildings', 'company', 'company_name']
 
 
 # --- "Составные" сериализаторы (зависят от определенных выше) ---
@@ -144,6 +182,7 @@ class BuildingSerializer(serializers.ModelSerializer):
 class ProjectDetailSerializer(serializers.ModelSerializer):
     buildings = BuildingSerializer(many=True, read_only=True)
     gallery_images = ProjectImageSerializer(many=True, read_only=True)
+    company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
 
     class Meta:
         model = Project

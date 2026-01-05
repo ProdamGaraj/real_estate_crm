@@ -22,9 +22,13 @@ import { getCompanies } from '../../api/permissions';
 import CompanyForm from '../../components/permissions/CompanyForm';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
+import { useAuthStore } from '../../store/authStore';
+import { hasPermission } from '../../utils/permissions';
 
 export default function CompaniesPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const canCreate = hasPermission(user, 'ADD', 'COMPANY');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -92,13 +96,15 @@ export default function CompaniesPage() {
             {t('pages.settings.permissions.companies_subtitle')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setIsModalOpen(true)}
-        >
-          {t('pages.settings.permissions.create_company')}
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setIsModalOpen(true)}
+          >
+            {t('pages.settings.permissions.create_company')}
+          </Button>
+        )}
       </Box>
 
       {/* Таблица */}

@@ -5,6 +5,16 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Project(models.Model):
     """ Проект (Жилой комплекс) """
+    # --- Привязка к компании ---
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.PROTECT,
+        related_name='projects',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    
     # --- Основная информация ---
     name = models.CharField(max_length=200, verbose_name="Название проекта")
     address = models.CharField(max_length=255, verbose_name="Адрес")

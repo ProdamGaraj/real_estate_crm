@@ -170,5 +170,11 @@
   "role_manager": "Менеджер",
   "role_viewer": "Наблюдатель",
   "roles_subtitle": "Управление ролями и разрешениями пользователей",
-  "action_irreversible": "Это действие нельзя отменить."
+  "action_irreversible": "Это действие нельзя отменить.",
+  "change_password": "Сменить пароль",
+  "new_password": "Новый пароль",
+  "confirm_password": "Подтвердите пароль",
+  "new_password_section": "Установить новый пароль",
+  "save_password": "Сохранить пароль",
+  "password_changed": "Пароль успешно изменён"
 }

@@ -839,7 +839,13 @@
         "role_department_manager": "Department Manager",
         "role_manager": "Manager",
         "role_viewer": "Viewer",
-        "roles_subtitle": "Manage user roles and permissions"
+        "roles_subtitle": "Manage user roles and permissions",
+        "change_password": "Change Password",
+        "new_password": "New Password",
+        "confirm_password": "Confirm Password",
+        "new_password_section": "Set New Password",
+        "save_password": "Save Password",
+        "password_changed": "Password successfully changed"
       }
     },
     "api_keys": {
@@ -1169,6 +1175,7 @@
     "user_not_found": "User not found",
     "create_user_error": "Error creating user",
     "save_user_error": "Error saving user",
+    "password_change_error": "Error changing password",
     "save_role_error": "Error saving role",
     "access_denied": "Access Denied",
     "admin_only": "This page is only available to system administrators",

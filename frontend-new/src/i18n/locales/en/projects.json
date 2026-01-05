@@ -25,6 +25,7 @@
   "delete_project_confirm": "Are you sure you want to delete project \"{{name}}\"? This action cannot be undone.",
   "project_updated": "Project updated!",
   "create_error": "An error occurred while creating the project.",
+  "company": "Company",
   "form": {
     "name": "Project Name",
     "address": "Address"

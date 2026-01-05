@@ -1,11 +1,11 @@
-import { 
-  Box, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
+import {
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Toolbar,
   AppBar,
   Typography,
@@ -48,7 +48,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { textKey: 'nav.dashboard', icon: <DashboardIcon />, path: '/' },
+  { textKey: 'nav.dashboard', icon: <DashboardIcon />, path: '/dashboard', resource: 'DASHBOARD' },
   { textKey: 'nav.clients', icon: <PeopleIcon />, path: '/clients', resource: 'CLIENT' },
   { textKey: 'nav.applications', icon: <AssignmentIcon />, path: '/applications', resource: 'APPLICATION' },
   { textKey: 'nav.meetings', icon: <EventIcon />, path: '/meetings', resource: 'MEETING' },
@@ -56,7 +56,7 @@ const navItems: NavItem[] = [
   { textKey: 'nav.deals', icon: <BusinessCenterIcon />, path: '/deals', resource: 'DEAL' },
   { textKey: 'nav.projects', icon: <AccountBalanceIcon />, path: '/projects', resource: 'PROJECT' },
   { textKey: 'nav.finances', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },
-  { textKey: 'nav.reports', icon: <AssessmentIcon />, path: '/reports' },
+  { textKey: 'nav.reports', icon: <AssessmentIcon />, path: '/reports', resource: 'REPORT' },
   { textKey: 'nav.discounts', icon: <LocalOfferIcon />, path: '/discounts', resource: 'DISCOUNT' },
   { textKey: 'nav.settings', icon: <SettingsIcon />, path: '/settings?tab=companies', requireAdmin: true },
 ];
@@ -70,9 +70,9 @@ export default function RootLayout() {
   // Фильтруем пункты меню на основе прав доступа
   const visibleNavItems = useMemo(() => {
     return navItems.filter(item => {
-      // Дашборд и отчеты доступны всем
+      // Пункты без resource и без requireAdmin - НЕ отображаются (все пункты должны иметь проверку)
       if (!item.resource && !item.requireAdmin) {
-        return true;
+        return false;
       }
 
       // Проверяем требование администратора
@@ -85,7 +85,7 @@ export default function RootLayout() {
         return hasAnyViewPermission(user, item.resource);
       }
 
-      return true;
+      return false;
     });
   }, [user]);
 
@@ -126,9 +126,9 @@ export default function RootLayout() {
   return (
     <Box sx={{ display: 'flex', bgcolor: 'background.default', height: '100vh', overflow: 'hidden' }}>
       {/* AppBar с информацией о пользователе */}
-      <AppBar 
-        position="fixed" 
-        sx={{ 
+      <AppBar
+        position="fixed"
+        sx={{
           zIndex: (theme) => theme.zIndex.drawer + 1,
           bgcolor: 'background.paper',
           color: 'text.primary',
@@ -224,9 +224,9 @@ export default function RootLayout() {
       </Drawer>
 
       {/* Основной контент */}
-      <Box component="main" sx={{ 
-        flexGrow: 1, 
-        p: 3, 
+      <Box component="main" sx={{
+        flexGrow: 1,
+        p: 3,
         bgcolor: 'background.default',
         height: 'calc(100vh - 64px)',
         overflow: 'auto',

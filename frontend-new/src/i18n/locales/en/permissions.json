@@ -170,5 +170,11 @@
   "role_manager": "Manager",
   "role_viewer": "Viewer",
   "roles_subtitle": "Manage user roles and permissions",
-  "action_irreversible": "This action cannot be undone."
+  "action_irreversible": "This action cannot be undone.",
+  "change_password": "Change Password",
+  "new_password": "New Password",
+  "confirm_password": "Confirm Password",
+  "new_password_section": "Set New Password",
+  "save_password": "Save Password",
+  "password_changed": "Password successfully changed"
 }

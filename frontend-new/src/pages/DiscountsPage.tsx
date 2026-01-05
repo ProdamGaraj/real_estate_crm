@@ -9,10 +9,15 @@ import { getDiscounts, createDiscount, updateDiscount } from '../api/discounts';
 import type { Discount, DiscountPayload } from '../api/discounts';
 import DiscountForm from '../components/discounts/DiscountForm';
 import EditIcon from '@mui/icons-material/Edit';
-import { Link as RouterLink } from 'react-router-dom'; // <-- Добавляем импорт
+import { Link as RouterLink } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import { hasPermission } from '../utils/permissions';
 
 export default function DiscountsPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const canCreate = hasPermission(user, 'ADD', 'DISCOUNT');
+  const canEdit = hasPermission(user, 'EDIT', 'DISCOUNT');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
   const queryClient = useQueryClient();
@@ -75,13 +80,13 @@ export default function DiscountsPage() {
     {
       field: 'actions',
       type: 'actions',
-      getActions: (params) => [
+      getActions: (params) => canEdit ? [
         <GridActionsCellItem
           icon={<EditIcon />}
           label={t('common.edit')}
           onClick={() => handleOpenEdit(params.row)}
         />,
-      ],
+      ] : [],
     },
   ];
 
@@ -91,7 +96,9 @@ export default function DiscountsPage() {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h4">{t('pages.discounts.title')}</Typography>
-        <Button variant="contained" onClick={handleOpenCreate}>{t('pages.discounts.create_discount')}</Button>
+        {canCreate && (
+          <Button variant="contained" onClick={handleOpenCreate}>{t('pages.discounts.create_discount')}</Button>
+        )}
       </Box>
 
       <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="sm" fullWidth>

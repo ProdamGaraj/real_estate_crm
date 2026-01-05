@@ -14,8 +14,11 @@ import { getMediaUrl } from '../utils/media';
 import {
     Box, Button, CircularProgress, Paper, Tab, Tabs, Typography, Dialog,
     DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Stack, Link as MuiLink, Grid,
-    Avatar, IconButton, Card, CardMedia, CardActions, Alert, CardContent, CardHeader
+    Avatar, IconButton, Card, CardMedia, CardActions, Alert, CardContent, CardHeader,
+    FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
+import { getCompanies } from '../api/permissions';
+import { useAuthStore } from '../store/authStore';
 import type { GridColDef } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import LocalizedDateField from '../components/common/LocalizedDateField';
@@ -52,6 +55,7 @@ export default function ProjectDetailPage() {
   const [buildingToDelete, setBuildingToDelete] = useState<Building | null>(null);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isSystemAdmin = useAuthStore((state) => state.user?.is_system_admin);
 
   const [buildingFilters, setBuildingFilters] = useState<BuildingFilters>({});
   const { register: registerBuildingFilter, watch: watchBuildingFilter } = useForm<BuildingFilters>();
@@ -66,6 +70,12 @@ export default function ProjectDetailPage() {
     queryKey: ['buildings', projectId, buildingFilters],
     queryFn: () => getBuildings({ projectId: Number(projectId), filters: buildingFilters }),
     enabled: !!projectId,
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: getCompanies,
+    enabled: !!isSystemAdmin,
   });
 
   const { register, handleSubmit, reset, control } = useForm<ProjectUpdatePayload>();
@@ -242,6 +252,30 @@ export default function ProjectDetailPage() {
                             />
                           )}/>
                         </Grid>
+                        {isSystemAdmin && (
+                          <Grid size={{ xs: 12, md: 6 }}>
+                            <Controller
+                              name="company"
+                              control={control}
+                              render={({ field }) => (
+                                <FormControl fullWidth>
+                                  <InputLabel>{t('pages.projects.company')}</InputLabel>
+                                  <Select
+                                    {...field}
+                                    label={t('pages.projects.company')}
+                                    value={field.value ?? ''}
+                                    onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                                  >
+                                    <MenuItem value="">{t('common.not_selected')}</MenuItem>
+                                    {companies.map((c) => (
+                                      <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                                    ))}
+                                  </Select>
+                                </FormControl>
+                              )}
+                            />
+                          </Grid>
+                        )}
                         <Grid size={{ xs: 12 }}><TextField fullWidth multiline rows={4} label={t('pages.projects.description')} {...register('description')} /></Grid>
                     </Grid>
                 </CardContent>

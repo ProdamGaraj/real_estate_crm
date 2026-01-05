@@ -45,6 +45,8 @@ class ApplicationSummaryView(APIView):
             days_since_update = 7
 
         queryset = Application.objects.all().select_related('created_by', 'client')
+        # Фильтруем по разрешениям пользователя
+        queryset = get_filtered_queryset(request.user, queryset, 'APPLICATION')
 
         if created_at_after:
             queryset = queryset.filter(created_at__date__gte=created_at_after)
@@ -120,6 +122,8 @@ class MeetingSummaryView(APIView):
         queryset = Meeting.objects.all().select_related(
             'executor', 'interested_building__project', 'client'
         )
+        # Фильтруем по разрешениям пользователя
+        queryset = get_filtered_queryset(request.user, queryset, 'MEETING')
 
         # Apply date filters
         if planned_date_after:
@@ -217,32 +221,54 @@ class DashboardAnalyticsView(APIView):
         today = timezone.now().date()
         start_of_month = today.replace(day=1)
 
-        # KPIs
-        new_clients_today = Client.objects.filter(created_at__date=today).count()
-        new_applications_today = Application.objects.filter(created_at__date=today).count()
-        monthly_sales = Deal.objects.filter(
+        # KPIs - фильтруем по разрешениям
+        clients_qs = get_filtered_queryset(request.user, Client.objects.all(), 'CLIENT')
+        apps_qs = get_filtered_queryset(request.user, Application.objects.all(), 'APPLICATION')
+        deals_qs = get_filtered_queryset(request.user, Deal.objects.all(), 'DEAL')
+        payments_qs = get_filtered_queryset(request.user, Payment.objects.all(), 'PAYMENT')
+        meetings_qs = get_filtered_queryset(request.user, Meeting.objects.all(), 'MEETING')
+        
+        new_clients_today = clients_qs.filter(created_at__date=today).count()
+        new_applications_today = apps_qs.filter(created_at__date=today).count()
+        monthly_sales = deals_qs.filter(
             status=Deal.DealStatus.CLOSED_WON,
             updated_at__gte=start_of_month
         ).aggregate(total=Sum('contract_price'))['total'] or 0
-        overdue_payments = Payment.objects.filter(
+        overdue_payments = payments_qs.filter(
             due_date__lt=today,
             status=Payment.PaymentStatus.PENDING
         ).aggregate(total=Sum('amount'))['total'] or 0
 
-        # Charts
-        application_statuses = Application.objects.values('status').annotate(count=Count('id'))
-        application_sources = Application.objects.values('source').annotate(count=Count('id'))
+        # Charts - используем отфильтрованный queryset
+        application_statuses = apps_qs.values('status').annotate(count=Count('id'))
+        application_sources = apps_qs.values('source').annotate(count=Count('id'))
 
-        # Top Managers
-        top_managers = User.objects.filter(
-            created_deals__status=Deal.DealStatus.CLOSED_WON,
-            created_deals__updated_at__gte=start_of_month
-        ).annotate(
-            total_sales=Sum('created_deals__contract_price')
-        ).order_by('-total_sales')[:5].values('first_name', 'last_name', 'total_sales')
+        # Top Managers - на основе отфильтрованных сделок
+        from django.db.models import OuterRef, Subquery
+        top_manager_ids = deals_qs.filter(
+            status=Deal.DealStatus.CLOSED_WON,
+            updated_at__gte=start_of_month
+        ).values('created_by').annotate(
+            total_sales=Sum('contract_price')
+        ).order_by('-total_sales')[:5].values_list('created_by', flat=True)
+        
+        top_managers = []
+        for user_id in top_manager_ids:
+            user = User.objects.filter(id=user_id).first()
+            if user:
+                sale = deals_qs.filter(
+                    status=Deal.DealStatus.CLOSED_WON,
+                    updated_at__gte=start_of_month,
+                    created_by=user
+                ).aggregate(total_sales=Sum('contract_price'))['total_sales'] or 0
+                top_managers.append({
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'total_sales': sale
+                })
 
-        # Upcoming Meetings
-        upcoming_meetings = Meeting.objects.filter(
+        # Upcoming Meetings - используем отфильтрованный queryset
+        upcoming_meetings = meetings_qs.filter(
             planned_date__gte=today,
             status=Meeting.MeetingStatus.NEW
         ).select_related('client').order_by('planned_date')[:5]

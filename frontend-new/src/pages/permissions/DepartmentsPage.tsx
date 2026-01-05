@@ -24,6 +24,8 @@ import { getDepartments, getCompanies, type Department, type Company } from '../
 import DepartmentForm from '../../components/permissions/DepartmentForm';
 import AddIcon from '@mui/icons-material/Add';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import { useAuthStore } from '../../store/authStore';
+import { hasPermission } from '../../utils/permissions';
 
 // Функция для построения дерева отделов
 function buildDepartmentTree(departments: Department[]): Department[] {
@@ -98,6 +100,8 @@ function DepartmentTreeNode({ department, onEdit, t }: DepartmentTreeNodeProps) 
 
 export default function DepartmentsPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const canCreate = hasPermission(user, 'ADD', 'DEPARTMENT');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<number | ''>('');
   const [editingDepartment, setEditingDepartment] = useState<Department | undefined>();
@@ -144,14 +148,16 @@ export default function DepartmentsPage() {
             {t('pages.settings.permissions.departments_subtitle')}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleCreate}
-          disabled={!selectedCompany}
-        >
-          {t('pages.settings.permissions.create_department')}
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+            disabled={!selectedCompany}
+          >
+            {t('pages.settings.permissions.create_department')}
+          </Button>
+        )}
       </Box>
 
       {/* Фильтры */}

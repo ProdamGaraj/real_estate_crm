@@ -15,9 +15,9 @@ import { getMediaUrl } from '../utils/media';
 
 import { styled } from '@mui/material/styles';
 import {
-    Box, CircularProgress, Paper, Typography, ToggleButtonGroup, ToggleButton, Alert, Link as MuiLink,
-    Stack, Button, Tabs, Tab, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
-    Card, CardMedia, CardActions, IconButton, CardHeader, CardContent
+  Box, CircularProgress, Paper, Typography, ToggleButtonGroup, ToggleButton, Alert, Link as MuiLink,
+  Stack, Button, Tabs, Tab, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
+  Card, CardMedia, CardActions, IconButton, CardHeader, CardContent
 } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
@@ -35,6 +35,8 @@ import Chessboard from '../components/buildings/Chessboard';
 import LayoutsTab from '../components/buildings/LayoutsTab';
 import PropertyDetailModal from '../components/buildings/PropertyDetailModal';
 import HumanizedLog from '../components/logs/HumanizedLog';
+import { useAuthStore } from '../store/authStore';
+import { hasPermission } from '../utils/permissions';
 
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
@@ -73,6 +75,9 @@ export default function BuildingDetailPage() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const canEditBuilding = hasPermission(user, 'EDIT', 'BUILDING');
+  const canEditProperty = hasPermission(user, 'EDIT', 'PROPERTY');
   const [propertyFilters, setPropertyFilters] = useState({ unit_number: '', status: '' });
 
   const getDateLocale = () => {
@@ -144,7 +149,7 @@ export default function BuildingDetailPage() {
     }
     // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл повторно
     if (event.target) {
-        event.target.value = '';
+      event.target.value = '';
     }
   };
 
@@ -191,13 +196,13 @@ export default function BuildingDetailPage() {
     let properties = building.properties;
 
     if (selectedType) {
-        properties = properties.filter(p => p.property_type === selectedType);
+      properties = properties.filter(p => p.property_type === selectedType);
     }
     if (propertyFilters.unit_number) {
-        properties = properties.filter(p => p.unit_number.toLowerCase().includes(propertyFilters.unit_number.toLowerCase()));
+      properties = properties.filter(p => p.unit_number.toLowerCase().includes(propertyFilters.unit_number.toLowerCase()));
     }
     if (propertyFilters.status) {
-        properties = properties.filter(p => p.status === propertyFilters.status);
+      properties = properties.filter(p => p.status === propertyFilters.status);
     }
     return properties;
   }, [building, selectedType, propertyFilters]);
@@ -238,68 +243,68 @@ export default function BuildingDetailPage() {
         <form onSubmit={handleSubmit((data) => updateMutation.mutate(data))}>
           <Stack spacing={3}>
             <Card variant="outlined">
-                <CardHeader title={t('pages.buildings.main_info')} avatar={<BusinessIcon />} />
-                <CardContent>
-                    <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.name_number')} {...register('name')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
-                          <Controller name="cadastre_date_plan" control={control} render={({ field }) => (
-                            <LocalizedDateField
-                              label={t('pages.buildings.cadastre_date_plan')}
-                              value={field.value || null}
-                              onChange={(date) => field.onChange(date || '')}
-                              fullWidth
-                            />
-                          )}/>
-                        </Grid>
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller name="status" control={control} defaultValue={building.status || ''} render={({ field }) => (
-                                <FormControl fullWidth><InputLabel>{t('common.status')}</InputLabel>
-                                <Select {...field} label={t('common.status')}>
-                                    <MenuItem value="UNDER_REVIEW">{t('statuses.building.UNDER_REVIEW')}</MenuItem>
-                                    <MenuItem value="FOR_SALE">{t('statuses.building.FOR_SALE')}</MenuItem>
-                                    <MenuItem value="COMPLETED">{t('statuses.building.COMPLETED')}</MenuItem>
-                                    <MenuItem value="ARCHIVED">{t('statuses.building.ARCHIVED')}</MenuItem>
-                                </Select></FormControl>
-                            )}/>
-                        </Grid>
-                        <Grid size={{ xs: 12, md: 4 }}>
-                            <Controller name="building_type_id" control={control} defaultValue={building.building_type?.id || ''} render={({ field }) => (
-                                <FormControl fullWidth><InputLabel>{t('pages.buildings.building_type')}</InputLabel>
-                                <Select {...field} label={t('pages.buildings.building_type')}>
-                                    {buildingTypes?.map(bt => <MenuItem key={bt.id} value={bt.id}>{bt.name}</MenuItem>)}
-                                </Select></FormControl>
-                            )}/>
-                        </Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.floors_count')} type="number" {...register('floors_count')} /></Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.ceiling_height')} {...register('ceiling_height')} /></Grid>
-                        <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.material')} {...register('material')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}>
-                          <Controller name="sales_start_date" control={control} render={({ field }) => (
-                            <LocalizedDateField
-                              label={t('pages.buildings.sales_start_date')}
-                              value={field.value || null}
-                              onChange={(date) => field.onChange(date || '')}
-                              fullWidth
-                            />
-                          )}/>
-                        </Grid>
-                    </Grid>
-                </CardContent>
+              <CardHeader title={t('pages.buildings.main_info')} avatar={<BusinessIcon />} />
+              <CardContent>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.name_number')} {...register('name')} /></Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Controller name="cadastre_date_plan" control={control} render={({ field }) => (
+                      <LocalizedDateField
+                        label={t('pages.buildings.cadastre_date_plan')}
+                        value={field.value || null}
+                        onChange={(date) => field.onChange(date || '')}
+                        fullWidth
+                      />
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Controller name="status" control={control} defaultValue={building.status || ''} render={({ field }) => (
+                      <FormControl fullWidth><InputLabel>{t('common.status')}</InputLabel>
+                        <Select {...field} label={t('common.status')}>
+                          <MenuItem value="UNDER_REVIEW">{t('statuses.building.UNDER_REVIEW')}</MenuItem>
+                          <MenuItem value="FOR_SALE">{t('statuses.building.FOR_SALE')}</MenuItem>
+                          <MenuItem value="COMPLETED">{t('statuses.building.COMPLETED')}</MenuItem>
+                          <MenuItem value="ARCHIVED">{t('statuses.building.ARCHIVED')}</MenuItem>
+                        </Select></FormControl>
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Controller name="building_type_id" control={control} defaultValue={building.building_type?.id || ''} render={({ field }) => (
+                      <FormControl fullWidth><InputLabel>{t('pages.buildings.building_type')}</InputLabel>
+                        <Select {...field} label={t('pages.buildings.building_type')}>
+                          {buildingTypes?.map(bt => <MenuItem key={bt.id} value={bt.id}>{bt.name}</MenuItem>)}
+                        </Select></FormControl>
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.floors_count')} type="number" {...register('floors_count')} /></Grid>
+                  <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.ceiling_height')} {...register('ceiling_height')} /></Grid>
+                  <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.buildings.material')} {...register('material')} /></Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Controller name="sales_start_date" control={control} render={({ field }) => (
+                      <LocalizedDateField
+                        label={t('pages.buildings.sales_start_date')}
+                        value={field.value || null}
+                        onChange={(date) => field.onChange(date || '')}
+                        fullWidth
+                      />
+                    )} />
+                  </Grid>
+                </Grid>
+              </CardContent>
             </Card>
 
             <Card variant="outlined">
-                <CardHeader title={t('pages.buildings.usp_title')} avatar={<StarIcon />} />
-                <CardContent>
-                     <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.buildings.usp_1')} {...register('usp_1')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.buildings.usp_2')} {...register('usp_2')} /></Grid>
-                    </Grid>
-                </CardContent>
+              <CardHeader title={t('pages.buildings.usp_title')} avatar={<StarIcon />} />
+              <CardContent>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.buildings.usp_1')} {...register('usp_1')} /></Grid>
+                  <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.buildings.usp_2')} {...register('usp_2')} /></Grid>
+                </Grid>
+              </CardContent>
             </Card>
 
             <Box>
-                <Button type="submit" variant="contained" disabled={updateMutation.isPending}>{t('common.save')}</Button>
+              <Button type="submit" variant="contained" disabled={updateMutation.isPending}>{t('common.save')}</Button>
             </Box>
           </Stack>
         </form>
@@ -308,71 +313,75 @@ export default function BuildingDetailPage() {
       {/* ВКЛАДКА "ОБЪЕКТЫ" */}
       <TabPanel value={tabValue} index={1}>
         <Stack spacing={2}>
-            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
-                <ToggleButtonGroup
-                value={selectedType}
-                exclusive
-                onChange={(_, newValue) => { if (newValue) setSelectedType(newValue); }}
-                >
-                {propertyTypes.map(type => (
-                    <ToggleButton key={type} value={type}>{type}</ToggleButton>
-                ))}
-                </ToggleButtonGroup>
-                <ToggleButtonGroup
-                value={viewMode}
-                exclusive
-                onChange={(_, newMode) => { if (newMode) setViewMode(newMode); }}
-                >
-                <ToggleButton value="table"><ViewListIcon /></ToggleButton>
-                <ToggleButton value="chessboard"><ViewModuleIcon /></ToggleButton>
-                </ToggleButtonGroup>
-            </Stack>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
+            <ToggleButtonGroup
+              value={selectedType}
+              exclusive
+              onChange={(_, newValue) => { if (newValue) setSelectedType(newValue); }}
+            >
+              {propertyTypes.map(type => (
+                <ToggleButton key={type} value={type}>{type}</ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(_, newMode) => { if (newMode) setViewMode(newMode); }}
+            >
+              <ToggleButton value="table"><ViewListIcon /></ToggleButton>
+              <ToggleButton value="chessboard"><ViewModuleIcon /></ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
 
-            <Stack direction="row" spacing={2} alignItems="center">
-                <TextField
-                    label={t('pages.buildings.search_by_number')}
-                    size="small"
-                    value={propertyFilters.unit_number}
-                    onChange={(e) => setPropertyFilters(prev => ({ ...prev, unit_number: e.target.value }))}
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TextField
+              label={t('pages.buildings.search_by_number')}
+              size="small"
+              value={propertyFilters.unit_number}
+              onChange={(e) => setPropertyFilters(prev => ({ ...prev, unit_number: e.target.value }))}
+            />
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>{t('common.status')}</InputLabel>
+              <Select
+                value={propertyFilters.status}
+                label={t('common.status')}
+                onChange={(e) => setPropertyFilters(prev => ({ ...prev, status: e.target.value }))}
+              >
+                <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
+                <MenuItem value="SELECTION">{t('statuses.property.SELECTION')}</MenuItem>
+                <MenuItem value="RESERVE">{t('statuses.property.RESERVE')}</MenuItem>
+                <MenuItem value="BOOKING">{t('statuses.property.BOOKING')}</MenuItem>
+                <MenuItem value="IN_DEAL">{t('statuses.property.IN_DEAL')}</MenuItem>
+                <MenuItem value="SOLD">{t('statuses.property.SOLD')}</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+
+          <Stack direction="row" spacing={2}>
+            {canEditProperty && (
+              <Button variant="outlined" onClick={handleDownload}>
+                {t('pages.buildings.download_template')}
+              </Button>
+            )}
+            {/* === ОБНОВЛЕННАЯ КНОПКА ЗАГРУЗКИ === */}
+            {canEditProperty && (
+              <Button
+                component="label"
+                role={undefined}
+                variant="contained"
+                tabIndex={-1}
+                startIcon={<UploadFileIcon />}
+                disabled={uploadMutation.isPending}
+              >
+                {uploadMutation.isPending ? t('common.uploading') : t('pages.buildings.upload_excel')}
+                <VisuallyHiddenInput
+                  type="file"
+                  onChange={handleFileChange}
+                  accept=".xlsx, .xls"
                 />
-                <FormControl size="small" sx={{ minWidth: 150 }}>
-                    <InputLabel>{t('common.status')}</InputLabel>
-                    <Select
-                        value={propertyFilters.status}
-                        label={t('common.status')}
-                        onChange={(e) => setPropertyFilters(prev => ({ ...prev, status: e.target.value }))}
-                    >
-                        <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
-                        <MenuItem value="SELECTION">{t('statuses.property.SELECTION')}</MenuItem>
-                        <MenuItem value="RESERVE">{t('statuses.property.RESERVE')}</MenuItem>
-                        <MenuItem value="BOOKING">{t('statuses.property.BOOKING')}</MenuItem>
-                        <MenuItem value="IN_DEAL">{t('statuses.property.IN_DEAL')}</MenuItem>
-                        <MenuItem value="SOLD">{t('statuses.property.SOLD')}</MenuItem>
-                    </Select>
-                </FormControl>
-            </Stack>
-
-            <Stack direction="row" spacing={2}>
-                <Button variant="outlined" onClick={handleDownload}>
-                    {t('pages.buildings.download_template')}
-                </Button>
-                {/* === ОБНОВЛЕННАЯ КНОПКА ЗАГРУЗКИ === */}
-                <Button
-                    component="label"
-                    role={undefined}
-                    variant="contained"
-                    tabIndex={-1}
-                    startIcon={<UploadFileIcon />}
-                    disabled={uploadMutation.isPending}
-                >
-                    {uploadMutation.isPending ? t('common.uploading') : t('pages.buildings.upload_excel')}
-                    <VisuallyHiddenInput
-                        type="file"
-                        onChange={handleFileChange}
-                        accept=".xlsx, .xls"
-                    />
-                </Button>
-            </Stack>
+              </Button>
+            )}
+          </Stack>
         </Stack>
 
         <Box sx={{ mt: 2 }}>
@@ -396,45 +405,58 @@ export default function BuildingDetailPage() {
 
       {/* ВКЛАДКА "ГАЛЕРЕЯ" */}
       <TabPanel value={tabValue} index={3}>
-        <Button variant="contained" component="label" startIcon={<PhotoCamera />} sx={{ mb: 2 }}>
+        {canEditBuilding && (
+          <Button variant="contained" component="label" startIcon={<PhotoCamera />} sx={{ mb: 2 }}>
             {t('pages.buildings.upload_photo')}
             <input type="file" hidden accept="image/*" onChange={handleGalleryFileChange} />
-        </Button>
+          </Button>
+        )}
         <Grid container spacing={2}>
-            {building?.gallery_images?.map((image) => (
-                <Grid key={image.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                    <Card>
-                        <CardMedia component="img" height="160" image={getMediaUrl(image.image) || ''} alt={image.caption} />
-                        <CardActions>
-                            <IconButton onClick={() => deleteImageMutation.mutate(image.id)} disabled={deleteImageMutation.isPending} size="small">
-                                <DeleteIcon />
-                            </IconButton>
-                        </CardActions>
-                    </Card>
-                </Grid>
-            ))}
+          {building?.gallery_images?.map((image) => (
+            <Grid key={image.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+              <Card>
+                <CardMedia component="img" height="160" image={getMediaUrl(image.image) || ''} alt={image.caption} />
+                {canEditBuilding && (
+                  <CardActions sx={{ justifyContent: 'flex-end' }}>
+                    <IconButton
+                      onClick={() => {
+                        if (confirm(t('common.confirm_delete') || 'Are you sure?')) {
+                          deleteImageMutation.mutate(image.id);
+                        }
+                      }}
+                      disabled={deleteImageMutation.isPending}
+                      size="small"
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardActions>
+                )}
+              </Card>
+            </Grid>
+          ))}
         </Grid>
       </TabPanel>
 
       {/* ВКЛАДКА "ЛОГИ" */}
-       <TabPanel value={tabValue} index={4}>
-            <Timeline>
-                {building?.logs?.map((log) => (
-                    <TimelineItem key={log.id}>
-                        <TimelineSeparator>
-                            <TimelineDot />
-                            <TimelineConnector />
-                        </TimelineSeparator>
-                        <TimelineContent sx={{ py: '12px', px: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                {new Date(log.created_at).toLocaleString(getDateLocale())} - {log.user || t('common.system')}
-                            </Typography>
-                            <HumanizedLog log={log} />
-                        </TimelineContent>
-                    </TimelineItem>
-                ))}
-            </Timeline>
-        </TabPanel>
+      <TabPanel value={tabValue} index={4}>
+        <Timeline>
+          {building?.logs?.map((log) => (
+            <TimelineItem key={log.id}>
+              <TimelineSeparator>
+                <TimelineDot />
+                <TimelineConnector />
+              </TimelineSeparator>
+              <TimelineContent sx={{ py: '12px', px: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {new Date(log.created_at).toLocaleString(getDateLocale())} - {log.user || t('common.system')}
+                </Typography>
+                <HumanizedLog log={log} />
+              </TimelineContent>
+            </TimelineItem>
+          ))}
+        </Timeline>
+      </TabPanel>
 
       <PropertyDetailModal
         property={selectedProperty}

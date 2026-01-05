@@ -4,9 +4,12 @@
 
 // Базовый URL бэкенда (без /api)
 const getBackendBaseUrl = (): string => {
-  // Берём baseURL из axios и убираем /api
-  // Можно также использовать переменные окружения
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://tws483gv-8000.euw.devtunnels.ms/api';
+  // В браузере используем текущий origin (работает для локальной разработки и туннеля)
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  // Fallback для SSR или тестов
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
   return apiBaseUrl.replace(/\/api\/?$/, '');
 };
 
@@ -20,17 +23,17 @@ export const getMediaUrl = (relativePath: string | null | undefined): string | n
   if (!relativePath) {
     return null;
   }
-  
+
   // Если уже абсолютный URL
   if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
     return relativePath;
   }
-  
+
   // Добавляем базовый URL
   const baseUrl = getBackendBaseUrl();
-  
+
   // Убеждаемся что путь начинается с /
   const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-  
+
   return `${baseUrl}${path}`;
 };

@@ -3,7 +3,7 @@
 /**
  * Типы ресурсов в системе
  */
-export type ResourceType = 
+export type ResourceType =
   | 'CLIENT'
   | 'APPLICATION'
   | 'MEETING'
@@ -21,7 +21,9 @@ export type ResourceType =
   | 'USER'
   | 'ROLE'
   | 'PERMISSION'
-  | 'SETTINGS';
+  | 'SETTINGS'
+  | 'DASHBOARD'
+  | 'REPORT';
 
 /**
  * Типы действий в системе
@@ -109,9 +111,9 @@ export function hasPermission(
 
   // Проверяем наличие разрешения с указанной областью действия
   return allPermissions.some(
-    perm => 
-      perm.action === action && 
-      perm.resource === resource && 
+    perm =>
+      perm.action === action &&
+      perm.resource === resource &&
       perm.scope === scope
   );
 }

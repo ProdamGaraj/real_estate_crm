@@ -34,24 +34,24 @@ export default function BookingForm({ onSubmit, isPending }: BookingFormProps) {
               loading={isLoadingClients}
               getOptionLabel={(option) => `${option.full_name} (${option.primary_phone_number || ''})`}
               onChange={(_, data) => field.onChange(data?.id)}
-              renderInput={(params) => <TextField {...params} label={t('deals.client')} required />}
+              renderInput={(params) => <TextField {...params} label={t('pages.deals.client')} required />}
             />
           )}
         />
         <Controller
-            name="booking_end_date"
-            control={control}
-            rules={{ required: true }}
-            render={({ field }) => (
-                <LocalizedDateField
-                    label={t('deals.booking_end_date')}
-                    value={field.value || null}
-                    onChange={(date) => field.onChange(date || '')}
-                />
-            )}
+          name="booking_end_date"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <LocalizedDateField
+              label={t('pages.deals.booking_end_date')}
+              value={field.value || null}
+              onChange={(date) => field.onChange(date || '')}
+            />
+          )}
         />
         <Button type="submit" variant="contained" disabled={isPending}>
-          {isPending ? t('common.creating') : t('deals.create_deal')}
+          {isPending ? t('common.creating') : t('pages.deals.create_deal')}
         </Button>
       </Stack>
     </Box>

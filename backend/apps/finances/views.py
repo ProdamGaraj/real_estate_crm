@@ -18,6 +18,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django.db.models import Sum, Count, Q
 from permissions.permissions import PaymentPermission, PaymentTypePermission, BeneficiaryAccountPermission, ReportPermission
+from permissions.backends import get_filtered_queryset
 
 
 class FinanceSummaryView(APIView):
@@ -36,6 +37,8 @@ class FinanceSummaryView(APIView):
         queryset = Payment.objects.all().select_related(
             'deal__property__building__project', 'responsible_employee'
         )
+        # Фильтруем по разрешениям пользователя
+        queryset = get_filtered_queryset(request.user, queryset, 'PAYMENT')
 
         if due_date_after:
             queryset = queryset.filter(due_date__gte=due_date_after)
@@ -105,7 +108,9 @@ class PaymentListView(generics.ListAPIView):
             status=Payment.PaymentStatus.PENDING
         ).update(status=Payment.PaymentStatus.OVERDUE)
 
-        return Payment.objects.select_related('client', 'deal', 'payment_type').all()
+        queryset = Payment.objects.select_related('client', 'deal', 'payment_type').all()
+        # Фильтруем по разрешениям пользователя
+        return get_filtered_queryset(self.request.user, queryset, 'PAYMENT')
 
 
 class PaymentMarkAsReturnedView(APIView):
@@ -179,7 +184,8 @@ class DealPaymentScheduleCreateView(APIView):
                 payment = serializer.save(
                     deal=deal,
                     client=deal.client,
-                    created_by=request.user
+                    created_by=request.user,
+                    status=Payment.PaymentStatus.PENDING
                 )
                 created_payments.append(PaymentSerializer(payment).data)
 

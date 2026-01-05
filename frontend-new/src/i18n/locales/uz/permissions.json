@@ -170,5 +170,11 @@
   "role_manager": "Menejer",
   "role_viewer": "Kuzatuvchi",
   "roles_subtitle": "Foydalanuvchi rollari va ruxsatlarini boshqarish",
-  "action_irreversible": "Bu amalni bekor qilib bo'lmaydi."
+  "action_irreversible": "Bu amalni bekor qilib bo'lmaydi.",
+  "change_password": "Parolni o'zgartirish",
+  "new_password": "Yangi parol",
+  "confirm_password": "Parolni tasdiqlang",
+  "new_password_section": "Yangi parol o'rnatish",
+  "save_password": "Parolni saqlash",
+  "password_changed": "Parol muvaffaqiyatli o'zgartirildi"
 }

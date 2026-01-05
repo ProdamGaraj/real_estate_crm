@@ -276,6 +276,52 @@ export const convertOldToNew = (
   return newHierarchy;
 };
 
+/**
+ * Преобразование массива разрешений роли в иерархическую структуру V2
+ * Используется для загрузки существующих разрешений при редактировании роли
+ */
+export const permissionIdsToHierarchy = (
+  rolePermissions: any[]
+): PermissionsHierarchyV2 => {
+  const hierarchy: PermissionsHierarchyV2 = {};
+
+  if (!rolePermissions || rolePermissions.length === 0) {
+    return hierarchy;
+  }
+
+  rolePermissions.forEach((perm) => {
+    const resource = perm.resource;
+    const action = perm.action?.toLowerCase() as keyof ScopeLevelPermissions;
+    const scope = perm.scope;
+
+    // Проверяем что action валидный
+    if (!action || !['view', 'add', 'edit', 'delete'].includes(action)) {
+      return; // Пропускаем нестандартные действия
+    }
+
+    // Создаём структуру для ресурса если её нет
+    if (!hierarchy[resource]) {
+      hierarchy[resource] = emptyResourcePermissions();
+    }
+
+    // Устанавливаем флаг в зависимости от scope
+    if (scope === 'OWN') {
+      hierarchy[resource].own[action] = true;
+    } else if (scope === 'SYSTEM') {
+      hierarchy[resource].system[action] = true;
+    } else if (scope === 'COMPANY') {
+      // Для COMPANY scope добавляем на уровень own (упрощённая логика)
+      // В полной версии нужно добавлять конкретную компанию
+      hierarchy[resource].own[action] = true;
+    } else if (scope === 'DEPARTMENT') {
+      // Для DEPARTMENT scope тоже добавляем на уровень own
+      hierarchy[resource].own[action] = true;
+    }
+  });
+
+  return hierarchy;
+};
+
 // Преобразование новой структуры в массив permission_ids для бэкенда
 export const hierarchyToPermissionIds = (
   hierarchy: PermissionsHierarchyV2,
@@ -290,23 +336,23 @@ export const hierarchyToPermissionIds = (
     actions.forEach((action) => {
       const actionUpper = action.toUpperCase();
 
-      // Мои
+      // Мои (OWN scope)
       if (resourcePerms.own[action]) {
         const perm = allPermissions.find(
-          (p) => p.resource === resourceName && p.action === actionUpper
+          (p) => p.resource === resourceName && p.action === actionUpper && p.scope === 'OWN'
         );
         if (perm) permissionIds.push(perm.id);
       }
 
       // Компании и отделы
       resourcePerms.companies.forEach((company) => {
-        // На уровне компании
+        // На уровне компании (COMPANY scope)
         if (company.companyLevel[action]) {
           const perm = allPermissions.find(
             (p) =>
               p.resource === resourceName &&
               p.action === actionUpper &&
-              p.company_id === company.companyId
+              p.scope === 'COMPANY'
           );
           if (perm) permissionIds.push(perm.id);
         }

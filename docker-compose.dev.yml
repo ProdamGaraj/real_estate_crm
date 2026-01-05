@@ -118,6 +118,8 @@ services:
     volumes:
       - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx_logs_dev:/var/log/nginx
+      # Media volumes для прямой отдачи файлов
+      - ./backend/media:/app/media:ro
     depends_on:
       - frontend
       - backend

@@ -21,6 +21,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { 
   updateUserProfile,
   createUserProfile,
+  changeUserPassword,
   getCompanies, 
   getDepartments, 
   getRoles,
@@ -54,6 +55,14 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
     is_active: userProfile?.is_active ?? true,
   });
 
+  // Поля для смены пароля (только при редактировании)
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
 
   // Загрузка компаний
@@ -81,6 +90,36 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
       setFormData(prev => ({ ...prev, department: null }));
     }
   }, [formData.company, userProfile?.company]);
+
+  // Мутация для смены пароля
+  const passwordMutation = useMutation({
+    mutationFn: () => {
+      if (!userProfile?.id) {
+        throw new Error(t('errors.user_not_found'));
+      }
+      return changeUserPassword(
+        userProfile.id,
+        passwordData.newPassword,
+        passwordData.confirmPassword
+      );
+    },
+    onSuccess: (data) => {
+      setPasswordSuccess(data.message || t('pages.settings.permissions.password_changed'));
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+      setShowPasswordSection(false);
+      // Очищаем сообщение об успехе через 5 секунд
+      setTimeout(() => setPasswordSuccess(null), 5000);
+    },
+    onError: (err: any) => {
+      console.error('Password change error:', err.response?.data);
+      const errorMessage = err.response?.data?.confirm_password?.[0] 
+        || err.response?.data?.new_password?.[0]
+        || err.response?.data?.detail
+        || err.message
+        || t('errors.password_change_error');
+      setError(errorMessage);
+    },
+  });
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -196,6 +235,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
       <Stack spacing={3}>
         {error && <Alert severity="error">{error}</Alert>}
+        {passwordSuccess && <Alert severity="success">{passwordSuccess}</Alert>}
 
         {isCreating ? (
           <>
@@ -263,6 +303,70 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
                 <Typography variant="body2" color="text.secondary">
                   {userProfile.user_full_name}
                 </Typography>
+              )}
+            </Box>
+
+            <Divider />
+
+            {/* Секция смены пароля */}
+            <Box>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => setShowPasswordSection(!showPasswordSection)}
+                sx={{ mb: 2 }}
+              >
+                {showPasswordSection 
+                  ? t('common.cancel') 
+                  : t('pages.settings.permissions.change_password')}
+              </Button>
+
+              {showPasswordSection && (
+                <Stack spacing={2} sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {t('pages.settings.permissions.new_password_section')}
+                  </Typography>
+
+                  <TextField
+                    label={t('pages.settings.permissions.new_password')}
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    fullWidth
+                    helperText={t('pages.settings.permissions.password_help')}
+                  />
+
+                  <TextField
+                    label={t('pages.settings.permissions.confirm_password')}
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    fullWidth
+                    error={passwordData.confirmPassword !== '' && passwordData.newPassword !== passwordData.confirmPassword}
+                    helperText={
+                      passwordData.confirmPassword !== '' && passwordData.newPassword !== passwordData.confirmPassword
+                        ? t('validation.passwords_not_match')
+                        : ''
+                    }
+                  />
+
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => passwordMutation.mutate()}
+                    disabled={
+                      passwordMutation.isPending ||
+                      !passwordData.newPassword ||
+                      !passwordData.confirmPassword ||
+                      passwordData.newPassword !== passwordData.confirmPassword ||
+                      passwordData.newPassword.length < 8
+                    }
+                  >
+                    {passwordMutation.isPending 
+                      ? t('common.saving') 
+                      : t('pages.settings.permissions.save_password')}
+                  </Button>
+                </Stack>
               )}
             </Box>
 
