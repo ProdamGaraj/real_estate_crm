@@ -1,4 +1,10 @@
 {
+  "theme": {
+    "switch_to_light": "Светлая тема",
+    "switch_to_dark": "Тёмная тема",
+    "light": "Светлая",
+    "dark": "Тёмная"
+  },
   "common": {
     "save": "Сохранить",
     "saving": "Сохранение...",

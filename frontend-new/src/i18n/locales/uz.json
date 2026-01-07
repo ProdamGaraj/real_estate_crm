@@ -1,4 +1,10 @@
 {
+  "theme": {
+    "switch_to_light": "Yorug' mavzu",
+    "switch_to_dark": "Qorong'i mavzu",
+    "light": "Yorug'",
+    "dark": "Qorong'i"
+  },
   "common": {
     "save": "Saqlash",
     "saving": "Saqlanmoqda...",

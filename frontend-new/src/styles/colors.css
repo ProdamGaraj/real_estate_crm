@@ -80,11 +80,14 @@
   --color-gray-900: #212121;
 }
 
-/* ========== ТЕМНАЯ ТЕМА (опционально) ========== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background-default: var(--color-dark-background);
-    --color-background-paper: var(--color-dark-background-alt);
-    --color-text-primary: var(--color-dark-text);
-  }
+/* ========== ТЕМНАЯ ТЕМА ========== */
+/* Применяется через data-theme атрибут или класс на html/body */
+[data-theme="dark"],
+.dark-theme {
+  --color-background-default: var(--color-dark-background);
+  --color-background-paper: var(--color-dark-background-alt);
+  --color-text-primary: var(--color-dark-text);
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-border-light: rgba(255, 255, 255, 0.12);
+  --color-border-default: rgba(255, 255, 255, 0.12);
 }

@@ -36,6 +36,7 @@ import { useAuthStore } from '../store/authStore';
 import { hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
 import type { ResourceType } from '../utils/permissions';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const drawerWidth = 240;
 
@@ -139,6 +140,9 @@ export default function RootLayout() {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             {t('nav.app_title')}
           </Typography>
+
+          {/* Theme Switcher */}
+          <ThemeSwitcher />
 
           {/* Language Switcher */}
           <LanguageSwitcher />

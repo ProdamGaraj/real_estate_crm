@@ -13,6 +13,8 @@ import { MailOutline, ArrowBack } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { passwordResetRequest } from '../../api/auth';
+import ThemeSwitcher from '../../components/ThemeSwitcher';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function PasswordResetRequestPage() {
   const { t } = useTranslation();
@@ -59,8 +61,14 @@ export default function PasswordResetRequestPage() {
           justifyContent: 'center',
           background: 'var(--gradient-auth)',
           padding: 2,
+          position: 'relative',
         }}
       >
+        {/* Theme and Language Switchers */}
+        <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
+          <ThemeSwitcher />
+          <LanguageSwitcher />
+        </Box>
         <Paper
           elevation={24}
           sx={{
@@ -100,8 +108,14 @@ export default function PasswordResetRequestPage() {
         justifyContent: 'center',
         background: 'var(--gradient-auth)',
         padding: 2,
+        position: 'relative',
       }}
     >
+      {/* Theme and Language Switchers */}
+      <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
+        <ThemeSwitcher />
+        <LanguageSwitcher />
+      </Box>
       <Paper
         elevation={24}
         sx={{

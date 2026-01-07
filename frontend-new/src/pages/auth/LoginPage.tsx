@@ -16,6 +16,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import LanguageSwitcher from '../../components/LanguageSwitcher';
+import ThemeSwitcher from '../../components/ThemeSwitcher';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -61,8 +62,9 @@ export default function LoginPage() {
         position: 'relative',
       }}
     >
-      {/* Language Switcher */}
-      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+      {/* Theme and Language Switchers */}
+      <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
+        <ThemeSwitcher />
         <LanguageSwitcher />
       </Box>
       

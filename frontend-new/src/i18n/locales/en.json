@@ -1,4 +1,10 @@
 {
+  "theme": {
+    "switch_to_light": "Light theme",
+    "switch_to_dark": "Dark theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
   "common": {
     "save": "Save",
     "saving": "Saving...",

@@ -11,10 +11,12 @@ import {
   REGISTER,
 } from 'redux-persist';
 import authReducer from './authSlice';
+import themeReducer from './themeSlice';
 
 // Объединяем все редьюсеры в один корневой редьюсер
 const rootReducer = combineReducers({
   auth: authReducer,
+  theme: themeReducer,
   // Если в будущем появятся другие редьюсеры, их нужно будет добавить сюда
 });
 
@@ -22,7 +24,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth'], // Указываем, какой "слайс" состояния нужно сохранять
+  whitelist: ['auth', 'theme'], // Указываем, какой "слайс" состояния нужно сохранять
 };
 
 // Создаем "персистентный" редьюсер, который оборачивает наш корневой редьюсер

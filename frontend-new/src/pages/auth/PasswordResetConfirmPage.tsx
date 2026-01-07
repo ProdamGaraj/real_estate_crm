@@ -15,6 +15,8 @@ import {
 import { LockReset, Visibility, VisibilityOff, CheckCircle } from '@mui/icons-material';
 import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import { passwordResetConfirm } from '../../api/auth';
+import ThemeSwitcher from '../../components/ThemeSwitcher';
+import LanguageSwitcher from '../../components/LanguageSwitcher';
 
 export default function PasswordResetConfirmPage() {
   const { t } = useTranslation();
@@ -85,8 +87,14 @@ export default function PasswordResetConfirmPage() {
           justifyContent: 'center',
           background: 'var(--gradient-auth)',
           padding: 2,
+          position: 'relative',
         }}
       >
+        {/* Theme and Language Switchers */}
+        <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
+          <ThemeSwitcher />
+          <LanguageSwitcher />
+        </Box>
         <Paper
           elevation={24}
           sx={{
@@ -125,8 +133,14 @@ export default function PasswordResetConfirmPage() {
         justifyContent: 'center',
         background: 'var(--gradient-auth)',
         padding: 2,
+        position: 'relative',
       }}
     >
+      {/* Theme and Language Switchers */}
+      <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
+        <ThemeSwitcher />
+        <LanguageSwitcher />
+      </Box>
       <Paper
         elevation={24}
         sx={{
