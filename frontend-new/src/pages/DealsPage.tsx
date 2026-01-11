@@ -51,7 +51,12 @@ export default function DealsPage() {
                 </MuiLink>
             )
         },
-        { field: 'status', headerName: t('table.status'), flex: 1 },
+        { 
+            field: 'status', 
+            headerName: t('table.status'), 
+            flex: 1,
+            valueGetter: (value: string) => t(`statuses.deal.${value}`, value)
+        },
         { field: 'client', headerName: t('table.client'), flex: 1 },
         { field: 'property', headerName: t('table.property'), flex: 1 },
         { field: 'contract_price', headerName: t('table.contract_price'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '' },

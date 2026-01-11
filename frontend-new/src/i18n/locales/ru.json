@@ -140,12 +140,13 @@
       "monthly_sales": "Продажи за месяц",
       "overdue_payments": "Просроченные платежи",
       "chart_placeholder": "(здесь будет график)",
-      "applications_dynamics": "Динамика заявок за неделю",
+      "applications_dynamics": "Статусы заявок",
       "application_sources": "Источники заявок",
       "manager_activity": "Активность менеджеров",
       "top_sales_month": "Топ по продажам за месяц",
       "upcoming_meetings": "Ближайшие встречи",
-      "sales_label": "Продажи:"
+      "sales_label": "Продажи:",
+      "no_data": "Нет данных для отображения"
     },
     "clients": {
       "title": "Клиенты",

@@ -140,12 +140,13 @@
       "monthly_sales": "Monthly sales",
       "overdue_payments": "Overdue payments",
       "chart_placeholder": "(chart will be here)",
-      "applications_dynamics": "Weekly application dynamics",
+      "applications_dynamics": "Application statuses",
       "application_sources": "Application sources",
       "manager_activity": "Manager activity",
       "top_sales_month": "Top sales this month",
       "upcoming_meetings": "Upcoming meetings",
-      "sales_label": "Sales:"
+      "sales_label": "Sales:",
+      "no_data": "No data to display"
     },
     "clients": {
       "title": "Clients",

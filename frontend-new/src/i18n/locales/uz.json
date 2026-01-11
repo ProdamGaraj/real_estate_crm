@@ -140,12 +140,13 @@
       "monthly_sales": "Oylik sotuvlar",
       "overdue_payments": "Muddati o'tgan to'lovlar",
       "chart_placeholder": "(bu yerda grafik bo'ladi)",
-      "applications_dynamics": "Haftalik arizalar dinamikasi",
+      "applications_dynamics": "Ariza holatlari",
       "application_sources": "Ariza manbalari",
       "manager_activity": "Menejerlar faolligi",
       "top_sales_month": "Oylik eng ko'p sotuvlar",
       "upcoming_meetings": "Kelgusi uchrashuvlar",
-      "sales_label": "Sotuvlar:"
+      "sales_label": "Sotuvlar:",
+      "no_data": "Ko'rsatish uchun ma'lumot yo'q"
     },
     "clients": {
       "title": "Mijozlar",

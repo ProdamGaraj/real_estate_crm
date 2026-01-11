@@ -3,13 +3,14 @@ import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import DonutLargeIcon from '@mui/icons-material/DonutLarge';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import EventIcon from '@mui/icons-material/Event';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDashboardData } from '../api/dashboard';
+import { BarChart } from '@mui/x-charts/BarChart';
+import { PieChart } from '@mui/x-charts/PieChart';
+import { useTheme } from '@mui/material/styles';
 
 
 // Вспомогательный компонент для карточек KPI
@@ -27,20 +28,25 @@ const KpiCard = ({ title, value, icon, color = 'primary.main' }: { title: string
     </Card>
 );
 
-// Вспомогательный компонент-заглушка для графика
-const ChartPlaceholder = ({ title, icon, placeholder }: { title: string, icon: React.ReactElement, placeholder: string }) => (
-     <Paper variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h6" sx={{ p: 2, pb: 0 }}>{title}</Typography>
-        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'text.secondary', flexDirection: 'column', gap: 1 }}>
-            {icon}
-            <Typography variant="caption">{placeholder}</Typography>
-        </Box>
-    </Paper>
-);
+// Цвета для статусов заявок
+const statusColors: Record<string, string> = {
+    'new': '#2196f3',
+    'in_progress': '#ff9800',
+    'qualified': '#4caf50',
+    'rejected': '#f44336',
+    'converted': '#9c27b0',
+};
+
+// Цвета для источников
+const sourceColors = [
+    '#D4A017', '#2196f3', '#4caf50', '#ff9800', '#f44336', 
+    '#9c27b0', '#00bcd4', '#795548', '#607d8b', '#e91e63'
+];
 
 
 export default function DashboardPage() {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { data, isLoading, isError } = useQuery({
       queryKey: ['dashboardData'],
       queryFn: getDashboardData
@@ -49,7 +55,29 @@ export default function DashboardPage() {
   if (isLoading) return <CircularProgress />;
   if (isError || !data) return <Alert severity="error">{t('errors.load_data_error')}</Alert>;
 
-  const { kpi, topManagers, upcomingMeetings } = data;
+  const { kpi, charts, topManagers, upcomingMeetings } = data;
+
+  // Подготовка данных для графика статусов заявок
+  const statusData = charts?.applicationStatuses?.map((item, index) => ({
+    id: index,
+    value: item.count,
+    label: t(`application.statuses.${item.status}`, item.status),
+    color: statusColors[item.status] || sourceColors[index % sourceColors.length],
+  })) || [];
+
+  // Подготовка данных для графика источников
+  const sourceData = charts?.applicationSources?.map((item, index) => ({
+    id: index,
+    value: item.count,
+    label: t(`application.sources.${item.source}`, item.source),
+    color: sourceColors[index % sourceColors.length],
+  })) || [];
+
+  // Данные для bar chart (статусы)
+  const barChartData = charts?.applicationStatuses?.map(item => item.count) || [];
+  const barChartLabels = charts?.applicationStatuses?.map(item => 
+    t(`application.statuses.${item.status}`, item.status)
+  ) || [];
 
   return (
     <Box>
@@ -68,10 +96,74 @@ export default function DashboardPage() {
         {/* Блок воронок и графиков */}
         <Grid container spacing={3} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, md: 8 }}>
-                <ChartPlaceholder title={t('pages.dashboard.applications_dynamics')} icon={<BarChartIcon sx={{ fontSize: 80 }} />} placeholder={t('pages.dashboard.chart_placeholder')} />
+                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        {t('pages.dashboard.applications_dynamics')}
+                    </Typography>
+                    {barChartData.length > 0 ? (
+                        <BarChart
+                            xAxis={[{ 
+                                scaleType: 'band', 
+                                data: barChartLabels,
+                                tickLabelStyle: {
+                                    fill: theme.palette.text.primary,
+                                },
+                            }]}
+                            series={[{ 
+                                data: barChartData,
+                                color: theme.palette.primary.main,
+                            }]}
+                            height={300}
+                            sx={{
+                                '& .MuiChartsAxis-tickLabel': {
+                                    fill: theme.palette.text.primary,
+                                },
+                                '& .MuiChartsAxis-line': {
+                                    stroke: theme.palette.divider,
+                                },
+                            }}
+                        />
+                    ) : (
+                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Typography color="text.secondary">{t('pages.dashboard.no_data')}</Typography>
+                        </Box>
+                    )}
+                </Paper>
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-                 <ChartPlaceholder title={t('pages.dashboard.application_sources')} icon={<DonutLargeIcon sx={{ fontSize: 80 }} />} placeholder={t('pages.dashboard.chart_placeholder')} />
+                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                        {t('pages.dashboard.application_sources')}
+                    </Typography>
+                    {sourceData.length > 0 ? (
+                        <PieChart
+                            series={[{
+                                data: sourceData,
+                                highlightScope: { fade: 'global', highlight: 'item' },
+                                innerRadius: 30,
+                                outerRadius: 100,
+                                paddingAngle: 2,
+                                cornerRadius: 5,
+                            }]}
+                            height={300}
+                            slotProps={{
+                                legend: {
+                                    direction: 'column',
+                                    position: { vertical: 'middle', horizontal: 'right' },
+                                    padding: 0,
+                                    labelStyle: {
+                                        fill: theme.palette.text.primary,
+                                        fontSize: 12,
+                                    },
+                                },
+                            }}
+                        />
+                    ) : (
+                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Typography color="text.secondary">{t('pages.dashboard.no_data')}</Typography>
+                        </Box>
+                    )}
+                </Paper>
             </Grid>
         </Grid>
 

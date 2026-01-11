@@ -87,6 +87,7 @@ services:
     volumes:
       # Логи nginx
       - frontend_logs:/var/log/nginx
+      - ./:/app
     # Порт не выставлен наружу - доступ только через nginx
     expose:
       - "80"
