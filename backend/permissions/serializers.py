@@ -382,7 +382,7 @@ class UserCreateSerializer(serializers.Serializer):
         first_name = validated_data.get('first_name', '')
         last_name = validated_data.get('last_name', '')
         
-        # Создаём пользователя
+        # Создаём пользователя (сигнал автоматически создаёт профиль)
         user = User.objects.create_user(
             username=username,
             password=password,
@@ -391,16 +391,15 @@ class UserCreateSerializer(serializers.Serializer):
             last_name=last_name
         )
         
-        # Создаём профиль
-        profile = UserProfile.objects.create(
-            user=user,
-            company_id=validated_data.get('company_id'),
-            department_id=validated_data.get('department_id'),
-            position=validated_data.get('position', ''),
-            phone=validated_data.get('phone', ''),
-            is_system_admin=validated_data.get('is_system_admin', False),
-            is_active=validated_data.get('is_active', True)
-        )
+        # Обновляем профиль, созданный сигналом
+        profile = user.profile
+        profile.company_id = validated_data.get('company_id')
+        profile.department_id = validated_data.get('department_id')
+        profile.position = validated_data.get('position', '')
+        profile.phone = validated_data.get('phone', '')
+        profile.is_system_admin = validated_data.get('is_system_admin', False)
+        profile.is_active = validated_data.get('is_active', True)
+        profile.save()
         
         # Назначаем роли
         role_ids = validated_data.get('role_ids', [])
