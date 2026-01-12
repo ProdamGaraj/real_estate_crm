@@ -54,7 +54,7 @@ class ClientFilter(filters.FilterSet):
 # Фильтры для заявок
 class ApplicationFilter(filters.FilterSet):
     # Фильтр по статусу
-    status = filters.ChoiceFilter(choices=Application.ApplicationStatus.choices)
+    status = filters.ChoiceFilter(choices=Application.ApplicationStatusChoices.choices)
 
     # Фильтр по источнику
     source = filters.ChoiceFilter(choices=Application.ApplicationSource.choices)

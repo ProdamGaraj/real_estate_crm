@@ -6,6 +6,7 @@
 export type ResourceType =
   | 'CLIENT'
   | 'APPLICATION'
+  | 'APPLICATION_STATUS'
   | 'MEETING'
   | 'TASK'
   | 'DEAL'

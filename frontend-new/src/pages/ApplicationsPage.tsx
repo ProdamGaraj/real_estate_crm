@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, Dialog, DialogTitle, DialogContent,
   CircularProgress, Alert, Link as MuiLink, Paper, Grid, TextField, Stack,
-  FormControl, InputLabel, Select, MenuItem, Tabs, Tab
+  FormControl, InputLabel, Select, MenuItem, Tabs, Tab, ToggleButton, ToggleButtonGroup
 } from '@mui/material';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
 import { useTranslation } from 'react-i18next';
 import { translateApplicationStatus, translateApplicationSource } from '../utils/translations';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -16,6 +18,7 @@ import ApplicationForm from '../components/applications/ApplicationForm';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form'; // Импортируем useForm
 import ApplicationSummary from '../components/applications/ApplicationSummary';
+import ApplicationsKanban from '../components/applications/ApplicationsKanban';
 import { LocalizedDateField } from '../components/common/LocalizedDateField';
 import { useAuthStore } from '../store/authStore';
 import { hasPermission } from '../utils/permissions';
@@ -75,6 +78,7 @@ export default function ApplicationsPage() {
   const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tabValue, setTabValue] = useState(location.state?.tab || 0);
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   const [filters, setFilters] = useState<ApplicationFilters>(location.state?.filters || {});
   const queryClient = useQueryClient();
   const { register, watch, control, reset } = useForm<ApplicationFilters>({
@@ -126,11 +130,27 @@ export default function ApplicationsPage() {
         )}
       </Box>
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab label={t('pages.applications.application_list')} />
           <Tab label={t('pages.applications.summary_table')} />
         </Tabs>
+        {tabValue === 0 && (
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newMode) => newMode && setViewMode(newMode)}
+            size="small"
+            sx={{ mr: 2 }}
+          >
+            <ToggleButton value="table" title={t('pages.applications.view_table')}>
+              <ViewListIcon />
+            </ToggleButton>
+            <ToggleButton value="kanban" title={t('pages.applications.view_kanban')}>
+              <ViewKanbanIcon />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        )}
       </Box>
 
       <TabPanel value={tabValue} index={0}>
@@ -216,14 +236,18 @@ export default function ApplicationsPage() {
             </DialogContent>
           </Dialog>
 
-          <Box sx={{ flex: 1, width: '100%', minHeight: 0 }}>
-            <LocalizedDataGrid
-              rows={data || []}
-              columns={columns}
-              initialState={{ sorting: { sortModel: [{ field: 'id', sort: 'desc' }] } }}
-              disableRowSelectionOnClick
-            />
-          </Box>
+          {viewMode === 'table' ? (
+            <Box sx={{ flex: 1, width: '100%', minHeight: 0 }}>
+              <LocalizedDataGrid
+                rows={data || []}
+                columns={columns}
+                initialState={{ sorting: { sortModel: [{ field: 'id', sort: 'desc' }] } }}
+                disableRowSelectionOnClick
+              />
+            </Box>
+          ) : (
+            <ApplicationsKanban applications={data || []} isLoading={isLoading} />
+          )}
         </Box>
       </TabPanel>
       <TabPanel value={tabValue} index={1}>

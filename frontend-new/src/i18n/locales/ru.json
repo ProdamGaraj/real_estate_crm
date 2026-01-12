@@ -190,6 +190,15 @@
       "edit_application": "Редактирование заявки",
       "application_list": "Список заявок",
       "summary_table": "Сводная таблица",
+      "view_table": "Табличный вид",
+      "view_kanban": "Канбан-доска",
+      "kanban": {
+        "no_applications": "Нет заявок",
+        "no_statuses": "Статусы заявок не настроены. Добавьте статусы в настройках.",
+        "change_status": "Изменить статус",
+        "status_changed": "Статус заявки изменён",
+        "status_change_error": "Ошибка при изменении статуса"
+      },
       "source": "Источник",
       "created_by": "Кем создана",
       "client_id": "ID Клиента",
@@ -652,6 +661,9 @@
       "no_building_restriction": "Без ограничений (все дома)",
       "no_comment": "Нет описания"
     },
+    "permissions": {
+      "permissions_matrix": "Матрица разрешений"
+    },
     "settings": {
       "title": "Настройки",
       "companies_tab": "Компании",
@@ -677,6 +689,20 @@
       "payment_type_name": "Название типа платежа",
       "new_account": "Новый счёт",
       "account_name": "Название счёта",
+      "application_statuses": {
+        "title": "Статусы заявок",
+        "add_status": "Добавить статус",
+        "new_status": "Новый статус",
+        "edit_status": "Редактировать статус",
+        "status_name": "Название статуса",
+        "code": "Код",
+        "code_hint": "Уникальный код статуса (например: NEW, IN_PROGRESS)",
+        "color": "Цвет",
+        "order": "Порядок сортировки",
+        "is_active": "Активный",
+        "is_final": "Финальный статус",
+        "confirm_delete": "Вы уверены, что хотите удалить этот статус?"
+      },
       "permissions": {
         "companies_title": "Компании",
         "companies_subtitle": "Управление организационной структурой системы",
@@ -1075,12 +1101,14 @@
   "resources": {
     "CLIENT": "Клиенты",
     "APPLICATION": "Заявки",
+    "APPLICATION_STATUS": "Статусы заявок",
     "MEETING": "Встречи",
     "DEAL": "Сделки",
     "PAYMENT": "Платежи",
     "REFUND": "Возвраты",
     "PROJECT": "Проекты",
     "BUILDING": "Здания",
+    "BUILDING_TYPE": "Типы домов",
     "PROPERTY": "Объекты недвижимости",
     "LAYOUT": "Планировки",
     "DISCOUNT": "Скидки",
@@ -1167,6 +1195,7 @@
     "load_data_error": "Не удалось загрузить данные для дашборда.",
     "load_clients_error": "Ошибка загрузки данных:",
     "load_applications_error": "Ошибка загрузки заявок",
+    "load_statuses_error": "Ошибка загрузки статусов",
     "load_meetings_error": "Ошибка загрузки встреч",
     "load_deals_error": "Ошибка загрузки сделок",
     "load_deal_error": "Не удалось загрузить данные сделки.",

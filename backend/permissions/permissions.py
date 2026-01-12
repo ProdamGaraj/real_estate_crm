@@ -74,6 +74,10 @@ class ApplicationPermission(BaseResourcePermission):
     resource_type = 'APPLICATION'
 
 
+class ApplicationStatusPermission(BaseResourcePermission):
+    resource_type = 'APPLICATION_STATUS'
+
+
 class MeetingPermission(BaseResourcePermission):
     resource_type = 'MEETING'
 

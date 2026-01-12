@@ -84,6 +84,7 @@ class Permission(models.Model):
         # CRM модуль
         CLIENT = 'CLIENT', 'Клиенты'
         APPLICATION = 'APPLICATION', 'Заявки'
+        APPLICATION_STATUS = 'APPLICATION_STATUS', 'Статусы заявок'
         MEETING = 'MEETING', 'Встречи'
         # Realty модуль
         PROJECT = 'PROJECT', 'Проекты'

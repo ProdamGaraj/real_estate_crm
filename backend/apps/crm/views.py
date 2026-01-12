@@ -4,11 +4,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema
-from .models import Client, Application, ClientLog, RejectionReason, ApplicationLog, Meeting, MeetingLog, ClientFile
+from .models import Client, Application, ClientLog, RejectionReason, ApplicationLog, Meeting, MeetingLog, ClientFile, ApplicationStatus
 from .serializers import (
     ClientListSerializer, ClientDetailSerializer,
     ApplicationListSerializer, ApplicationDetailSerializer,
-    PublicApplicationSerializer, RejectionReasonSerializer, MeetingSerializer, ClientFileSerializer
+    PublicApplicationSerializer, RejectionReasonSerializer, MeetingSerializer, ClientFileSerializer,
+    ApplicationStatusSerializer
 )
 from .filters import ClientFilter, ApplicationFilter, MeetingFilter
 from django.contrib.auth.models import User
@@ -24,7 +25,7 @@ from django.http import HttpResponse
 from permissions.permissions import (
     ClientPermission, ApplicationPermission, MeetingPermission, 
     ReportPermission, DashboardPermission, SettingsPermission, UserPermission,
-    HasPartnerCreateApplicationScope
+    HasPartnerCreateApplicationScope, ApplicationStatusPermission
 )
 from permissions.backends import get_filtered_queryset
 
@@ -552,3 +553,49 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, UserPermission]
+
+
+# --- Views для статусов заявок ---
+class ApplicationStatusListCreateView(generics.ListCreateAPIView):
+    """
+    GET: Список всех статусов заявок (доступно всем авторизованным пользователям)
+    POST: Создание нового статуса заявки (требует разрешение APPLICATION_STATUS)
+    """
+    queryset = ApplicationStatus.objects.all()
+    serializer_class = ApplicationStatusSerializer
+
+    def get_permissions(self):
+        """
+        Чтение списка статусов - для всех авторизованных.
+        Создание - требует разрешение ApplicationStatusPermission.
+        """
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), ApplicationStatusPermission()]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Фильтр по активным статусам (опционально)
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+        return queryset
+
+
+class ApplicationStatusDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET: Детали статуса заявки (доступно всем авторизованным пользователям)
+    PUT/PATCH: Обновление статуса заявки (требует разрешение APPLICATION_STATUS)
+    DELETE: Удаление статуса заявки (требует разрешение APPLICATION_STATUS)
+    """
+    queryset = ApplicationStatus.objects.all()
+    serializer_class = ApplicationStatusSerializer
+
+    def get_permissions(self):
+        """
+        Чтение статуса - для всех авторизованных.
+        Редактирование/удаление - требует разрешение ApplicationStatusPermission.
+        """
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), ApplicationStatusPermission()]

@@ -12,6 +12,8 @@ from .views import (
     DashboardAnalyticsView,
     MeetingSummaryView,
     ApplicationSummaryView,
+    ApplicationStatusListCreateView,
+    ApplicationStatusDetailView,
 )
 
 urlpatterns = [
@@ -29,6 +31,10 @@ urlpatterns = [
     path('applications/<int:pk>/', ApplicationDetailView.as_view(), name='application-detail'),
     path('applications/summary/', ApplicationSummaryView.as_view(), name='application-summary'),
     path('users/', UserListView.as_view(), name='user-list'),
+
+    # Application Statuses
+    path('application-statuses/', ApplicationStatusListCreateView.as_view(), name='application-status-list-create'),
+    path('application-statuses/<int:pk>/', ApplicationStatusDetailView.as_view(), name='application-status-detail'),
 
     # Meetings
     path('meetings/', MeetingListCreateView.as_view(), name='meeting-list-create'),

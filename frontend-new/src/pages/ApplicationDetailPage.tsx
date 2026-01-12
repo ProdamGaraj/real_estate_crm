@@ -3,11 +3,13 @@ import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getApplicationById, updateApplication, getRejectionReasons, deleteApplication } from '../api/applications';
+import { getApplicationStatuses } from '../api/settings';
 import type { ApplicationPayload, RejectionReason } from '../api/applications';
 import {
     Typography, CircularProgress, Alert, Paper, Grid, Box, Tabs, Tab, Button,
     Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, TextField, Chip, Link as MuiLink,
-    Stack, FormControl, InputLabel, Select, MenuItem, Card, CardHeader, CardContent, Avatar
+    Stack, FormControl, InputLabel, Select, MenuItem, Card, CardHeader, CardContent, Avatar,
+    Menu, ListItemIcon, ListItemText
 } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid'; // <-- Импорт GridColDef
 import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
@@ -17,6 +19,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import InterestsIcon from '@mui/icons-material/Interests';
 import NotesIcon from '@mui/icons-material/Notes';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import CircleIcon from '@mui/icons-material/Circle';
 import HumanizedLog from '../components/logs/HumanizedLog'; // <-- Импорт HumanizedLog
 import MeetingForm from '../components/meetings/MeetingForm'; // <-- Импорт MeetingForm
 import type { Meeting } from '../api/meetings'; // <-- Импорт типа Meeting
@@ -47,6 +51,7 @@ export default function ApplicationDetailPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false); // <-- Состояние для модального окна встречи
   const [targetStatus, setTargetStatus] = useState<'JUNK' | 'REJECTED' | null>(null);
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
 
   const getDateLocale = () => {
     const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
@@ -72,6 +77,12 @@ export default function ApplicationDetailPage() {
     queryKey: ['rejectionReasons', targetStatus],
     queryFn: () => getRejectionReasons(targetStatus!),
     enabled: !!targetStatus,
+  });
+
+  // Загружаем статусы заявок
+  const { data: applicationStatuses } = useQuery({
+    queryKey: ['applicationStatuses', true],
+    queryFn: () => getApplicationStatuses(true),
   });
 
   const { register, handleSubmit, control, reset, formState: { errors } } = useForm<ApplicationPayload>({
@@ -106,6 +117,17 @@ export default function ApplicationDetailPage() {
     setIsReasonModalOpen(true);
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    if (applicationId) {
+      updateMutation.mutate({ id: Number(applicationId), payload: { status: newStatus } });
+    }
+    setStatusMenuAnchor(null);
+  };
+
+  // Текущий статус и доступные для перехода
+  const currentStatus = applicationStatuses?.find(s => s.code === app?.status);
+  const availableStatuses = applicationStatuses?.filter(s => s.code !== app?.status && s.is_active) || [];
+
   const onReasonSubmit = (data: { rejection_reason_id: number }) => {
     if (targetStatus && applicationId) {
       const payload: ApplicationPayload = { status: targetStatus, rejection_reason_id: data.rejection_reason_id };
@@ -133,7 +155,37 @@ export default function ApplicationDetailPage() {
             </Avatar>
             <Box>
                 <Typography variant="h4" gutterBottom>
-                    {t('pages.applications.application_number', { number: app.id })} <Chip label={t(`statuses.application.${app.status}`)} color="primary" size="small" />
+                    {t('pages.applications.application_number', { number: app.id })}
+                    {' '}
+                    <Chip 
+                      label={currentStatus?.name || t(`statuses.application.${app.status}`)} 
+                      sx={{ 
+                        backgroundColor: currentStatus?.color || 'primary.main',
+                        color: 'white',
+                        cursor: 'pointer'
+                      }}
+                      size="small"
+                      onClick={(e) => setStatusMenuAnchor(e.currentTarget)}
+                      onDelete={(e) => setStatusMenuAnchor(e.currentTarget)}
+                      deleteIcon={<ArrowDropDownIcon sx={{ color: 'white !important' }} />}
+                    />
+                    <Menu
+                      anchorEl={statusMenuAnchor}
+                      open={Boolean(statusMenuAnchor)}
+                      onClose={() => setStatusMenuAnchor(null)}
+                    >
+                      <Typography variant="caption" color="text.secondary" sx={{ px: 2, py: 0.5, display: 'block' }}>
+                        {t('pages.applications.kanban.change_status')}
+                      </Typography>
+                      {availableStatuses.map((status) => (
+                        <MenuItem key={status.id} onClick={() => handleStatusChange(status.code)}>
+                          <ListItemIcon>
+                            <CircleIcon sx={{ color: status.color, fontSize: 16 }} />
+                          </ListItemIcon>
+                          <ListItemText>{status.name}</ListItemText>
+                        </MenuItem>
+                      ))}
+                    </Menu>
                 </Typography>
                 <Typography color="text.secondary">
                     {t('pages.applications.client')}: <MuiLink component={RouterLink} to={`/clients/${app.client.id}`}>{app.client.full_name}</MuiLink>

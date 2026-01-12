@@ -232,7 +232,6 @@ export default function RootLayout() {
         flexGrow: 1,
         p: 3,
         bgcolor: 'background.default',
-        height: 'calc(100vh - 64px)',
         overflow: 'auto',
         display: 'flex',
         flexDirection: 'column'

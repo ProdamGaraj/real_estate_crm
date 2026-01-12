@@ -190,6 +190,15 @@
       "edit_application": "Edit Application",
       "application_list": "Application List",
       "summary_table": "Summary Table",
+      "view_table": "Table View",
+      "view_kanban": "Kanban Board",
+      "kanban": {
+        "no_applications": "No applications",
+        "no_statuses": "Application statuses are not configured. Add statuses in settings.",
+        "change_status": "Change status",
+        "status_changed": "Application status changed",
+        "status_change_error": "Error changing status"
+      },
       "source": "Source",
       "created_by": "Created By",
       "client_id": "Client ID",
@@ -651,6 +660,9 @@
       "no_building_restriction": "No restriction (all buildings)",
       "no_comment": "No description"
     },
+    "permissions": {
+      "permissions_matrix": "Permissions Matrix"
+    },
     "settings": {
       "title": "Settings",
       "companies_tab": "Companies",
@@ -676,6 +688,20 @@
       "payment_type_name": "Payment Type Name",
       "new_account": "New Account",
       "account_name": "Account Name",
+      "application_statuses": {
+        "title": "Application Statuses",
+        "add_status": "Add Status",
+        "new_status": "New Status",
+        "edit_status": "Edit Status",
+        "status_name": "Status Name",
+        "code": "Code",
+        "code_hint": "Unique status code (e.g., NEW, IN_PROGRESS)",
+        "color": "Color",
+        "order": "Sort Order",
+        "is_active": "Active",
+        "is_final": "Final Status",
+        "confirm_delete": "Are you sure you want to delete this status?"
+      },
       "permissions": {
         "companies_title": "Companies",
         "companies_subtitle": "Managing organizational structure",
@@ -1089,12 +1115,14 @@
   "resources": {
     "CLIENT": "Clients",
     "APPLICATION": "Applications",
+    "APPLICATION_STATUS": "Application Statuses",
     "MEETING": "Meetings",
     "DEAL": "Deals",
     "PAYMENT": "Payments",
     "REFUND": "Refunds",
     "PROJECT": "Projects",
     "BUILDING": "Buildings",
+    "BUILDING_TYPE": "Building Types",
     "PROPERTY": "Properties",
     "LAYOUT": "Layouts",
     "DISCOUNT": "Discounts",
@@ -1157,6 +1185,7 @@
     "load_data_error": "Failed to load dashboard data.",
     "load_clients_error": "Error loading data:",
     "load_applications_error": "Error loading applications",
+    "load_statuses_error": "Error loading statuses",
     "load_meetings_error": "Error loading meetings",
     "load_deals_error": "Error loading deals",
     "load_deal_error": "Failed to load deal data.",

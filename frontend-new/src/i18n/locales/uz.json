@@ -190,6 +190,15 @@
       "edit_application": "Arizani tahrirlash",
       "application_list": "Arizalar ro'yxati",
       "summary_table": "Umumiy jadval",
+      "view_table": "Jadval ko'rinishi",
+      "view_kanban": "Kanban doskasi",
+      "kanban": {
+        "no_applications": "Arizalar yo'q",
+        "no_statuses": "Ariza holatlari sozlanmagan. Sozlamalarda holatlarni qo'shing.",
+        "change_status": "Holatni o'zgartirish",
+        "status_changed": "Ariza holati o'zgartirildi",
+        "status_change_error": "Holatni o'zgartirishda xatolik"
+      },
       "source": "Manba",
       "created_by": "Kim tomonidan yaratilgan",
       "client_id": "Mijoz ID",
@@ -632,6 +641,9 @@
       "no_building_restriction": "Cheklov yo'q (barcha binolar)",
       "no_comment": "Tavsif yo'q"
     },
+    "permissions": {
+      "permissions_matrix": "Ruxsatlar matritsasi"
+    },
     "settings": {
       "title": "Sozlamalar",
       "companies_tab": "Kompaniyalar",
@@ -657,6 +669,20 @@
       "payment_type_name": "To'lov turi nomi",
       "new_account": "Yangi hisob",
       "account_name": "Hisob nomi",
+      "application_statuses": {
+        "title": "Ariza holatlari",
+        "add_status": "Holat qo'shish",
+        "new_status": "Yangi holat",
+        "edit_status": "Holatni tahrirlash",
+        "status_name": "Holat nomi",
+        "code": "Kod",
+        "code_hint": "Noyob holat kodi (masalan: NEW, IN_PROGRESS)",
+        "color": "Rang",
+        "order": "Saralash tartibi",
+        "is_active": "Faol",
+        "is_final": "Yakuniy holat",
+        "confirm_delete": "Ushbu holatni o'chirishga ishonchingiz komilmi?"
+      },
       "permissions": {
         "companies_title": "Kompaniyalar",
         "companies_subtitle": "Tizimning tashkiliy tuzilmasini boshqarish",
@@ -1028,12 +1054,14 @@
   "resources": {
     "CLIENT": "Mijozlar",
     "APPLICATION": "Arizalar",
+    "APPLICATION_STATUS": "Ariza holatlari",
     "MEETING": "Uchrashuvlar",
     "DEAL": "Bitimlar",
     "PAYMENT": "To'lovlar",
     "REFUND": "Qaytarishlar",
     "PROJECT": "Loyihalar",
     "BUILDING": "Binolar",
+    "BUILDING_TYPE": "Bino turlari",
     "PROPERTY": "Ko'chmas mulk ob'ektlari",
     "LAYOUT": "Planlar",
     "DISCOUNT": "Chegirmalar",
@@ -1096,6 +1124,7 @@
     "load_data_error": "Boshqaruv paneli ma'lumotlarini yuklab bo'lmadi.",
     "load_clients_error": "Ma'lumotlarni yuklashda xatolik:",
     "load_applications_error": "Arizalarni yuklashda xatolik",
+    "load_statuses_error": "Holatlarni yuklashda xatolik",
     "load_meetings_error": "Uchrashuvlarni yuklashda xatolik",
     "load_deals_error": "Bitimlarni yuklashda xatolik",
     "load_deal_error": "Bitim ma'lumotlarini yuklab bo'lmadi.",

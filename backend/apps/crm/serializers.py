@@ -2,9 +2,20 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import (
     Client, Application, PreciseSource, ClientLog, RejectionReason,
-    ApplicationLog, ClientPhoneNumber, Meeting, MeetingLog, ClientFile
+    ApplicationLog, ClientPhoneNumber, Meeting, MeetingLog, ClientFile,
+    ApplicationStatus
 )
 from apps.realty.serializers import BuildingMiniSerializer
+
+
+# --- Сериализатор для статусов заявок ---
+
+class ApplicationStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationStatus
+        fields = ['id', 'code', 'name', 'color', 'order', 'is_active', 'is_final', 'created_at']
+        read_only_fields = ['created_at']
+
 
 # --- Сериализаторы для Клиентов ---
 

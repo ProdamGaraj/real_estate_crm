@@ -5,6 +5,7 @@ import { Box, Typography, Grid, Paper, Tabs, Tab } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import ReasonManager from '../components/settings/ReasonManager';
+import ApplicationStatusManager from '../components/settings/ApplicationStatusManager';
 import BuildingTypeManager from '../components/settings/BuildingTypeManager';
 import PaymentTypeManager from '../components/settings/PaymentTypeManager';
 import BeneficiaryAccountManager from '../components/settings/BeneficiaryAccountManager';
@@ -107,6 +108,9 @@ export default function SettingsPage() {
 
         {/* Вкладка "Заявки" */}
         <TabPanel value={tabValue} index={4}>
+          <Box sx={{ mb: 4 }}>
+            <ApplicationStatusManager />
+          </Box>
           <Typography variant="h6" sx={{ mb: 2 }}>{t('pages.settings.rejection_reasons_title')}</Typography>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 6 }}>

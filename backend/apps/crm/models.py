@@ -46,10 +46,30 @@ class RejectionReason(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Активна")
 
 
+class ApplicationStatus(models.Model):
+    """ Статус заявки (настраиваемый справочник) """
+    code = models.CharField(max_length=50, unique=True, verbose_name="Код статуса")
+    name = models.CharField(max_length=100, verbose_name="Название статуса")
+    color = models.CharField(max_length=7, default='#9e9e9e', verbose_name="Цвет (HEX)")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортировки")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+    is_final = models.BooleanField(default=False, verbose_name="Финальный статус")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+
+    class Meta:
+        verbose_name = "Статус заявки"
+        verbose_name_plural = "Статусы заявок"
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class Application(models.Model):
     """ Заявка от клиента """
 
-    class ApplicationStatus(models.TextChoices):
+    # Сохраняем для обратной совместимости и миграции
+    class ApplicationStatusChoices(models.TextChoices):
         NEW = 'NEW', 'Новая'
         IN_PROGRESS = 'IN_PROGRESS', 'В работе'
         JUNK = 'JUNK', 'Нецелевая'
@@ -65,7 +85,7 @@ class Application(models.Model):
 
     # --- Основная информация ---
     client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='applications', verbose_name="Клиент")
-    status = models.CharField(max_length=20, choices=ApplicationStatus.choices, default=ApplicationStatus.NEW,
+    status = models.CharField(max_length=50, choices=ApplicationStatusChoices.choices, default=ApplicationStatusChoices.NEW,
                               verbose_name="Статус заявки")
 
     # --- Источник ---
