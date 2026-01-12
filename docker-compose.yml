@@ -142,6 +142,36 @@ services:
       retries: 3
 
 # =============================================================================
+  # PostgreSQL Backup - Автоматические бэкапы раз в неделю
+  # =============================================================================
+  db-backup:
+    image: prodrigestivill/postgres-backup-local:16-alpine
+    container_name: crm_db_backup
+    restart: unless-stopped
+    volumes:
+      - ./backups:/backups
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_DB=${DB_NAME:-real_estate_crm}
+      - POSTGRES_USER=${DB_USER:-crm_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-crm_password_2024}
+      # Расписание: каждое воскресенье в 3:00 ночи
+      - SCHEDULE=0 3 * * 0
+      # Хранить 4 еженедельных бэкапа (1 месяц)
+      - BACKUP_KEEP_WEEKS=4
+      # Хранить 3 ежемесячных бэкапа
+      - BACKUP_KEEP_MONTHS=3
+      # Ежедневные бэкапы не нужны (0 = отключено)
+      - BACKUP_KEEP_DAYS=0
+      # Сжатие gzip
+      - HEALTHCHECK_PORT=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend_network
+
+# =============================================================================
 # Volumes - Персистентное хранилище
 # =============================================================================
 volumes:

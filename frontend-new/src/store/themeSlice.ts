@@ -8,16 +8,31 @@ interface ThemeState {
 
 // Проверяем системную настройку темы при первом запуске
 const getInitialTheme = (): ThemeMode => {
-  // Сначала проверяем сохраненную настройку
+  // Сначала проверяем сохраненную настройку пользователя
   const savedTheme = localStorage.getItem('themeMode') as ThemeMode;
   if (savedTheme === 'light' || savedTheme === 'dark') {
     return savedTheme;
   }
-  // Если нет сохраненной настройки, проверяем системные предпочтения
-  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark';
+  
+  // Если нет сохраненной настройки, определяем по системным предпочтениям
+  try {
+    if (window.matchMedia) {
+      // Проверяем, предпочитает ли пользователь светлую тему
+      if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light';
+      }
+      // Проверяем, предпочитает ли пользователь тёмную тему
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+    }
+  } catch (e) {
+    // В случае ошибки используем тёмную тему по умолчанию
+    console.warn('Не удалось определить системную тему:', e);
   }
-  return 'light';
+  
+  // По умолчанию — тёмная тема
+  return 'dark';
 };
 
 const initialState: ThemeState = {

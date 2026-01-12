@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import {
     Box, Typography, CircularProgress, Alert, Link as MuiLink,
-    Paper, Grid, TextField, FormControl, InputLabel, Select, MenuItem, Stack, Chip, Tabs, Tab
+    Paper, Grid, TextField, FormControl, InputLabel, Select, MenuItem, Stack, Chip, Tabs, Tab,
+    useTheme, alpha
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { translatePaymentStatus } from '../utils/translations';
@@ -93,6 +94,7 @@ const getColumns = (t: (key: string) => string): GridColDef<Payment>[] => [
 
 export default function FinancesPage() {
     const { t } = useTranslation();
+    const theme = useTheme();
     const location = useLocation();
     const [tabValue, setTabValue] = useState(location.state?.tab || 0);
     const columns = getColumns(t);
@@ -139,15 +141,19 @@ export default function FinancesPage() {
     if (isLoading) return <CircularProgress />;
     if (isError) return <Alert severity="error">{t('errors.load_payments_error')}</Alert>;
 
+    // Цвета для подсветки просроченных строк с учётом темы
+    const overdueRowBg = alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.2 : 0.1);
+    const overdueRowHoverBg = alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.3 : 0.15);
+
     return (
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <style>
                 {`
                     .overdue-row {
-                        background-color: var(--color-error-lighter) !important;
+                        background-color: ${overdueRowBg} !important;
                     }
                     .overdue-row:hover {
-                        background-color: var(--color-error-light) !important;
+                        background-color: ${overdueRowHoverBg} !important;
                     }
                 `}
             </style>

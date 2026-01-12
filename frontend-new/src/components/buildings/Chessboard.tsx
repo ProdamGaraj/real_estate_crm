@@ -1,4 +1,4 @@
-import { Box, Paper, Tooltip, Typography } from '@mui/material';
+import { Box, Paper, Tooltip, Typography, useTheme, alpha } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { Property } from '../../api/buildings'; // Убедитесь, что этот тип экспортируется из api/buildings.ts
 
@@ -38,15 +38,21 @@ const getStatusColor = (status: string) => {
 
 export default function Chessboard({ properties, onCellClick }: ChessboardProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const propertiesByEntrance = groupProperties(properties);
   const entrances = Object.keys(propertiesByEntrance).map(Number).sort((a, b) => a - b);
+
+  // Адаптивные цвета для тёмной/светлой темы
+  const isDark = theme.palette.mode === 'dark';
+  const containerBg = isDark ? alpha(theme.palette.background.paper, 0.5) : 'grey.50';
+  const borderColor = theme.palette.divider;
 
   if (entrances.length === 0) {
     return <Typography sx={{ p: 2, color: 'text.secondary' }}>{t('pages.buildings.chessboard.no_properties')}</Typography>
   }
 
   return (
-    <Box sx={{ display: 'flex', gap: 3, overflowX: 'auto', p: 1, bgcolor: 'grey.50', borderRadius: 2 }}>
+    <Box sx={{ display: 'flex', gap: 3, overflowX: 'auto', p: 1, bgcolor: containerBg, borderRadius: 2 }}>
       {entrances.map(entrance => {
         const floors = Object.keys(propertiesByEntrance[entrance]).map(Number).sort((a, b) => b - a);
         return (
@@ -56,8 +62,8 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
               {floors.map((floor) => (
-                <Box key={floor} sx={{ display: 'flex', borderBottom: '1px solid var(--color-border-light)' }}>
-                  <Box sx={{ width: '50px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid var(--color-border-light)' }}>
+                <Box key={floor} sx={{ display: 'flex', borderBottom: `1px solid ${borderColor}` }}>
+                  <Box sx={{ width: '50px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: `1px solid ${borderColor}` }}>
                     <Typography variant="subtitle2">{floor}</Typography>
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 1, p: 1 }}>
@@ -77,7 +83,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
                               alignItems: 'center',
                               justifyContent: 'center',
                               cursor: 'pointer',
-                              border: '1px solid var(--color-border-dark)',
+                              border: `1px solid ${borderColor}`,
                               transition: 'transform 0.1s ease-in-out',
                               '&:hover': {
                                 opacity: 0.8,
