@@ -30,7 +30,7 @@ export default function BuildingForm({ onSubmit, isPending }: BuildingFormProps)
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 1 }}>
       <Stack spacing={2}>
         <TextField
-          label={t('buildings.form.name')}
+          label={t('pages.buildings.form.name')}
           fullWidth
           required
           {...register('name', { required: t('common.required_field') })}
@@ -38,7 +38,7 @@ export default function BuildingForm({ onSubmit, isPending }: BuildingFormProps)
           helperText={errors.name?.message}
         />
         <TextField
-          label={t('buildings.form.floors_count')}
+          label={t('pages.buildings.form.floors_count')}
           fullWidth
           required
           type="number"
@@ -56,7 +56,7 @@ export default function BuildingForm({ onSubmit, isPending }: BuildingFormProps)
               loading={isLoadingTypes}
               getOptionLabel={(option) => option.name}
               onChange={(_, data) => field.onChange(data?.id)}
-              renderInput={(params) => <TextField {...params} label={t('buildings.form.building_type')} required error={!!errors.building_type_id} />}
+              renderInput={(params) => <TextField {...params} label={t('pages.buildings.form.building_type')} required error={!!errors.building_type_id} />}
             />
           )}
         />

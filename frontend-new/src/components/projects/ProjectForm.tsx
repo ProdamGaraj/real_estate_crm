@@ -70,7 +70,7 @@ export default function ProjectForm({ onSuccess }: ProjectFormProps) {
         )}
 
         <TextField
-          label={t('projects.form.name')}
+          label={t('pages.projects.form.name')}
           fullWidth
           required
           {...register('name', { required: t('common.required_field') })}
@@ -78,7 +78,7 @@ export default function ProjectForm({ onSuccess }: ProjectFormProps) {
           helperText={errors.name?.message}
         />
         <TextField
-          label={t('projects.form.address')}
+          label={t('pages.projects.form.address')}
           fullWidth
           required
           {...register('address', { required: t('common.required_field') })}
