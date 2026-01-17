@@ -10,7 +10,7 @@ from .views import (
 )
 from .views import DiscountListView, DiscountDetailView
 from .views import PropertyDetailView
-from .views import LayoutListView, LayoutDetailView
+from .views import LayoutListView, LayoutDetailView, LayoutBulkUploadView
 from .views import PropertyTemplateDownloadView, PropertyUploadView, ProjectImageCreateView,ProjectImageDetailView,BuildingImageCreateView,BuildingImageDetailView
 
 urlpatterns = [
@@ -21,8 +21,9 @@ urlpatterns = [
     # Buildings (nested under projects)
     path('projects/<int:project_pk>/buildings/',  BuildingListCreateView.as_view(), name='building-create'),
     path('projects/<int:project_pk>/buildings/<int:pk>/', BuildingDetailView.as_view(), name='building-detail'),
-    path('projects/<int>/buildings/<int:building_pk>/layouts/', LayoutListView.as_view()),
-    path('projects/<int>/buildings/<int:building_pk>/layouts/<int:pk>/', LayoutDetailView.as_view()),
+    path('projects/<int:project_pk>/buildings/<int:building_pk>/layouts/', LayoutListView.as_view()),
+    path('projects/<int:project_pk>/buildings/<int:building_pk>/layouts/<int:pk>/', LayoutDetailView.as_view()),
+    path('projects/<int:project_pk>/buildings/<int:building_pk>/layouts/bulk-upload/', LayoutBulkUploadView.as_view(), name='layout-bulk-upload'),
     # Building Types
     path('building-types/', BuildingTypeListView.as_view(), name='building-type-list'),
     path('building-types/<int:pk>/', BuildingTypeDetailView.as_view(), name='building-type-detail'),

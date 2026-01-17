@@ -46,3 +46,48 @@ export const deleteLayoutImage = async ({ buildingId, layoutId, fieldName }: { b
   });
   return response.data;
 };
+
+/**
+ * Результат массовой загрузки планировок
+ */
+export interface BulkUploadResult {
+  message: string;
+  uploaded: number;
+  errors_count: number;
+  created_layouts: string[];
+  details: {
+    success: Array<{
+      file: string;
+      layout: string;
+      field: string;
+      created: boolean;
+    }>;
+    errors: Array<{
+      file: string;
+      error: string;
+    }>;
+    created_layouts: string[];
+  };
+}
+
+/**
+ * Массовая загрузка изображений планировок.
+ * Формат имени файла: {layout_name}_{image_type}.{ext}
+ * Где image_type: main, extra, floor, usp
+ * 
+ * @param buildingId - ID дома
+ * @param files - Массив файлов для загрузки
+ */
+export const bulkUploadLayoutImages = async ({ buildingId, files }: { buildingId: number, files: File[] }): Promise<BulkUploadResult> => {
+  const formData = new FormData();
+  files.forEach(file => {
+    formData.append('files', file);
+  });
+  
+  const response = await apiClient.post(`/projects/0/buildings/${buildingId}/layouts/bulk-upload/`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};

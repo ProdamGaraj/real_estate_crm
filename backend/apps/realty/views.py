@@ -350,6 +350,132 @@ class PropertyUploadView(APIView):
             return Response({'error': f"Произошла ошибка: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class LayoutBulkUploadView(APIView):
+    """
+    Массовая загрузка изображений планировок.
+    
+    Формат имени файла: {layout_name}_{image_type}.{ext}
+    Где image_type: main, extra, floor, usp
+    
+    Примеры:
+    - 1-комн 35м_main.jpg -> планировка "1-комн 35м", поле main_layout_image
+    - Студия_floor.png -> планировка "Студия", поле floor_plan_image
+    
+    Если планировка не существует, она будет создана автоматически.
+    """
+    parser_classes = [MultiPartParser]
+    permission_classes = [IsAuthenticated, LayoutPermission]
+    
+    IMAGE_TYPE_MAP = {
+        'main': 'main_layout_image',
+        'extra': 'extra_layout_image', 
+        'floor': 'floor_plan_image',
+        'usp': 'usp_image',
+    }
+    
+    def post(self, request, building_pk, **kwargs):
+        import traceback as tb
+        try:
+            files = request.FILES.getlist('files')
+            if not files:
+                return Response(
+                    {'error': 'Файлы не найдены. Используйте поле "files" для загрузки.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            try:
+                building = Building.objects.get(pk=building_pk)
+            except Building.DoesNotExist:
+                return Response(
+                    {'error': 'Дом не найден'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Проверяем доступ по компании
+            user = request.user
+            if hasattr(user, 'profile'):
+                profile = user.profile
+                if not profile.is_system_admin:
+                    if not profile.company or building.project.company != profile.company:
+                        return Response(
+                            {'error': 'Нет доступа к этому дому'},
+                            status=status.HTTP_403_FORBIDDEN
+                        )
+            
+            results = {
+                'success': [],
+                'errors': [],
+                'created_layouts': [],
+            }
+            
+            for file in files:
+                filename = file.name
+                # Убираем расширение
+                name_without_ext = filename.rsplit('.', 1)[0] if '.' in filename else filename
+                
+                # Ищем разделитель типа изображения (последнее подчёркивание)
+                if '_' not in name_without_ext:
+                    # Если нет подчёркивания — используем всё имя как название планировки, тип = main
+                    layout_name = name_without_ext.strip()
+                    image_type = 'main'
+                else:
+                    # Разделяем на имя планировки и тип
+                    last_underscore = name_without_ext.rfind('_')
+                    potential_type = name_without_ext[last_underscore + 1:].lower().strip()
+                    
+                    # Проверяем, является ли последняя часть типом изображения
+                    if potential_type in self.IMAGE_TYPE_MAP:
+                        layout_name = name_without_ext[:last_underscore].strip()
+                        image_type = potential_type
+                    else:
+                        # Если последняя часть не тип — используем всё имя как название, тип = main
+                        layout_name = name_without_ext.strip()
+                        image_type = 'main'
+                
+                if not layout_name:
+                    results['errors'].append({
+                        'file': filename,
+                        'error': 'Название планировки не может быть пустым'
+                    })
+                    continue
+                
+                field_name = self.IMAGE_TYPE_MAP[image_type]
+                
+                # Находим или создаём планировку
+                layout, created = Layout.objects.get_or_create(
+                    building=building,
+                    name=layout_name
+                )
+                
+                if created:
+                    results['created_layouts'].append(layout_name)
+                
+                # Сохраняем изображение
+                setattr(layout, field_name, file)
+                layout.save()
+                
+                results['success'].append({
+                    'file': filename,
+                    'layout': layout_name,
+                    'field': field_name,
+                    'created': created
+                })
+            
+            return Response({
+                'message': f'Обработано файлов: {len(files)}',
+                'uploaded': len(results['success']),
+                'errors_count': len(results['errors']),
+                'created_layouts': results['created_layouts'],
+                'details': results
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': str(e),
+                'traceback': tb.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 # --- Views for Properties ---
 class PropertyDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = PropertyDetailSerializer
