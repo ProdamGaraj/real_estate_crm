@@ -209,7 +209,7 @@ class Property(models.Model):
                               verbose_name="Статус")
     unit_number = models.CharField(max_length=20, verbose_name="Номер объекта")
     floor = models.IntegerField(verbose_name="Этаж")
-    entrance = models.PositiveIntegerField(blank=True, null=True, verbose_name="Подъезд")
+    entrance = models.CharField(max_length=20, blank=True, null=True, verbose_name="Подъезд")
     riser = models.CharField(max_length=20, blank=True, verbose_name="Стояк")
     area = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Площадь (кв.м)")
     has_finishing = models.BooleanField(default=False, verbose_name="Наличие отделки")
@@ -237,7 +237,7 @@ class Property(models.Model):
     class Meta:
         verbose_name = "Объект недвижимости"
         verbose_name_plural = "Объекты недвижимости"
-        unique_together = ('building', 'unit_number')
+        unique_together = ('building', 'unit_number', 'entrance', 'floor')
         ordering = ['-created_at']
 
     def __str__(self):

@@ -96,6 +96,11 @@ const isPublicEndpoint = (url: string | undefined): boolean => {
 // Перехватчик ЗАПРОСОВ (добавляет токен в заголовок и проактивно обновляет его)
 apiClient.interceptors.request.use(
   async (config) => {
+    // Если отправляем FormData, удаляем Content-Type чтобы браузер сам установил с правильным boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     // Для публичных эндпоинтов (логин и т.д.) не добавляем токен и не обновляем его
     if (isPublicEndpoint(config.url)) {
       return config;

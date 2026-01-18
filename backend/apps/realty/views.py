@@ -3,7 +3,7 @@ import io
 import pandas as pd
 from django.http import HttpResponse
 from rest_framework import generics, status
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -282,70 +282,154 @@ class PropertyTemplateDownloadView(APIView):
 
 class PropertyUploadView(APIView):
     permission_classes = [IsAuthenticated, PropertyPermission]
-    parser_classes = [MultiPartParser]
+    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, project_pk, building_pk, format=None):
         file_obj = request.FILES.get('file')
         if not file_obj:
-            return Response({'error': 'Файл не найден'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Файл не найден', 'details': f'FILES: {list(request.FILES.keys())}, DATA: {list(request.data.keys())}'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             df = pd.read_excel(file_obj)
             building = Building.objects.get(pk=building_pk, project_id=project_pk)
+            
+            # Логирование для отладки
+            total_rows = len(df)
+            columns = list(df.columns)
+            
+            # Проверяем дубликаты в файле (по комбинации номер + подъезд + этаж)
+            # Заполняем NaN пустой строкой перед формированием ключа
+            df['_entrance_clean'] = df['Подъезд'].fillna('').astype(str).str.strip()
+            df['_unit_clean'] = df['Номер объекта'].fillna('').astype(str).str.strip()
+            df['_floor_clean'] = df['Этаж'].fillna('').astype(str).str.strip()
+            df['_unit_key'] = df['_unit_clean'] + '_' + df['_entrance_clean'] + '_' + df['_floor_clean']
+            duplicates_in_file = df[df['_unit_key'].duplicated()]['_unit_key'].unique().tolist()
+            
             # Маппинг кодов: код -> код (для валидации что код существует)
             valid_types = {k: k for k, v in Property.PropertyType.choices}
             valid_statuses = {k: k for k, v in Property.PropertyStatus.choices}
             allowed_statuses_from_excel = [Property.PropertyStatus.SELECTION, Property.PropertyStatus.RESERVE]
             created_count = 0
             updated_count = 0
+            skipped_empty = 0
+            skipped_no_unit = 0
+            skipped_duplicates = 0
+            errors_list = []
+            
+            # Отслеживаем обработанные номера в этой загрузке
+            processed_units = set()
+            
             for index, row in df.iterrows():
                 if row.isnull().all():
+                    skipped_empty += 1
                     continue
+                    
                 unit_number = row.get('Номер объекта')
-                if not unit_number:
+                # Проверяем на NaN и пустые значения
+                if pd.isna(unit_number) or unit_number is None or str(unit_number).strip() == '':
+                    skipped_no_unit += 1
                     continue
+                    
+                # Приводим к строке и убираем пробелы
+                unit_number = str(unit_number).strip()
+                
+                # Получаем подъезд и этаж для формирования уникального ключа
+                entrance_val = row.get('Подъезд')
+                floor_val = row.get('Этаж')
+                entrance_key = str(entrance_val).strip() if pd.notna(entrance_val) else ''
+                floor_key = str(int(floor_val)) if pd.notna(floor_val) else ''
+                unit_key = f"{unit_number}_{entrance_key}_{floor_key}"
+                
+                # Пропускаем дубликаты в файле (берём только первое вхождение)
+                if unit_key in processed_units:
+                    skipped_duplicates += 1
+                    continue
+                processed_units.add(unit_key)
+                
                 layout_name = row.get('Название планировки')
                 layout_obj = None
                 if layout_name and pd.notna(layout_name):
                     layout_obj, _ = Layout.objects.get_or_create(
                         building=building,
-                        name=layout_name
+                        name=str(layout_name).strip()
                     )
+                
+                # Безопасное получение и преобразование значений
+                floor_val = row.get('Этаж')
+                entrance_val = row.get('Подъезд')
+                riser_val = row.get('Стояк')
+                area_val = row.get('Площадь (кв.м)')
+                price_val = row.get('Стоимость')
+                
                 property_data = {
-                    'floor': row.get('Этаж'),
-                    'entrance': row.get('Подъезд'),
-                    'riser': row.get('Стояк'),
-                    'area': row.get('Площадь (кв.м)'),
-                    'price': row.get('Стоимость'),
-                    'has_finishing': row.get('Наличие отделки (TRUE/FALSE)', False),
-                    'description': row.get('Описание'),
+                    'floor': int(floor_val) if pd.notna(floor_val) else 0,
+                    'entrance': str(entrance_val).strip() if pd.notna(entrance_val) else None,
+                    'riser': str(riser_val).strip() if pd.notna(riser_val) else '',
+                    'area': float(area_val) if pd.notna(area_val) else 0,
+                    'price': float(price_val) if pd.notna(price_val) else 0,
+                    'has_finishing': bool(row.get('Наличие отделки (TRUE/FALSE)', False)),
+                    'description': str(row.get('Описание', '')).strip() if pd.notna(row.get('Описание')) else '',
                     'property_type': valid_types.get(row.get('Тип объекта'), Property.PropertyType.APARTMENT),
                     'layout': layout_obj,
                 }
+                
                 status_from_file = valid_statuses.get(row.get('Статус'), Property.PropertyStatus.SELECTION)
-                existing_property = Property.objects.filter(building=building, unit_number=unit_number).first()
-                if existing_property:
-                    for key, value in property_data.items():
-                        if pd.notna(value):
-                            setattr(existing_property, key, value)
-                    if existing_property.status in allowed_statuses_from_excel:
-                        if status_from_file in allowed_statuses_from_excel:
-                            existing_property.status = status_from_file
-                    existing_property.updated_by = request.user
-                    existing_property.save()
-                    updated_count += 1
-                else:
-                    if status_from_file not in allowed_statuses_from_excel:
-                        status_from_file = Property.PropertyStatus.SELECTION
-                    property_data['status'] = status_from_file
-                    Property.objects.create(
-                        building=building,
+                
+                try:
+                    # Ищем по building + unit_number + entrance + floor
+                    entrance_for_search = str(entrance_val).strip() if pd.notna(entrance_val) else None
+                    floor_for_search = int(floor_val) if pd.notna(floor_val) else 0
+                    existing_property = Property.objects.filter(
+                        building=building, 
                         unit_number=unit_number,
-                        created_by=request.user,
-                        **property_data
-                    )
-                    created_count += 1
-            return Response({'status': f'Успешно загружено. Создано: {created_count}, Обновлено: {updated_count}'},
-                            status=status.HTTP_200_OK)
+                        entrance=entrance_for_search,
+                        floor=floor_for_search
+                    ).first()
+                    if existing_property:
+                        for key, value in property_data.items():
+                            if value is not None:
+                                setattr(existing_property, key, value)
+                        if existing_property.status in allowed_statuses_from_excel:
+                            if status_from_file in allowed_statuses_from_excel:
+                                existing_property.status = status_from_file
+                        existing_property.updated_by = request.user
+                        existing_property.save()
+                        updated_count += 1
+                    else:
+                        if status_from_file not in allowed_statuses_from_excel:
+                            status_from_file = Property.PropertyStatus.SELECTION
+                        property_data['status'] = status_from_file
+                        Property.objects.create(
+                            building=building,
+                            unit_number=unit_number,
+                            created_by=request.user,
+                            **property_data
+                        )
+                        created_count += 1
+                except Exception as row_error:
+                    errors_list.append(f"Строка {index + 2}: {str(row_error)}")
+            
+            result_message = f'Успешно загружено. Создано: {created_count}, Обновлено: {updated_count}'
+            if skipped_empty > 0 or skipped_no_unit > 0 or skipped_duplicates > 0:
+                result_message += f'. Пропущено: {skipped_empty} пустых, {skipped_no_unit} без номера, {skipped_duplicates} дубликатов'
+            if duplicates_in_file:
+                result_message += f'. ВНИМАНИЕ: В файле найдены дубликаты номеров объектов!'
+            if errors_list:
+                result_message += f'. Ошибки в {len(errors_list)} строках'
+            
+            return Response({
+                'status': result_message,
+                'details': {
+                    'total_rows': total_rows,
+                    'columns': columns,
+                    'created': created_count,
+                    'updated': updated_count,
+                    'skipped_empty': skipped_empty,
+                    'skipped_no_unit': skipped_no_unit,
+                    'skipped_duplicates': skipped_duplicates,
+                    'duplicates_in_file': duplicates_in_file[:20] if duplicates_in_file else [],  # Первые 20 дубликатов
+                    'errors': errors_list[:10] if errors_list else []  # Первые 10 ошибок
+                }
+            }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': f"Произошла ошибка: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 

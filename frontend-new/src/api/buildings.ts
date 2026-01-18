@@ -24,7 +24,7 @@ export interface Property {
   area: number;
   price: number;
   floor: number;
-  entrance: number;
+  entrance: string | null;
   riser: string;
   has_finishing: boolean;
   layout: LayoutMini | null;
@@ -82,16 +82,33 @@ export const uploadProperties = async ({ projectId, buildingId, file }: { projec
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await apiClient.post(
-    `/projects/${projectId}/buildings/${buildingId}/upload-properties/`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+  // Получаем токен из localStorage
+  let accessToken = null;
+  try {
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage);
+      accessToken = parsed.state?.accessToken;
     }
-  );
-  return response.data;
+  } catch (error) {
+    console.error('Error reading auth token:', error);
+  }
+
+  // Используем native fetch для загрузки файла, чтобы избежать проблем с axios headers
+  const response = await fetch(`/api/projects/${projectId}/buildings/${buildingId}/upload-properties/`, {
+    method: 'POST',
+    headers: {
+      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Upload failed: ${response.status}`);
+  }
+
+  return response.json();
 };
 
 /**
