@@ -34,6 +34,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     'c0s9w1gq-8000.euw.devtunnels.ms',  # Tunnel для бэкенда (на всякий случай)
     'backend',  # Docker service name
+    'dvgorup.uz',  # Production domain
+    'www.dvgorup.uz',  # Production domain with www
 ] + [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
 
 # Парсинг CORS_ORIGINS из переменной окружения (для production сервера)
@@ -182,8 +184,12 @@ CORS_ALLOWED_ORIGINS = [
     'https://c0s9w1gq-5173.euw.devtunnels.ms',
     'https://c0s9w1gq-8000.euw.devtunnels.ms',
     'https://tws483gv-5173.euw.devtunnels.ms',
-    'https://tws483gv-8000.euw.devtunnels.ms'
-    # Backend tunnel
+    'https://tws483gv-8000.euw.devtunnels.ms',
+    # Production domain
+    'https://dvgorup.uz',
+    'https://www.dvgorup.uz',
+    'http://dvgorup.uz',
+    'http://www.dvgorup.uz',
 ] + [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
 
 # Дополнительные настройки CORS для работы с JWT
