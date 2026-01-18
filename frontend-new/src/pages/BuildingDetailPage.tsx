@@ -400,7 +400,7 @@ export default function BuildingDetailPage() {
 
       {/* ВКЛАДКА "ПЛАНИРОВКИ" */}
       <TabPanel value={tabValue} index={2}>
-        <LayoutsTab buildingId={Number(buildingId)} />
+        <LayoutsTab projectId={Number(projectId)} buildingId={Number(buildingId)} />
       </TabPanel>
 
       {/* ВКЛАДКА "ГАЛЕРЕЯ" */}

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getApplicationById, updateApplication, getRejectionReasons, deleteApplication } from '../api/applications';
 import { getApplicationStatuses } from '../api/settings';
-import type { ApplicationPayload, RejectionReason } from '../api/applications';
+import type { ApplicationPayload } from '../api/applications';
 import {
     Typography, CircularProgress, Alert, Paper, Grid, Box, Tabs, Tab, Button,
     Dialog, DialogTitle, DialogContent, DialogActions, Autocomplete, TextField, Chip, Link as MuiLink,
@@ -74,8 +74,8 @@ export default function ApplicationDetailPage() {
   });
 
   const { data: reasons, isLoading: isLoadingReasons } = useQuery({
-    queryKey: ['rejectionReasons', targetStatus],
-    queryFn: () => getRejectionReasons(targetStatus!),
+    queryKey: ['rejectionReasons'],
+    queryFn: () => getRejectionReasons(),
     enabled: !!targetStatus,
   });
 
@@ -85,13 +85,18 @@ export default function ApplicationDetailPage() {
     queryFn: () => getApplicationStatuses(true),
   });
 
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<ApplicationPayload>({
-    defaultValues: app,
-  });
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<ApplicationPayload>();
 
   useEffect(() => {
     if (app) {
-      reset(app);
+      reset({
+        interested_property_type: app.interested_property_type,
+        min_area: app.min_area ? Number(app.min_area) : null,
+        max_area: app.max_area ? Number(app.max_area) : null,
+        min_floor: app.min_floor,
+        max_floor: app.max_floor,
+        notes: app.notes,
+      });
     }
   }, [app, reset]);
 
@@ -128,8 +133,8 @@ export default function ApplicationDetailPage() {
   const currentStatus = applicationStatuses?.find(s => s.code === app?.status);
   const availableStatuses = applicationStatuses?.filter(s => s.code !== app?.status && s.is_active) || [];
 
-  const onReasonSubmit = (data: { rejection_reason_id: number }) => {
-    if (targetStatus && applicationId) {
+  const onReasonSubmit = (data: ApplicationPayload) => {
+    if (targetStatus && applicationId && data.rejection_reason_id) {
       const payload: ApplicationPayload = { status: targetStatus, rejection_reason_id: data.rejection_reason_id };
       updateMutation.mutate({ id: Number(applicationId), payload });
     }

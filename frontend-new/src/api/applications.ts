@@ -1,5 +1,6 @@
 import apiClient from './axios';
 import type { Client } from './clients'; // Импортируем тип клиента для вложенности
+import type { Meeting } from './meetings'; // Импортируем тип встречи
 
 /**
  * Тип для заявки в общем списке (краткая информация).
@@ -35,6 +36,7 @@ export interface ApplicationDetail extends Application {
   updated_at: string;
   logs: any[];
   rejection_reason: RejectionReason | null;
+  meetings: Meeting[];  // Встречи по заявке
 }
 
 /**

@@ -98,10 +98,10 @@ export const uploadProperties = async ({ projectId, buildingId, file }: { projec
  * Формирует URL для скачивания шаблона Excel для объектов.
  * @param projectId - ID проекта
  * @param buildingId - ID дома
- * @returns - Полный URL для скачивания.
+ * @returns - Относительный URL (без /api, т.к. используется с apiClient).
  */
 export const getPropertyTemplateUrl = (projectId: number, buildingId: number): string => {
-  return `${apiClient.defaults.baseURL}/projects/${projectId}/buildings/${buildingId}/download-template/`;
+  return `/projects/${projectId}/buildings/${buildingId}/download-template/`;
 };
 // Интерфейс для изображения в галерее дома
 export interface BuildingImage {

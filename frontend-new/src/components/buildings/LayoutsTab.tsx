@@ -18,10 +18,11 @@ import { useAuthStore } from '../../store/authStore';
 import { hasPermission } from '../../utils/permissions';
 
 interface LayoutsTabProps {
+  projectId: number;
   buildingId: number;
 }
 
-export default function LayoutsTab({ buildingId }: LayoutsTabProps) {
+export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +51,8 @@ export default function LayoutsTab({ buildingId }: LayoutsTabProps) {
 
   const handleDownloadTemplate = async () => {
     try {
-      const url = await getPropertyTemplateUrl(buildingId);
+      // Для window.open нужен полный путь с /api
+      const url = `/api${getPropertyTemplateUrl(projectId, buildingId)}`;
       window.open(url, '_blank');
     } catch {
       alert(t('pages.buildings.download_error'));
