@@ -1,11 +1,11 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link as RouterLink } from 'react-router-dom';
+import { useParams, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   getBuildingById, uploadProperties, getPropertyTemplateUrl, updateBuilding,
-  uploadBuildingImage, deleteBuildingImage
+  uploadBuildingImage, deleteBuildingImage, deleteBuilding
 } from '../api/buildings';
 import type { Property, BuildingUpdatePayload } from '../api/buildings';
 import { getBuildingTypes } from '../api/projects';
@@ -17,7 +17,8 @@ import { styled } from '@mui/material/styles';
 import {
   Box, CircularProgress, Paper, Typography, ToggleButtonGroup, ToggleButton, Alert, Link as MuiLink,
   Stack, Button, Tabs, Tab, Grid, TextField, FormControl, InputLabel, Select, MenuItem,
-  Card, CardMedia, CardActions, IconButton, CardHeader, CardContent
+  Card, CardMedia, CardActions, IconButton, CardHeader, CardContent,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
@@ -69,14 +70,17 @@ const VisuallyHiddenInput = styled('input')({
 
 export default function BuildingDetailPage() {
   const { projectId, buildingId } = useParams<{ projectId: string; buildingId: string }>();
+  const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const [tabValue, setTabValue] = useState(0);
   const [viewMode, setViewMode] = useState<'table' | 'chessboard'>('chessboard');
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const canEditBuilding = hasPermission(user, 'EDIT', 'BUILDING');
+  const canDeleteBuilding = hasPermission(user, 'DELETE', 'BUILDING');
   const canEditProperty = hasPermission(user, 'EDIT', 'PROPERTY');
   const [propertyFilters, setPropertyFilters] = useState({ unit_number: '', status: '' });
 
@@ -138,6 +142,14 @@ export default function BuildingDetailPage() {
     mutationFn: (imageId: number) => deleteBuildingImage({ projectId: Number(projectId), buildingId: Number(buildingId), imageId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['building', buildingId] });
+    },
+  });
+
+  const deleteBuildingMutation = useMutation({
+    mutationFn: () => deleteBuilding({ projectId: Number(projectId), buildingId: Number(buildingId) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['buildings', projectId] });
+      navigate(`/projects/${projectId}`);
     },
   });
 
@@ -222,10 +234,24 @@ export default function BuildingDetailPage() {
   return (
     <Stack spacing={3}>
       <Paper sx={{ p: 2 }}>
-        <Typography variant="h4">{building.name}</Typography>
-        <Typography color="text.secondary">
-          {t('pages.buildings.project')}: <MuiLink component={RouterLink} to={`/projects/${projectId}`} underline="hover">{building.project.name}</MuiLink>
-        </Typography>
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Box>
+            <Typography variant="h4">{building.name}</Typography>
+            <Typography color="text.secondary">
+              {t('pages.buildings.project')}: <MuiLink component={RouterLink} to={`/projects/${projectId}`} underline="hover">{building.project.name}</MuiLink>
+            </Typography>
+          </Box>
+          {canDeleteBuilding && (
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              {t('pages.buildings.delete_building')}
+            </Button>
+          )}
+        </Stack>
       </Paper>
 
       <Box>
@@ -464,6 +490,27 @@ export default function BuildingDetailPage() {
         open={!!selectedProperty}
         onClose={() => setSelectedProperty(null)}
       />
+
+      {/* Диалог подтверждения удаления дома */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>{t('pages.buildings.delete_building')}?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('pages.buildings.delete_building_confirm', { name: building?.name })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button 
+            color="error" 
+            variant="contained"
+            onClick={() => deleteBuildingMutation.mutate()}
+            disabled={deleteBuildingMutation.isPending}
+          >
+            {deleteBuildingMutation.isPending ? t('common.deleting') : t('common.delete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

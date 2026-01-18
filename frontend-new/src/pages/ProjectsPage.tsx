@@ -1,22 +1,37 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, CircularProgress, Alert, Link as MuiLink, TextField } from '@mui/material';
-import type { GridColDef } from '@mui/x-data-grid';
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Alert, Link as MuiLink, TextField, IconButton } from '@mui/material';
+import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link as RouterLink } from 'react-router-dom';
-import { getProjects } from '../api/projects';
-import type { ProjectFilters } from '../api/projects';
+import { getProjects, deleteProject } from '../api/projects';
+import type { ProjectFilters, Project } from '../api/projects';
 import ProjectForm from '../components/projects/ProjectForm';
 import { useForm } from 'react-hook-form';
 import { useAuthStore } from '../store/authStore';
 import { hasPermission } from '../utils/permissions';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function ProjectsPage() {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const canCreate = hasPermission(user, 'ADD', 'PROJECT');
+  const canDelete = hasPermission(user, 'DELETE', 'PROJECT');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: (projectId: number) => deleteProject(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setDeleteDialogOpen(false);
+      setProjectToDelete(null);
+    },
+  });
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: t('table.id'), width: 90 },
@@ -38,9 +53,25 @@ export default function ProjectsPage() {
       width: 200,
       valueGetter: (value) => new Date(value),
     },
+    ...(canDelete ? [{
+      field: 'actions',
+      headerName: t('common.actions'),
+      width: 100,
+      sortable: false,
+      renderCell: (params: GridRenderCellParams<Project>) => (
+        <IconButton
+          color="error"
+          onClick={() => {
+            setProjectToDelete(params.row as Project);
+            setDeleteDialogOpen(true);
+          }}
+        >
+          <DeleteIcon />
+        </IconButton>
+      ),
+    }] : []),
   ];
   const [filters, setFilters] = useState<ProjectFilters>({});
-  const queryClient = useQueryClient();
   const { register, watch } = useForm<ProjectFilters>();
 
   useEffect(() => {
@@ -105,6 +136,27 @@ export default function ProjectsPage() {
           disableRowSelectionOnClick
         />
       </Box>
+
+      {/* Диалог подтверждения удаления проекта */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>{t('pages.projects.delete_project')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('pages.projects.delete_project_confirm', { name: projectToDelete?.name })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>{t('common.cancel')}</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => projectToDelete && deleteProjectMutation.mutate(projectToDelete.id)}
+            disabled={deleteProjectMutation.isPending}
+          >
+            {deleteProjectMutation.isPending ? <CircularProgress size={20} /> : t('common.delete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

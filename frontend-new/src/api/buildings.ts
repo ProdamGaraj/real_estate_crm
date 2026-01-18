@@ -125,6 +125,11 @@ export const uploadBuildingImage = async ({ projectId, buildingId, formData }: {
   return response.data;
 };
 
+// Функция для удаления дома
+export const deleteBuilding = async ({ projectId, buildingId }: { projectId: number; buildingId: number }): Promise<void> => {
+  await apiClient.delete(`/projects/${projectId}/buildings/${buildingId}/`);
+};
+
 // Функция для удаления изображения из галереи дома
 export const deleteBuildingImage = async ({ projectId, buildingId, imageId }: { projectId: number; buildingId: number; imageId: number }): Promise<void> => {
   await apiClient.delete(`/projects/${projectId}/buildings/${buildingId}/gallery/${imageId}/`);

@@ -19,7 +19,8 @@ import {
 } from '@mui/material';
 import { getCompanies } from '../api/permissions';
 import { useAuthStore } from '../store/authStore';
-import type { GridColDef } from '@mui/x-data-grid';
+import { hasPermission } from '../utils/permissions';
+import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import LocalizedDateField from '../components/common/LocalizedDateField';
 import BuildingForm from '../components/buildings/BuildingForm';
@@ -55,7 +56,10 @@ export default function ProjectDetailPage() {
   const [buildingToDelete, setBuildingToDelete] = useState<Building | null>(null);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isSystemAdmin = useAuthStore((state) => state.user?.is_system_admin);
+  const { user } = useAuthStore();
+  const isSystemAdmin = user?.is_system_admin;
+  const canDeleteProject = hasPermission(user, 'DELETE', 'PROJECT');
+  const canDeleteBuilding = hasPermission(user, 'DELETE', 'BUILDING');
 
   const [buildingFilters, setBuildingFilters] = useState<BuildingFilters>({});
   const { register: registerBuildingFilter, watch: watchBuildingFilter } = useForm<BuildingFilters>();
@@ -182,23 +186,23 @@ export default function ProjectDetailPage() {
       )
     },
     { field: 'floors_count', headerName: t('pages.buildings.floors_count') },
-    {
+    ...(canDeleteBuilding ? [{
       field: 'actions',
       headerName: t('common.actions'),
       width: 100,
       sortable: false,
-      renderCell: (params) => (
+      renderCell: (params: GridRenderCellParams<Building>) => (
         <IconButton
           color="error"
           onClick={() => {
-            setBuildingToDelete(params.row);
+            setBuildingToDelete(params.row as Building);
             setDeleteBuildingDialogOpen(true);
           }}
         >
           <DeleteIcon />
         </IconButton>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -214,14 +218,16 @@ export default function ProjectDetailPage() {
                   <Typography color="text.secondary">{project.address}</Typography>
               </Box>
             </Stack>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={() => setDeleteProjectDialogOpen(true)}
-            >
-              {t('pages.projects.delete_project')}
-            </Button>
+            {canDeleteProject && (
+              <Button
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteIcon />}
+                onClick={() => setDeleteProjectDialogOpen(true)}
+              >
+                {t('pages.projects.delete_project')}
+              </Button>
+            )}
           </Stack>
       </Paper>
 
