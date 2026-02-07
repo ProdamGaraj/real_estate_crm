@@ -562,9 +562,11 @@ class LayoutBulkUploadView(APIView):
                     if created:
                         results['created_layouts'].append(layout_name)
                     
-                    # Сохраняем изображение
+                    # Сохраняем изображение с оригинальным именем файла
                     logger.debug(f"[LayoutBulkUpload] Сохраняем файл в поле {field_name}")
-                    setattr(layout, field_name, file)
+                    # Используем .save() вместо прямого присваивания, чтобы сохранить оригинальное имя файла
+                    # (Django не санитизирует имя при явном save)
+                    getattr(layout, field_name).save(filename, file, save=False)
                     layout.save()
                     logger.info(f"[LayoutBulkUpload] ✓ Файл {filename} успешно сохранён")
                     
