@@ -462,6 +462,8 @@ class LayoutBulkUploadView(APIView):
     
     def post(self, request, building_pk, **kwargs):
         import traceback as tb
+        from django.core.exceptions import TooManyFilesSent
+        
         logger.info(f"[LayoutBulkUpload] Начало загрузки файлов для дома {building_pk}")
         
         try:
@@ -590,6 +592,14 @@ class LayoutBulkUploadView(APIView):
                 'created_layouts': results['created_layouts'],
                 'details': results
             }, status=status.HTTP_200_OK)
+            
+        except TooManyFilesSent as e:
+            error_msg = f"Слишком много файлов. Максимум: 10000 файлов в одном запросе. Загружайте в несколько раз."
+            logger.error(f"[LayoutBulkUpload] {error_msg}")
+            return Response({
+                'error': error_msg,
+                'detail': 'Разделите загрузку на несколько запросов'
+            }, status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
             
         except Exception as e:
             error_msg = f"Критическая ошибка при загрузке: {str(e)}"

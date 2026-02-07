@@ -346,6 +346,18 @@ if not DEBUG:
     # Прокси-заголовки (если за nginx/load balancer)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# =============================================================================
+# НАСТРОЙКИ ЗАГРУЗКИ ФАЙЛОВ
+# =============================================================================
+# Максимальное количество файлов в одном запросе (по умолчанию 2500)
+DATA_UPLOAD_MAX_NUMBER_FILES = 10000
+
+# Максимальный размер файла в памяти перед использованием диска (32 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 33554432  # 32 * 1024 * 1024
+
+# Максимальный размер одного поля при загрузке (100 MB)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 * 1024 * 1024
+
 # CSRF_TRUSTED_ORIGINS для production (из переменной окружения)
 _csrf_trusted_env = config('CSRF_TRUSTED_ORIGINS', default='')
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_env.split(',') if o.strip()]
