@@ -1,4 +1,5 @@
 import io
+import logging
 
 import pandas as pd
 from django.http import HttpResponse
@@ -9,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
+
+logger = logging.getLogger(__name__)
 from permissions.permissions import (
     DiscountPermission, ProjectPermission, BuildingPermission, 
     BuildingTypePermission, PropertyPermission, LayoutPermission,
@@ -459,9 +462,14 @@ class LayoutBulkUploadView(APIView):
     
     def post(self, request, building_pk, **kwargs):
         import traceback as tb
+        logger.info(f"[LayoutBulkUpload] Начало загрузки файлов для дома {building_pk}")
+        
         try:
             files = request.FILES.getlist('files')
+            logger.info(f"[LayoutBulkUpload] Получено файлов: {len(files)}")
+            
             if not files:
+                logger.warning(f"[LayoutBulkUpload] Файлы не найдены в запросе")
                 return Response(
                     {'error': 'Файлы не найдены. Используйте поле "files" для загрузки.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -469,7 +477,9 @@ class LayoutBulkUploadView(APIView):
             
             try:
                 building = Building.objects.get(pk=building_pk)
+                logger.info(f"[LayoutBulkUpload] Найден дом: {building.name}")
             except Building.DoesNotExist:
+                logger.error(f"[LayoutBulkUpload] Дом с ID {building_pk} не найден")
                 return Response(
                     {'error': 'Дом не найден'},
                     status=status.HTTP_404_NOT_FOUND
@@ -477,14 +487,18 @@ class LayoutBulkUploadView(APIView):
             
             # Проверяем доступ по компании
             user = request.user
+            logger.info(f"[LayoutBulkUpload] Пользователь: {user.username}")
+            
             if hasattr(user, 'profile'):
                 profile = user.profile
                 if not profile.is_system_admin:
                     if not profile.company or building.project.company != profile.company:
+                        logger.error(f"[LayoutBulkUpload] Пользователь {user.username} не имеет доступ к дому {building_pk}")
                         return Response(
                             {'error': 'Нет доступа к этому дому'},
                             status=status.HTTP_403_FORBIDDEN
                         )
+                logger.info(f"[LayoutBulkUpload] Доступ разрешён для пользователя {user.username}")
             
             results = {
                 'success': [],
@@ -492,58 +506,82 @@ class LayoutBulkUploadView(APIView):
                 'created_layouts': [],
             }
             
-            for file in files:
+            for idx, file in enumerate(files):
                 filename = file.name
-                # Убираем расширение
-                name_without_ext = filename.rsplit('.', 1)[0] if '.' in filename else filename
+                logger.info(f"[LayoutBulkUpload] Обработка файла {idx + 1}/{len(files)}: {filename} (размер: {file.size} байт)")
                 
-                # Ищем разделитель типа изображения (последнее подчёркивание)
-                if '_' not in name_without_ext:
-                    # Если нет подчёркивания — используем всё имя как название планировки, тип = main
-                    layout_name = name_without_ext.strip()
-                    image_type = 'main'
-                else:
-                    # Разделяем на имя планировки и тип
-                    last_underscore = name_without_ext.rfind('_')
-                    potential_type = name_without_ext[last_underscore + 1:].lower().strip()
+                try:
+                    # Убираем расширение
+                    name_without_ext = filename.rsplit('.', 1)[0] if '.' in filename else filename
+                    file_ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                    logger.debug(f"[LayoutBulkUpload] Имя без расширения: {name_without_ext}, расширение: {file_ext}")
                     
-                    # Проверяем, является ли последняя часть типом изображения
-                    if potential_type in self.IMAGE_TYPE_MAP:
-                        layout_name = name_without_ext[:last_underscore].strip()
-                        image_type = potential_type
-                    else:
-                        # Если последняя часть не тип — используем всё имя как название, тип = main
+                    # Ищем разделитель типа изображения (последнее подчёркивание)
+                    if '_' not in name_without_ext:
+                        # Если нет подчёркивания — используем всё имя как название планировки, тип = main
                         layout_name = name_without_ext.strip()
                         image_type = 'main'
-                
-                if not layout_name:
+                        logger.debug(f"[LayoutBulkUpload] Нет подчёркивания, используется тип: main")
+                    else:
+                        # Разделяем на имя планировки и тип
+                        last_underscore = name_without_ext.rfind('_')
+                        potential_type = name_without_ext[last_underscore + 1:].lower().strip()
+                        
+                        # Проверяем, является ли последняя часть типом изображения
+                        if potential_type in self.IMAGE_TYPE_MAP:
+                            layout_name = name_without_ext[:last_underscore].strip()
+                            image_type = potential_type
+                            logger.debug(f"[LayoutBulkUpload] Найден тип: {image_type}")
+                        else:
+                            # Если последняя часть не тип — используем всё имя как название, тип = main
+                            layout_name = name_without_ext.strip()
+                            image_type = 'main'
+                            logger.debug(f"[LayoutBulkUpload] Тип не распознан '{potential_type}', используется default: main")
+                    
+                    if not layout_name:
+                        error_msg = 'Название планировки не может быть пустым'
+                        logger.warning(f"[LayoutBulkUpload] {error_msg} для файла {filename}")
+                        results['errors'].append({
+                            'file': filename,
+                            'error': error_msg
+                        })
+                        continue
+                    
+                    field_name = self.IMAGE_TYPE_MAP[image_type]
+                    logger.info(f"[LayoutBulkUpload] Планировка: '{layout_name}', поле: {field_name}")
+                    
+                    # Находим или создаём планировку
+                    layout, created = Layout.objects.get_or_create(
+                        building=building,
+                        name=layout_name
+                    )
+                    logger.info(f"[LayoutBulkUpload] {'Создана новая' if created else 'Найдена существующая'} планировка: {layout.name} (ID: {layout.id})")
+                    
+                    if created:
+                        results['created_layouts'].append(layout_name)
+                    
+                    # Сохраняем изображение
+                    logger.debug(f"[LayoutBulkUpload] Сохраняем файл в поле {field_name}")
+                    setattr(layout, field_name, file)
+                    layout.save()
+                    logger.info(f"[LayoutBulkUpload] ✓ Файл {filename} успешно сохранён")
+                    
+                    results['success'].append({
+                        'file': filename,
+                        'layout': layout_name,
+                        'field': field_name,
+                        'created': created
+                    })
+                    
+                except Exception as e:
+                    error_msg = f"Ошибка при обработке файла: {str(e)}"
+                    logger.error(f"[LayoutBulkUpload] {error_msg}\n{tb.format_exc()}")
                     results['errors'].append({
                         'file': filename,
-                        'error': 'Название планировки не может быть пустым'
+                        'error': error_msg
                     })
-                    continue
-                
-                field_name = self.IMAGE_TYPE_MAP[image_type]
-                
-                # Находим или создаём планировку
-                layout, created = Layout.objects.get_or_create(
-                    building=building,
-                    name=layout_name
-                )
-                
-                if created:
-                    results['created_layouts'].append(layout_name)
-                
-                # Сохраняем изображение
-                setattr(layout, field_name, file)
-                layout.save()
-                
-                results['success'].append({
-                    'file': filename,
-                    'layout': layout_name,
-                    'field': field_name,
-                    'created': created
-                })
+            
+            logger.info(f"[LayoutBulkUpload] Завершена загрузка. Успешно: {len(results['success'])}, Ошибок: {len(results['errors'])}, Создано планировок: {len(results['created_layouts'])}")
             
             return Response({
                 'message': f'Обработано файлов: {len(files)}',
@@ -554,9 +592,11 @@ class LayoutBulkUploadView(APIView):
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
+            error_msg = f"Критическая ошибка при загрузке: {str(e)}"
+            logger.critical(f"[LayoutBulkUpload] {error_msg}\n{tb.format_exc()}")
             return Response({
-                'error': str(e),
-                'traceback': tb.format_exc()
+                'error': error_msg,
+                'detail': 'Проверьте логи сервера для подробной информации'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
