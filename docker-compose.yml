@@ -33,12 +33,12 @@ services:
     container_name: crm_backend
     restart: unless-stopped
     volumes:
-      # Медиа файлы (изображения, документы) - доступны для изменения
-      - media_buildings:/app/media/buildings
-      - media_deals:/app/media/deals
-      - media_layouts:/app/media/layouts
-      - media_projects:/app/media/projects
-      - media_templates:/app/media/templates
+      # Медиа файлы (изображения, документы) - прямые пути на диск
+      - ./backend/media/buildings:/app/media/buildings
+      - ./backend/media/deals:/app/media/deals
+      - ./backend/media/layouts:/app/media/layouts
+      - ./backend/media/projects:/app/media/projects
+      - ./backend/media/templates:/app/media/templates
       # Статические файлы Django
       - static_files:/app/staticfiles
       # Логи
@@ -122,12 +122,12 @@ services:
       - certbot_www:/var/www/certbot:ro
       # Логи
       - nginx_logs:/var/log/nginx
-      # Media volumes для прямой отдачи файлов
-      - media_buildings:/app/media/buildings:ro
-      - media_deals:/app/media/deals:ro
-      - media_layouts:/app/media/layouts:ro
-      - media_projects:/app/media/projects:ro
-      - media_templates:/app/media/templates:ro
+      # Media volumes - прямые пути на диск для прямой отдачи файлов
+      - ./backend/media/buildings:/app/media/buildings:ro
+      - ./backend/media/deals:/app/media/deals:ro
+      - ./backend/media/layouts:/app/media/layouts:ro
+      - ./backend/media/projects:/app/media/projects:ro
+      - ./backend/media/templates:/app/media/templates:ro
     depends_on:
       - frontend
       - backend
@@ -177,19 +177,6 @@ services:
 volumes:
   # База данных PostgreSQL
   postgres_data:
-    driver: local
-  
-  # Медиа файлы backend (изображения, документы)
-  # Каждая папка в отдельном volume для удобства управления
-  media_buildings:
-    driver: local
-  media_deals:
-    driver: local
-  media_layouts:
-    driver: local
-  media_projects:
-    driver: local
-  media_templates:
     driver: local
   
   # Статические файлы Django (CSS, JS для admin)
