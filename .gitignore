@@ -42,3 +42,4 @@ backend/sqlite_export.json
 *.sql
 backups
 all
+rename_files.sh
