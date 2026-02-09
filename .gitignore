@@ -41,3 +41,4 @@ backend/full_dump_clean.json
 backend/sqlite_export.json
 *.sql
 backups
+all
