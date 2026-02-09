@@ -562,13 +562,33 @@ class LayoutBulkUploadView(APIView):
                     if created:
                         results['created_layouts'].append(layout_name)
                     
-                    # Сохраняем изображение с оригинальным именем файла
-                    logger.debug(f"[LayoutBulkUpload] Сохраняем файл в поле {field_name}")
-                    # Используем .save() вместо прямого присваивания, чтобы сохранить оригинальное имя файла
-                    # (Django не санитизирует имя при явном save)
-                    getattr(layout, field_name).save(filename, file, save=False)
-                    layout.save()
-                    logger.info(f"[LayoutBulkUpload] ✓ Файл {filename} успешно сохранён")
+                    # Сохраняем файл напрямую на диск под MEDIA_ROOT, чтобы сохранить оригинальное имя
+                    logger.debug(f"[LayoutBulkUpload] Сохраняем файл в поле {field_name} (прямой записью)")
+                    try:
+                        from django.conf import settings
+                        import os
+
+                        # Получаем upload_to из поля модели (например 'layouts/main/')
+                        upload_to = layout._meta.get_field(field_name).upload_to or ''
+                        # Относительный путь внутри MEDIA_ROOT
+                        rel_path = os.path.join(upload_to, filename)
+                        # Нормализация разделителей
+                        rel_path = rel_path.replace('\\', '/')
+                        abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+                        os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+
+                        # Пишем файл по частям
+                        with open(abs_path, 'wb') as dst:
+                            for chunk in file.chunks():
+                                dst.write(chunk)
+
+                        # Обновляем поле модели, указывая относительный путь
+                        setattr(layout, field_name, rel_path)
+                        layout.save()
+                        logger.info(f"[LayoutBulkUpload] ✓ Файл {filename} успешно сохранён -> {rel_path}")
+                    except Exception as write_err:
+                        logger.error(f"[LayoutBulkUpload] Ошибка при сохранении файла напрямую: {write_err}\n{tb.format_exc()}")
+                        raise
                     
                     results['success'].append({
                         'file': filename,
