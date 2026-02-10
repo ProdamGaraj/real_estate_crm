@@ -311,7 +311,7 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,                  # Старый refresh-токен будет добавлен в черный список
     "UPDATE_LAST_LOGIN": True,                         # Обновлять поле last_login у пользователя при входе
 }
-SITE_URL = 'http://127.0.0.1:8000'
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
 
 # Email settings (для восстановления пароля)
 # В продакшене замените на реальные настройки SMTP
