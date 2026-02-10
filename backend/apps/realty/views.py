@@ -915,13 +915,21 @@ API_KEY_PARAMETER = OpenApiParameter(
 class PublicProjectListView(generics.ListAPIView):
     """
     Публичный список проектов. Требует валидный API-ключ партнёра.
+    Показывает только проекты компаний, привязанных к API-ключу.
     """
-    queryset = Project.objects.filter(
-        buildings__status=Building.BuildingStatus.FOR_SALE
-    ).distinct()
     serializer_class = PublicProjectListSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerViewProjectsScope]
+
+    def get_queryset(self):
+        queryset = Project.objects.filter(
+            buildings__status=Building.BuildingStatus.FOR_SALE
+        ).distinct()
+        # Фильтруем по компаниям партнёра
+        partner_companies = getattr(self.request, 'partner_companies', [])
+        if partner_companies:
+            queryset = queryset.filter(company__in=partner_companies)
+        return queryset
 
 
 @extend_schema(
@@ -948,11 +956,18 @@ class PublicProjectListView(generics.ListAPIView):
 class PublicProjectDetailView(generics.RetrieveAPIView):
     """
     Публичная детальная страница проекта. Требует валидный API-ключ партнёра.
+    Показывает только проекты компаний, привязанных к API-ключу.
     """
-    queryset = Project.objects.all()
     serializer_class = PublicProjectDetailSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerViewProjectsScope]
+
+    def get_queryset(self):
+        queryset = Project.objects.all()
+        partner_companies = getattr(self.request, 'partner_companies', [])
+        if partner_companies:
+            queryset = queryset.filter(company__in=partner_companies)
+        return queryset
 
 
 @extend_schema(
@@ -976,11 +991,18 @@ class PublicProjectDetailView(generics.RetrieveAPIView):
 class PublicBuildingDetailView(generics.RetrieveAPIView):
     """
     Публичная детальная страница дома. Требует валидный API-ключ партнёра.
+    Показывает только здания компаний, привязанных к API-ключу.
     """
-    queryset = Building.objects.filter(status=Building.BuildingStatus.FOR_SALE)
     serializer_class = PublicBuildingDetailSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerViewBuildingsScope]
+
+    def get_queryset(self):
+        queryset = Building.objects.filter(status=Building.BuildingStatus.FOR_SALE)
+        partner_companies = getattr(self.request, 'partner_companies', [])
+        if partner_companies:
+            queryset = queryset.filter(project__company__in=partner_companies)
+        return queryset
 
 
 @extend_schema(
@@ -1010,7 +1032,12 @@ class PublicLayoutListView(generics.ListAPIView):
     
     def get_queryset(self):
         building_id = self.kwargs.get('building_pk')
-        return Layout.objects.filter(
+        queryset = Layout.objects.filter(
             building_id=building_id,
             building__status=Building.BuildingStatus.FOR_SALE
         )
+        # Фильтруем по компаниям партнёра
+        partner_companies = getattr(self.request, 'partner_companies', [])
+        if partner_companies:
+            queryset = queryset.filter(building__project__company__in=partner_companies)
+        return queryset
