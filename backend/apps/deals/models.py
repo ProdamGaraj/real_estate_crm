@@ -28,6 +28,15 @@ class PaymentType(models.Model):
 
 class Deal(models.Model):
     """ Сделка """
+    # --- Привязка к компании ---
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.PROTECT,
+        related_name='deals',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
 
     class DealStatus(models.TextChoices):
         BOOKING = 'BOOKING', 'Бронь'

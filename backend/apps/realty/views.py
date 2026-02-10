@@ -42,6 +42,7 @@ class ProjectListView(generics.ListCreateAPIView):
         Фильтрация проектов по компании пользователя.
         Системные администраторы видят все проекты.
         """
+        from django.db.models import Q
         user = self.request.user
         queryset = Project.objects.all()
         
@@ -51,9 +52,13 @@ class ProjectListView(generics.ListCreateAPIView):
             # Системный админ видит все проекты
             if profile.is_system_admin:
                 return queryset
-            # Обычные пользователи видят только проекты своей компании
+            # Обычные пользователи видят проекты своей компании
+            # + проекты без компании, которые они создали (чтобы не терялись)
             if profile.company:
-                return queryset.filter(company=profile.company)
+                return queryset.filter(
+                    Q(company=profile.company) |
+                    Q(company__isnull=True, created_by=user)
+                )
             # Если у пользователя нет компании - не видит никаких проектов
             return queryset.none()
         
@@ -67,11 +72,21 @@ class ProjectListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         """
         При создании проекта автоматически назначаем компанию пользователя.
+        Системные администраторы могут указать компанию вручную.
         """
         user = self.request.user
-        company = None
-        if hasattr(user, 'profile') and user.profile.company:
+        company = serializer.validated_data.get('company', None)
+        
+        # Если компания не указана в запросе — берём из профиля
+        if company is None and hasattr(user, 'profile') and user.profile.company:
             company = user.profile.company
+        
+        if company is None:
+            from rest_framework import serializers as drf_serializers
+            raise drf_serializers.ValidationError(
+                {'company': 'Необходимо указать компанию для проекта.'}
+            )
+        
         serializer.save(created_by=user, company=company)
 
 class ProjectImageDetailView(generics.DestroyAPIView):
@@ -460,6 +475,54 @@ class LayoutBulkUploadView(APIView):
         'usp': 'usp_image',
     }
     
+    # Маппинг латиница <-> кириллица для первой буквы имени планировки
+    LATIN_TO_CYRILLIC = {'A': 'А', 'B': 'Б', 'V': 'В', 'G': 'Г', 'D': 'Д',
+                         'E': 'Е', 'K': 'К', 'M': 'М', 'N': 'Н', 'O': 'О',
+                         'P': 'Р', 'S': 'С', 'T': 'Т'}
+    CYRILLIC_TO_LATIN = {v: k for k, v in LATIN_TO_CYRILLIC.items()}
+    
+    def _find_or_create_layout(self, building, layout_name):
+        """
+        Умный поиск планировки: сначала точное совпадение, потом с учётом
+        латиница/кириллица, и только если ничего нет — создаёт новую.
+        """
+        # 1. Точное совпадение
+        layout = Layout.objects.filter(building=building, name=layout_name).first()
+        if layout:
+            return layout, False
+        
+        # 2. Пробуем альтернативное написание (латиница <-> кириллица)
+        alt_name = layout_name
+        for lat, cyr in self.LATIN_TO_CYRILLIC.items():
+            if layout_name.startswith(lat + '-'):
+                alt_name = cyr + layout_name[1:]
+                break
+            if layout_name.startswith(cyr + '-'):
+                alt_name = lat + layout_name[len(cyr):]
+                break
+        
+        if alt_name != layout_name:
+            layout = Layout.objects.filter(building=building, name=alt_name).first()
+            if layout:
+                logger.info(f"[LayoutBulkUpload] Найдена планировка по альт. имени: '{layout_name}' -> '{alt_name}'")
+                return layout, False
+        
+        # 3. Регистронезависимый поиск
+        layout = Layout.objects.filter(building=building, name__iexact=layout_name).first()
+        if layout:
+            logger.info(f"[LayoutBulkUpload] Найдена планировка (case-insensitive): '{layout_name}' -> '{layout.name}'")
+            return layout, False
+        
+        if alt_name != layout_name:
+            layout = Layout.objects.filter(building=building, name__iexact=alt_name).first()
+            if layout:
+                logger.info(f"[LayoutBulkUpload] Найдена планировка (case-insensitive alt): '{layout_name}' -> '{layout.name}'")
+                return layout, False
+        
+        # 4. Ничего не найдено — создаём новую
+        layout = Layout.objects.create(building=building, name=layout_name)
+        return layout, True
+    
     def post(self, request, building_pk, **kwargs):
         import traceback as tb
         from django.core.exceptions import TooManyFilesSent
@@ -552,11 +615,8 @@ class LayoutBulkUploadView(APIView):
                     field_name = self.IMAGE_TYPE_MAP[image_type]
                     logger.info(f"[LayoutBulkUpload] Планировка: '{layout_name}', поле: {field_name}")
                     
-                    # Находим или создаём планировку
-                    layout, created = Layout.objects.get_or_create(
-                        building=building,
-                        name=layout_name
-                    )
+                    # Умный поиск планировки (с учётом латиница/кириллица)
+                    layout, created = self._find_or_create_layout(building, layout_name)
                     logger.info(f"[LayoutBulkUpload] {'Создана новая' if created else 'Найдена существующая'} планировка: {layout.name} (ID: {layout.id})")
                     
                     if created:

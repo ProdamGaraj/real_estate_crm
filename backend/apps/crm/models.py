@@ -67,6 +67,15 @@ class ApplicationStatus(models.Model):
 
 class Application(models.Model):
     """ Заявка от клиента """
+    # --- Привязка к компании ---
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.PROTECT,
+        related_name='applications',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
 
     # Сохраняем для обратной совместимости и миграции
     class ApplicationStatusChoices(models.TextChoices):
@@ -162,6 +171,15 @@ class ApplicationLog(models.Model):
 
 class Client(models.Model):
     """ Клиент """
+    # --- Привязка к компании ---
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.PROTECT,
+        related_name='clients',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
 
     class Gender(models.TextChoices):
         MALE = 'MALE', 'Мужской'
@@ -263,6 +281,15 @@ class ClientLog(models.Model):
 
 class Meeting(models.Model):
     """ Встреча с клиентом """
+    # --- Привязка к компании ---
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.PROTECT,
+        related_name='meetings',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
 
     class MeetingStatus(models.TextChoices):
         NEW = 'NEW', 'Новая встреча'

@@ -181,11 +181,16 @@ class DealPaymentScheduleCreateView(APIView):
             serializer = PaymentSerializer(data=payment_data)
             if serializer.is_valid(raise_exception=True):
                 # Сохраняем платеж, привязывая его к сделке, клиенту и текущему пользователю
+                # Компанию берём из сделки или из профиля пользователя
+                payment_company = deal.company
+                if not payment_company and hasattr(request.user, 'profile') and request.user.profile.company:
+                    payment_company = request.user.profile.company
                 payment = serializer.save(
                     deal=deal,
                     client=deal.client,
                     created_by=request.user,
-                    status=Payment.PaymentStatus.PENDING
+                    status=Payment.PaymentStatus.PENDING,
+                    company=payment_company
                 )
                 created_payments.append(PaymentSerializer(payment).data)
 

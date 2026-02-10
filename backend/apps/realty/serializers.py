@@ -188,6 +188,12 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         model = Project
         fields = '__all__'
         read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
+    
+    def validate_company(self, value):
+        """Компания обязательна при создании проекта."""
+        if value is None and not self.instance:
+            raise serializers.ValidationError("Необходимо указать компанию для проекта.")
+        return value
 
 class PublicImageLayoutSerializer(serializers.ModelSerializer):
     """ Сериализатор для планировок, отдает полные URL изображений """

@@ -30,6 +30,15 @@ class BeneficiaryAccount(models.Model):
 
 class Payment(models.Model):
     """ Платёж """
+    # --- Привязка к компании ---
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.PROTECT,
+        related_name='payments',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
 
     class Currency(models.TextChoices):
         UZS = 'UZS', 'Узбекский сум'

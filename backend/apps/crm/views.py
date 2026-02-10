@@ -342,7 +342,11 @@ class ClientListView(generics.ListCreateAPIView):
         return ClientListSerializer
 
     def perform_create(self, serializer):
-        client_instance = serializer.save(created_by=self.request.user)
+        # Определяем компанию из профиля пользователя
+        company = None
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
+            company = self.request.user.profile.company
+        client_instance = serializer.save(created_by=self.request.user, company=company)
 
         today = timezone.now()
         Meeting.objects.create(
@@ -415,10 +419,14 @@ class ApplicationListView(generics.ListCreateAPIView):
         return ApplicationListSerializer
 
     def perform_create(self, serializer):
+        # Определяем компанию из профиля пользователя
+        company = None
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
+            company = self.request.user.profile.company
         if serializer.validated_data.get('source') == 'OFFICE':
-            serializer.save(created_by=self.request.user)
+            serializer.save(created_by=self.request.user, company=company)
         else:
-            serializer.save()
+            serializer.save(company=company)
 
 
 class RejectionReasonDetailView(generics.RetrieveUpdateAPIView):
@@ -505,10 +513,21 @@ class PublicApplicationCreateView(generics.CreateAPIView):
             client = Client.objects.create(full_name=full_name)
             ClientPhoneNumber.objects.create(client=client, phone_number=phone_number)
         
+        # Определяем компанию из API-ключа партнёра
+        partner_company = None
+        if hasattr(request, 'partner_api_key') and request.partner_api_key:
+            partner_company = request.partner_api_key.companies.first()
+        
+        # Привязываем клиента к компании, если у него ещё нет компании
+        if partner_company and not client.company:
+            client.company = partner_company
+            client.save(update_fields=['company'])
+        
         Application.objects.create(
             client=client,
             source=data.get('source'),
-            notes=data.get('notes', '')
+            notes=data.get('notes', ''),
+            company=partner_company
         )
         return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
 
@@ -528,7 +547,11 @@ class MeetingListCreateView(generics.ListCreateAPIView):
         return get_filtered_queryset(self.request.user, queryset, 'MEETING')
 
     def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
+        # Определяем компанию из профиля пользователя
+        company = None
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
+            company = self.request.user.profile.company
+        serializer.save(creator=self.request.user, company=company)
 
 
 class MeetingDetailView(generics.RetrieveUpdateDestroyAPIView):

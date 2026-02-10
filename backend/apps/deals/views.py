@@ -131,10 +131,15 @@ class DealListView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         property_instance = serializer.validated_data['property']
+        # Определяем компанию из профиля пользователя
+        company = None
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
+            company = self.request.user.profile.company
         deal = serializer.save(
             created_by=self.request.user,
             initial_price=property_instance.price,
-            initial_price_per_sqm=property_instance.price_per_sqm
+            initial_price_per_sqm=property_instance.price_per_sqm,
+            company=company
         )
         property_instance.status = Property.PropertyStatus.BOOKING
         property_instance.save()
