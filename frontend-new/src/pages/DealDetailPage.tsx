@@ -11,6 +11,7 @@ import DocumentGeneration from '../components/deals/DocumentGeneration';
 import HumanizedLog from '../components/logs/HumanizedLog';
 import DealCancellationModal from '../components/deals/DealCancellationModal';
 import LocalizedDateField from '../components/common/LocalizedDateField';
+import { useIsMobile } from '../hooks/useMobile';
 
 import {
   Typography, CircularProgress, Alert, Paper, Grid, Box, TextField, Button,
@@ -28,12 +29,13 @@ interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+  isMobile?: boolean;
 }
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index, isMobile = false, ...other } = props;
   return (
     <div role="tabpanel" hidden={value !== index} {...other}>
-      {value === index && <Box sx={{ p: 2 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: isMobile ? 1 : 2 }}>{children}</Box>}
     </div>
   );
 }
@@ -43,6 +45,7 @@ export default function DealDetailPage() {
   const { dealId } = useParams<{ dealId: string }>();
   const queryClient = useQueryClient();
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
 
   const [isDiscountModalOpen, setDiscountModalOpen] = useState(false);
   const [mainTabValue, setMainTabValue] = useState(0); // Для главных вкладок
@@ -139,14 +142,22 @@ export default function DealDetailPage() {
 
   return (
     <>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Typography variant="h4">{t('pages.deals.deal_title', { id: deal.id, status: t(`statuses.deal.${deal.status}`) })}</Typography>
+      <Stack 
+        direction={isMobile ? 'column' : 'row'} 
+        justifyContent="space-between" 
+        alignItems={isMobile ? 'stretch' : 'center'} 
+        spacing={isMobile ? 1 : 2}
+        sx={{ mb: 2 }}
+      >
+        <Typography variant={isMobile ? 'h5' : 'h4'}>{t('pages.deals.deal_title', { id: deal.id, status: t(`statuses.deal.${deal.status}`) })}</Typography>
         {canTerminateDeal && (
             <Button
                 variant="outlined"
                 color="error"
                 startIcon={<ErrorOutlineIcon />}
                 onClick={() => setCancellationModalOpen(true)}
+                size={isMobile ? 'small' : 'medium'}
+                fullWidth={isMobile}
             >
                 {t('pages.deals.cancel_terminate')}
             </Button>
@@ -156,12 +167,12 @@ export default function DealDetailPage() {
             {(deal.status === 'CANCELLED' || deal.status === 'TERMINATED') && (
                 <Alert severity="error" sx={{ mb: 2 }}>
                     <Typography fontWeight="bold">{t('pages.deals.deal_closed', { status: deal.status === 'CANCELLED' ? t('pages.deals.cancelled') : t('pages.deals.terminated') })}</Typography>
-                    {deal.status === 'CANCELLED' && <Typography>{t('pages.deals.reason')}: {deal.cancellation_reason}</Typography>}
+                    {deal.status === 'CANCELLED' && <Typography variant={isMobile ? 'body2' : 'body1'}>{t('pages.deals.reason')}: {deal.cancellation_reason}</Typography>}
                     {deal.status === 'TERMINATED' && (
                         <>
-                            <Typography>{t('pages.deals.termination_date')}: {deal.termination_date}</Typography>
+                            <Typography variant={isMobile ? 'body2' : 'body1'}>{t('pages.deals.termination_date')}: {deal.termination_date}</Typography>
                             {deal.termination_document_scan && (
-                                <Typography>
+                                <Typography variant={isMobile ? 'body2' : 'body1'}>
                                     {t('pages.deals.termination_document')}: <MuiLink href={deal.termination_document_scan} target="_blank" rel="noopener noreferrer">{t('common.view')}</MuiLink>
                                 </Typography>
                             )}
@@ -172,30 +183,34 @@ export default function DealDetailPage() {
 
         <Paper>
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={mainTabValue} onChange={(_, newValue) => setMainTabValue(newValue)}>
+              <Tabs 
+                value={mainTabValue} 
+                onChange={(_, newValue) => setMainTabValue(newValue)}
+                variant={isMobile ? 'fullWidth' : 'standard'}
+              >
                   <Tab label={t('pages.deals.deal_steps')} />
-                  <Tab label={`${t('pages.deals.logs_tab')} (${deal.logs?.length || 0})`} />
+                  <Tab label={isMobile ? `${deal.logs?.length || 0}` : `${t('pages.deals.logs_tab')} (${deal.logs?.length || 0})`} />
               </Tabs>
           </Box>
 
           {/* ПАНЕЛЬ 1: ШАГИ СДЕЛКИ */}
-          <TabPanel value={mainTabValue} index={0}>
+          <TabPanel value={mainTabValue} index={0} isMobile={isMobile}>
               <Stepper activeStep={activeStep} orientation="vertical">
                   {/* === ШАГ 1: ИНФОРМАЦИЯ О СДЕЛКЕ === */}
                   <Step>
                     <StepLabel onClick={() => setActiveStep(0)} sx={{cursor: 'pointer'}}>{t('pages.deals.step_info')}</StepLabel>
                     <StepContent>
-                      <Grid container spacing={2}>
+                      <Grid container spacing={isMobile ? 1 : 2}>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                              <Typography><b>{t('pages.deals.client')}:</b> <MuiLink component={RouterLink} to={`/clients/${deal.client.id}`}>{deal.client.full_name}</MuiLink></Typography>
-                              <Typography><b>{t('pages.deals.property')}:</b> {deal.property.property_type} №{deal.property.unit_number}, {deal.property.area} {t('common.sqm')}</Typography>
+                              <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('pages.deals.client')}:</b> <MuiLink component={RouterLink} to={`/clients/${deal.client.id}`}>{deal.client.full_name}</MuiLink></Typography>
+                              <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('pages.deals.property')}:</b> {deal.property.property_type} №{deal.property.unit_number}, {deal.property.area} {t('common.sqm')}</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                              <Typography><b>{t('pages.deals.booking_start')}:</b> {new Date(deal.booking_start_date).toLocaleString(getDateLocale())}</Typography>
-                              <Typography><b>{t('pages.deals.booking_end')}:</b> {new Date(deal.booking_end_date).toLocaleString(getDateLocale())}</Typography>
+                              <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('pages.deals.booking_start')}:</b> {new Date(deal.booking_start_date).toLocaleString(getDateLocale())}</Typography>
+                              <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('pages.deals.booking_end')}:</b> {new Date(deal.booking_end_date).toLocaleString(getDateLocale())}</Typography>
                           </Grid>
                       </Grid>
-                      <Button onClick={() => setActiveStep(1)} variant="contained" sx={{mt: 2}} disabled={isDealReadOnly}>{t('common.next')}</Button>
+                      <Button onClick={() => setActiveStep(1)} variant="contained" sx={{mt: 2}} disabled={isDealReadOnly} size={isMobile ? 'small' : 'medium'}>{t('common.next')}</Button>
                     </StepContent>
                   </Step>
 
@@ -307,7 +322,7 @@ export default function DealDetailPage() {
           </TabPanel>
 
           {/* ПАНЕЛЬ 2: ЛОГИ */}
-          <TabPanel value={mainTabValue} index={1}>
+          <TabPanel value={mainTabValue} index={1} isMobile={isMobile}>
               <Timeline>
                   {deal.logs?.map((log) => (
                       <TimelineItem key={log.id}>
@@ -315,8 +330,8 @@ export default function DealDetailPage() {
                               <TimelineDot color="grey" />
                               <TimelineConnector />
                           </TimelineSeparator>
-                          <TimelineContent sx={{ py: '12px', px: 2 }}>
-                              <Typography variant="body2" color="text.secondary">
+                          <TimelineContent sx={{ py: isMobile ? '8px' : '12px', px: isMobile ? 1 : 2 }}>
+                              <Typography variant={isMobile ? 'caption' : 'body2'} color="text.secondary">
                                   {new Date(log.created_at).toLocaleString(getDateLocale())} - {log.user || t('common.system')}
                               </Typography>
                               <HumanizedLog log={log} />

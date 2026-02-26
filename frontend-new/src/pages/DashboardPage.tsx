@@ -1,4 +1,4 @@
-import { Avatar, Box, Card, CardContent, CardHeader, Grid, Paper, Typography, List, ListItem, ListItemAvatar, ListItemText, Divider, Stack, CircularProgress, Alert } from '@mui/material';
+import { Avatar, Box, Card, CardContent, CardHeader, Grid, Paper, Typography, List, ListItem, ListItemText, Stack, CircularProgress, Alert } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -11,17 +11,18 @@ import { getDashboardData } from '../api/dashboard';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useTheme } from '@mui/material/styles';
+import { useIsMobile } from '../hooks/useMobile';
 
 
 // Вспомогательный компонент для карточек KPI
-const KpiCard = ({ title, value, icon, color = 'primary.main' }: { title: string, value: string, icon: React.ReactElement, color?: string }) => (
+const KpiCard = ({ title, value, icon, color = 'primary.main', compact = false }: { title: string, value: string, icon: React.ReactElement, color?: string, compact?: boolean }) => (
     <Card variant="outlined">
-        <CardContent>
-            <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar sx={{ bgcolor: color, width: 56, height: 56 }}>{icon}</Avatar>
+        <CardContent sx={{ p: compact ? 1.5 : 2 }}>
+            <Stack direction="row" spacing={compact ? 1 : 2} alignItems="center">
+                <Avatar sx={{ bgcolor: color, width: compact ? 40 : 56, height: compact ? 40 : 56 }}>{icon}</Avatar>
                 <Box>
-                    <Typography variant="h5" fontWeight="bold">{value}</Typography>
-                    <Typography color="text.secondary">{title}</Typography>
+                    <Typography variant={compact ? 'h6' : 'h5'} fontWeight="bold">{value}</Typography>
+                    <Typography color="text.secondary" variant={compact ? 'body2' : 'body1'}>{title}</Typography>
                 </Box>
             </Stack>
         </CardContent>
@@ -47,6 +48,7 @@ const sourceColors = [
 export default function DashboardPage() {
   const { t } = useTranslation();
   const theme = useTheme();
+  const isMobile = useIsMobile();
   const { data, isLoading, isError } = useQuery({
       queryKey: ['dashboardData'],
       queryFn: getDashboardData
@@ -79,25 +81,28 @@ export default function DashboardPage() {
     t(`application.statuses.${item.status}`, item.status)
   ) || [];
 
+  // Adaptive chart height
+  const chartHeight = isMobile ? 220 : 300;
+
   return (
     <Box>
-        <Typography variant="h4" sx={{ mb: 3 }}>
+        <Typography variant={isMobile ? 'h5' : 'h4'} sx={{ mb: isMobile ? 2 : 3 }}>
             {t('pages.dashboard.title')}
         </Typography>
 
-        {/* Блок KPI */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_clients_today')} value={String(kpi.newClientsToday)} icon={<PeopleIcon />} /></Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_applications_today')} value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" /></Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.monthly_sales')} value={`${kpi.monthlySales.toLocaleString()} ${t('common.currency')}`} icon={<MonetizationOnIcon />} color="info.main"/></Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={`${kpi.overduePayments.toLocaleString()} ${t('common.currency')}`} icon={<EventBusyIcon />} color="error.main"/></Grid>
+        {/* Блок KPI - 2 columns on mobile */}
+        <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_clients_today')} value={String(kpi.newClientsToday)} icon={<PeopleIcon />} compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_applications_today')} value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.monthly_sales')} value={`${kpi.monthlySales.toLocaleString()} ${t('common.currency')}`} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={`${kpi.overduePayments.toLocaleString()} ${t('common.currency')}`} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
         </Grid>
 
         {/* Блок воронок и графиков */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
             <Grid size={{ xs: 12, md: 8 }}>
-                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                    <Typography variant="h6" sx={{ mb: 2 }}>
+                <Paper variant="outlined" sx={{ p: isMobile ? 1 : 2, height: '100%' }}>
+                    <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ mb: isMobile ? 1 : 2 }}>
                         {t('pages.dashboard.applications_dynamics')}
                     </Typography>
                     {barChartData.length > 0 ? (
@@ -107,13 +112,17 @@ export default function DashboardPage() {
                                 data: barChartLabels,
                                 tickLabelStyle: {
                                     fill: theme.palette.text.primary,
+                                    fontSize: isMobile ? 10 : 12,
+                                    angle: isMobile ? 45 : 0,
+                                    textAnchor: isMobile ? 'start' : 'middle',
                                 },
                             }]}
                             series={[{ 
                                 data: barChartData,
                                 color: theme.palette.primary.main,
                             }]}
-                            height={300}
+                            height={chartHeight}
+                            margin={isMobile ? { left: 40, right: 10, top: 10, bottom: 60 } : undefined}
                             sx={{
                                 '& .MuiChartsAxis-tickLabel': {
                                     fill: theme.palette.text.primary,
@@ -124,15 +133,15 @@ export default function DashboardPage() {
                             }}
                         />
                     ) : (
-                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box sx={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Typography color="text.secondary">{t('pages.dashboard.no_data')}</Typography>
                         </Box>
                     )}
                 </Paper>
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
-                <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                    <Typography variant="h6" sx={{ mb: 2 }}>
+                <Paper variant="outlined" sx={{ p: isMobile ? 1 : 2, height: '100%' }}>
+                    <Typography variant={isMobile ? 'subtitle1' : 'h6'} sx={{ mb: isMobile ? 1 : 2 }}>
                         {t('pages.dashboard.application_sources')}
                     </Typography>
                     {sourceData.length > 0 ? (
@@ -140,26 +149,30 @@ export default function DashboardPage() {
                             series={[{
                                 data: sourceData,
                                 highlightScope: { fade: 'global', highlight: 'item' },
-                                innerRadius: 30,
-                                outerRadius: 100,
+                                innerRadius: isMobile ? 20 : 30,
+                                outerRadius: isMobile ? 60 : 100,
                                 paddingAngle: 2,
                                 cornerRadius: 5,
                             }]}
-                            height={300}
+                            height={isMobile ? 280 : 300}
                             slotProps={{
                                 legend: {
-                                    direction: 'column',
-                                    position: { vertical: 'middle', horizontal: 'right' },
-                                    padding: 0,
+                                    direction: isMobile ? 'row' : 'column',
+                                    position: isMobile 
+                                        ? { vertical: 'bottom', horizontal: 'middle' }
+                                        : { vertical: 'middle', horizontal: 'right' },
+                                    padding: isMobile ? { top: 20 } : 0,
                                     labelStyle: {
                                         fill: theme.palette.text.primary,
-                                        fontSize: 12,
+                                        fontSize: isMobile ? 10 : 12,
                                     },
+                                    itemMarkWidth: isMobile ? 10 : 14,
+                                    itemMarkHeight: isMobile ? 10 : 14,
                                 },
                             }}
                         />
                     ) : (
-                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box sx={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Typography color="text.secondary">{t('pages.dashboard.no_data')}</Typography>
                         </Box>
                     )}
@@ -168,19 +181,26 @@ export default function DashboardPage() {
         </Grid>
 
          {/* Блок менеджеров и встреч */}
-        <Grid container spacing={3}>
+        <Grid container spacing={isMobile ? 1.5 : 3}>
             <Grid size={{ xs: 12, md: 6 }}>
                  <Paper variant="outlined">
                     <CardHeader
                         avatar={<LeaderboardIcon />}
                         title={t('pages.dashboard.manager_activity')}
                         subheader={t('pages.dashboard.top_sales_month')}
+                        titleTypographyProps={{ variant: isMobile ? 'subtitle1' : 'h6' }}
+                        subheaderTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
                     />
-                    <CardContent>
-                         <List>
+                    <CardContent sx={{ pt: 0 }}>
+                         <List dense={isMobile}>
                             {topManagers.map((manager, index) => (
                                 <ListItem key={index} divider>
-                                    <ListItemText primary={`${manager.first_name} ${manager.last_name}`} secondary={`${t('pages.dashboard.sales_label')} ${manager.total_sales.toLocaleString()} ${t('common.currency')}`} />
+                                    <ListItemText 
+                                        primary={`${manager.first_name} ${manager.last_name}`} 
+                                        secondary={`${t('pages.dashboard.sales_label')} ${manager.total_sales.toLocaleString()} ${t('common.currency')}`} 
+                                        primaryTypographyProps={{ variant: isMobile ? 'body2' : 'body1' }}
+                                        secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                                    />
                                 </ListItem>
                             ))}
                         </List>
@@ -192,12 +212,18 @@ export default function DashboardPage() {
                     <CardHeader
                         avatar={<EventIcon />}
                         title={t('pages.dashboard.upcoming_meetings')}
+                        titleTypographyProps={{ variant: isMobile ? 'subtitle1' : 'h6' }}
                     />
-                     <CardContent>
-                        <List>
+                     <CardContent sx={{ pt: 0 }}>
+                        <List dense={isMobile}>
                             {upcomingMeetings.map((meeting, index) => (
                                 <ListItem key={index} divider>
-                                     <ListItemText primary={meeting.client} secondary={new Date(meeting.time).toLocaleString()} />
+                                     <ListItemText 
+                                        primary={meeting.client} 
+                                        secondary={new Date(meeting.time).toLocaleString()} 
+                                        primaryTypographyProps={{ variant: isMobile ? 'body2' : 'body1' }}
+                                        secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
+                                    />
                                 </ListItem>
                             ))}
                         </List>

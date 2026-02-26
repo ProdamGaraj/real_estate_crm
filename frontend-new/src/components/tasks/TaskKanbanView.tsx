@@ -132,7 +132,10 @@ const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({ columns, loading }) => 
             minWidth: 320,
             maxWidth: 320,
             p: 2,
-            backgroundColor: '#f5f5f5',
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.05)'
+                : '#f5f5f5',
             display: 'flex',
             flexDirection: 'column',
           }}
@@ -151,7 +154,8 @@ const TaskKanbanView: React.FC<TaskKanbanViewProps> = ({ columns, loading }) => 
                   p: 3,
                   textAlign: 'center',
                   color: 'text.secondary',
-                  border: '2px dashed #ccc',
+                  border: (theme) =>
+                    `2px dashed ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#ccc'}`,
                   borderRadius: 1,
                 }}
               >

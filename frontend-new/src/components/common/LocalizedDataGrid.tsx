@@ -166,7 +166,9 @@ const getDataGridLocaleText = (lang: string) => {
 };
 
 /**
- * Localized DataGrid wrapper that automatically applies translations based on current language
+ * Localized DataGrid wrapper that automatically applies translations based on current language.
+ * Includes responsive header styles for better readability on small screens.
+ * Automatically adds minWidth to flex columns to prevent them from collapsing on narrow viewports.
  */
 export default function LocalizedDataGrid(props: DataGridProps) {
   const { i18n } = useTranslation();
@@ -180,13 +182,51 @@ export default function LocalizedDataGrid(props: DataGridProps) {
     // Use custom localization for Uzbek and others
     return getDataGridLocaleText(lang);
   }, [lang]);
+
+  // Ensure all flex columns have a reasonable minWidth so they don't collapse on mobile
+  const columnsWithMinWidth = useMemo(() => {
+    if (!props.columns) return props.columns;
+    return props.columns.map((col) => {
+      if (col.flex && !col.minWidth) {
+        return { ...col, minWidth: 120 };
+      }
+      return col;
+    });
+  }, [props.columns]);
+
+  // Responsive header styles: wrap text, smaller font/padding on narrow screens
+  const responsiveSx = {
+    '& .MuiDataGrid-columnHeaderTitle': {
+      whiteSpace: 'normal',
+      lineHeight: 1.3,
+      overflow: 'visible',
+      textOverflow: 'clip',
+    },
+    '@media (max-width: 960px)': {
+      '& .MuiDataGrid-columnHeader': {
+        padding: '4px 6px',
+      },
+      '& .MuiDataGrid-columnHeaderTitle': {
+        fontSize: '0.75rem',
+      },
+      '& .MuiDataGrid-cell': {
+        padding: '4px 6px',
+        fontSize: '0.8rem',
+      },
+    },
+  };
   
   return (
     <DataGrid
       {...props}
+      columns={columnsWithMinWidth}
       localeText={{
         ...localeText,
         ...props.localeText,
+      }}
+      sx={{
+        ...responsiveSx,
+        ...((props.sx as object) || {}),
       }}
     />
   );

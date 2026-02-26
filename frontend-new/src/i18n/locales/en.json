@@ -73,7 +73,8 @@
     "save_data": "Save data",
     "sqm": "sq.m.",
     "uploading": "Uploading...",
-    "phone": "Phone"
+    "phone": "Phone",
+    "no_data": "No data to display"
   },
   "nav": {
     "app_title": "Real Estate CRM",
@@ -91,7 +92,8 @@
     "logout": "Logout",
     "company_label": "Company:",
     "department_label": "Department:",
-    "no_email": "No email"
+    "no_email": "No email",
+    "more": "More"
   },
   "auth": {
     "login_title": "Login",

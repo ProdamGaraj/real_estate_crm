@@ -73,7 +73,8 @@
     "save_data": "Сохранить данные",
     "sqm": "м²",
     "uploading": "Загрузка...",
-    "phone": "Телефон"
+    "phone": "Телефон",
+    "no_data": "Нет данных для отображения"
   },
   "nav": {
     "app_title": "CRM Недвижимость",
@@ -91,7 +92,8 @@
     "logout": "Выйти",
     "company_label": "Компания:",
     "department_label": "Отдел:",
-    "no_email": "Нет email"
+    "no_email": "Нет email",
+    "more": "Ещё"
   },
   "auth": {
     "login_title": "Вход в систему",

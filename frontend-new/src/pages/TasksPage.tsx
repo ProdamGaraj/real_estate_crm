@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Box,
@@ -11,6 +11,8 @@ import {
   IconButton,
   Tooltip,
   Alert,
+  Stack,
+  Collapse,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,15 +29,17 @@ import { TaskFormDialog } from '../components/tasks/TaskFormDialog';
 import type { TaskFilters } from '../api/tasks';
 import { hasAnyViewPermission } from '../utils/permissions';
 import { useAuthStore } from '../store/authStore';
+import { useIsMobile } from '../hooks/useMobile';
 
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+  isMobile?: boolean;
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index, isMobile = false, ...other } = props;
 
   return (
     <div
@@ -45,19 +49,28 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`tasks-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ py: isMobile ? 1 : 3 }}>{children}</Box>}
     </div>
   );
 }
 
 const TasksPage: React.FC = () => {
   const { t } = useTranslation();
-  const [tabValue, setTabValue] = useState(0);
+  const isMobile = useIsMobile();
+  // On mobile, default to Kanban view (index 1)
+  const [tabValue, setTabValue] = useState(isMobile ? 1 : 0);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<TaskFilters>({});
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
+
+  // Update tabValue if isMobile changes
+  useEffect(() => {
+    if (isMobile && tabValue === 0) {
+      setTabValue(1); // Switch to Kanban on mobile
+    }
+  }, [isMobile]);
 
   const { user } = useAuthStore();
 
@@ -142,15 +155,21 @@ const TasksPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: isMobile ? 1 : 3 }}>
       {/* Заголовок */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Stack 
+        direction={isMobile ? 'column' : 'row'} 
+        justifyContent="space-between" 
+        alignItems={isMobile ? 'stretch' : 'center'} 
+        spacing={2}
+        sx={{ mb: isMobile ? 2 : 3 }}
+      >
         <Box>
-          <Typography variant="h4" gutterBottom>
+          <Typography variant={isMobile ? 'h5' : 'h4'} gutterBottom>
             {t('pages.tasks.title')}
           </Typography>
           {stats && (
-            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
               <Chip label={`${t('pages.tasks.total_count')} ${stats.total}`} color="default" size="small" />
               <Chip label={`${t('pages.tasks.my_tasks')} ${stats.my_tasks}`} color="primary" size="small" />
               {stats.overdue > 0 && (
@@ -159,9 +178,9 @@ const TasksPage: React.FC = () => {
             </Box>
           )}
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Stack direction="row" spacing={1} justifyContent={isMobile ? 'flex-end' : 'flex-start'}>
           <Tooltip title={t('common.refresh')}>
-            <IconButton onClick={handleRefresh}>
+            <IconButton onClick={handleRefresh} size={isMobile ? 'small' : 'medium'}>
               <RefreshIcon />
             </IconButton>
           </Tooltip>
@@ -169,42 +188,48 @@ const TasksPage: React.FC = () => {
             <IconButton
               onClick={() => setShowFilters(!showFilters)}
               color={Object.keys(filters).length > 0 ? 'primary' : 'default'}
+              size={isMobile ? 'small' : 'medium'}
             >
               <FilterListIcon />
             </IconButton>
           </Tooltip>
           <Button
             variant="contained"
-            startIcon={<AddIcon />}
+            startIcon={!isMobile && <AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
+            size={isMobile ? 'small' : 'medium'}
           >
-            {t('pages.tasks.create_task')}
+            {isMobile ? <AddIcon /> : t('pages.tasks.create_task')}
           </Button>
-        </Box>
-      </Box>
+        </Stack>
+      </Stack>
 
       {/* Панель фильтров */}
-      {showFilters && (
-        <Paper sx={{ p: 2, mb: 3 }}>
+      <Collapse in={showFilters}>
+        <Paper sx={{ p: 2, mb: isMobile ? 2 : 3 }}>
           <TaskFilterForm
             filters={filters}
             onApply={handleApplyFilters}
             onReset={handleResetFilters}
           />
         </Paper>
-      )}
+      </Collapse>
 
       {/* Вкладки */}
       <Paper sx={{ mb: 2 }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          variant={isMobile ? 'fullWidth' : 'standard'}
+        >
           <Tab label={t('pages.tasks.list_view')} />
           <Tab label={t('pages.tasks.kanban_view')} />
-          <Tab label={t('pages.tasks.calendar_view')} />
+          {!isMobile && <Tab label={t('pages.tasks.calendar_view')} />}
         </Tabs>
       </Paper>
 
       {/* Содержимое вкладок */}
-      <TabPanel value={tabValue} index={0}>
+      <TabPanel value={tabValue} index={0} isMobile={isMobile}>
         <TaskListView
           tasks={tasks || []}
           loading={tasksLoading}
@@ -216,7 +241,7 @@ const TasksPage: React.FC = () => {
         />
       </TabPanel>
 
-      <TabPanel value={tabValue} index={1}>
+      <TabPanel value={tabValue} index={1} isMobile={isMobile}>
         <TaskKanbanView
           columns={kanbanData || []}
           loading={kanbanLoading}
@@ -224,9 +249,11 @@ const TasksPage: React.FC = () => {
         />
       </TabPanel>
 
-      <TabPanel value={tabValue} index={2}>
-        <TaskCalendarView filters={filters} />
-      </TabPanel>
+      {!isMobile && (
+        <TabPanel value={tabValue} index={2} isMobile={isMobile}>
+          <TaskCalendarView filters={filters} />
+        </TabPanel>
+      )}
 
       {/* Диалог создания задачи */}
       <TaskFormDialog

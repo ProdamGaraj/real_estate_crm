@@ -4,12 +4,14 @@ import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getEmployeePlanFactReport, downloadEmployeePlanTemplate, uploadEmployeePlan, type ReportFilters } from '../../api/reports';
+import { useIsMobile } from '../../hooks/useMobile';
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
 export default function EmployeeReport() {
     const { t } = useTranslation();
+    const isMobile = useIsMobile();
     const [filters, setFilters] = useState<ReportFilters | null>(null);
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,13 +83,22 @@ export default function EmployeeReport() {
     };
 
     const separatorStyle = { borderRight: '1px solid var(--color-border-default)' };
+    
+    // Sticky first column style for mobile horizontal scroll
+    const stickyColumnStyle = isMobile ? {
+        position: 'sticky' as const,
+        left: 0,
+        background: 'var(--color-background-paper, #fff)',
+        zIndex: 1,
+        minWidth: 120,
+    } : {};
 
     return (
-        <Stack spacing={3}>
-            <Paper sx={{p: 2}}>
+        <Stack spacing={isMobile ? 2 : 3}>
+            <Paper sx={{p: isMobile ? 1.5 : 2}}>
                 <form onSubmit={handleSubmit(onGenerateReport)}>
-                    <Grid container spacing={2} alignItems="center">
-                        <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid container spacing={isMobile ? 1 : 2} alignItems="center">
+                        <Grid size={{ xs: 6, sm: 4 }}>
                             <Controller name="year" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small">
                                     <InputLabel>{t('pages.reports.year')}</InputLabel>
@@ -97,7 +108,7 @@ export default function EmployeeReport() {
                                 </FormControl>
                             )} />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 3 }}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                             <Controller name="period_type" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small">
                                     <InputLabel>{t('pages.reports.period')}</InputLabel>
@@ -107,7 +118,7 @@ export default function EmployeeReport() {
                                 </FormControl>
                             )} />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 3 }}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
                            <Controller name="period_value" control={control} render={({ field }) => (
                                 <FormControl fullWidth size="small" disabled={periodType === 'year'}>
                                     <InputLabel>{t('pages.reports.period_value')}</InputLabel>
@@ -117,19 +128,21 @@ export default function EmployeeReport() {
                                 </FormControl>
                             )} />
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 2 }}>
-                            <Button type="submit" variant="contained" fullWidth>{t('pages.reports.generate')}</Button>
+                        <Grid size={{ xs: 6, sm: 2 }}>
+                            <Button type="submit" variant="contained" fullWidth size={isMobile ? 'small' : 'medium'}>{t('pages.reports.generate')}</Button>
                         </Grid>
                     </Grid>
                 </form>
             </Paper>
 
-            <Stack direction="row" spacing={2}>
-                <Button onClick={downloadEmployeePlanTemplate} variant="outlined">{t('pages.reports.download_template')}</Button>
+            <Stack direction={isMobile ? 'column' : 'row'} spacing={isMobile ? 1 : 2}>
+                <Button onClick={downloadEmployeePlanTemplate} variant="outlined" size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>{t('pages.reports.download_template')}</Button>
                 <Button
                     variant="outlined"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadMutation.isPending}
+                    size={isMobile ? 'small' : 'medium'}
+                    fullWidth={isMobile}
                 >
                     {uploadMutation.isPending ? t('pages.reports.uploading') : t('pages.reports.upload_plan')}
                 </Button>
@@ -139,11 +152,11 @@ export default function EmployeeReport() {
             {isLoadingReport && <CircularProgress />}
             {isError && <Alert severity="error">{(error as Error).message}</Alert>}
             {reportData && (
-                <TableContainer component={Paper}>
-                    <Table stickyHeader>
+                <TableContainer component={Paper} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+                    <Table stickyHeader size={isMobile ? 'small' : 'medium'}>
                         <TableHead>
                             <TableRow>
-                                <TableCell rowSpan={2} sx={{...separatorStyle, verticalAlign: 'bottom'}}>{t('pages.reports.employee_column')}</TableCell>
+                                <TableCell rowSpan={2} sx={{...separatorStyle, ...stickyColumnStyle, verticalAlign: 'bottom'}}>{t('pages.reports.employee_column')}</TableCell>
                                 <TableCell align="center" colSpan={4} sx={separatorStyle}>{t('pages.reports.quantity_pcs')}</TableCell>
                                 <TableCell align="center" colSpan={4} sx={separatorStyle}>{t('pages.reports.contracting')}</TableCell>
                                 <TableCell align="center" colSpan={4}>{t('pages.reports.revenue')}</TableCell>
@@ -166,8 +179,8 @@ export default function EmployeeReport() {
                         <TableBody>
                             {reportData.map((employee) => (
                                 <TableRow key={employee.employee_id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, ...(employee.employee_id === 'total' && {backgroundColor: 'var(--color-background-total)'}) }}>
-                                    <TableCell component="th" scope="row" sx={separatorStyle}>
-                                        <Typography sx={{fontWeight: employee.employee_id === 'total' ? 'bold' : 'normal'}}>
+                                    <TableCell component="th" scope="row" sx={{...separatorStyle, ...stickyColumnStyle, ...(employee.employee_id === 'total' && {backgroundColor: 'var(--color-background-total)'})}}>
+                                        <Typography variant={isMobile ? 'body2' : 'body1'} sx={{fontWeight: employee.employee_id === 'total' ? 'bold' : 'normal'}}>
                                             {employee.employee_name}
                                         </Typography>
                                     </TableCell>

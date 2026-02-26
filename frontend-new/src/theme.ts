@@ -253,6 +253,50 @@ export const createAppTheme = (mode: PaletteMode = 'light') => {
           },
         },
       },
+      // Стили для MUI X DataGrid
+      MuiDataGrid: {
+        styleOverrides: {
+          root: {
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(224, 224, 224, 1)',
+            backgroundColor: isDark ? '#1e1e1e' : '#ffffff',
+          },
+          columnHeaders: {
+            backgroundColor: isDark ? '#252525' : '#fafafa',
+            borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(224, 224, 224, 1)',
+          },
+          columnHeader: {
+            '&:focus, &:focus-within': {
+              outline: 'none',
+            },
+          },
+          columnHeaderTitle: {
+            fontWeight: 600,
+          },
+          cell: {
+            borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(224, 224, 224, 1)',
+            '&:focus, &:focus-within': {
+              outline: 'none',
+            },
+          },
+          row: {
+            '&:hover': {
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)',
+            },
+            '&.Mui-selected': {
+              backgroundColor: isDark ? 'rgba(229, 184, 64, 0.16)' : 'rgba(212, 160, 23, 0.08)',
+              '&:hover': {
+                backgroundColor: isDark ? 'rgba(229, 184, 64, 0.24)' : 'rgba(212, 160, 23, 0.12)',
+              },
+            },
+          },
+          footerContainer: {
+            borderTopColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(224, 224, 224, 1)',
+          },
+          overlay: {
+            backgroundColor: isDark ? 'rgba(18, 18, 18, 0.7)' : 'rgba(255, 255, 255, 0.7)',
+          },
+        },
+      },
       // Стили для таблиц
       MuiTableCell: {
         styleOverrides: {

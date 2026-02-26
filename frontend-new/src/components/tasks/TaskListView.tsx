@@ -9,7 +9,8 @@ import {
   Edit as EditIcon,
 } from '@mui/icons-material';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import LocalizedDataGrid from '../common/LocalizedDataGrid';
+import ResponsiveDataView from '../common/ResponsiveDataView';
+import type { MobileCardField } from '../common/MobileCardList';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TaskListItem } from '../../api/tasks';
@@ -41,6 +42,43 @@ const priorityColors: Record<string, 'default' | 'primary' | 'secondary' | 'succ
 const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Mobile card fields
+  const mobileFields: MobileCardField<TaskListItem>[] = useMemo(() => [
+    {
+      key: 'title',
+      label: 'common.name',
+      primary: true,
+    },
+    {
+      key: 'status',
+      label: 'common.status',
+      chip: true,
+      chipColor: (value: string) => statusColors[value] || 'default',
+      render: (value: string) => translateStatus(value, 'task'),
+    },
+    {
+      key: 'priority',
+      label: 'pages.tasks.priority',
+      chip: true,
+      chipColor: (value: string) => priorityColors[value] || 'default',
+      render: (value: string) => translateStatus(value, 'task_priority'),
+    },
+    {
+      key: 'assignee.full_name',
+      label: 'pages.tasks.assignee',
+      secondary: true,
+    },
+    {
+      key: 'deadline',
+      label: 'pages.tasks.deadline',
+      render: (value: string) => value ? new Date(value).toLocaleDateString('ru-RU') : '-',
+    },
+  ], []);
+
+  const handleTaskClick = (task: TaskListItem) => {
+    navigate(`/tasks/${task.id}`);
+  };
 
   const columns: GridColDef[] = useMemo(() => [
     {
@@ -186,19 +224,23 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
 
   return (
     <Box sx={{ width: '100%' }}>
-      <LocalizedDataGrid
-        rows={tasks}
+      <ResponsiveDataView
+        data={tasks}
         columns={columns}
-        loading={loading}
-        pageSizeOptions={[10, 25, 50, 100]}
-        initialState={{
-          pagination: { paginationModel: { pageSize: 25 } },
-        }}
-        disableRowSelectionOnClick
-        autoHeight
-        sx={{
-          '& .MuiDataGrid-row:hover': {
-            cursor: 'pointer',
+        mobileFields={mobileFields}
+        isLoading={loading}
+        onRowClick={handleTaskClick}
+        dataGridProps={{
+          pageSizeOptions: [10, 25, 50, 100],
+          initialState: {
+            pagination: { paginationModel: { pageSize: 25 } },
+          },
+          disableRowSelectionOnClick: true,
+          autoHeight: true,
+          sx: {
+            '& .MuiDataGrid-row:hover': {
+              cursor: 'pointer',
+            },
           },
         }}
       />

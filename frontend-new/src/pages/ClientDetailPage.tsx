@@ -10,7 +10,8 @@ import {
     Dialog, DialogTitle, DialogContent, Card, CardHeader, CardContent, Avatar
 } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
-import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
+import ResponsiveDataView from '../components/common/ResponsiveDataView';
+import type { MobileCardField } from '../components/common/MobileCardList';
 import LocalizedDateField from '../components/common/LocalizedDateField';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -22,19 +23,21 @@ import HumanizedLog from '../components/logs/HumanizedLog';
 import MeetingForm from '../components/meetings/MeetingForm';
 import type { Meeting } from '../api/meetings';
 import ClientFilesTab from '../components/clients/ClientFilesTab';
+import { useIsMobile } from '../hooks/useMobile';
 
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+  isMobile?: boolean;
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index, isMobile = false, ...other } = props;
   return (
     <div role="tabpanel" hidden={value !== index} {...other}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ p: isMobile ? 1 : 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -67,9 +70,25 @@ const getMeetingColumns = (t: (key: string) => string): GridColDef<Meeting>[] =>
     { field: 'executor', headerName: t('table.executor'), width: 150 },
 ];
 
+// Mobile fields for applications
+const getApplicationMobileFields = (): MobileCardField<{ id: number; status: string; source: string; created_at: string }>[] => [
+    { key: 'id', label: 'ID', primary: true },
+    { key: 'status', label: 'table.status', chip: true },
+    { key: 'source', label: 'table.source', secondary: true },
+    { key: 'created_at', label: 'table.created_at', render: (v: string) => new Date(v).toLocaleDateString() },
+];
+
+// Mobile fields for meetings
+const getMeetingMobileFields = (): MobileCardField<Meeting>[] => [
+    { key: 'planned_date', label: 'table.planned_date', primary: true, render: (v: string) => new Date(v).toLocaleString() },
+    { key: 'status', label: 'table.status', chip: true },
+    { key: 'executor', label: 'table.executor', secondary: true },
+];
+
 
 export default function ClientDetailPage() {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const { clientId } = useParams<{ clientId: string }>();
   const queryClient = useQueryClient();
   const [tabValue, setTabValue] = useState(0);
@@ -113,13 +132,13 @@ export default function ClientDetailPage() {
   if (isError) return <Alert severity="error">{(error as Error).message}</Alert>;
 
   return (
-    <Stack spacing={3}>
-        <Paper sx={{ p: 2 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar sx={{ width: 64, height: 64 }}><PersonIcon fontSize="large" /></Avatar>
+    <Stack spacing={isMobile ? 2 : 3}>
+        <Paper sx={{ p: isMobile ? 1.5 : 2 }}>
+            <Stack direction="row" spacing={isMobile ? 1 : 2} alignItems="center">
+                <Avatar sx={{ width: isMobile ? 48 : 64, height: isMobile ? 48 : 64 }}><PersonIcon fontSize={isMobile ? 'medium' : 'large'} /></Avatar>
                 <Box>
-                    <Typography variant="h4">{client?.full_name}</Typography>
-                    <Typography color="text.secondary">
+                    <Typography variant={isMobile ? 'h5' : 'h4'}>{client?.full_name}</Typography>
+                    <Typography color="text.secondary" variant={isMobile ? 'body2' : 'body1'}>
                         {client?.phone_numbers.find(p => p.is_primary)?.phone_number || client?.phone_numbers[0]?.phone_number}
                     </Typography>
                 </Box>
@@ -127,22 +146,28 @@ export default function ClientDetailPage() {
         </Paper>
 
       <Box>
-        <Tabs value={tabValue} onChange={(event, newValue) => setTabValue(newValue)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs 
+            value={tabValue} 
+            onChange={(event, newValue) => setTabValue(newValue)} 
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+            variant={isMobile ? 'scrollable' : 'standard'}
+            scrollButtons={isMobile ? 'auto' : false}
+        >
           <Tab label={t('pages.clients.main_info')} />
-          <Tab label={`${t('pages.clients.applications')} (${client?.applications.length || 0})`} />
-          <Tab label={`${t('pages.meetings.title')} (${client?.meetings?.length || 0})`} />
-          <Tab label={`${t('pages.clients.files')} (${client?.files?.length || 0})`} />
-          <Tab label={`${t('common.logs')} (${client?.logs.length || 0})`} />
+          <Tab label={isMobile ? `${client?.applications.length || 0}` : `${t('pages.clients.applications')} (${client?.applications.length || 0})`} />
+          <Tab label={isMobile ? `${client?.meetings?.length || 0}` : `${t('pages.meetings.title')} (${client?.meetings?.length || 0})`} />
+          <Tab label={isMobile ? `${client?.files?.length || 0}` : `${t('pages.clients.files')} (${client?.files?.length || 0})`} />
+          <Tab label={isMobile ? `${client?.logs.length || 0}` : `${t('common.logs')} (${client?.logs.length || 0})`} />
         </Tabs>
       </Box>
 
-      <TabPanel value={tabValue} index={0}>
+      <TabPanel value={tabValue} index={0} isMobile={isMobile}>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={3}>
+          <Stack spacing={isMobile ? 2 : 3}>
             <Card variant="outlined">
-              <CardHeader avatar={<PersonIcon />} title={t('pages.clients.personal_data')} />
-              <CardContent>
-                <Grid container spacing={2}>
+              <CardHeader avatar={<PersonIcon />} title={t('pages.clients.personal_data')} titleTypographyProps={{ variant: isMobile ? 'subtitle1' : 'h6' }} />
+              <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+                <Grid container spacing={isMobile ? 1 : 2}>
                    <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.clients.full_name')} {...register('full_name')} /></Grid>
                   <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('forms.email')} type="email" {...register('email')} /></Grid>
                   <Grid size={{ xs: 12, md: 4 }}>
@@ -181,16 +206,17 @@ export default function ClientDetailPage() {
             </Card>
 
             <Card variant="outlined">
-                <CardHeader avatar={<ContactPhoneIcon />} title={t('pages.clients.phones_section')} />
-                <CardContent>
+                <CardHeader avatar={<ContactPhoneIcon />} title={t('pages.clients.phones_section')} titleTypographyProps={{ variant: isMobile ? 'subtitle1' : 'h6' }} />
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                   {fields.map((field, index) => (
-                    <Stack direction="row" spacing={2} key={field.id} sx={{ mb: 2 }}>
+                    <Stack direction="row" spacing={isMobile ? 1 : 2} key={field.id} sx={{ mb: isMobile ? 1 : 2 }}>
                       <TextField
                         label={`${t('pages.clients.phone')} ${index + 1}`}
                         fullWidth
+                        size={isMobile ? 'small' : 'medium'}
                         {...register(`phone_numbers.${index}.phone_number`)}
                       />
-                      <IconButton onClick={() => remove(index)}>
+                      <IconButton onClick={() => remove(index)} size={isMobile ? 'small' : 'medium'}>
                         <RemoveCircleOutlineIcon />
                       </IconButton>
                     </Stack>
@@ -198,6 +224,7 @@ export default function ClientDetailPage() {
                   <Button
                     startIcon={<AddCircleOutlineIcon />}
                     onClick={() => append({ phone_number: '', is_primary: fields.length === 0 })}
+                    size={isMobile ? 'small' : 'medium'}
                   >
                     {t('pages.clients.add_phone')}
                   </Button>
@@ -205,22 +232,22 @@ export default function ClientDetailPage() {
             </Card>
 
             <Card variant="outlined">
-                <CardHeader avatar={<ArticleIcon />} title={t('pages.clients.passport_and_address')} />
-                <CardContent>
-                    <Grid container spacing={2}>
-                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label={t('pages.clients.passport_series')} {...register('passport_series')} /></Grid>
-                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label={t('pages.clients.passport_number')} {...register('passport_number')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.clients.passport_issued_by')} {...register('passport_issued_by')} /></Grid>
-                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label={t('pages.clients.inn')} {...register('inn')} /></Grid>
-                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth label={t('pages.clients.pinfl')} {...register('pinfl')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.clients.registration_address')} {...register('registration_address')} /></Grid>
-                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth label={t('pages.clients.billing_address')} {...register('billing_address')} /></Grid>
+                <CardHeader avatar={<ArticleIcon />} title={t('pages.clients.passport_and_address')} titleTypographyProps={{ variant: isMobile ? 'subtitle1' : 'h6' }} />
+                <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+                    <Grid container spacing={isMobile ? 1 : 2}>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.passport_series')} {...register('passport_series')} /></Grid>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.passport_number')} {...register('passport_number')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.passport_issued_by')} {...register('passport_issued_by')} /></Grid>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.inn')} {...register('inn')} /></Grid>
+                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.pinfl')} {...register('pinfl')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.registration_address')} {...register('registration_address')} /></Grid>
+                        <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.billing_address')} {...register('billing_address')} /></Grid>
                     </Grid>
                 </CardContent>
             </Card>
 
             <Box>
-                <Button type="submit" variant="contained" disabled={updateClientMutation.isPending}>
+                <Button type="submit" variant="contained" disabled={updateClientMutation.isPending} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
                     {updateClientMutation.isPending ? t('common.saving') : t('pages.clients.save_changes')}
                 </Button>
             </Box>
@@ -228,34 +255,34 @@ export default function ClientDetailPage() {
         </form>
       </TabPanel>
 
-      <TabPanel value={tabValue} index={1}>
-        <Box sx={{ height: 400, width: '100%' }}>
-          <LocalizedDataGrid
-            rows={client?.applications || []}
+      <TabPanel value={tabValue} index={1} isMobile={isMobile}>
+        <Box sx={{ width: '100%' }}>
+          <ResponsiveDataView
+            data={client?.applications || []}
             columns={getApplicationColumns(t)}
-            disableRowSelectionOnClick
+            mobileFields={getApplicationMobileFields()}
           />
         </Box>
       </TabPanel>
 
-      <TabPanel value={tabValue} index={2}>
-        <Button variant="contained" sx={{ mb: 2 }} onClick={() => setIsMeetingModalOpen(true)}>
+      <TabPanel value={tabValue} index={2} isMobile={isMobile}>
+        <Button variant="contained" sx={{ mb: 2 }} onClick={() => setIsMeetingModalOpen(true)} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
             {t('pages.clients.schedule_meeting')}
         </Button>
-        <Box sx={{ height: 400, width: '100%' }}>
-          <LocalizedDataGrid
-            rows={client?.meetings || []}
+        <Box sx={{ width: '100%' }}>
+          <ResponsiveDataView
+            data={client?.meetings || []}
             columns={getMeetingColumns(t)}
-            disableRowSelectionOnClick
+            mobileFields={getMeetingMobileFields()}
           />
         </Box>
       </TabPanel>
 
-      <TabPanel value={tabValue} index={3}>
+      <TabPanel value={tabValue} index={3} isMobile={isMobile}>
         <ClientFilesTab clientId={Number(clientId)} />
       </TabPanel>
 
-      <TabPanel value={tabValue} index={4}>
+      <TabPanel value={tabValue} index={4} isMobile={isMobile}>
         <Timeline position="right">
             {client?.logs.map((log) => (
                 <TimelineItem key={log.id}>
@@ -274,7 +301,7 @@ export default function ClientDetailPage() {
         </Timeline>
       </TabPanel>
 
-      <Dialog open={isMeetingModalOpen} onClose={() => setIsMeetingModalOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={isMeetingModalOpen} onClose={() => setIsMeetingModalOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
           <DialogTitle>{t('pages.meetings.new_meeting_for_client')}: {client?.full_name}</DialogTitle>
           <DialogContent>
               {client && (

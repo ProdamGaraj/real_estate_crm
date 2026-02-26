@@ -14,12 +14,18 @@ import {
   MenuItem,
   Avatar,
   Divider,
+  BottomNavigation,
+  BottomNavigationAction,
+  Paper,
+  SwipeableDrawer,
 } from '@mui/material';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import EventIcon from '@mui/icons-material/Event';
 import ChecklistIcon from '@mui/icons-material/Checklist';
+import MenuIcon from '@mui/icons-material/Menu';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 // Иконки
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
@@ -37,8 +43,9 @@ import { hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
 import type { ResourceType } from '../utils/permissions';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import { useIsMobile, DRAWER_WIDTH, BOTTOM_NAV_HEIGHT } from '../hooks/useMobile';
 
-const drawerWidth = 240;
+const drawerWidth = DRAWER_WIDTH;
 
 interface NavItem {
   textKey: string; // i18n key for translation
@@ -65,8 +72,11 @@ const navItems: NavItem[] = [
 export default function RootLayout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Фильтруем пункты меню на основе прав доступа
   const visibleNavItems = useMemo(() => {
@@ -90,6 +100,23 @@ export default function RootLayout() {
     });
   }, [user]);
 
+  // Пункты для Bottom Navigation (первые 4 + "Ещё")
+  const bottomNavItems = useMemo(() => {
+    return visibleNavItems.slice(0, 4);
+  }, [visibleNavItems]);
+
+  // Определяем текущий активный пункт для bottom nav
+  const getCurrentBottomNavValue = () => {
+    const currentPath = location.pathname;
+    const index = bottomNavItems.findIndex(item => currentPath.startsWith(item.path.split('?')[0]));
+    if (index !== -1) return index;
+    // Если текущий путь не в первых 4, возвращаем "Ещё" (индекс 4)
+    const isInMoreMenu = visibleNavItems.slice(4).some(item => 
+      currentPath.startsWith(item.path.split('?')[0])
+    );
+    return isInMoreMenu ? 4 : 0;
+  };
+
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -101,6 +128,27 @@ export default function RootLayout() {
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleMobileDrawerToggle = () => {
+    setMobileDrawerOpen(!mobileDrawerOpen);
+  };
+
+  const handleMobileDrawerClose = () => {
+    setMobileDrawerOpen(false);
+  };
+
+  const handleMobileDrawerOpen = () => {
+    setMobileDrawerOpen(true);
+  };
+
+  const handleBottomNavChange = (_event: React.SyntheticEvent, newValue: number) => {
+    if (newValue === 4) {
+      // "Ещё" - открываем drawer
+      setMobileDrawerOpen(true);
+    } else {
+      navigate(bottomNavItems[newValue].path);
+    }
   };
 
   const getUserDisplayName = () => {
@@ -124,6 +172,31 @@ export default function RootLayout() {
     return 'UN';
   };
 
+  // Контент drawer (общий для desktop и mobile)
+  const drawerContent = (
+    <Box sx={{ overflow: 'auto' }}>
+      <List>
+        {visibleNavItems.map((item) => {
+          const itemPath = item.path.split('?')[0];
+          const isActive = location.pathname.startsWith(itemPath);
+          return (
+            <ListItem key={item.textKey} disablePadding>
+              <ListItemButton 
+                component={Link} 
+                to={item.path}
+                selected={isActive}
+                onClick={isMobile ? handleMobileDrawerClose : undefined}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={t(item.textKey)} />
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
+      </List>
+    </Box>
+  );
+
   return (
     <Box sx={{ display: 'flex', bgcolor: 'background.default', height: '100vh', overflow: 'hidden' }}>
       {/* AppBar с информацией о пользователе */}
@@ -137,19 +210,50 @@ export default function RootLayout() {
         }}
       >
         <Toolbar>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+          {/* Hamburger menu для mobile */}
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleMobileDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          <Typography 
+            variant="h6" 
+            noWrap 
+            component="div" 
+            sx={{ 
+              flexGrow: 1, 
+              fontWeight: 'bold',
+              fontSize: isMobile ? '1rem' : '1.25rem'
+            }}
+          >
             {t('nav.app_title')}
           </Typography>
 
-          {/* Theme Switcher */}
-          <ThemeSwitcher />
+          {/* Theme Switcher - скрыт на очень маленьких экранах */}
+          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+            <ThemeSwitcher />
+          </Box>
 
           {/* Language Switcher */}
           <LanguageSwitcher />
 
           {/* Информация о пользователе */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" sx={{ mr: 1 }}>
+            {/* Имя пользователя скрыто на mobile */}
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                mr: 1,
+                display: { xs: 'none', sm: 'block' }
+              }}
+            >
               {getUserDisplayName()}
             </Typography>
             <IconButton onClick={handleMenuOpen} size="small">
@@ -191,6 +295,15 @@ export default function RootLayout() {
                 </Typography>
               </MenuItem>
             )}
+            {/* Theme switcher в меню для mobile */}
+            {isMobile && (
+              <>
+                <Divider />
+                <MenuItem>
+                  <ThemeSwitcher />
+                </MenuItem>
+              </>
+            )}
             <Divider />
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
@@ -200,45 +313,110 @@ export default function RootLayout() {
         </Toolbar>
       </AppBar>
 
-      {/* Боковое меню */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
+      {/* Боковое меню - Desktop (permanent) */}
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
             width: drawerWidth,
-            boxSizing: 'border-box',
-          },
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
+          }}
+        >
+          <Toolbar />
+          {drawerContent}
+        </Drawer>
+      )}
+
+      {/* Боковое меню - Mobile (swipeable) */}
+      {isMobile && (
+        <SwipeableDrawer
+          variant="temporary"
+          open={mobileDrawerOpen}
+          onOpen={handleMobileDrawerOpen}
+          onClose={handleMobileDrawerClose}
+          ModalProps={{
+            keepMounted: true, // Better performance on mobile
+          }}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
+          }}
+        >
+          <Toolbar />
+          {drawerContent}
+        </SwipeableDrawer>
+      )}
+
+      {/* Основной контент */}
+      <Box 
+        component="main" 
+        sx={{
+          flexGrow: 1,
+          p: isMobile ? 2 : 3,
+          pb: isMobile ? `${BOTTOM_NAV_HEIGHT + 16}px` : 3,
+          bgcolor: 'background.default',
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
         }}
       >
         <Toolbar />
-        <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {visibleNavItems.map((item) => (
-              <ListItem key={item.textKey} disablePadding>
-                <ListItemButton component={Link} to={item.path}>
-                  <ListItemIcon>{item.icon}</ListItemIcon>
-                  <ListItemText primary={t(item.textKey)} />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-
-      {/* Основной контент */}
-      <Box component="main" sx={{
-        flexGrow: 1,
-        p: 3,
-        bgcolor: 'background.default',
-        overflow: 'auto',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <Toolbar />
         <Outlet />
       </Box>
+
+      {/* Bottom Navigation для mobile */}
+      {isMobile && (
+        <Paper 
+          sx={{ 
+            position: 'fixed', 
+            bottom: 0, 
+            left: 0, 
+            right: 0,
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+          }} 
+          elevation={3}
+        >
+          <BottomNavigation
+            showLabels
+            value={getCurrentBottomNavValue()}
+            onChange={handleBottomNavChange}
+            sx={{
+              height: BOTTOM_NAV_HEIGHT,
+              '& .MuiBottomNavigationAction-root': {
+                minWidth: 'auto',
+                px: 1,
+              },
+              '& .MuiBottomNavigationAction-label': {
+                fontSize: '0.65rem',
+                '&.Mui-selected': {
+                  fontSize: '0.7rem',
+                },
+              },
+            }}
+          >
+            {bottomNavItems.map((item) => (
+              <BottomNavigationAction
+                key={item.textKey}
+                label={t(item.textKey)}
+                icon={item.icon}
+              />
+            ))}
+            {visibleNavItems.length > 4 && (
+              <BottomNavigationAction
+                label={t('nav.more')}
+                icon={<MoreHorizIcon />}
+              />
+            )}
+          </BottomNavigation>
+        </Paper>
+      )}
     </Box>
   );
 }

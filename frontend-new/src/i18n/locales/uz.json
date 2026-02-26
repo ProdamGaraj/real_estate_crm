@@ -73,7 +73,8 @@
     "save_data": "Ma'lumotlarni saqlash",
     "sqm": "kv.m.",
     "uploading": "Yuklanmoqda...",
-    "phone": "Telefon"
+    "phone": "Telefon",
+    "no_data": "Ko'rsatish uchun ma'lumot yo'q"
   },
   "nav": {
     "app_title": "Ko'chmas mulk CRM",
@@ -91,7 +92,8 @@
     "logout": "Chiqish",
     "company_label": "Kompaniya:",
     "department_label": "Bo'lim:",
-    "no_email": "Email yo'q"
+    "no_email": "Email yo'q",
+    "more": "Boshqa"
   },
   "auth": {
     "login_title": "Tizimga kirish",
