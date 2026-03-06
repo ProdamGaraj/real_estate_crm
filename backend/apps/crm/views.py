@@ -106,18 +106,18 @@ class ApplicationSummaryView(APIView):
                 })
 
         elif group_by == 'status':
-            summary = queryset.values('status').annotate(total_applications=Count('id')).order_by('-total_applications')
+            summary = queryset.order_by().values('status').annotate(total_applications=Count('id')).order_by('-total_applications')
             data_for_df = [{'Status': item['status'], 'Total Applications': item['total_applications']} for item in
                            summary]
 
         elif group_by == 'project':
-            summary = queryset.values('interested_projects__name').annotate(total_applications=Count('id')).order_by(
+            summary = queryset.order_by().values('interested_projects__name').annotate(total_applications=Count('id')).order_by(
                 '-total_applications')
             data_for_df = [{'Project': item['interested_projects__name'] or "N/A",
                             'Total Applications': item['total_applications']} for item in summary]
 
         elif group_by == 'source':
-            summary = queryset.values('source').annotate(total_applications=Count('id')).order_by('-total_applications')
+            summary = queryset.order_by().values('source').annotate(total_applications=Count('id')).order_by('-total_applications')
             data_for_df = [{'Source': item['source'], 'Total Applications': item['total_applications']} for item in
                            summary]
 
@@ -277,15 +277,16 @@ class DashboardAnalyticsView(APIView):
         ).aggregate(total=Sum('amount'))['total'] or 0
 
         # Charts - используем отфильтрованный queryset
-        application_statuses = apps_qs.values('status').annotate(count=Count('id'))
-        application_sources = apps_qs.values('source').annotate(count=Count('id'))
+        # .order_by() сбрасывает Meta.ordering, иначе created_at попадает в GROUP BY и дублирует строки
+        application_statuses = apps_qs.order_by().values('status').annotate(count=Count('id'))
+        application_sources = apps_qs.order_by().values('source').annotate(count=Count('id'))
 
         # Top Managers - на основе отфильтрованных сделок
         from django.db.models import OuterRef, Subquery
         top_manager_ids = deals_qs.filter(
             status=Deal.DealStatus.CLOSED_WON,
             updated_at__gte=start_of_month
-        ).values('created_by').annotate(
+        ).order_by().values('created_by').annotate(
             total_sales=Sum('contract_price')
         ).order_by('-total_sales')[:5].values_list('created_by', flat=True)
         
