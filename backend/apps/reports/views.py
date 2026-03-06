@@ -18,7 +18,7 @@ from apps.finances.models import Payment
 from apps.realty.models import Project
 from django.contrib.auth.models import User
 from permissions.permissions import ReportPermission, PlanPermission
-from permissions.backends import get_filtered_queryset
+from permissions.backends import get_filtered_queryset, get_user_max_scope
 
 
 # --- Helper Function ---
@@ -80,8 +80,10 @@ class PlanFactReportView(APIView):
             return Response({"error": "Invalid period type"}, status=status.HTTP_400_BAD_REQUEST)
 
         projects = Project.objects.all()
+        # Определяем scope отчёта
+        report_scope = get_user_max_scope(request.user, 'REPORT')
         # Фильтруем проекты по разрешениям пользователя
-        projects = get_filtered_queryset(request.user, projects, 'PROJECT')
+        projects = get_filtered_queryset(request.user, projects, 'PROJECT', max_scope=report_scope)
         report_data = []
 
         total_metrics = {
@@ -100,12 +102,12 @@ class PlanFactReportView(APIView):
             deals_qs = Deal.objects.filter(contract_date__range=[start_date, end_date],
                                            status=Deal.DealStatus.CLOSED_WON, property__building__project=project)
             # Фильтруем сделки по разрешениям
-            deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL')
+            deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL', max_scope=report_scope)
             payments_qs = Payment.objects.filter(payment_date__range=[start_date, end_date],
                                                  status=Payment.PaymentStatus.PAID,
                                                  deal__property__building__project=project)
             # Фильтруем платежи по разрешениям
-            payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT')
+            payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT', max_scope=report_scope)
 
             fact_units = deals_qs.count()
             fact_money = deals_qs.aggregate(Sum('contract_price'))['contract_price__sum'] or 0
@@ -226,6 +228,8 @@ class EmployeePlanFactReportView(APIView):
             return Response({"error": "Invalid period type"}, status=status.HTTP_400_BAD_REQUEST)
 
         employees = User.objects.filter(is_staff=True, is_active=True)
+        # Определяем scope отчёта
+        report_scope = get_user_max_scope(request.user, 'REPORT')
         report_data = []
 
         total_metrics = {
@@ -244,11 +248,11 @@ class EmployeePlanFactReportView(APIView):
             deals_qs = Deal.objects.filter(contract_date__range=[start_date, end_date],
                                            status=Deal.DealStatus.CLOSED_WON, created_by=emp)
             # Фильтруем сделки по разрешениям
-            deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL')
+            deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL', max_scope=report_scope)
             payments_qs = Payment.objects.filter(payment_date__range=[start_date, end_date],
                                                  status=Payment.PaymentStatus.PAID, responsible_employee=emp)
             # Фильтруем платежи по разрешениям
-            payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT')
+            payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT', max_scope=report_scope)
 
             fact_units = deals_qs.count()
             fact_money = deals_qs.aggregate(Sum('contract_price'))['contract_price__sum'] or 0

@@ -80,7 +80,37 @@ class PermissionBackend:
             return set()
 
 
-def get_filtered_queryset(user, queryset, resource_type):
+# Иерархия scope (от широкого к узкому)
+SCOPE_HIERARCHY = ['SYSTEM', 'COMPANY', 'DEPARTMENT', 'OWN']
+
+
+def get_user_max_scope(user, resource_type):
+    """
+    Определяет максимальный (самый широкий) scope пользователя для VIEW на данный ресурс.
+    
+    Returns:
+        str или None: 'SYSTEM', 'COMPANY', 'DEPARTMENT', 'OWN' или None если нет прав
+    """
+    if not user or not user.is_active:
+        return None
+    
+    if user.is_superuser:
+        return 'SYSTEM'
+    
+    try:
+        profile = user.profile
+        if profile.is_system_admin:
+            return 'SYSTEM'
+        
+        for scope in SCOPE_HIERARCHY:
+            if profile.has_permission_for_action('VIEW', resource_type, scope):
+                return scope
+        return None
+    except UserProfile.DoesNotExist:
+        return None
+
+
+def get_filtered_queryset(user, queryset, resource_type, max_scope=None):
     """
     Фильтрация queryset на основе разрешений пользователя
     
@@ -88,6 +118,9 @@ def get_filtered_queryset(user, queryset, resource_type):
         user: Объект пользователя
         queryset: Исходный queryset
         resource_type: Тип ресурса (из Permission.Resource)
+        max_scope: Максимально допустимый scope (ограничитель сверху).
+                   Если задан, scope шире max_scope будут игнорироваться.
+                   Например, если max_scope='OWN', то COMPANY и DEPARTMENT не применяются.
     
     Returns:
         Отфильтрованный queryset
@@ -95,22 +128,42 @@ def get_filtered_queryset(user, queryset, resource_type):
     if not user or not user.is_active:
         return queryset.none()
     
-    # Суперпользователь видит все
-    if user.is_superuser:
+    # Суперпользователь видит все (но max_scope может ограничить)
+    if user.is_superuser and not max_scope:
         return queryset
     
     try:
         profile = user.profile
         
-        # Системный администратор видит все
-        if profile.is_system_admin:
+        # Системный администратор видит все (но max_scope может ограничить)
+        if profile.is_system_admin and not max_scope:
             return queryset
         
-        # Проверяем разрешения VIEW для данного ресурса
-        has_system_view = profile.has_permission_for_action('VIEW', resource_type, 'SYSTEM')
-        has_company_view = profile.has_permission_for_action('VIEW', resource_type, 'COMPANY')
-        has_department_view = profile.has_permission_for_action('VIEW', resource_type, 'DEPARTMENT')
-        has_own_view = profile.has_permission_for_action('VIEW', resource_type, 'OWN')
+        # Определяем допустимые scopes с учётом max_scope
+        if max_scope:
+            max_scope_index = SCOPE_HIERARCHY.index(max_scope)
+            allowed_scopes = set(SCOPE_HIERARCHY[max_scope_index:])
+        else:
+            allowed_scopes = set(SCOPE_HIERARCHY)
+        
+        # Для superuser/system_admin с max_scope — если SYSTEM допустим, вернуть всё
+        # Иначе принудительно применяем max_scope
+        is_admin = user.is_superuser or profile.is_system_admin
+        if is_admin:
+            if 'SYSTEM' in allowed_scopes:
+                return queryset
+            # Для admin с ограничительным max_scope:
+            # их реальные разрешения = все, но урезаем до max_scope
+            has_system_view = False  # Запрещён по max_scope
+            has_company_view = 'COMPANY' in allowed_scopes
+            has_department_view = 'DEPARTMENT' in allowed_scopes
+            has_own_view = 'OWN' in allowed_scopes
+        else:
+            # Обычный пользователь: проверяем реальные разрешения с учётом allowed_scopes
+            has_system_view = 'SYSTEM' in allowed_scopes and profile.has_permission_for_action('VIEW', resource_type, 'SYSTEM')
+            has_company_view = 'COMPANY' in allowed_scopes and profile.has_permission_for_action('VIEW', resource_type, 'COMPANY')
+            has_department_view = 'DEPARTMENT' in allowed_scopes and profile.has_permission_for_action('VIEW', resource_type, 'DEPARTMENT')
+            has_own_view = 'OWN' in allowed_scopes and profile.has_permission_for_action('VIEW', resource_type, 'OWN')
         
         # Если есть разрешение SYSTEM - видит все
         if has_system_view:

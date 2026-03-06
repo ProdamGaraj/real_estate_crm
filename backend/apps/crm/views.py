@@ -58,7 +58,7 @@ from permissions.permissions import (
     ReportPermission, DashboardPermission, SettingsPermission, UserPermission,
     HasPartnerCreateApplicationScope, ApplicationStatusPermission
 )
-from permissions.backends import get_filtered_queryset
+from permissions.backends import get_filtered_queryset, get_user_max_scope
 
 
 class ApplicationSummaryView(APIView):
@@ -77,8 +77,9 @@ class ApplicationSummaryView(APIView):
             days_since_update = 7
 
         queryset = Application.objects.all().select_related('created_by', 'client')
-        # Фильтруем по разрешениям пользователя
-        queryset = get_filtered_queryset(request.user, queryset, 'APPLICATION')
+        # Фильтруем по разрешениям пользователя с учётом scope отчёта
+        report_scope = get_user_max_scope(request.user, 'REPORT')
+        queryset = get_filtered_queryset(request.user, queryset, 'APPLICATION', max_scope=report_scope)
 
         if created_at_after:
             queryset = queryset.filter(created_at__date__gte=created_at_after)
@@ -154,8 +155,9 @@ class MeetingSummaryView(APIView):
         queryset = Meeting.objects.all().select_related(
             'executor', 'interested_building__project', 'client'
         )
-        # Фильтруем по разрешениям пользователя
-        queryset = get_filtered_queryset(request.user, queryset, 'MEETING')
+        # Фильтруем по разрешениям пользователя с учётом scope отчёта
+        report_scope = get_user_max_scope(request.user, 'REPORT')
+        queryset = get_filtered_queryset(request.user, queryset, 'MEETING', max_scope=report_scope)
 
         # Apply date filters
         if planned_date_after:
@@ -253,12 +255,15 @@ class DashboardAnalyticsView(APIView):
         today = timezone.now().date()
         start_of_month = today.replace(day=1)
 
-        # KPIs - фильтруем по разрешениям
-        clients_qs = get_filtered_queryset(request.user, Client.objects.all(), 'CLIENT')
-        apps_qs = get_filtered_queryset(request.user, Application.objects.all(), 'APPLICATION')
-        deals_qs = get_filtered_queryset(request.user, Deal.objects.all(), 'DEAL')
-        payments_qs = get_filtered_queryset(request.user, Payment.objects.all(), 'PAYMENT')
-        meetings_qs = get_filtered_queryset(request.user, Meeting.objects.all(), 'MEETING')
+        # Определяем scope дашборда — он ограничивает видимость данных
+        dashboard_scope = get_user_max_scope(request.user, 'DASHBOARD')
+
+        # KPIs - фильтруем по разрешениям с учётом scope дашборда
+        clients_qs = get_filtered_queryset(request.user, Client.objects.all(), 'CLIENT', max_scope=dashboard_scope)
+        apps_qs = get_filtered_queryset(request.user, Application.objects.all(), 'APPLICATION', max_scope=dashboard_scope)
+        deals_qs = get_filtered_queryset(request.user, Deal.objects.all(), 'DEAL', max_scope=dashboard_scope)
+        payments_qs = get_filtered_queryset(request.user, Payment.objects.all(), 'PAYMENT', max_scope=dashboard_scope)
+        meetings_qs = get_filtered_queryset(request.user, Meeting.objects.all(), 'MEETING', max_scope=dashboard_scope)
         
         new_clients_today = clients_qs.filter(created_at__date=today).count()
         new_applications_today = apps_qs.filter(created_at__date=today).count()
