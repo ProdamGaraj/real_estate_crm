@@ -8,6 +8,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
   Alert,
   CircularProgress,
   Stack,
@@ -16,15 +17,20 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
 import LocalizedDataGrid from '../../components/common/LocalizedDataGrid';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getUserProfiles, getCompanies, getDepartments } from '../../api/permissions';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getUserProfiles, getCompanies, getDepartments, banUser, unbanUser, softDeleteUser } from '../../api/permissions';
 import UserForm from '../../components/permissions/UserForm';
 import AddIcon from '@mui/icons-material/Add';
 import PersonIcon from '@mui/icons-material/Person';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import BlockIcon from '@mui/icons-material/Block';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useAuthStore } from '../../store/authStore';
 import { hasPermission } from '../../utils/permissions';
 
@@ -54,6 +60,93 @@ function formatUserFullName(fullName: string | null): string {
 
 export default function UsersPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
+  const canCreate = hasPermission(user, 'ADD', 'USER');
+  const canDelete = hasPermission(user, 'DELETE', 'USER');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [filters, setFilters] = useState({
+    company: '',
+    department: '',
+    is_active: 'true',
+  });
+
+  const queryClient = useQueryClient();
+
+  // Загрузка пользователей
+  const { data: users, isLoading, isError, error } = useQuery({
+    queryKey: ['user-profiles', filters],
+    queryFn: () => getUserProfiles({
+      company: filters.company ? Number(filters.company) : undefined,
+      department: filters.department ? Number(filters.department) : undefined,
+      is_active: filters.is_active === 'all' ? undefined : filters.is_active === 'true',
+    }),
+  });
+
+  // Загрузка компаний для фильтра
+  const { data: companies } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => getCompanies(),
+  });
+
+  // Загрузка отделов для фильтра
+  const { data: departments } = useQuery({
+    queryKey: ['departments', filters.company],
+    queryFn: () => getDepartments({
+      company: filters.company ? Number(filters.company) : undefined,
+    }),
+    enabled: !!filters.company,
+  });
+
+  const handleSuccess = () => {
+    setIsModalOpen(false);
+    setSelectedUser(null);
+    queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
+  };
+
+  const handleRowClick = (params: any) => {
+    setSelectedUser(params.row);
+    setIsModalOpen(true);
+  };
+
+  // Мутации для бана/разбана/удаления
+  const banMutation = useMutation({
+    mutationFn: (id: number) => banUser(id),
+    onSuccess: (data) => {
+      setActionSuccess(data.message);
+      queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
+      setTimeout(() => setActionSuccess(null), 4000);
+    },
+  });
+
+  const unbanMutation = useMutation({
+    mutationFn: (id: number) => unbanUser(id),
+    onSuccess: (data) => {
+      setActionSuccess(data.message);
+      queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
+      setTimeout(() => setActionSuccess(null), 4000);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => softDeleteUser(id),
+    onSuccess: (data) => {
+      setActionSuccess(data.message);
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
+      setTimeout(() => setActionSuccess(null), 4000);
+    },
+  });
+
+  const handleBan = (userRow: any) => {
+    banMutation.mutate(userRow.id);
+  };
+
+  const handleUnban = (userRow: any) => {
+    unbanMutation.mutate(userRow.id);
+  };
 
   const ROLE_NAME_MAPPING: Record<string, string> = {
     'SYSTEM_ADMIN': t('pages.settings.permissions.role_system_admin'),
@@ -155,54 +248,52 @@ export default function UsersPage() {
         />
       ),
     },
+    ...(canDelete ? [{
+      field: 'actions',
+      headerName: t('common.actions'),
+      width: 120,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: any) => {
+        const isSelf = params.row.user === user?.id;
+        if (isSelf) return null;
+        return (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {params.row.is_active ? (
+              <Tooltip title={t('pages.settings.permissions.ban_user')}>
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={(e) => { e.stopPropagation(); handleBan(params.row); }}
+                >
+                  <BlockIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            ) : (
+              <Tooltip title={t('pages.settings.permissions.unban_user')}>
+                <IconButton
+                  size="small"
+                  color="success"
+                  onClick={(e) => { e.stopPropagation(); handleUnban(params.row); }}
+                >
+                  <LockOpenIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Tooltip title={t('pages.settings.permissions.delete_user')}>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => { e.stopPropagation(); setDeleteTarget(params.row); }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        );
+      },
+    }] : []),
   ];
-  const { user } = useAuthStore();
-  const canCreate = hasPermission(user, 'ADD', 'USER');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [filters, setFilters] = useState({
-    company: '',
-    department: '',
-    is_active: 'true',
-  });
-
-  const queryClient = useQueryClient();
-
-  // Загрузка пользователей
-  const { data: users, isLoading, isError, error } = useQuery({
-    queryKey: ['user-profiles', filters],
-    queryFn: () => getUserProfiles({
-      company: filters.company ? Number(filters.company) : undefined,
-      department: filters.department ? Number(filters.department) : undefined,
-      is_active: filters.is_active === 'all' ? undefined : filters.is_active === 'true',
-    }),
-  });
-
-  // Загрузка компаний для фильтра
-  const { data: companies } = useQuery({
-    queryKey: ['companies'],
-    queryFn: () => getCompanies(),
-  });
-
-  // Загрузка отделов для фильтра
-  const { data: departments } = useQuery({
-    queryKey: ['departments', filters.company],
-    queryFn: () => getDepartments({
-      company: filters.company ? Number(filters.company) : undefined,
-    }),
-    enabled: !!filters.company,
-  });
-
-  const handleSuccess = () => {
-    setIsModalOpen(false);
-    setSelectedUser(null);
-    queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
-  };
-
-  const handleRowClick = (params: any) => {
-    setSelectedUser(params.row);
-    setIsModalOpen(true);
-  };
 
   return (
     <Stack spacing={3}>
@@ -286,6 +377,12 @@ export default function UsersPage() {
 
       {/* Таблица */}
       <Paper sx={{ p: 2 }}>
+        {actionSuccess && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {actionSuccess}
+          </Alert>
+        )}
+
         {isError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {t('common.load_error')}: {error instanceof Error ? error.message : t('common.unknown_error')}
@@ -338,7 +435,90 @@ export default function UsersPage() {
               setSelectedUser(null);
             }}
           />
+          {/* Кнопки бан/удаление в модалке (только при редактировании + если есть права) */}
+          {selectedUser && canDelete && selectedUser.user !== user?.id && (
+            <>
+              <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  {t('pages.settings.permissions.danger_zone')}
+                </Typography>
+                <Stack direction="row" spacing={2}>
+                  {selectedUser.is_active ? (
+                    <Button
+                      variant="outlined"
+                      color="warning"
+                      startIcon={<BlockIcon />}
+                      onClick={() => {
+                        banMutation.mutate(selectedUser.id);
+                        setIsModalOpen(false);
+                        setSelectedUser(null);
+                      }}
+                      disabled={banMutation.isPending}
+                    >
+                      {t('pages.settings.permissions.ban_user')}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      startIcon={<LockOpenIcon />}
+                      onClick={() => {
+                        unbanMutation.mutate(selectedUser.id);
+                        setIsModalOpen(false);
+                        setSelectedUser(null);
+                      }}
+                      disabled={unbanMutation.isPending}
+                    >
+                      {t('pages.settings.permissions.unban_user')}
+                    </Button>
+                  )}
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteOutlineIcon />}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setDeleteTarget(selectedUser);
+                      setSelectedUser(null);
+                    }}
+                  >
+                    {t('pages.settings.permissions.delete_user')}
+                  </Button>
+                </Stack>
+              </Box>
+            </>
+          )}
         </DialogContent>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления */}
+      <Dialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle color="error">
+          {t('pages.settings.permissions.confirm_delete_user_title')}
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            {t('pages.settings.permissions.confirm_delete_user', { name: deleteTarget?.user_username })}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? t('common.deleting') : t('common.delete')}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Stack>
   );

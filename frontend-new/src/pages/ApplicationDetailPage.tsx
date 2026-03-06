@@ -24,6 +24,8 @@ import CircleIcon from '@mui/icons-material/Circle';
 import HumanizedLog from '../components/logs/HumanizedLog'; // <-- Импорт HumanizedLog
 import MeetingForm from '../components/meetings/MeetingForm'; // <-- Импорт MeetingForm
 import type { Meeting } from '../api/meetings'; // <-- Импорт типа Meeting
+import { useAuthStore } from '../store/authStore';
+import { hasPermission } from '../utils/permissions';
 
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
@@ -52,6 +54,8 @@ export default function ApplicationDetailPage() {
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false); // <-- Состояние для модального окна встречи
   const [targetStatus, setTargetStatus] = useState<'JUNK' | 'REJECTED' | null>(null);
   const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
+  const { user } = useAuthStore();
+  const canDelete = hasPermission(user, 'DELETE', 'APPLICATION');
 
   const getDateLocale = () => {
     const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
@@ -198,15 +202,11 @@ export default function ApplicationDetailPage() {
             </Box>
             <Box sx={{ flexGrow: 1 }} />
             <Stack direction="row" spacing={2}>
-                {app.status === 'IN_PROGRESS' && (
-                    <>
-                    <Button variant="outlined" color="error" onClick={() => handleOpenReasonModal('JUNK')}>{t('pages.applications.junk')}</Button>
-                    <Button variant="outlined" color="warning" onClick={() => handleOpenReasonModal('REJECTED')}>{t('pages.applications.rejected')}</Button>
-                    </>
+                {canDelete && (
+                  <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setIsDeleteDialogOpen(true)}>
+                      {t('common.delete')}
+                  </Button>
                 )}
-                <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setIsDeleteDialogOpen(true)}>
-                    {t('common.delete')}
-                </Button>
             </Stack>
         </Stack>
       </Paper>

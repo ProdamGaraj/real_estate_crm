@@ -346,6 +346,7 @@ class UserProfile(models.Model):
     
     # Метаданные
     is_active = models.BooleanField(default=True, verbose_name="Активен")
+    is_deleted = models.BooleanField(default=False, verbose_name="Удалён")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 

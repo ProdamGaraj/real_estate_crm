@@ -296,6 +296,21 @@ export const deleteUserProfile = async (id: number): Promise<void> => {
   await apiClient.delete(`/permissions/user-profiles/${id}/`);
 };
 
+export const banUser = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.post(`/permissions/user-profiles/${id}/ban/`);
+  return response.data;
+};
+
+export const unbanUser = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.post(`/permissions/user-profiles/${id}/unban/`);
+  return response.data;
+};
+
+export const softDeleteUser = async (id: number): Promise<{ success: boolean; message: string }> => {
+  const response = await apiClient.post(`/permissions/user-profiles/${id}/soft_delete/`);
+  return response.data;
+};
+
 export const changeUserPassword = async (
   profileId: number,
   newPassword: string,

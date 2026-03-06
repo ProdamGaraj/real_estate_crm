@@ -232,8 +232,8 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return UserProfileDetailSerializer
     
     def get_queryset(self):
-        """Фильтруем профили на основе разрешений пользователя"""
-        queryset = super().get_queryset()
+        """Фильтруем профили на основе разрешений пользователя, скрываем удалённых"""
+        queryset = super().get_queryset().filter(is_deleted=False)
         return get_filtered_queryset(self.request.user, queryset, 'USER')
     
     @action(detail=False, methods=['post'])
@@ -341,6 +341,138 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             'success': True,
             'message': f'Пароль пользователя {user.username} успешно изменён'
         })
+
+    @action(detail=True, methods=['post'])
+    def ban(self, request, pk=None):
+        """
+        Заблокировать пользователя (деактивировать User + UserProfile)
+        """
+        profile = self.get_object()
+        
+        # Нельзя забанить самого себя
+        if profile.user == request.user:
+            return Response(
+                {'error': 'Нельзя заблокировать самого себя'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Деактивируем и User, и UserProfile
+        profile.is_active = False
+        profile.save(update_fields=['is_active', 'updated_at'])
+        profile.user.is_active = False
+        profile.user.save(update_fields=['is_active'])
+        
+        # Логируем
+        PermissionLog.objects.create(
+            user=request.user,
+            action='USER_BAN',
+            entity_type='UserProfile',
+            entity_id=profile.id,
+            details={
+                'username': profile.user.username,
+                'banned_by': request.user.username
+            },
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        
+        return Response({
+            'success': True,
+            'message': f'Пользователь {profile.user.username} заблокирован'
+        })
+
+    @action(detail=True, methods=['post'])
+    def unban(self, request, pk=None):
+        """
+        Разблокировать пользователя (активировать User + UserProfile)
+        """
+        profile = self.get_object()
+        
+        # Активируем и User, и UserProfile
+        profile.is_active = True
+        profile.save(update_fields=['is_active', 'updated_at'])
+        profile.user.is_active = True
+        profile.user.save(update_fields=['is_active'])
+        
+        # Логируем
+        PermissionLog.objects.create(
+            user=request.user,
+            action='USER_UNBAN',
+            entity_type='UserProfile',
+            entity_id=profile.id,
+            details={
+                'username': profile.user.username,
+                'unbanned_by': request.user.username
+            },
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        
+        return Response({
+            'success': True,
+            'message': f'Пользователь {profile.user.username} разблокирован'
+        })
+
+    @action(detail=True, methods=['post'])
+    def soft_delete(self, request, pk=None):
+        """
+        Мягкое удаление пользователя (скрытие из списков + деактивация)
+        """
+        profile = self.get_object()
+        
+        # Нельзя удалить самого себя
+        if profile.user == request.user:
+            return Response(
+                {'error': 'Нельзя удалить самого себя'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Мягкое удаление: деактивация + флаг is_deleted
+        profile.is_active = False
+        profile.is_deleted = True
+        profile.save(update_fields=['is_active', 'is_deleted', 'updated_at'])
+        profile.user.is_active = False
+        profile.user.save(update_fields=['is_active'])
+        
+        # Логируем
+        PermissionLog.objects.create(
+            user=request.user,
+            action='USER_DELETE',
+            entity_type='UserProfile',
+            entity_id=profile.id,
+            details={
+                'username': profile.user.username,
+                'deleted_by': request.user.username
+            },
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+        
+        return Response({
+            'success': True,
+            'message': f'Пользователь {profile.user.username} удалён'
+        })
+
+    def perform_destroy(self, instance):
+        """Переопределяем DELETE — используем soft delete вместо hard delete"""
+        if instance.user == self.request.user:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError('Нельзя удалить самого себя')
+        
+        instance.is_active = False
+        instance.is_deleted = True
+        instance.save(update_fields=['is_active', 'is_deleted', 'updated_at'])
+        instance.user.is_active = False
+        instance.user.save(update_fields=['is_active'])
+        
+        PermissionLog.objects.create(
+            user=self.request.user,
+            action='USER_DELETE',
+            entity_type='UserProfile',
+            entity_id=instance.id,
+            details={
+                'username': instance.user.username,
+                'deleted_by': self.request.user.username
+            },
+            ip_address=self.request.META.get('REMOTE_ADDR')
+        )
 
 
 class CurrentUserProfileView(APIView):

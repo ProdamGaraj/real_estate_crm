@@ -883,7 +883,17 @@
         "confirm_password": "Confirm Password",
         "new_password_section": "Set New Password",
         "save_password": "Save Password",
-        "password_changed": "Password successfully changed"
+        "password_changed": "Password successfully changed",
+        "ban_user": "Block",
+        "unban_user": "Unblock",
+        "delete_user": "Delete user",
+        "danger_zone": "Danger zone",
+        "confirm_delete_user_title": "Delete user",
+        "confirm_delete_user": "Are you sure you want to delete user \"{{name}}\"? The user will be deactivated and hidden from all lists.",
+        "user_banned": "User blocked",
+        "user_unbanned": "User unblocked",
+        "user_deleted": "User deleted",
+        "actions": "Actions"
       }
     },
     "api_keys": {

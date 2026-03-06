@@ -864,7 +864,17 @@
         "confirm_password": "Parolni tasdiqlang",
         "new_password_section": "Yangi parol o'rnatish",
         "save_password": "Parolni saqlash",
-        "password_changed": "Parol muvaffaqiyatli o'zgartirildi"
+        "password_changed": "Parol muvaffaqiyatli o'zgartirildi",
+        "ban_user": "Bloklash",
+        "unban_user": "Blokdan chiqarish",
+        "delete_user": "Foydalanuvchini o'chirish",
+        "danger_zone": "Xavfli zona",
+        "confirm_delete_user_title": "Foydalanuvchini o'chirish",
+        "confirm_delete_user": "\"{{name}}\" foydalanuvchisini o'chirishga ishonchingiz komilmi? Foydalanuvchi o'chiriladi va ro'yxatlardan yashiriladi.",
+        "user_banned": "Foydalanuvchi bloklandi",
+        "user_unbanned": "Foydalanuvchi blokdan chiqarildi",
+        "user_deleted": "Foydalanuvchi o'chirildi",
+        "actions": "Amallar"
       }
     },
     "api_keys": {
