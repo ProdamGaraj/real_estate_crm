@@ -63,7 +63,7 @@ export default function DashboardPage() {
   const statusData = charts?.applicationStatuses?.map((item, index) => ({
     id: index,
     value: item.count,
-    label: t(`application.statuses.${item.status}`, item.status),
+    label: t(`statuses.application.${item.status}`, item.status),
     color: statusColors[item.status] || sourceColors[index % sourceColors.length],
   })) || [];
 
@@ -71,14 +71,14 @@ export default function DashboardPage() {
   const sourceData = charts?.applicationSources?.map((item, index) => ({
     id: index,
     value: item.count,
-    label: t(`application.sources.${item.source}`, item.source),
+    label: t(`statuses.application_source.${item.source}`, item.source),
     color: sourceColors[index % sourceColors.length],
   })) || [];
 
   // Данные для bar chart (статусы)
   const barChartData = charts?.applicationStatuses?.map(item => item.count) || [];
   const barChartLabels = charts?.applicationStatuses?.map(item => 
-    t(`application.statuses.${item.status}`, item.status)
+    t(`statuses.application.${item.status}`, item.status)
   ) || [];
 
   // Adaptive chart height

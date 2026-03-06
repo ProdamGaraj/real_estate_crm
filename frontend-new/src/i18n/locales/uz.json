@@ -21,6 +21,7 @@
     "next": "Keyingi",
     "all": "Hammasi",
     "none": "Tanlanmagan",
+    "not_selected": "Tanlanmagan",
     "yes": "Ha",
     "no": "Yo'q",
     "loading": "Yuklanmoqda...",
@@ -487,6 +488,7 @@
       "delete_project_confirm": "\"{{name}}\" loyihasini o'chirishga ishonchingiz komilmi?",
       "project_updated": "Loyiha yangilandi!",
       "create_error": "Loyihani yaratishda xatolik yuz berdi.",
+      "company": "Kompaniya",
       "form": {
         "name": "Loyiha nomi",
         "address": "Manzil"

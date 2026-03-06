@@ -51,6 +51,12 @@ export const passwordResetConfirm = async (data: PasswordResetConfirm): Promise<
   return response.data;
 };
 
+// Получение актуального профиля текущего пользователя
+export const fetchCurrentUser = async (): Promise<any> => {
+  const response = await apiClient.get('/permissions/me/');
+  return response.data;
+};
+
 // Обновление access токена через refresh токен
 export const refreshAccessToken = async (refreshToken: string): Promise<{ access: string; refresh: string }> => {
   const response = await apiClient.post('/token/refresh/', { refresh: refreshToken });

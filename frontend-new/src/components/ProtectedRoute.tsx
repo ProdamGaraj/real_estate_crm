@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Box, CircularProgress } from '@mui/material';
@@ -7,7 +8,16 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, refreshUser } = useAuthStore();
+  const hasRefreshed = useRef(false);
+
+  // При загрузке приложения обновляем данные пользователя с сервера
+  useEffect(() => {
+    if (isAuthenticated && !hasRefreshed.current) {
+      hasRefreshed.current = true;
+      refreshUser();
+    }
+  }, [isAuthenticated, refreshUser]);
   const location = useLocation();
 
   if (isLoading) {

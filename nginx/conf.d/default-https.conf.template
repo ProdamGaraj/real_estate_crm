@@ -20,7 +20,8 @@ server {
 
 # HTTPS сервер
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name dvgroup.uz www.dvgroup.uz localhost _;
 
     # SSL сертификаты

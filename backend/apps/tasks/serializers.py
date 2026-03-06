@@ -90,7 +90,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'parent_task', 'is_overdue', 'time_spent',
             'comments_count', 'subtasks_count'
         ]
-        read_only_fields = ['id', 'created_at', 'started_at', 'completed_at', 'completed_with_delay', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'completed_at', 'completed_with_delay', 'updated_at']
         extra_kwargs = {
             'company': {'required': False},  # Будет установлено автоматически из профиля
             'department': {'required': False},
@@ -223,11 +223,17 @@ class TaskSerializer(serializers.ModelSerializer):
         validated_data['assignee_id'] = assignee_id
         
         # Автоматически устанавливаем company и department из профиля создателя
-        if hasattr(user, 'profile'):
+        if hasattr(user, 'profile') and user.profile:
             if 'company' not in validated_data and user.profile.company:
                 validated_data['company'] = user.profile.company
             if 'department' not in validated_data and user.profile.department:
                 validated_data['department'] = user.profile.department
+        
+        # Проверяем что company установлена (обязательное поле)
+        if 'company' not in validated_data or validated_data.get('company') is None:
+            raise serializers.ValidationError({
+                'company': 'Не удалось определить компанию. Убедитесь, что у вашего профиля указана компания.'
+            })
         
         # Создаем задачу
         task = super().create(validated_data)

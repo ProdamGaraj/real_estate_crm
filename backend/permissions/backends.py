@@ -183,8 +183,16 @@ def get_filtered_queryset(user, queryset, resource_type):
             if has_own_view:
                 if hasattr(queryset.model, 'created_by'):
                     filters |= Q(created_by=user)
+                elif hasattr(queryset.model, 'creator'):
+                    filters |= Q(creator=user)
                 elif hasattr(queryset.model, 'user'):
                     filters |= Q(user=user)
+                # Для задач: исполнитель тоже видит назначенные на него задачи
+                if hasattr(queryset.model, 'assignee'):
+                    filters |= Q(assignee=user)
+                # Для задач: наблюдатель тоже видит задачи
+                if hasattr(queryset.model, 'watchers'):
+                    filters |= Q(watchers=user)
         
         # Если нет ни одного разрешения - возвращаем пустой queryset
         if not filters:

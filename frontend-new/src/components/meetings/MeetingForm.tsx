@@ -1,7 +1,7 @@
 import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getBuildings } from '../../api/projects';
+import { getAllBuildings } from '../../api/projects';
 import { getUsers } from '../../api/users';
 import { createMeeting, type MeetingPayload } from '../../api/meetings';
 import {
@@ -26,9 +26,8 @@ export default function MeetingForm({ clientId, applicationId, onSuccess }: Meet
   });
 
   const { data: buildings, isLoading: isLoadingBuildings } = useQuery({
-    // Просто получаем все дома из первого проекта для примера. В идеале нужен другой эндпоинт.
-    queryKey: ['buildings', 1],
-    queryFn: () => getBuildings({ projectId: 1, filters: {} })
+    queryKey: ['buildings-all'],
+    queryFn: getAllBuildings
   });
 
   const mutation = useMutation({
@@ -77,7 +76,7 @@ export default function MeetingForm({ clientId, applicationId, onSuccess }: Meet
             <Autocomplete
               options={buildings || []}
               loading={isLoadingBuildings}
-              getOptionLabel={(option) => option.name}
+              getOptionLabel={(option) => option.project_name ? `${option.name} (${option.project_name})` : option.name}
               onChange={(_, data) => field.onChange(data?.id)}
               renderInput={(params) => <TextField {...params} label={t('pages.meetings.interested_building')} />}
             />

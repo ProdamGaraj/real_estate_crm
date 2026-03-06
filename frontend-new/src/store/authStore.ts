@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { login as apiLogin, logout as apiLogout } from '../api/auth';
+import { login as apiLogin, logout as apiLogout, fetchCurrentUser } from '../api/auth';
 
 interface User {
   id: number;
@@ -26,6 +26,7 @@ interface AuthState {
   // Actions
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   setUser: (user: User | null) => void;
   setTokens: (access: string, refresh: string) => void;
   clearError: () => void;
@@ -97,6 +98,29 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      refreshUser: async () => {
+        const { isAuthenticated, accessToken } = get();
+        if (!isAuthenticated || !accessToken) return;
+        try {
+          const userData = await fetchCurrentUser();
+          const user: User = {
+            id: userData.id,
+            user_username: userData.user?.username || '',
+            user_full_name: userData.user?.full_name || userData.user?.username || '',
+            email: userData.user?.email,
+            is_system_admin: userData.is_system_admin,
+            company: userData.company?.id,
+            company_name: userData.company?.name,
+            department: userData.department?.id,
+            department_name: userData.department?.name,
+            roles: userData.roles || [],
+          };
+          set({ user });
+        } catch (error) {
+          console.error('Failed to refresh user data:', error);
+        }
+      },
+
       setUser: (user) => set({ user }),
 
       setTokens: (access, refresh) =>
@@ -106,12 +130,26 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      version: 1,
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          // Сброс старого формата — при следующем входе загрузятся актуальные данные
+          return {
+            ...persistedState,
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+            isAuthenticated: false,
+          };
+        }
+        return persistedState as AuthState;
+      },
     }
   )
 );
