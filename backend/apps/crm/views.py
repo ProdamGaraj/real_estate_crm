@@ -13,6 +13,37 @@ from .serializers import (
 )
 from .filters import ClientFilter, ApplicationFilter, MeetingFilter
 from django.contrib.auth.models import User
+
+
+def _get_field_display_name(model, field_name):
+    """Получить человекочитаемое название поля из verbose_name модели."""
+    try:
+        return str(model._meta.get_field(field_name).verbose_name)
+    except Exception:
+        return field_name
+
+
+def _get_choice_display(model, field_name, value):
+    """Получить человекочитаемое значение для choices-поля."""
+    if value is None or value == '':
+        return 'пусто'
+    try:
+        field = model._meta.get_field(field_name)
+        if hasattr(field, 'choices') and field.choices:
+            choices_dict = dict(field.choices)
+            if value in choices_dict:
+                return str(choices_dict[value])
+    except Exception:
+        pass
+    return str(value) or 'пусто'
+
+
+def _format_change(model, key, old_value, new_value):
+    """Сформировать строку изменения с человекочитаемыми названиями."""
+    field_label = _get_field_display_name(model, key)
+    old_display = _get_choice_display(model, key, old_value)
+    new_display = _get_choice_display(model, key, new_value)
+    return f"'{field_label}' изменено с '{old_display}' на '{new_display}'"
 from .serializers import UserSerializer
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
@@ -384,17 +415,16 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
         new_data = self.get_serializer(instance).data
         new_phones = sorted([p['phone_number'] for p in new_data.get('phone_numbers', [])])
         changes = []
+        skip_keys = {'updated_at', 'logs', 'applications', 'phone_numbers', 'meetings', 'id', 'created_at', 'created_by'}
         for key, value in old_data.items():
-            if key not in ['updated_at', 'logs', 'applications', 'phone_numbers', 'meetings']:
+            if key not in skip_keys:
                 new_value = new_data.get(key)
                 if value != new_value:
-                    old_value_str = value or "пусто"
-                    new_value_str = new_value or "пусто"
-                    changes.append(f"Поле '{key}' изменено с '{old_value_str}' на '{new_value_str}'")
+                    changes.append(_format_change(Client, key, value, new_value))
         if old_phones != new_phones:
             old_phones_str = ", ".join(old_phones) or "пусто"
             new_phones_str = ", ".join(new_phones) or "пусто"
-            changes.append(f"Поле 'phone_numbers' изменено с '{old_phones_str}' на '{new_phones_str}'")
+            changes.append(f"'Номера телефонов' изменено с '{old_phones_str}' на '{new_phones_str}'")
         if changes:
             action_text = "Данные клиента обновлены. " + "; ".join(changes)
             ClientLog.objects.create(
@@ -424,9 +454,16 @@ class ApplicationListView(generics.ListCreateAPIView):
         if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
             company = self.request.user.profile.company
         if serializer.validated_data.get('source') == 'OFFICE':
-            serializer.save(created_by=self.request.user, company=company)
+            instance = serializer.save(created_by=self.request.user, company=company)
         else:
-            serializer.save(company=company)
+            instance = serializer.save(company=company)
+
+        # Логируем создание заявки
+        ApplicationLog.objects.create(
+            application=instance,
+            user=self.request.user,
+            action="Заявка создана."
+        )
 
 
 class RejectionReasonDetailView(generics.RetrieveUpdateAPIView):
@@ -450,12 +487,10 @@ class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance = serializer.save()
         new_data = self.get_serializer(instance).data
         changes = []
+        skip_keys = {'updated_at', 'logs', 'client', 'meetings', 'id', 'created_at', 'created_by'}
         for key in old_data:
-            if old_data[key] != new_data[key]:
-                if key not in ['updated_at', 'logs', 'client', 'meetings']:
-                    old_value = old_data[key] or "пусто"
-                    new_value = new_data[key] or "пусто"
-                    changes.append(f"Поле '{key}' изменено с '{old_value}' на '{new_value}'")
+            if key not in skip_keys and old_data[key] != new_data[key]:
+                changes.append(_format_change(Application, key, old_data[key], new_data[key]))
         if changes:
             action_text = "Заявка обновлена. " + "; ".join(changes)
             ApplicationLog.objects.create(
@@ -523,12 +558,31 @@ class PublicApplicationCreateView(generics.CreateAPIView):
             client.company = partner_company
             client.save(update_fields=['company'])
         
-        Application.objects.create(
+        application = Application.objects.create(
             client=client,
             source=data.get('source'),
             notes=data.get('notes', ''),
             company=partner_company
         )
+
+        # Логируем создание заявки через партнёрский API
+        partner_name = ''
+        if hasattr(request, 'partner_api_key') and request.partner_api_key:
+            partner_name = request.partner_api_key.name
+        ApplicationLog.objects.create(
+            application=application,
+            user=None,
+            action=f"Заявка создана через партнёрский API (партнёр: {partner_name})." if partner_name else "Заявка создана через партнёрский API."
+        )
+
+        # Логируем создание клиента, если он был создан
+        if not phone_obj:
+            ClientLog.objects.create(
+                client=client,
+                user=None,
+                action=f"Клиент создан через партнёрский API (партнёр: {partner_name})." if partner_name else "Клиент создан через партнёрский API."
+            )
+
         return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
 
 

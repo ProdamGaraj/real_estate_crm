@@ -70,21 +70,126 @@ const router = createBrowserRouter([
               </PermissionRoute>
             )
           },
-          { path: 'clients', element: <ClientsPage /> },
-          { path: 'clients/:clientId', element: <ClientDetailPage /> },
-          { path: 'applications', element: <ApplicationsPage /> },
-          { path: 'applications/:applicationId', element: <ApplicationDetailPage /> },
-          { path: 'meetings', element: <MeetingsPage /> },
-          { path: 'tasks', element: <TasksPage /> },
-          { path: 'tasks/:id', element: <TaskDetailPage /> },
-          { path: 'deals', element: <DealsPage /> },
-          { path: 'deals/:dealId', element: <DealDetailPage /> },
-          { path: 'projects', element: <ProjectsPage /> },
-          { path: 'projects/:projectId', element: <ProjectDetailPage /> },
-          { path: 'projects/:projectId/buildings/:buildingId', element: <BuildingDetailPage /> },
-          { path: 'finances', element: <FinancesPage /> },
-          { path: 'finances/:paymentId', element: <PaymentDetailPage /> },
-          { path: 'reports', element: <ReportsPage /> },
+          {
+            path: 'clients',
+            element: (
+              <PermissionRoute resource="CLIENT" action="VIEW">
+                <ClientsPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'clients/:clientId',
+            element: (
+              <PermissionRoute resource="CLIENT" action="VIEW">
+                <ClientDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'applications',
+            element: (
+              <PermissionRoute resource="APPLICATION" action="VIEW">
+                <ApplicationsPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'applications/:applicationId',
+            element: (
+              <PermissionRoute resource="APPLICATION" action="VIEW">
+                <ApplicationDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'meetings',
+            element: (
+              <PermissionRoute resource="MEETING" action="VIEW">
+                <MeetingsPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'tasks',
+            element: (
+              <PermissionRoute resource="TASK" action="VIEW">
+                <TasksPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'tasks/:id',
+            element: (
+              <PermissionRoute resource="TASK" action="VIEW">
+                <TaskDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'deals',
+            element: (
+              <PermissionRoute resource="DEAL" action="VIEW">
+                <DealsPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'deals/:dealId',
+            element: (
+              <PermissionRoute resource="DEAL" action="VIEW">
+                <DealDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'projects',
+            element: (
+              <PermissionRoute resource="PROJECT" action="VIEW">
+                <ProjectsPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'projects/:projectId',
+            element: (
+              <PermissionRoute resource="PROJECT" action="VIEW">
+                <ProjectDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'projects/:projectId/buildings/:buildingId',
+            element: (
+              <PermissionRoute resource="BUILDING" action="VIEW">
+                <BuildingDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'finances',
+            element: (
+              <PermissionRoute resource="PAYMENT" action="VIEW">
+                <FinancesPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'finances/:paymentId',
+            element: (
+              <PermissionRoute resource="PAYMENT" action="VIEW">
+                <PaymentDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'reports',
+            element: (
+              <PermissionRoute resource="REPORT" action="VIEW">
+                <ReportsPage />
+              </PermissionRoute>
+            )
+          },
           {
             path: 'settings',
             element: (
@@ -110,8 +215,22 @@ const router = createBrowserRouter([
             )
           },
           // Permissions routes
-          { path: 'permissions/companies/:id', element: <CompanyDetailPage /> },
-          { path: 'permissions/roles/:id', element: <RoleDetailPage /> },
+          {
+            path: 'permissions/companies/:id',
+            element: (
+              <PermissionRoute requireAdmin>
+                <CompanyDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'permissions/roles/:id',
+            element: (
+              <PermissionRoute requireAdmin>
+                <RoleDetailPage />
+              </PermissionRoute>
+            )
+          },
         ],
       },
     ],
