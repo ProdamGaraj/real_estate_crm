@@ -93,10 +93,14 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
   React.useEffect(() => {
     if (role?.permissions && allPermissions) {
       // Преобразуем разрешения роли в иерархическую структуру V2
-      const hierarchy = permissionIdsToHierarchy(role.permissions);
+      const hierarchy = permissionIdsToHierarchy(
+        role.permissions,
+        accessibleCompanies,
+        accessibleDepartments,
+      );
       setPermissionsHierarchy(hierarchy);
     }
-  }, [role, allPermissions]);
+  }, [role, allPermissions, accessibleCompanies, accessibleDepartments]);
 
   const mutation = useMutation({
     mutationFn: (data: any) => {
@@ -151,7 +155,26 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
       onSuccess();
     },
     onError: (err: any) => {
-      setError(err.response?.data?.detail || err.message || t('errors.save_role_error'));
+      const data = err.response?.data;
+      if (data) {
+        if (typeof data === 'string') {
+          setError(data);
+        } else if (data.detail) {
+          setError(data.detail);
+        } else if (data.non_field_errors) {
+          setError(Array.isArray(data.non_field_errors) ? data.non_field_errors.join('; ') : data.non_field_errors);
+        } else if (typeof data === 'object') {
+          // Собираем все ошибки полей
+          const msgs = Object.entries(data).map(([key, val]) => 
+            `${key}: ${Array.isArray(val) ? val.join(', ') : val}`
+          );
+          setError(msgs.join('; '));
+        } else {
+          setError(err.message || t('errors.save_role_error'));
+        }
+      } else {
+        setError(err.message || t('errors.save_role_error'));
+      }
     },
   });
 

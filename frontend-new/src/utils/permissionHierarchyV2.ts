@@ -281,13 +281,36 @@ export const convertOldToNew = (
  * Используется для загрузки существующих разрешений при редактировании роли
  */
 export const permissionIdsToHierarchy = (
-  rolePermissions: any[]
+  rolePermissions: any[],
+  accessibleCompanies?: { id: number; name: string }[],
+  accessibleDepartments?: { id: number; company: number; name: string }[],
 ): PermissionsHierarchyV2 => {
   const hierarchy: PermissionsHierarchyV2 = {};
 
   if (!rolePermissions || rolePermissions.length === 0) {
     return hierarchy;
   }
+
+  // Вспомогательная функция: гарантировать наличие компании в hierarchy[resource].companies
+  const ensureCompany = (resource: string, companyId: number): CompanyPermissions => {
+    const resPerms = hierarchy[resource];
+    let company = resPerms.companies.find((c) => c.companyId === companyId);
+    if (!company) {
+      // Добавляем компанию с отделами
+      const companyDepts = (accessibleDepartments || []).filter((d) => d.company === companyId);
+      company = {
+        companyId,
+        companyLevel: emptyCrudPermissions(),
+        departments: companyDepts.map((dept) => ({
+          departmentId: dept.id,
+          permissions: emptyCrudPermissions(),
+        })),
+        selectAll: false,
+      };
+      resPerms.companies.push(company);
+    }
+    return company;
+  };
 
   rolePermissions.forEach((perm) => {
     const resource = perm.resource;
@@ -310,12 +333,36 @@ export const permissionIdsToHierarchy = (
     } else if (scope === 'SYSTEM') {
       hierarchy[resource].system[action] = true;
     } else if (scope === 'COMPANY') {
-      // Для COMPANY scope добавляем на уровень own (упрощённая логика)
-      // В полной версии нужно добавлять конкретную компанию
-      hierarchy[resource].own[action] = true;
+      // Добавляем COMPANY разрешение во все доступные компании
+      if (accessibleCompanies && accessibleCompanies.length > 0) {
+        accessibleCompanies.forEach((comp) => {
+          const company = ensureCompany(resource, comp.id);
+          company.companyLevel[action] = true;
+        });
+      } else {
+        // Фоллбек: если нет списка компаний, показываем как OWN чтобы не потерять
+        hierarchy[resource].own[action] = true;
+      }
     } else if (scope === 'DEPARTMENT') {
-      // Для DEPARTMENT scope тоже добавляем на уровень own
-      hierarchy[resource].own[action] = true;
+      // Добавляем DEPARTMENT разрешение во все доступные отделы
+      if (accessibleCompanies && accessibleCompanies.length > 0 && accessibleDepartments && accessibleDepartments.length > 0) {
+        // Группируем отделы по компаниям
+        accessibleCompanies.forEach((comp) => {
+          const companyDepts = accessibleDepartments.filter((d) => d.company === comp.id);
+          if (companyDepts.length > 0) {
+            const company = ensureCompany(resource, comp.id);
+            companyDepts.forEach((dept) => {
+              const deptEntry = company.departments.find((d) => d.departmentId === dept.id);
+              if (deptEntry) {
+                deptEntry.permissions[action] = true;
+              }
+            });
+          }
+        });
+      } else {
+        // Фоллбек: если нет списка отделов, показываем как OWN чтобы не потерять
+        hierarchy[resource].own[action] = true;
+      }
     }
   });
 
@@ -354,19 +401,19 @@ export const hierarchyToPermissionIds = (
               p.action === actionUpper &&
               p.scope === 'COMPANY'
           );
-          if (perm) permissionIds.push(perm.id);
+          if (perm && !permissionIds.includes(perm.id)) permissionIds.push(perm.id);
         }
 
-        // На уровне отделов
+        // На уровне отделов (DEPARTMENT scope)
         company.departments.forEach((dept) => {
           if (dept.permissions[action]) {
             const perm = allPermissions.find(
               (p) =>
                 p.resource === resourceName &&
                 p.action === actionUpper &&
-                p.department_id === dept.departmentId
+                p.scope === 'DEPARTMENT'
             );
-            if (perm) permissionIds.push(perm.id);
+            if (perm && !permissionIds.includes(perm.id)) permissionIds.push(perm.id);
           }
         });
       });

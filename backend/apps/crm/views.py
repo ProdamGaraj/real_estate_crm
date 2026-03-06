@@ -637,6 +637,31 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, UserPermission]
 
+    def get_queryset(self):
+        """Фильтрация пользователей по scope-разрешениям."""
+        qs = super().get_queryset()
+        user = self.request.user
+
+        if user.is_superuser:
+            return qs
+
+        try:
+            profile = user.profile
+            if profile.is_system_admin:
+                return qs
+
+            if profile.has_permission_for_action('VIEW', 'USER', 'SYSTEM'):
+                return qs
+            if profile.has_permission_for_action('VIEW', 'USER', 'COMPANY') and profile.company:
+                return qs.filter(profile__company=profile.company)
+            if profile.has_permission_for_action('VIEW', 'USER', 'DEPARTMENT') and profile.department:
+                return qs.filter(profile__department=profile.department)
+            if profile.has_permission_for_action('VIEW', 'USER', 'OWN'):
+                return qs.filter(id=user.id)
+            return qs.none()
+        except Exception:
+            return qs.none()
+
 
 # --- Views для статусов заявок ---
 class ApplicationStatusListCreateView(generics.ListCreateAPIView):
