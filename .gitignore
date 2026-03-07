@@ -43,3 +43,5 @@ backend/sqlite_export.json
 backups
 all
 rename_files.sh
+backend/logs/*
+backend/permissions/migrations/__pycache__/*
