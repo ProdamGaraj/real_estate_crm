@@ -58,12 +58,20 @@ export default function RoleDetailPage() {
     CUSTOM: t('pages.settings.permissions.category_custom'),
   }), [t]);
 
-  // Названия для action
+  // Названия для action (синхронизировано с backend Permission.Action)
   const ACTION_LABELS = useMemo(() => ({
     VIEW: t('pages.settings.permissions.action_view'),
     ADD: t('pages.settings.permissions.action_add'),
     EDIT: t('pages.settings.permissions.action_edit'),
     DELETE: t('pages.settings.permissions.action_delete'),
+    EXPORT: t('pages.settings.permissions.action_export'),
+    IMPORT: t('pages.settings.permissions.action_import'),
+    APPROVE: t('pages.settings.permissions.action_approve'),
+    ASSIGN: t('pages.settings.permissions.action_assign'),
+    EDIT_IN_PROGRESS: t('pages.settings.permissions.action_edit_in_progress'),
+    REOPEN: t('pages.settings.permissions.action_reopen'),
+    FORCE_EDIT: t('pages.settings.permissions.action_force_edit'),
+    DELETE_LOG: t('pages.settings.permissions.action_delete_log'),
   }), [t]);
 
   // Названия для scope
@@ -75,32 +83,35 @@ export default function RoleDetailPage() {
   }), [t]);
 
   // Названия для resource
+  // Синхронизировано с backend Permission.Resource (27 ресурсов)
   const RESOURCE_LABELS = useMemo(() => ({
     CLIENT: t('pages.settings.permissions.resource_client'),
     APPLICATION: t('pages.settings.permissions.resource_application'),
+    APPLICATION_STATUS: t('pages.settings.permissions.resource_application_status'),
     MEETING: t('pages.settings.permissions.resource_meeting'),
     DEAL: t('pages.settings.permissions.resource_deal'),
     PAYMENT: t('pages.settings.permissions.resource_payment'),
-    REFUND: t('pages.settings.permissions.resource_refund'),
+    PAYMENT_TYPE: t('pages.settings.permissions.resource_payment_type'),
     PROJECT: t('pages.settings.permissions.resource_project'),
     BUILDING: t('pages.settings.permissions.resource_building'),
+    BUILDING_TYPE: t('pages.settings.permissions.resource_building_type'),
     PROPERTY: t('pages.settings.permissions.resource_property'),
     LAYOUT: t('pages.settings.permissions.resource_layout'),
     DISCOUNT: t('pages.settings.permissions.resource_discount'),
-    DOCUMENT: t('pages.settings.permissions.resource_document'),
+    BENEFICIARY_ACCOUNT: t('pages.settings.permissions.resource_beneficiary_account'),
+    TEMPLATE: t('pages.settings.permissions.resource_template'),
     REPORT: t('pages.settings.permissions.resource_report'),
+    PLAN: t('pages.settings.permissions.resource_plan'),
+    TASK: t('pages.settings.permissions.resource_task'),
+    TASK_LOG: t('pages.settings.permissions.resource_task_log'),
     COMPANY: t('pages.settings.permissions.resource_company'),
     DEPARTMENT: t('pages.settings.permissions.resource_department'),
     ROLE: t('pages.settings.permissions.resource_role'),
     USER: t('pages.settings.permissions.resource_user'),
-    BENEFICIARY_ACCOUNT: t('pages.settings.permissions.resource_beneficiary_account'),
-    DASHBOARD: t('pages.settings.permissions.resource_dashboard'),
-    PAYMENT_TYPE: t('pages.settings.permissions.resource_payment_type'),
     PERMISSION: t('pages.settings.permissions.resource_permission'),
-    PLAN: t('pages.settings.permissions.resource_plan'),
+    PARTNER_API_KEY: t('pages.settings.permissions.resource_partner_api_key'),
+    DASHBOARD: t('pages.settings.permissions.resource_dashboard'),
     SETTINGS: t('pages.settings.permissions.resource_settings'),
-    TEMPLATE: t('pages.settings.permissions.resource_template'),
-    OTHER: t('pages.settings.permissions.resource_other'),
   }), [t]);
 
   const { data: role, isLoading, isError, error } = useQuery({

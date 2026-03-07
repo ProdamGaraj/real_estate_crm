@@ -2,13 +2,28 @@
  * Новая иерархическая система разрешений V2
  * 
  * Структура:
- * Ресурс → Scope Level (own/companies/system) → Actions (CRUD)
+ * Ресурс → Scope Level (own/companies/system) → Actions (CRUD + extended)
  */
 
-// CRUD операции
+// Базовые CRUD операции
 export type CrudAction = 'VIEW' | 'ADD' | 'EDIT' | 'DELETE';
 
-// Разрешения для конкретного уровня (own/company/department/system)
+// Расширенные действия (используются только для TASK)
+export type ExtendedAction = 'ASSIGN' | 'EDIT_IN_PROGRESS' | 'REOPEN' | 'FORCE_EDIT';
+
+// Все действия
+export type AllAction = CrudAction | ExtendedAction;
+
+// Список всех CRUD действий
+export const CRUD_ACTIONS: Array<keyof ScopeLevelPermissions> = ['view', 'add', 'edit', 'delete'];
+
+// Список расширенных действий
+export const EXTENDED_ACTIONS: Array<keyof ExtendedPermissions> = ['assign', 'edit_in_progress', 'reopen', 'force_edit'];
+
+// Список всех действий
+export const ALL_ACTIONS = [...CRUD_ACTIONS, ...EXTENDED_ACTIONS] as const;
+
+// Разрешения для конкретного уровня (own/company/department/system) — базовые CRUD
 export interface ScopeLevelPermissions {
   view: boolean;
   add: boolean;
@@ -16,10 +31,22 @@ export interface ScopeLevelPermissions {
   delete: boolean;
 }
 
+// Расширенные разрешения (для ресурса TASK)
+export interface ExtendedPermissions {
+  assign: boolean;
+  edit_in_progress: boolean;
+  reopen: boolean;
+  force_edit: boolean;
+}
+
+// Полные разрешения для scope level (CRUD + extended)
+export interface FullScopeLevelPermissions extends ScopeLevelPermissions, ExtendedPermissions {}
+
 // Разрешения для отдела
 export interface DepartmentPermissions {
   departmentId: number;
   permissions: ScopeLevelPermissions;
+  extendedPermissions: ExtendedPermissions;
 }
 
 // Разрешения для компании (включая отделы)
@@ -27,6 +54,7 @@ export interface CompanyPermissions {
   companyId: number;
   // Разрешения на уровне всей компании
   companyLevel: ScopeLevelPermissions;
+  companyExtended: ExtendedPermissions;
   // Разрешения для конкретных отделов
   departments: DepartmentPermissions[];
   // Флаг "выбрать всё" для компании
@@ -37,10 +65,16 @@ export interface CompanyPermissions {
 export interface ResourcePermissions {
   // Мои данные
   own: ScopeLevelPermissions;
+  ownExtended: ExtendedPermissions;
   // Компании и их отделы
   companies: CompanyPermissions[];
   // Вся система
   system: ScopeLevelPermissions;
+  systemExtended: ExtendedPermissions;
+  // Pass-through IDs — разрешения которые UI не может отобразить
+  // (actions типа EXPORT, IMPORT, APPROVE, DELETE_LOG)
+  // Сохраняются без изменений при save
+  passthroughIds: number[];
 }
 
 // Полная иерархия: resource -> ResourcePermissions
@@ -54,11 +88,22 @@ export const emptyCrudPermissions = (): ScopeLevelPermissions => ({
   delete: false,
 });
 
+// Создание пустых расширенных разрешений
+export const emptyExtendedPermissions = (): ExtendedPermissions => ({
+  assign: false,
+  edit_in_progress: false,
+  reopen: false,
+  force_edit: false,
+});
+
 // Создание пустых разрешений для ресурса
 export const emptyResourcePermissions = (): ResourcePermissions => ({
   own: emptyCrudPermissions(),
+  ownExtended: emptyExtendedPermissions(),
   companies: [],
   system: emptyCrudPermissions(),
+  systemExtended: emptyExtendedPermissions(),
+  passthroughIds: [],
 });
 
 // Проверка что разрешения CRUD пустые
@@ -66,12 +111,20 @@ export const isCrudEmpty = (crud: ScopeLevelPermissions): boolean => {
   return !crud.view && !crud.add && !crud.edit && !crud.delete;
 };
 
+// Проверка что расширенные разрешения пустые
+export const isExtendedEmpty = (ext: ExtendedPermissions): boolean => {
+  return !ext.assign && !ext.edit_in_progress && !ext.reopen && !ext.force_edit;
+};
+
 // Проверка что разрешения ресурса пустые
 export const isResourceEmpty = (resource: ResourcePermissions): boolean => {
   return (
     isCrudEmpty(resource.own) &&
+    isExtendedEmpty(resource.ownExtended) &&
     resource.companies.length === 0 &&
-    isCrudEmpty(resource.system)
+    isCrudEmpty(resource.system) &&
+    isExtendedEmpty(resource.systemExtended) &&
+    resource.passthroughIds.length === 0
   );
 };
 
@@ -81,6 +134,14 @@ export const setAllCrud = (value: boolean): ScopeLevelPermissions => ({
   add: value,
   edit: value,
   delete: value,
+});
+
+// Установить все расширенные разрешения
+export const setAllExtended = (value: boolean): ExtendedPermissions => ({
+  assign: value,
+  edit_in_progress: value,
+  reopen: value,
+  force_edit: value,
 });
 
 // Проверка что все CRUD разрешения установлены
@@ -97,9 +158,11 @@ export const applyCompanySelectAll = (
     ...company,
     selectAll: value,
     companyLevel: setAllCrud(value),
+    companyExtended: setAllExtended(value),
     departments: company.departments.map((dept) => ({
       ...dept,
       permissions: setAllCrud(value),
+      extendedPermissions: setAllExtended(value),
     })),
   };
 };
@@ -118,9 +181,11 @@ export const addCompanyToResource = (
   const newCompany: CompanyPermissions = {
     companyId,
     companyLevel: emptyCrudPermissions(),
+    companyExtended: emptyExtendedPermissions(),
     departments: departments.map((deptId) => ({
       departmentId: deptId,
       permissions: emptyCrudPermissions(),
+      extendedPermissions: emptyExtendedPermissions(),
     })),
     selectAll: false,
   };
@@ -159,6 +224,7 @@ export const addDepartmentToCompany = (
       {
         departmentId,
         permissions: company.selectAll ? setAllCrud(true) : emptyCrudPermissions(),
+        extendedPermissions: company.selectAll ? setAllExtended(true) : emptyExtendedPermissions(),
       },
     ],
   };
@@ -236,37 +302,35 @@ export const convertOldToNew = (
     const resourcePerms = emptyResourcePermissions();
 
     Object.entries(actions).forEach(([action, scope]: [string, any]) => {
-      const crudAction = action.toLowerCase() as keyof ScopeLevelPermissions;
+      const actionLower = action.toLowerCase();
 
-      // Мои
-      if (scope.own) {
-        resourcePerms.own[crudAction] = true;
+      // CRUD действия
+      if (['view', 'add', 'edit', 'delete'].includes(actionLower)) {
+        const crudAction = actionLower as keyof ScopeLevelPermissions;
+        if (scope.own) resourcePerms.own[crudAction] = true;
+        if (scope.system) resourcePerms.system[crudAction] = true;
+
+        scope.companies?.forEach((companyId: number) => {
+          let company = resourcePerms.companies.find((c) => c.companyId === companyId);
+          if (!company) {
+            company = {
+              companyId,
+              companyLevel: emptyCrudPermissions(),
+              companyExtended: emptyExtendedPermissions(),
+              departments: [],
+              selectAll: false,
+            };
+            resourcePerms.companies.push(company);
+          }
+          company.companyLevel[crudAction] = true;
+        });
       }
 
-      // Компании
-      scope.companies?.forEach((companyId: number) => {
-        let company = resourcePerms.companies.find((c) => c.companyId === companyId);
-        if (!company) {
-          company = {
-            companyId,
-            companyLevel: emptyCrudPermissions(),
-            departments: [],
-            selectAll: false,
-          };
-          resourcePerms.companies.push(company);
-        }
-        company.companyLevel[crudAction] = true;
-      });
-
-      // Отделы
-      scope.departments?.forEach((_deptId: number) => {
-        // TODO: Нужно найти компанию для этого отдела
-        // Пока просто добавляем как отдельную запись
-      });
-
-      // Система
-      if (scope.system) {
-        resourcePerms.system[crudAction] = true;
+      // Extended actions
+      if (['assign', 'edit_in_progress', 'reopen', 'force_edit'].includes(actionLower)) {
+        const extAction = actionLower as keyof ExtendedPermissions;
+        if (scope.own) resourcePerms.ownExtended[extAction] = true;
+        if (scope.system) resourcePerms.systemExtended[extAction] = true;
       }
     });
 
@@ -279,7 +343,17 @@ export const convertOldToNew = (
 /**
  * Преобразование массива разрешений роли в иерархическую структуру V2
  * Используется для загрузки существующих разрешений при редактировании роли
+ *
+ * Действия, которые UI не умеет отображать (EXPORT, IMPORT, APPROVE, DELETE_LOG),
+ * сохраняются в passthroughIds и передаются обратно при сохранении без изменений.
+ *
+ * COMPANY/DEPARTMENT scope при отсутствии компаний/отделов НЕ переключаются на OWN —
+ * они сохраняются как pass-through, чтобы не потерять данные.
  */
+
+// Действия, которые UI может отображать и редактировать
+const UI_EDITABLE_ACTIONS = ['view', 'add', 'edit', 'delete', 'assign', 'edit_in_progress', 'reopen', 'force_edit'];
+
 export const permissionIdsToHierarchy = (
   rolePermissions: any[],
   accessibleCompanies?: { id: number; name: string }[],
@@ -301,9 +375,11 @@ export const permissionIdsToHierarchy = (
       company = {
         companyId,
         companyLevel: emptyCrudPermissions(),
+        companyExtended: emptyExtendedPermissions(),
         departments: companyDepts.map((dept) => ({
           departmentId: dept.id,
           permissions: emptyCrudPermissions(),
+          extendedPermissions: emptyExtendedPermissions(),
         })),
         selectAll: false,
       };
@@ -312,41 +388,44 @@ export const permissionIdsToHierarchy = (
     return company;
   };
 
-  rolePermissions.forEach((perm) => {
-    const resource = perm.resource;
-    const action = perm.action?.toLowerCase() as keyof ScopeLevelPermissions;
-    const scope = perm.scope;
+  // Функция для установки действия на уровне scope
+  const setActionOnScope = (
+    resource: string,
+    actionLower: string,
+    scope: string,
+    permId: number,
+  ) => {
+    const isCrud = ['view', 'add', 'edit', 'delete'].includes(actionLower);
+    const isExtended = ['assign', 'edit_in_progress', 'reopen', 'force_edit'].includes(actionLower);
 
-    // Проверяем что action валидный
-    if (!action || !['view', 'add', 'edit', 'delete'].includes(action)) {
-      return; // Пропускаем нестандартные действия
+    if (!isCrud && !isExtended) {
+      // Неизвестное действие — pass-through
+      hierarchy[resource].passthroughIds.push(permId);
+      return;
     }
 
-    // Создаём структуру для ресурса если её нет
-    if (!hierarchy[resource]) {
-      hierarchy[resource] = emptyResourcePermissions();
-    }
-
-    // Устанавливаем флаг в зависимости от scope
     if (scope === 'OWN') {
-      hierarchy[resource].own[action] = true;
+      if (isCrud) hierarchy[resource].own[actionLower as keyof ScopeLevelPermissions] = true;
+      if (isExtended) hierarchy[resource].ownExtended[actionLower as keyof ExtendedPermissions] = true;
+
     } else if (scope === 'SYSTEM') {
-      hierarchy[resource].system[action] = true;
+      if (isCrud) hierarchy[resource].system[actionLower as keyof ScopeLevelPermissions] = true;
+      if (isExtended) hierarchy[resource].systemExtended[actionLower as keyof ExtendedPermissions] = true;
+
     } else if (scope === 'COMPANY') {
-      // Добавляем COMPANY разрешение во все доступные компании
       if (accessibleCompanies && accessibleCompanies.length > 0) {
         accessibleCompanies.forEach((comp) => {
           const company = ensureCompany(resource, comp.id);
-          company.companyLevel[action] = true;
+          if (isCrud) company.companyLevel[actionLower as keyof ScopeLevelPermissions] = true;
+          if (isExtended) company.companyExtended[actionLower as keyof ExtendedPermissions] = true;
         });
       } else {
-        // Фоллбек: если нет списка компаний, показываем как OWN чтобы не потерять
-        hierarchy[resource].own[action] = true;
+        // Нет доступных компаний — сохраняем как pass-through, чтобы не потерять scope
+        hierarchy[resource].passthroughIds.push(permId);
       }
+
     } else if (scope === 'DEPARTMENT') {
-      // Добавляем DEPARTMENT разрешение во все доступные отделы
       if (accessibleCompanies && accessibleCompanies.length > 0 && accessibleDepartments && accessibleDepartments.length > 0) {
-        // Группируем отделы по компаниям
         accessibleCompanies.forEach((comp) => {
           const companyDepts = accessibleDepartments.filter((d) => d.company === comp.id);
           if (companyDepts.length > 0) {
@@ -354,15 +433,36 @@ export const permissionIdsToHierarchy = (
             companyDepts.forEach((dept) => {
               const deptEntry = company.departments.find((d) => d.departmentId === dept.id);
               if (deptEntry) {
-                deptEntry.permissions[action] = true;
+                if (isCrud) deptEntry.permissions[actionLower as keyof ScopeLevelPermissions] = true;
+                if (isExtended) deptEntry.extendedPermissions[actionLower as keyof ExtendedPermissions] = true;
               }
             });
           }
         });
       } else {
-        // Фоллбек: если нет списка отделов, показываем как OWN чтобы не потерять
-        hierarchy[resource].own[action] = true;
+        // Нет доступных отделов — сохраняем как pass-through, чтобы не потерять scope
+        hierarchy[resource].passthroughIds.push(permId);
       }
+    }
+  };
+
+  rolePermissions.forEach((perm) => {
+    const resource = perm.resource;
+    const actionLower = perm.action?.toLowerCase();
+    const scope = perm.scope;
+
+    if (!actionLower || !scope) return;
+
+    // Создаём структуру для ресурса если её нет
+    if (!hierarchy[resource]) {
+      hierarchy[resource] = emptyResourcePermissions();
+    }
+
+    if (!UI_EDITABLE_ACTIONS.includes(actionLower)) {
+      // Действие вне UI — pass-through (EXPORT, IMPORT, APPROVE, DELETE_LOG)
+      hierarchy[resource].passthroughIds.push(perm.id);
+    } else {
+      setActionOnScope(resource, actionLower, scope, perm.id);
     }
   });
 
@@ -376,57 +476,85 @@ export const hierarchyToPermissionIds = (
 ): number[] => {
   const permissionIds: number[] = [];
 
-  Object.entries(hierarchy).forEach(([resourceName, resourcePerms]) => {
-    // Для каждого уровня (own, companies, system) и каждого действия
-    const actions: Array<keyof ScopeLevelPermissions> = ['view', 'add', 'edit', 'delete'];
+  const addPermId = (id: number) => {
+    if (!permissionIds.includes(id)) permissionIds.push(id);
+  };
 
-    actions.forEach((action) => {
+  const findPerm = (resourceName: string, actionUpper: string, scope: string) => {
+    return allPermissions.find(
+      (p) => p.resource === resourceName && p.action === actionUpper && p.scope === scope
+    );
+  };
+
+  Object.entries(hierarchy).forEach(([resourceName, resourcePerms]) => {
+    // Pass-through IDs — добавляем без изменений
+    resourcePerms.passthroughIds.forEach((id) => addPermId(id));
+
+    // CRUD действия
+    const crudActions: Array<keyof ScopeLevelPermissions> = ['view', 'add', 'edit', 'delete'];
+
+    crudActions.forEach((action) => {
       const actionUpper = action.toUpperCase();
 
-      // Мои (OWN scope)
+      // OWN scope
       if (resourcePerms.own[action]) {
-        const perm = allPermissions.find(
-          (p) => p.resource === resourceName && p.action === actionUpper && p.scope === 'OWN'
-        );
-        if (perm) permissionIds.push(perm.id);
+        const perm = findPerm(resourceName, actionUpper, 'OWN');
+        if (perm) addPermId(perm.id);
       }
 
       // Компании и отделы
       resourcePerms.companies.forEach((company) => {
-        // На уровне компании (COMPANY scope)
         if (company.companyLevel[action]) {
-          const perm = allPermissions.find(
-            (p) =>
-              p.resource === resourceName &&
-              p.action === actionUpper &&
-              p.scope === 'COMPANY'
-          );
-          if (perm && !permissionIds.includes(perm.id)) permissionIds.push(perm.id);
+          const perm = findPerm(resourceName, actionUpper, 'COMPANY');
+          if (perm) addPermId(perm.id);
         }
 
-        // На уровне отделов (DEPARTMENT scope)
         company.departments.forEach((dept) => {
           if (dept.permissions[action]) {
-            const perm = allPermissions.find(
-              (p) =>
-                p.resource === resourceName &&
-                p.action === actionUpper &&
-                p.scope === 'DEPARTMENT'
-            );
-            if (perm && !permissionIds.includes(perm.id)) permissionIds.push(perm.id);
+            const perm = findPerm(resourceName, actionUpper, 'DEPARTMENT');
+            if (perm) addPermId(perm.id);
           }
         });
       });
 
-      // Система
+      // SYSTEM scope
       if (resourcePerms.system[action]) {
-        const perm = allPermissions.find(
-          (p) =>
-            p.resource === resourceName &&
-            p.action === actionUpper &&
-            p.scope === 'SYSTEM'
-        );
-        if (perm) permissionIds.push(perm.id);
+        const perm = findPerm(resourceName, actionUpper, 'SYSTEM');
+        if (perm) addPermId(perm.id);
+      }
+    });
+
+    // Extended действия (ASSIGN, EDIT_IN_PROGRESS, REOPEN, FORCE_EDIT)
+    const extActions: Array<keyof ExtendedPermissions> = ['assign', 'edit_in_progress', 'reopen', 'force_edit'];
+
+    extActions.forEach((action) => {
+      const actionUpper = action.toUpperCase();
+
+      // OWN scope
+      if (resourcePerms.ownExtended[action]) {
+        const perm = findPerm(resourceName, actionUpper, 'OWN');
+        if (perm) addPermId(perm.id);
+      }
+
+      // Компании и отделы
+      resourcePerms.companies.forEach((company) => {
+        if (company.companyExtended[action]) {
+          const perm = findPerm(resourceName, actionUpper, 'COMPANY');
+          if (perm) addPermId(perm.id);
+        }
+
+        company.departments.forEach((dept) => {
+          if (dept.extendedPermissions[action]) {
+            const perm = findPerm(resourceName, actionUpper, 'DEPARTMENT');
+            if (perm) addPermId(perm.id);
+          }
+        });
+      });
+
+      // SYSTEM scope
+      if (resourcePerms.systemExtended[action]) {
+        const perm = findPerm(resourceName, actionUpper, 'SYSTEM');
+        if (perm) addPermId(perm.id);
       }
     });
   });
@@ -439,19 +567,26 @@ export const countSelectedPermissions = (hierarchy: PermissionsHierarchyV2): num
   let count = 0;
 
   Object.values(hierarchy).forEach((resourcePerms) => {
+    // Pass-through
+    count += resourcePerms.passthroughIds.length;
+
     // Мои
     if (!isCrudEmpty(resourcePerms.own)) count++;
+    if (!isExtendedEmpty(resourcePerms.ownExtended)) count++;
 
     // Компании и отделы
     resourcePerms.companies.forEach((company) => {
       if (!isCrudEmpty(company.companyLevel)) count++;
+      if (!isExtendedEmpty(company.companyExtended)) count++;
       company.departments.forEach((dept) => {
         if (!isCrudEmpty(dept.permissions)) count++;
+        if (!isExtendedEmpty(dept.extendedPermissions)) count++;
       });
     });
 
     // Система
     if (!isCrudEmpty(resourcePerms.system)) count++;
+    if (!isExtendedEmpty(resourcePerms.systemExtended)) count++;
   });
 
   return count;

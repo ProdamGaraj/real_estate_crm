@@ -16,15 +16,20 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import type {
   ResourcePermissions,
   ScopeLevelPermissions,
+  ExtendedPermissions,
   CompanyPermissions,
 } from '../../utils/permissionHierarchyV2';
 import {
   emptyCrudPermissions,
+  emptyExtendedPermissions,
   applyCompanySelectAll,
   updateCompanyCrud,
   updateDepartmentCrud,
 } from '../../utils/permissionHierarchyV2';
 import type { Company, Department } from '../../api/permissions';
+
+// Ресурсы, для которых показываются расширенные действия
+const RESOURCES_WITH_EXTENDED_ACTIONS = ['TASK'];
 
 interface ResourcePermissionSelectorProps {
   resourceName: string;
@@ -105,8 +110,77 @@ const CrudCheckboxes: React.FC<CrudCheckboxesProps> = React.memo(
 
 CrudCheckboxes.displayName = 'CrudCheckboxes';
 
+// Компонент для расширенных чекбоксов (ASSIGN, EDIT_IN_PROGRESS, REOPEN, FORCE_EDIT)
+interface ExtendedCheckboxesProps {
+  permissions: ExtendedPermissions;
+  onChange: (action: keyof ExtendedPermissions, value: boolean) => void;
+  disabled?: boolean;
+  labels: {
+    assign: string;
+    edit_in_progress: string;
+    reopen: string;
+    force_edit: string;
+  };
+}
+
+const ExtendedCheckboxes: React.FC<ExtendedCheckboxesProps> = React.memo(
+  ({ permissions, onChange, disabled, labels }) => {
+    return (
+      <Stack direction="row" spacing={2} sx={{ pl: 2, flexWrap: 'wrap' }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={permissions.assign}
+              onChange={(e) => onChange('assign', e.target.checked)}
+              disabled={disabled}
+            />
+          }
+          label={labels.assign}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={permissions.edit_in_progress}
+              onChange={(e) => onChange('edit_in_progress', e.target.checked)}
+              disabled={disabled}
+            />
+          }
+          label={labels.edit_in_progress}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={permissions.reopen}
+              onChange={(e) => onChange('reopen', e.target.checked)}
+              disabled={disabled}
+            />
+          }
+          label={labels.reopen}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              size="small"
+              checked={permissions.force_edit}
+              onChange={(e) => onChange('force_edit', e.target.checked)}
+              disabled={disabled}
+            />
+          }
+          label={labels.force_edit}
+        />
+      </Stack>
+    );
+  }
+);
+
+ExtendedCheckboxes.displayName = 'ExtendedCheckboxes';
+
 // Обертка с React.memo для оптимизации
 const ResourcePermissionSelector = React.memo(function ResourcePermissionSelector({
+  resourceName,
   resourceLabel,
   permissions,
   companies,
@@ -115,6 +189,8 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
   userCompanyId,
 }: ResourcePermissionSelectorProps) {
   const { t } = useTranslation();
+
+  const showExtended = RESOURCES_WITH_EXTENDED_ACTIONS.includes(resourceName);
   
   // Мемоизируем переводы для CRUD операций
   const crudLabels = useMemo(() => ({
@@ -122,6 +198,14 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
     add: t('pages.settings.permissions.action_add'),
     edit: t('pages.settings.permissions.action_edit'),
     delete: t('pages.settings.permissions.action_delete'),
+  }), [t]);
+
+  // Мемоизируем переводы для расширенных действий
+  const extendedLabels = useMemo(() => ({
+    assign: t('pages.settings.permissions.action_assign'),
+    edit_in_progress: t('pages.settings.permissions.action_edit_in_progress'),
+    reopen: t('pages.settings.permissions.action_reopen'),
+    force_edit: t('pages.settings.permissions.action_force_edit'),
   }), [t]);
   
   // Используем ref для хранения актуального permissions без пересоздания callbacks
@@ -145,6 +229,21 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
     [onChange]
   );
 
+  // Обработчик для "Мои" расширенные
+  const handleOwnExtendedChange = useCallback(
+    (action: keyof ExtendedPermissions, value: boolean) => {
+      const current = permissionsRef.current;
+      onChange({
+        ...current,
+        ownExtended: {
+          ...current.ownExtended,
+          [action]: value,
+        },
+      });
+    },
+    [onChange]
+  );
+
   // Обработчик для "Система" - стабильный callback
   const handleSystemChange = useCallback(
     (action: keyof ScopeLevelPermissions, value: boolean) => {
@@ -153,6 +252,21 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
         ...current,
         system: {
           ...current.system,
+          [action]: value,
+        },
+      });
+    },
+    [onChange]
+  );
+
+  // Обработчик для "Система" расширенные
+  const handleSystemExtendedChange = useCallback(
+    (action: keyof ExtendedPermissions, value: boolean) => {
+      const current = permissionsRef.current;
+      onChange({
+        ...current,
+        systemExtended: {
+          ...current.systemExtended,
           [action]: value,
         },
       });
@@ -170,9 +284,11 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
       const newCompany: CompanyPermissions = {
         companyId,
         companyLevel: emptyCrudPermissions(),
+        companyExtended: emptyExtendedPermissions(),
         departments: companyDepartments.map((dept) => ({
           departmentId: dept.id,
           permissions: emptyCrudPermissions(),
+          extendedPermissions: emptyExtendedPermissions(),
         })),
         selectAll: false,
       };
@@ -245,6 +361,45 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
     [onChange]
   );
 
+  // Обработчик для расширенных действий компании
+  const handleCompanyExtendedChange = useCallback(
+    (companyId: number, action: keyof ExtendedPermissions, value: boolean) => {
+      const current = permissionsRef.current;
+      onChange({
+        ...current,
+        companies: current.companies.map((company) =>
+          company.companyId === companyId
+            ? { ...company, companyExtended: { ...company.companyExtended, [action]: value } }
+            : company
+        ),
+      });
+    },
+    [onChange]
+  );
+
+  // Обработчик для расширенных действий отдела
+  const handleDepartmentExtendedChange = useCallback(
+    (companyId: number, departmentId: number, action: keyof ExtendedPermissions, value: boolean) => {
+      const current = permissionsRef.current;
+      onChange({
+        ...current,
+        companies: current.companies.map((company) =>
+          company.companyId === companyId
+            ? {
+                ...company,
+                departments: company.departments.map((dept) =>
+                  dept.departmentId === departmentId
+                    ? { ...dept, extendedPermissions: { ...dept.extendedPermissions, [action]: value } }
+                    : dept
+                ),
+              }
+            : company
+        ),
+      });
+    },
+    [onChange]
+  );
+
   // Фильтруем компании (для админа компании только его компания)
   const availableCompanies = useMemo(() => {
     if (userCompanyId) {
@@ -272,6 +427,9 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
               {t('pages.settings.permissions.my_resource', { resource: resourceLabel.toLowerCase() })}
             </Typography>
             <CrudCheckboxes permissions={permissions.own} onChange={handleOwnChange} labels={crudLabels} />
+            {showExtended && (
+              <ExtendedCheckboxes permissions={permissions.ownExtended} onChange={handleOwnExtendedChange} labels={extendedLabels} />
+            )}
           </Box>
 
           <Divider />
@@ -336,6 +494,15 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
                           }
                           labels={crudLabels}
                         />
+                        {showExtended && (
+                          <ExtendedCheckboxes
+                            permissions={company.companyExtended}
+                            onChange={(action, value) =>
+                              handleCompanyExtendedChange(company.companyId, action, value)
+                            }
+                            labels={extendedLabels}
+                          />
+                        )}
                       </Box>
 
                       {/* Отделы компании */}
@@ -366,6 +533,20 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
                                     }
                                     labels={crudLabels}
                                   />
+                                  {showExtended && (
+                                    <ExtendedCheckboxes
+                                      permissions={dept.extendedPermissions}
+                                      onChange={(action, value) =>
+                                        handleDepartmentExtendedChange(
+                                          company.companyId,
+                                          dept.departmentId,
+                                          action,
+                                          value
+                                        )
+                                      }
+                                      labels={extendedLabels}
+                                    />
+                                  )}
                                 </Box>
                               );
                             })}
@@ -410,6 +591,9 @@ const ResourcePermissionSelector = React.memo(function ResourcePermissionSelecto
                 {t('pages.settings.permissions.scope_system')}
               </Typography>
               <CrudCheckboxes permissions={permissions.system} onChange={handleSystemChange} labels={crudLabels} />
+              {showExtended && (
+                <ExtendedCheckboxes permissions={permissions.systemExtended} onChange={handleSystemExtendedChange} labels={extendedLabels} />
+              )}
             </Box>
           )}
         </Stack>

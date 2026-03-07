@@ -120,7 +120,9 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
       // Проверяем все разрешения в иерархии
       Object.values(permissionsHierarchy).forEach((resourcePerms) => {
         if (resourcePerms.system.view || resourcePerms.system.add ||
-          resourcePerms.system.edit || resourcePerms.system.delete) {
+          resourcePerms.system.edit || resourcePerms.system.delete ||
+          resourcePerms.systemExtended?.assign || resourcePerms.systemExtended?.edit_in_progress ||
+          resourcePerms.systemExtended?.reopen || resourcePerms.systemExtended?.force_edit) {
           hasSystem = true;
         }
         if (resourcePerms.companies.length > 0) {

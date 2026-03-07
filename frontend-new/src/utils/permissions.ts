@@ -1,35 +1,51 @@
 // real_estate_crm/frontend-new/src/utils/permissions.ts
 
 /**
- * Типы ресурсов в системе
+ * Типы ресурсов в системе (синхронизировано с backend Permission.Resource)
  */
 export type ResourceType =
   | 'CLIENT'
   | 'APPLICATION'
   | 'APPLICATION_STATUS'
   | 'MEETING'
-  | 'TASK'
-  | 'DEAL'
   | 'PROJECT'
-  | 'PROPERTY'
   | 'BUILDING'
+  | 'BUILDING_TYPE'
+  | 'PROPERTY'
   | 'LAYOUT'
-  | 'PAYMENT'
   | 'DISCOUNT'
+  | 'DEAL'
+  | 'PAYMENT'
+  | 'PAYMENT_TYPE'
+  | 'BENEFICIARY_ACCOUNT'
   | 'TEMPLATE'
-  | 'COMPANY'
-  | 'DEPARTMENT'
+  | 'REPORT'
+  | 'PLAN'
+  | 'TASK'
+  | 'TASK_LOG'
   | 'USER'
   | 'ROLE'
   | 'PERMISSION'
-  | 'SETTINGS'
+  | 'COMPANY'
+  | 'DEPARTMENT'
+  | 'PARTNER_API_KEY'
   | 'DASHBOARD'
-  | 'REPORT';
+  | 'SETTINGS';
 
 /**
- * Типы действий в системе
+ * Базовые CRUD действия
  */
-export type ActionType = 'VIEW' | 'ADD' | 'EDIT' | 'DELETE';
+export type CrudActionType = 'VIEW' | 'ADD' | 'EDIT' | 'DELETE';
+
+/**
+ * Расширенные действия (только для TASK)
+ */
+export type ExtendedActionType = 'EXPORT' | 'IMPORT' | 'APPROVE' | 'ASSIGN' | 'EDIT_IN_PROGRESS' | 'REOPEN' | 'FORCE_EDIT' | 'DELETE_LOG';
+
+/**
+ * Все типы действий в системе (синхронизировано с backend Permission.Action)
+ */
+export type ActionType = CrudActionType | ExtendedActionType;
 
 /**
  * Типы области действия разрешений
