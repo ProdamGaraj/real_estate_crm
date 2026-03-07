@@ -958,7 +958,10 @@
       "available_tags": "Available Template Tags",
       "upload_template": "Upload Template",
       "no_templates": "No templates found",
-      "tags_cheatsheet": "Tags Cheatsheet"
+      "tags_cheatsheet": "Tags Cheatsheet",
+      "apply_to_projects": "Apply to projects",
+      "apply_to_buildings": "Apply to buildings",
+      "property_types": "Property types"
     }
   },
   "documents": {

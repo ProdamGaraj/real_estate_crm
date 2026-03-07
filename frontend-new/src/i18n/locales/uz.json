@@ -939,7 +939,10 @@
       "available_tags": "Shablonlar uchun mavjud teglar",
       "upload_template": "Shablon yuklash",
       "no_templates": "Shablonlar topilmadi",
-      "tags_cheatsheet": "Teglar bo'yicha yordam"
+      "tags_cheatsheet": "Teglar bo'yicha yordam",
+      "apply_to_projects": "Loyihalarga qo'llash",
+      "apply_to_buildings": "Binolarga qo'llash",
+      "property_types": "Mulk turlari"
     }
   },
   "documents": {

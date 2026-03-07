@@ -960,7 +960,10 @@
       "available_tags": "Доступные теги для шаблонов",
       "upload_template": "Загрузить шаблон",
       "no_templates": "Шаблоны не найдены",
-      "tags_cheatsheet": "Справка по тегам"
+      "tags_cheatsheet": "Справка по тегам",
+      "apply_to_projects": "Применить к проектам",
+      "apply_to_buildings": "Применить к корпусам",
+      "property_types": "Типы недвижимости"
     },
     "payments": {
       "payment_number": "Платеж №{{id}}",
