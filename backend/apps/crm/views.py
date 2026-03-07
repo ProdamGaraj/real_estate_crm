@@ -58,7 +58,7 @@ from permissions.permissions import (
     ReportPermission, DashboardPermission, SettingsPermission, UserPermission,
     HasPartnerCreateApplicationScope, ApplicationStatusPermission
 )
-from permissions.backends import get_filtered_queryset, get_user_max_scope
+from permissions.backends import get_filtered_queryset, get_user_max_scope, can_user_perform_action
 
 
 class ApplicationSummaryView(APIView):
@@ -339,11 +339,19 @@ class ClientFileView(APIView):
     parser_classes = [MultiPartParser]
 
     def get(self, request, pk, format=None):
+        # Проверяем доступ к клиенту через scope-фильтрацию
+        client_qs = get_filtered_queryset(request.user, Client.objects.all(), 'CLIENT')
+        if not client_qs.filter(pk=pk).exists():
+            return Response({"error": "Клиент не найден или нет доступа."}, status=status.HTTP_404_NOT_FOUND)
         files = ClientFile.objects.filter(client_id=pk)
         serializer = ClientFileSerializer(files, many=True)
         return Response(serializer.data)
 
     def post(self, request, pk, format=None):
+        # Проверяем доступ к клиенту через scope-фильтрацию
+        client_qs = get_filtered_queryset(request.user, Client.objects.all(), 'CLIENT')
+        if not client_qs.filter(pk=pk).exists():
+            return Response({"error": "Клиент не найден или нет доступа."}, status=status.HTTP_404_NOT_FOUND)
         file_serializer = ClientFileSerializer(data=request.data)
         if file_serializer.is_valid():
             file_serializer.save(client_id=pk, uploaded_by=request.user)
@@ -459,10 +467,8 @@ class ApplicationListView(generics.ListCreateAPIView):
         company = None
         if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
             company = self.request.user.profile.company
-        if serializer.validated_data.get('source') == 'OFFICE':
-            instance = serializer.save(created_by=self.request.user, company=company)
-        else:
-            instance = serializer.save(company=company)
+        # Всегда записываем created_by
+        instance = serializer.save(created_by=self.request.user, company=company)
 
         # Логируем создание заявки
         ApplicationLog.objects.create(

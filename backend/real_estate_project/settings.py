@@ -22,21 +22,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-!l5n0q200=_=x@&(n=mo65t$#))vha%zdlo8gqk$w+9^yg9^(t')
+# SECRET_KEY обязателен — приложение не запустится без .env (это намеренно).
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 # Парсинг ALLOWED_HOSTS из переменной окружения
 _allowed_hosts_env = config('ALLOWED_HOSTS', default='')
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'c0s9w1gq-8000.euw.devtunnels.ms',  # Tunnel для бэкенда (на всякий случай)
     'backend',  # Docker service name
     'dvgroup.uz',  # Production domain
     'www.dvgroup.uz',  # Production domain with www
 ] + [h.strip() for h in _allowed_hosts_env.split(',') if h.strip()]
+
+# Devtunnel домены — только для разработки
+if DEBUG:
+    ALLOWED_HOSTS += [
+        'c0s9w1gq-8000.euw.devtunnels.ms',
+    ]
 
 # Парсинг CORS_ORIGINS из переменной окружения (для production сервера)
 _cors_origins_env = config('CORS_ORIGINS', default='')
@@ -175,22 +181,27 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Ваш фронтенд
     "http://127.0.0.1:5173",  # Альтернативный адрес
     "http://localhost:5174",
-    "http://localhost:5175",  # Для друга
-    "http://localhost:5176",  # Дополнительный порт
+    "http://localhost:5175",
+    "http://localhost:5176",
     "http://localhost",       # Docker frontend (port 80)
     "http://localhost:80",    # Docker frontend explicit
     "http://frontend",        # Docker service name
-    'https://5mpxwrp0-5174.euw.devtunnels.ms',
-    'https://c0s9w1gq-5173.euw.devtunnels.ms',
-    'https://c0s9w1gq-8000.euw.devtunnels.ms',
-    'https://tws483gv-5173.euw.devtunnels.ms',
-    'https://tws483gv-8000.euw.devtunnels.ms',
     # Production domain
     'https://dvgroup.uz',
     'https://www.dvgroup.uz',
     'http://dvgroup.uz',
     'http://www.dvgroup.uz',
 ] + [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
+
+# Devtunnel origins — только для разработки
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        'https://5mpxwrp0-5174.euw.devtunnels.ms',
+        'https://c0s9w1gq-5173.euw.devtunnels.ms',
+        'https://c0s9w1gq-8000.euw.devtunnels.ms',
+        'https://tws483gv-5173.euw.devtunnels.ms',
+        'https://tws483gv-8000.euw.devtunnels.ms',
+    ]
 
 # Дополнительные настройки CORS для работы с JWT
 CORS_ALLOW_CREDENTIALS = True
@@ -224,6 +235,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'
     ],
@@ -236,6 +250,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/hour',      # Анонимные запросы (для /public/ с API-ключом)
         'user': '1000/hour',     # Аутентифицированные пользователи
+        'login': '5/min',        # Попытки логина по IP
     }
 }
 
@@ -305,8 +320,8 @@ AUTHENTICATION_BACKENDS = [
     'permissions.backends.PermissionBackend',  # Наш кастомный backend
 ]
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=5),       # access-токен будет жить 5 часов (для разработки)
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),      # refresh-токен будет жить 30 дней
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(config('JWT_ACCESS_LIFETIME_MINUTES', default='30'))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),       # refresh-токен будет жить 1 день
     "ROTATE_REFRESH_TOKENS": True,                     # При обновлении refresh-токен также будет заменяться на новый
     "BLACKLIST_AFTER_ROTATION": True,                  # Старый refresh-токен будет добавлен в черный список
     "UPDATE_LAST_LOGIN": True,                         # Обновлять поле last_login у пользователя при входе
@@ -323,7 +338,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для ра�
 # EMAIL_HOST_USER = 'your-email@gmail.com'
 # EMAIL_HOST_PASSWORD = 'your-app-password'
 DEFAULT_FROM_EMAIL = 'noreply@crm.local'
-FRONTEND_URL = 'http://localhost:5173'  # URL фронтенда для ссылок в письмах
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')  # URL фронтенда для ссылок в письмах
 
 # =============================================================================
 # НАСТРОЙКИ БЕЗОПАСНОСТИ (для продакшена)
@@ -350,7 +365,7 @@ if not DEBUG:
 # НАСТРОЙКИ ЗАГРУЗКИ ФАЙЛОВ
 # =============================================================================
 # Максимальное количество файлов в одном запросе (по умолчанию 2500)
-DATA_UPLOAD_MAX_NUMBER_FILES = 10000
+DATA_UPLOAD_MAX_NUMBER_FILES = 100
 
 # Максимальный размер файла в памяти перед использованием диска (32 MB)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 33554432  # 32 * 1024 * 1024
@@ -361,3 +376,116 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100 * 1024 * 1024
 # CSRF_TRUSTED_ORIGINS для production (из переменной окружения)
 _csrf_trusted_env = config('CSRF_TRUSTED_ORIGINS', default='')
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_env.split(',') if o.strip()]
+
+# =============================================================================
+# КЕШИРОВАНИЕ (Redis)
+# =============================================================================
+# Redis используется для rate limiting, account lockout и кеширования.
+# Без Redis Django использует LocMemCache, который не работает корректно
+# при нескольких Gunicorn workers (каждый worker имеет свой кеш).
+REDIS_URL = config('REDIS_URL', default='redis://redis:6379/0')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'db': 0,
+        },
+        'KEY_PREFIX': 'crm',
+        'TIMEOUT': 300,  # 5 минут по умолчанию
+    }
+}
+
+# =============================================================================
+# ACCOUNT LOCKOUT
+# =============================================================================
+LOCKOUT_MAX_ATTEMPTS = config('LOCKOUT_MAX_ATTEMPTS', default=10, cast=int)
+LOCKOUT_DURATION = config('LOCKOUT_DURATION', default=300, cast=int)  # секунды
+
+# =============================================================================
+# ЛОГИРОВАНИЕ
+# =============================================================================
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name} {module}:{lineno} {message}',
+            'style': '{',
+        },
+        'json': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file_django': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'django.log'),
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'file_security': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'security.log'),
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 10,
+            'formatter': 'verbose',
+        },
+        'file_app': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'app.log'),
+            'maxBytes': 10 * 1024 * 1024,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file_django'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['file_security'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console', 'file_django'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'permissions': {
+            'handlers': ['console', 'file_security'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'apps': {
+            'handlers': ['console', 'file_app'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file_app'],
+        'level': 'WARNING',
+    },
+}

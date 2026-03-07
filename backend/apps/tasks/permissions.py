@@ -17,17 +17,39 @@ class TaskPermission(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Определяем требуемое действие
-        if view.action in ['list', 'retrieve', 'kanban', 'calendar', 'my_tasks', 'created_by_me']:
-            action = 'VIEW'
-        elif view.action == 'create':
-            action = 'ADD'
-        elif view.action in ['update', 'partial_update', 'start', 'complete', 'cancel']:
-            action = 'EDIT'
-        elif view.action == 'destroy':
-            action = 'DELETE'
-        else:
-            action = 'VIEW'
+        # Полный маппинг действий к типам разрешений
+        ACTION_MAP = {
+            # VIEW-действия
+            'list': 'VIEW',
+            'retrieve': 'VIEW',
+            'kanban': 'VIEW',
+            'calendar': 'VIEW',
+            'my_tasks': 'VIEW',
+            'created_by_me': 'VIEW',
+            'logs': 'VIEW',
+            'stats': 'VIEW',
+            'overdue': 'VIEW',
+            'subtasks': 'VIEW',
+            'comments': 'VIEW',
+            # ADD-действия
+            'create': 'ADD',
+            'add_comment': 'ADD',
+            # EDIT-действия
+            'update': 'EDIT',
+            'partial_update': 'EDIT',
+            'start': 'EDIT',
+            'complete': 'EDIT',
+            'cancel': 'EDIT',
+            'reopen': 'EDIT',
+            # DELETE-действия
+            'destroy': 'DELETE',
+            'delete_log': 'DELETE',
+        }
+        
+        action = ACTION_MAP.get(view.action)
+        if action is None:
+            # Неизвестное действие — отклоняем
+            return False
         
         # Проверяем наличие разрешения для работы с задачами
         return can_user_perform_action(request.user, action, 'TASK')
@@ -43,14 +65,22 @@ class TaskPermission(permissions.BasePermission):
         if hasattr(request.user, 'profile') and request.user.profile.is_system_admin:
             return True
         
-        # Определяем требуемое действие
-        if view.action in ['retrieve']:
-            action = 'VIEW'
-        elif view.action in ['update', 'partial_update', 'start', 'complete', 'cancel']:
-            action = 'EDIT'
-        elif view.action == 'destroy':
-            action = 'DELETE'
-        else:
+        # Полный маппинг действий
+        ACTION_MAP = {
+            'retrieve': 'VIEW',
+            'update': 'EDIT',
+            'partial_update': 'EDIT',
+            'start': 'EDIT',
+            'complete': 'EDIT',
+            'cancel': 'EDIT',
+            'reopen': 'EDIT',
+            'add_comment': 'ADD',
+            'destroy': 'DELETE',
+            'delete_log': 'DELETE',
+        }
+        
+        action = ACTION_MAP.get(view.action)
+        if action is None:
             return False
         
         # Проверяем разрешение с учетом объекта

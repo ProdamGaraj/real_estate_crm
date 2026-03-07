@@ -68,6 +68,7 @@ class LayoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = Layout
         fields = '__all__'
+        read_only_fields = ['building']
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
@@ -88,6 +89,7 @@ class DiscountLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountLog
         fields = ['id', 'user', 'action', 'created_at']
+        read_only_fields = ['created_at']
 
 
 class BuildingLogSerializer(serializers.ModelSerializer):
@@ -96,6 +98,7 @@ class BuildingLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuildingLog
         fields = ['id', 'user', 'action', 'created_at']
+        read_only_fields = ['created_at']
 
 
 # --- Сериализаторы Объектов (Property) ---
@@ -149,7 +152,7 @@ class DiscountDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Discount
         fields = '__all__'
-        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'buildings']
 
 
 # --- Сериализаторы Проектов (Project) ---
@@ -161,6 +164,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = ['id', 'name', 'address', 'created_at', 'buildings', 'company', 'company_name']
+        read_only_fields = ['created_at']
 
 
 # --- "Составные" сериализаторы (зависят от определенных выше) ---
@@ -187,7 +191,7 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = '__all__'
-        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at']
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'company']
     
     def validate_company(self, value):
         """Компания обязательна при создании проекта."""

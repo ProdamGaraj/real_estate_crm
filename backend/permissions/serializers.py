@@ -17,11 +17,16 @@ class CompanySerializer(serializers.ModelSerializer):
             'departments_count', 'employees_count',
             'created_at', 'updated_at'
         ]
+        read_only_fields = ['created_at', 'updated_at']
     
     def get_departments_count(self, obj):
+        if hasattr(obj, '_departments_count'):
+            return obj._departments_count
         return obj.departments.filter(is_active=True).count()
     
     def get_employees_count(self, obj):
+        if hasattr(obj, '_employees_count'):
+            return obj._employees_count
         return obj.employees.filter(is_active=True).count()
 
 
@@ -42,8 +47,20 @@ class DepartmentSerializer(serializers.ModelSerializer):
             'employees_count', 'is_active',
             'created_at', 'updated_at'
         ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def validate(self, data):
+        parent = data.get('parent_department')
+        company = data.get('company', getattr(self.instance, 'company', None))
+        if parent and company and parent.company_id != company.id:
+            raise serializers.ValidationError(
+                {'parent_department': 'Родительский отдел должен принадлежать той же компании'}
+            )
+        return data
     
     def get_employees_count(self, obj):
+        if hasattr(obj, '_employees_count'):
+            return obj._employees_count
         return obj.employees.filter(is_active=True).count()
 
 
@@ -61,7 +78,7 @@ class PermissionSerializer(serializers.ModelSerializer):
             'scope', 'scope_display',
             'is_active', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['code', 'name']
+        read_only_fields = ['code', 'name', 'created_at', 'updated_at']
 
 
 class RoleListSerializer(serializers.ModelSerializer):
@@ -81,11 +98,20 @@ class RoleListSerializer(serializers.ModelSerializer):
             'is_system', 'is_active',
             'created_at', 'updated_at'
         ]
+        read_only_fields = ['created_at', 'updated_at']
     
     def get_permissions_count(self, obj):
+        # Используем prefetched cache если есть, иначе аннотацию
+        if hasattr(obj, '_permissions_count'):
+            return obj._permissions_count
+        # Если permissions уже prefetchнуты, считаем в Python чтобы не делать extra query
+        if 'permissions' in getattr(obj, '_prefetched_objects_cache', {}):
+            return sum(1 for p in obj.permissions.all() if p.is_active)
         return obj.permissions.filter(is_active=True).count()
     
     def get_users_count(self, obj):
+        if hasattr(obj, '_users_count'):
+            return obj._users_count
         return obj.user_profiles.filter(is_active=True).count()
 
 
@@ -125,7 +151,7 @@ class RoleDetailSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at',
             'created_by', 'created_by_name'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'created_by']
+        read_only_fields = ['created_at', 'updated_at', 'created_by', 'is_system']
     
     def validate(self, data):
         # Системные роли не могут быть изменены через API
@@ -133,6 +159,30 @@ class RoleDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Системные роли не могут быть изменены"
             )
+        
+        # M-18: Валидация Permission.scope <= Role.scope
+        # Роль с scope=DEPARTMENT не должна содержать разрешения с scope=SYSTEM
+        SCOPE_HIERARCHY = ['SYSTEM', 'COMPANY', 'DEPARTMENT', 'OWN']
+        role_scope = data.get('scope', getattr(self.instance, 'scope', None))
+        permissions_list = data.get('permissions')  # source='permissions' from permission_ids
+        
+        if role_scope and permissions_list:
+            role_scope_idx = SCOPE_HIERARCHY.index(role_scope) if role_scope in SCOPE_HIERARCHY else 0
+            violations = []
+            for perm in permissions_list:
+                perm_scope_idx = SCOPE_HIERARCHY.index(perm.scope) if perm.scope in SCOPE_HIERARCHY else 0
+                if perm_scope_idx < role_scope_idx:
+                    violations.append(
+                        f"{perm.code} (scope={perm.scope})"
+                    )
+            if violations:
+                raise serializers.ValidationError({
+                    'permission_ids': (
+                        f"Роль с областью действия '{role_scope}' не может содержать "
+                        f"разрешения с более широкой областью: {', '.join(violations)}"
+                    )
+                })
+        
         return data
 
 
@@ -166,6 +216,7 @@ class UserProfileListSerializer(serializers.ModelSerializer):
             'is_system_admin', 'is_active',
             'created_at', 'updated_at'
         ]
+        read_only_fields = ['created_at', 'updated_at']
     
     def get_user_full_name(self, obj):
         """Возвращает ФИО пользователя"""
@@ -221,6 +272,7 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
             'all_permissions',
             'created_at', 'updated_at'
         ]
+        read_only_fields = ['is_system_admin', 'is_active', 'is_deleted', 'created_at', 'updated_at']
     
     def get_all_permissions(self, obj):
         permissions = obj.get_all_permissions()
@@ -306,6 +358,38 @@ class BulkPermissionAssignSerializer(serializers.Serializer):
         
         return value
 
+    def validate(self, data):
+        """M-18: Валидация scope разрешений относительно scope роли"""
+        action = data.get('action')
+        if action in ('add', 'set'):
+            SCOPE_HIERARCHY = ['SYSTEM', 'COMPANY', 'DEPARTMENT', 'OWN']
+            try:
+                role = Role.objects.get(id=data['role_id'])
+            except Role.DoesNotExist:
+                return data  # уже обработано в validate_role_id
+            
+            role_scope_idx = SCOPE_HIERARCHY.index(role.scope) if role.scope in SCOPE_HIERARCHY else 0
+            permissions = Permission.objects.filter(
+                id__in=data['permission_ids'],
+                is_active=True
+            )
+            violations = []
+            for perm in permissions:
+                perm_scope_idx = SCOPE_HIERARCHY.index(perm.scope) if perm.scope in SCOPE_HIERARCHY else 0
+                if perm_scope_idx < role_scope_idx:
+                    violations.append(f"{perm.code} (scope={perm.scope})")
+            
+            if violations:
+                raise serializers.ValidationError({
+                    'permission_ids': (
+                        f"Роль '{role.name}' с областью действия '{role.scope}' "
+                        f"не может содержать разрешения с более широкой областью: "
+                        f"{', '.join(violations)}"
+                    )
+                })
+        
+        return data
+
 
 class UserCreateSerializer(serializers.Serializer):
     """
@@ -329,6 +413,15 @@ class UserCreateSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     is_system_admin = serializers.BooleanField(default=False)
     is_active = serializers.BooleanField(default=True)
+    
+    def validate_password(self, value):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_password(value)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return value
     
     def validate_username(self, value):
         if User.objects.filter(username=value).exists():
@@ -411,21 +504,29 @@ class UserCreateSerializer(serializers.Serializer):
 
 
 class PartnerAPIKeySerializer(serializers.ModelSerializer):
-    """Сериализатор для API-ключей партнёров"""
+    """Сериализатор для API-ключей партнёров (чтение — ключ замаскирован)"""
     companies_data = CompanySerializer(source='companies', many=True, read_only=True)
     is_expired = serializers.SerializerMethodField()
     available_scopes = serializers.SerializerMethodField()
+    key_masked = serializers.SerializerMethodField(help_text="Замаскированный API-ключ (первые 8 символов)")
     
     class Meta:
         model = PartnerAPIKey
         fields = [
-            'id', 'name', 'key', 'description', 'companies', 'companies_data',
+            'id', 'name', 'key_masked', 'description', 'companies', 'companies_data',
             'allowed_scopes', 'available_scopes',
             'is_active', 'expires_at', 'allowed_ips',
             'requests_per_minute', 'requests_per_day',
             'created_at', 'last_used_at', 'is_expired'
         ]
-        read_only_fields = ['key', 'created_at', 'last_used_at']
+        read_only_fields = ['key_masked', 'created_at', 'last_used_at']
+    
+    def get_key_masked(self, obj):
+        """Возвращает замаскированный ключ: первые 8 символов + ***"""
+        full_key = obj.get_key_display()
+        if full_key and len(full_key) > 8:
+            return full_key[:8] + '***'
+        return '***'
     
     def get_is_expired(self, obj):
         from django.utils import timezone
@@ -455,7 +556,8 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class PartnerAPIKeyCreateSerializer(serializers.ModelSerializer):
-    """Сериализатор для создания API-ключа (без возможности указать ключ вручную)"""
+    """Сериализатор для создания API-ключа (ключ генерируется автоматически)"""
+    key = serializers.SerializerMethodField(help_text="Расшифрованный API-ключ (доступен после создания)")
     
     class Meta:
         model = PartnerAPIKey
@@ -466,6 +568,21 @@ class PartnerAPIKeyCreateSerializer(serializers.ModelSerializer):
             'created_at'
         ]
         read_only_fields = ['key', 'created_at']
+    
+    def validate_allowed_scopes(self, value):
+        """Проверяем, что все scopes входят в допустимые"""
+        valid_scopes = {choice[0] for choice in PartnerAPIKey.AllowedScope.choices}
+        invalid = [s for s in value if s not in valid_scopes]
+        if invalid:
+            raise serializers.ValidationError(
+                f"Недопустимые scopes: {invalid}. "
+                f"Допустимые: {sorted(valid_scopes)}"
+            )
+        return value
+    
+    def get_key(self, obj):
+        """Дешифрует и возвращает оригинальный API-ключ"""
+        return obj.get_key_display()
 
 
 class PartnerAPIKeyUpdateSerializer(serializers.ModelSerializer):
@@ -478,3 +595,14 @@ class PartnerAPIKeyUpdateSerializer(serializers.ModelSerializer):
             'is_active', 'expires_at', 'allowed_ips',
             'requests_per_minute', 'requests_per_day'
         ]
+    
+    def validate_allowed_scopes(self, value):
+        """Проверяем, что все scopes входят в допустимые"""
+        valid_scopes = {choice[0] for choice in PartnerAPIKey.AllowedScope.choices}
+        invalid = [s for s in value if s not in valid_scopes]
+        if invalid:
+            raise serializers.ValidationError(
+                f"Недопустимые scopes: {invalid}. "
+                f"Допустимые: {sorted(valid_scopes)}"
+            )
+        return value

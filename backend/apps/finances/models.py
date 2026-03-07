@@ -19,6 +19,22 @@ class BeneficiaryAccount(models.Model):
     """ Справочник: Счёт получателя """
     name = models.CharField(max_length=200, verbose_name="Название счёта")
     details = models.TextField(blank=True, verbose_name="Реквизиты")
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='beneficiary_accounts',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name='created_beneficiary_accounts',
+        verbose_name="Кем создан",
+        null=True,
+        blank=True
+    )
 
     class Meta:
         verbose_name = "Счёт получателя"

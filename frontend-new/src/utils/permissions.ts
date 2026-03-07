@@ -77,12 +77,18 @@ export interface UserWithRoles {
 }
 
 /**
- * Проверяет, имеет ли пользователь разрешение на действие с ресурсом
- * @param user - пользователь
- * @param action - действие (VIEW, ADD, EDIT, DELETE)
- * @param resource - ресурс (CLIENT, DEAL, и т.д.)
- * @param scope - опциональная область действия (SYSTEM, COMPANY, DEPARTMENT, OWN)
- * @returns true если есть разрешение, false если нет
+ * Иерархия scope: SYSTEM включает COMPANY, COMPANY включает DEPARTMENT, и т.д.
+ * Чем меньше индекс — тем выше scope.
+ */
+const SCOPE_HIERARCHY: ScopeType[] = ['SYSTEM', 'COMPANY', 'DEPARTMENT', 'OWN'];
+
+/**
+ * Проверяет, имеет ли пользователь разрешение на действие с ресурсом.
+ * 
+ * Если scope указан — учитывает иерархию:
+ *   SYSTEM-разрешение покрывает COMPANY, DEPARTMENT, OWN
+ *   COMPANY-разрешение покрывает DEPARTMENT, OWN
+ *   и т.д.
  */
 export function hasPermission(
   user: UserWithRoles | null,
@@ -90,32 +96,29 @@ export function hasPermission(
   resource: ResourceType,
   scope?: ScopeType
 ): boolean {
-  // Системный администратор имеет все права
   if (user?.is_system_admin) {
     return true;
   }
 
-  // Если пользователь не авторизован
   if (!user || !user.roles || user.roles.length === 0) {
     return false;
   }
 
-  // Собираем все разрешения из всех ролей пользователя
   const allPermissions = user.roles.flatMap(role => role.permissions || []);
 
-  // Если не указана конкретная область действия, проверяем наличие разрешения с любой областью
   if (!scope) {
     return allPermissions.some(
       perm => perm.action === action && perm.resource === resource
     );
   }
 
-  // Проверяем наличие разрешения с указанной областью действия
+  // Иерархическая проверка: если у пользователя есть scope >= запрошенного — разрешаем
+  const requestedIdx = SCOPE_HIERARCHY.indexOf(scope);
   return allPermissions.some(
     perm =>
       perm.action === action &&
       perm.resource === resource &&
-      perm.scope === scope
+      SCOPE_HIERARCHY.indexOf(perm.scope as ScopeType) <= requestedIdx
   );
 }
 

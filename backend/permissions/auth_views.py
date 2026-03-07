@@ -1,8 +1,10 @@
-"""
+"""  
 Views для аутентификации пользователей
 """
+import logging
+
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -15,12 +17,24 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.template.loader import render_to_string
 
+logger = logging.getLogger(__name__)
+
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+
 from .models import UserProfile
 from .serializers import UserProfileDetailSerializer
+from .throttles import (
+    LoginRateThrottle,
+    check_account_lockout,
+    record_failed_login,
+    reset_failed_logins,
+)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def login_view(request):
     """
     Вход пользователя
@@ -46,10 +60,23 @@ def login_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
+    # Проверяем account lockout
+    is_locked, retry_after = check_account_lockout(username)
+    if is_locked:
+        return Response(
+            {
+                'error': 'Аккаунт временно заблокирован из-за множества неудачных попыток входа. '
+                        f'Попробуйте через {retry_after} секунд.',
+                'retry_after': retry_after
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+    
     # Аутентификация пользователя
     user = authenticate(username=username, password=password)
     
     if user is None:
+        record_failed_login(username)
         return Response(
             {'error': 'Неверное имя пользователя или пароль'},
             status=status.HTTP_401_UNAUTHORIZED
@@ -75,6 +102,9 @@ def login_view(request):
             status=status.HTTP_404_NOT_FOUND
         )
     
+    # Успешный логин — сбрасываем счётчик
+    reset_failed_logins(username)
+    
     # Генерация JWT токенов
     refresh = RefreshToken.for_user(user)
     
@@ -87,6 +117,7 @@ def login_view(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def password_reset_request(request):
     """
     Запрос на восстановление пароля
@@ -153,7 +184,7 @@ def password_reset_request(request):
         )
     except Exception as e:
         # Логируем ошибку, но не показываем пользователю
-        print(f"Error sending email: {e}")
+        logger.exception("Error sending password reset email")
     
     return Response({
         'message': 'Если указанный email зарегистрирован в системе, на него будут отправлены инструкции по восстановлению пароля'
@@ -162,6 +193,7 @@ def password_reset_request(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([LoginRateThrottle])
 def password_reset_confirm(request):
     """
     Подтверждение сброса пароля и установка нового
@@ -204,10 +236,12 @@ def password_reset_confirm(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    # Валидация пароля
-    if len(new_password) < 8:
+    # Валидация пароля через Django validators (AUTH_PASSWORD_VALIDATORS)
+    try:
+        validate_password(new_password, user=user)
+    except DjangoValidationError as e:
         return Response(
-            {'error': 'Пароль должен содержать минимум 8 символов'},
+            {'error': e.messages},
             status=status.HTTP_400_BAD_REQUEST
         )
     
@@ -236,9 +270,13 @@ def logout_view(request):
     """
     try:
         refresh_token = request.data.get('refresh')
-        if refresh_token:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+        if not refresh_token:
+            return Response(
+                {'error': 'Необходимо указать refresh токен'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        token = RefreshToken(refresh_token)
+        token.blacklist()
         return Response({'message': 'Выход выполнен успешно'})
     except Exception:
         return Response(

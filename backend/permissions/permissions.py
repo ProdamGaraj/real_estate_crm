@@ -1,8 +1,12 @@
 """
 Кастомные DRF permissions классы для проверки разрешений
 """
+import logging
+
 from rest_framework import permissions
 from .backends import can_user_perform_action
+
+logger = logging.getLogger(__name__)
 
 
 class BaseResourcePermission(permissions.BasePermission):
@@ -18,8 +22,8 @@ class BaseResourcePermission(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        # Определяем действие на основе метода HTTP
-        action = self._get_action_from_method(request.method)
+        # Определяем действие на основе метода HTTP или кастомного экшена
+        action = self._get_action_from_view(request, view)
         
         if action is None:
             return False
@@ -39,7 +43,7 @@ class BaseResourcePermission(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        action = self._get_action_from_method(request.method)
+        action = self._get_action_from_view(request, view)
         
         if action is None:
             return False
@@ -57,12 +61,28 @@ class BaseResourcePermission(permissions.BasePermission):
         """
         method_action_map = {
             'GET': 'VIEW',
+            'HEAD': 'VIEW',
+            'OPTIONS': 'VIEW',
             'POST': 'ADD',
             'PUT': 'EDIT',
             'PATCH': 'EDIT',
             'DELETE': 'DELETE',
         }
         return method_action_map.get(method)
+
+    def _get_action_from_view(self, request, view):
+        """
+        Определение действия с учётом кастомных экшенов ViewSet.
+        Используйте permission_action на view action для переопределения.
+        Например: @action(detail=True, methods=['post'], permission_action='EDIT')
+        """
+        # Проверяем кастомное переопределение на action
+        if hasattr(view, 'action'):
+            action_method = getattr(view, view.action, None) if view.action else None
+            if action_method and hasattr(action_method, 'permission_action'):
+                return action_method.permission_action
+        
+        return self._get_action_from_method(request.method)
 
 
 # Permissions для CRM модуля
@@ -195,13 +215,15 @@ class IsSystemAdmin(permissions.BasePermission):
         
         try:
             return request.user.profile.is_system_admin
-        except:
+        except Exception:
+            logger.exception('IsSystemAdmin check failed')
             return False
 
 
 class IsCompanyAdmin(permissions.BasePermission):
     """
-    Разрешение для администраторов компании
+    Разрешение для администраторов компании.
+    Проверяет что у пользователя есть роль с scope COMPANY или SYSTEM.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -216,16 +238,18 @@ class IsCompanyAdmin(permissions.BasePermission):
                 return True
             
             return profile.roles.filter(
-                level='COMPANY_ADMIN',
+                scope__in=['COMPANY', 'SYSTEM'],
                 is_active=True
             ).exists()
-        except:
+        except Exception:
+            logger.exception('IsCompanyAdmin check failed')
             return False
 
 
 class IsDepartmentManager(permissions.BasePermission):
     """
-    Разрешение для руководителей отделов
+    Разрешение для руководителей отделов.
+    Проверяет что у пользователя есть роль с scope DEPARTMENT, COMPANY или SYSTEM.
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -240,10 +264,11 @@ class IsDepartmentManager(permissions.BasePermission):
                 return True
             
             return profile.roles.filter(
-                level__in=['COMPANY_ADMIN', 'DEPARTMENT_MANAGER'],
+                scope__in=['DEPARTMENT', 'COMPANY', 'SYSTEM'],
                 is_active=True
             ).exists()
-        except:
+        except Exception:
+            logger.exception('IsDepartmentManager check failed')
             return False
 
 
@@ -267,7 +292,7 @@ class HasValidPartnerAPIKey(permissions.BasePermission):
     
     def has_permission(self, request, view):
         from django.conf import settings
-        from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+        from rest_framework.exceptions import NotAuthenticated, PermissionDenied, Throttled
         from .models import PartnerAPIKey
         
         # В продакшене требуем HTTPS
@@ -275,16 +300,15 @@ class HasValidPartnerAPIKey(permissions.BasePermission):
             if not request.is_secure():
                 raise PermissionDenied("API-ключи можно использовать только через HTTPS")
         
-        # Получаем ключ из заголовка (рекомендуется) или query параметра
-        api_key = request.headers.get('X-API-Key') or request.query_params.get('api_key')
+        # Получаем ключ ТОЛЬКО из заголовка (query параметр убран — утечка в логи)
+        api_key = request.headers.get('X-API-Key')
         
         if not api_key:
             raise NotAuthenticated("Отсутствует API-ключ. Передайте его в заголовке X-API-Key")
         
-        # Ищем ключ в базе
-        try:
-            partner_key = PartnerAPIKey.objects.prefetch_related('companies').get(key=api_key)
-        except PartnerAPIKey.DoesNotExist:
+        # Ищем ключ в базе по хешу
+        partner_key = PartnerAPIKey.find_by_key(api_key)
+        if partner_key is None:
             raise NotAuthenticated("Недействительный API-ключ")
         
         # Проверяем валидность (активность + срок действия)
@@ -295,6 +319,14 @@ class HasValidPartnerAPIKey(permissions.BasePermission):
         client_ip = self._get_client_ip(request)
         if not partner_key.is_ip_allowed(client_ip):
             raise PermissionDenied(f"Доступ с IP-адреса {client_ip} запрещён для данного ключа")
+        
+        # Проверяем rate limit
+        allowed, retry_after = partner_key.check_rate_limit(client_ip)
+        if not allowed:
+            raise Throttled(
+                detail="Превышен лимит запросов для API-ключа",
+                wait=retry_after
+            )
         
         # Проверяем scope (если указан)
         if self.required_scope and not partner_key.has_scope(self.required_scope):
@@ -310,10 +342,15 @@ class HasValidPartnerAPIKey(permissions.BasePermission):
         return True
     
     def _get_client_ip(self, request):
-        """Получает IP-адрес клиента (с учётом прокси)"""
+        """
+        Получает IP-адрес клиента (с учётом прокси).
+        Берёт ПОСЛЕДНИЙ IP из X-Forwarded-For — это IP, добавленный
+        ближайшим доверенным прокси (nginx). Первый IP легко подделать.
+        """
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
-            return x_forwarded_for.split(',')[0].strip()
+            # Последний IP — добавлен доверенным прокси (nginx)
+            return x_forwarded_for.split(',')[-1].strip()
         return request.META.get('REMOTE_ADDR')
 
 
@@ -339,4 +376,4 @@ class HasPartnerCreateApplicationScope(HasValidPartnerAPIKey):
 
 class PartnerAPIKeyPermission(BaseResourcePermission):
     """Разрешение на управление API-ключами партнёров"""
-    resource = 'PARTNER_API_KEY'
+    resource_type = 'PARTNER_API_KEY'

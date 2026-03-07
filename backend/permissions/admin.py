@@ -72,8 +72,8 @@ class PermissionLogAdmin(admin.ModelAdmin):
 class PartnerAPIKeyAdmin(admin.ModelAdmin):
     list_display = ['name', 'get_companies', 'is_active', 'last_used_at', 'expires_at', 'created_at']
     list_filter = ['is_active', 'created_at']
-    search_fields = ['name', 'key', 'companies__name']
-    readonly_fields = ['key', 'created_at', 'last_used_at']
+    search_fields = ['name', 'companies__name']
+    readonly_fields = ['key_display', 'created_at', 'last_used_at']
     filter_horizontal = ['companies']
     ordering = ['-created_at']
     
@@ -82,8 +82,11 @@ class PartnerAPIKeyAdmin(admin.ModelAdmin):
             'fields': ('name', 'description', 'companies', 'is_active')
         }),
         ('API Ключ', {
-            'fields': ('key',),
-            'description': 'Ключ генерируется автоматически при создании'
+            'fields': ('key_display',),
+            'description': 'Ключ генерируется автоматически при создании. Хранится в зашифрованном виде.'
+        }),
+        ('Разрешённые действия', {
+            'fields': ('allowed_scopes',),
         }),
         ('Ограничения', {
             'fields': ('expires_at', 'allowed_ips', 'requests_per_minute', 'requests_per_day')
@@ -92,6 +95,19 @@ class PartnerAPIKeyAdmin(admin.ModelAdmin):
             'fields': ('created_at', 'last_used_at'),
         }),
     )
+    
+    @admin.display(description='API Ключ (маскированный)')
+    def key_display(self, obj):
+        """Отображает маскированный API-ключ в админке"""
+        if obj.pk and obj.key_encrypted:
+            try:
+                full_key = obj.get_key_display()
+                if full_key and len(full_key) > 8:
+                    return f'{full_key[:8]}{"*" * 24}'
+                return full_key
+            except Exception:
+                return '<ошибка дешифровки>'
+        return '(будет сгенерирован при сохранении)'
     
     @admin.display(description='Компании')
     def get_companies(self, obj):

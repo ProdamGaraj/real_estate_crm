@@ -15,12 +15,33 @@ class DealCreateSerializer(serializers.ModelSerializer):
         model = Deal
         fields = ['client', 'property', 'booking_end_date']
 
+    def validate_client(self, value):
+        """Проверяем что клиент доступен пользователю (scope-check)"""
+        from permissions.backends import get_filtered_queryset
+        user = self.context['request'].user
+        from apps.crm.models import Client
+        accessible = get_filtered_queryset(user, Client.objects.filter(pk=value.pk), 'CLIENT')
+        if not accessible.exists():
+            raise serializers.ValidationError('Клиент не найден или недоступен.')
+        return value
+
+    def validate_property(self, value):
+        """Проверяем что объект недвижимости доступен пользователю (scope-check)"""
+        from apps.realty.views import _filter_by_company_scope
+        user = self.context['request'].user
+        from apps.realty.models import Property
+        accessible = _filter_by_company_scope(user, Property.objects.filter(pk=value.pk), 'building__project__company')
+        if not accessible.exists():
+            raise serializers.ValidationError('Объект недвижимости не найден или недоступен.')
+        return value
+
 class DealLogSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
 
     class Meta:
         model = DealLog
         fields = ['id', 'user', 'action', 'created_at']
+        read_only_fields = ['created_at']
 
 class DealListSerializer(serializers.ModelSerializer):
     client = serializers.StringRelatedField()
@@ -30,6 +51,7 @@ class DealListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deal
         fields = ['id', 'status', 'client', 'property', 'contract_price', 'created_by', 'created_at']
+        read_only_fields = ['created_at']
 
 
 class DealDetailSerializer(serializers.ModelSerializer):
@@ -53,6 +75,21 @@ class DealDetailSerializer(serializers.ModelSerializer):
         queryset=Deal.applied_discounts.field.related_model.objects.all(),
         source='applied_discounts'
     )
+
+    def validate_applied_discounts_ids(self, value):
+        """Проверяем что скидки доступны пользователю (scope-check)"""
+        from apps.realty.views import _filter_by_company_scope
+        from apps.realty.models import Discount
+        user = self.context['request'].user
+        ids = [d.pk for d in value]
+        accessible = _filter_by_company_scope(
+            user, Discount.objects.filter(pk__in=ids), 'buildings__project__company'
+        ).distinct()
+        accessible_ids = set(accessible.values_list('pk', flat=True))
+        denied = set(ids) - accessible_ids
+        if denied:
+            raise serializers.ValidationError(f'Скидки {denied} не найдены или недоступны.')
+        return value
 
     class Meta:
         model = Deal

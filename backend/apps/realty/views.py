@@ -32,6 +32,36 @@ from .serializers import (
 )
 
 
+def _filter_by_company_scope(user, queryset, company_field='company'):
+    """
+    Фильтрация queryset по доступным компаниям пользователя (scope-aware).
+    Заменяет ручные проверки is_system_admin / profile.company.
+    
+    company_field — путь к FK компании (например 'company', 'project__company',
+    'building__project__company').
+    """
+    if user.is_superuser:
+        return queryset
+    if not hasattr(user, 'profile'):
+        return queryset.none()
+    
+    profile = user.profile
+    
+    # Деактивированный или удалённый профиль — ничего не видит
+    if not profile.is_active or profile.is_deleted:
+        return queryset.none()
+    
+    if profile.is_system_admin:
+        return queryset
+    
+    companies = profile.get_accessible_companies()
+    if companies:
+        company_ids = [c.id for c in companies]
+        return queryset.filter(**{f'{company_field}__in': company_ids})
+    
+    return queryset.none()
+
+
 # --- Views for Projects ---
 class ProjectListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, ProjectPermission]
@@ -39,30 +69,10 @@ class ProjectListView(generics.ListCreateAPIView):
     
     def get_queryset(self):
         """
-        Фильтрация проектов по компании пользователя.
-        Системные администраторы видят все проекты.
+        Фильтрация проектов по доступным компаниям пользователя.
         """
-        from django.db.models import Q
-        user = self.request.user
         queryset = Project.objects.all()
-        
-        # Проверяем профиль пользователя
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            # Системный админ видит все проекты
-            if profile.is_system_admin:
-                return queryset
-            # Обычные пользователи видят проекты своей компании
-            # + проекты без компании, которые они создали (чтобы не терялись)
-            if profile.company:
-                return queryset.filter(
-                    Q(company=profile.company) |
-                    Q(company__isnull=True, created_by=user)
-                )
-            # Если у пользователя нет компании - не видит никаких проектов
-            return queryset.none()
-        
-        return queryset.none()
+        return _filter_by_company_scope(self.request.user, queryset, 'company')
     
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -95,22 +105,9 @@ class ProjectImageDetailView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, ProjectPermission]
 
     def get_queryset(self):
-        """
-        Фильтрация изображений проекта по компании пользователя.
-        """
         project_pk = self.kwargs['project_pk']
-        user = self.request.user
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return ProjectImage.objects.filter(project_id=project_pk)
-            if profile.company:
-                return ProjectImage.objects.filter(
-                    project_id=project_pk,
-                    project__company=profile.company
-                )
-        return ProjectImage.objects.none()
+        queryset = ProjectImage.objects.filter(project_id=project_pk)
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
 
 class ProjectImageCreateView(generics.CreateAPIView):
     """ View для загрузки нового изображения в галерею проекта """
@@ -122,37 +119,22 @@ class ProjectImageCreateView(generics.CreateAPIView):
         user = self.request.user
         project_pk = self.kwargs['project_pk']
         
-        # Проверяем доступ к проекту через компанию
         queryset = Project.objects.filter(pk=project_pk)
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if not profile.is_system_admin and profile.company:
-                queryset = queryset.filter(company=profile.company)
+        queryset = _filter_by_company_scope(user, queryset, 'company')
         
         project = queryset.first()
-        if project:
-            serializer.save(project=project)
+        if not project:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Проект не найден или недоступен.')
+        serializer.save(project=project)
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProjectDetailSerializer
     permission_classes = [IsAuthenticated, ProjectPermission]
     
     def get_queryset(self):
-        """
-        Фильтрация проектов по компании пользователя.
-        """
-        user = self.request.user
         queryset = Project.objects.all()
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return queryset
-            if profile.company:
-                return queryset.filter(company=profile.company)
-            return queryset.none()
-        
-        return queryset.none()
+        return _filter_by_company_scope(self.request.user, queryset, 'company')
 
 
 # --- Views for Buildings ---
@@ -162,27 +144,21 @@ class BuildingListCreateView(generics.ListCreateAPIView):
     filterset_class = BuildingFilter # <--- ДОБАВЛЕНО
 
     def get_queryset(self):
-        """
-        Фильтрация домов по компании пользователя через родительский проект.
-        """
         project_id = self.kwargs['project_pk']
-        user = self.request.user
-        
-        # Проверяем доступ к проекту
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return Building.objects.filter(project_id=project_id)
-            if profile.company:
-                # Проверяем, что проект принадлежит компании пользователя
-                return Building.objects.filter(
-                    project_id=project_id,
-                    project__company=profile.company
-                )
-        return Building.objects.none()
+        queryset = Building.objects.filter(project_id=project_id)
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
 
     def perform_create(self, serializer):
-        project = Project.objects.get(pk=self.kwargs['project_pk'])
+        # Scope-check: проверяем доступ к проекту
+        project_qs = _filter_by_company_scope(
+            self.request.user,
+            Project.objects.filter(pk=self.kwargs['project_pk']),
+            'company'
+        )
+        project = project_qs.first()
+        if not project:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Проект не найден или недоступен.')
         serializer.save(created_by=self.request.user, project=project)
 
 
@@ -191,22 +167,9 @@ class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, BuildingPermission]
 
     def get_queryset(self):
-        """
-        Фильтрация домов по компании пользователя через родительский проект.
-        """
         project_id = self.kwargs['project_pk']
-        user = self.request.user
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return Building.objects.filter(project_id=project_id)
-            if profile.company:
-                return Building.objects.filter(
-                    project_id=project_id,
-                    project__company=profile.company
-                )
-        return Building.objects.none()
+        queryset = Building.objects.filter(project_id=project_id)
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
 
     # --- ДОБАВЬТЕ ЭТОТ МЕТОД ДЛЯ ЛОГИРОВАНИЯ ---
     def perform_update(self, serializer):
@@ -260,6 +223,15 @@ class PropertyTemplateDownloadView(APIView):
     permission_classes = [IsAuthenticated, PropertyPermission]
 
     def get(self, request, project_pk, building_pk, *args, **kwargs):
+        # Scope-check: проверяем доступ к зданию
+        building_qs = _filter_by_company_scope(
+            request.user,
+            Building.objects.filter(pk=building_pk, project_id=project_pk),
+            'project__company'
+        )
+        if not building_qs.exists():
+            return Response({'error': 'Здание не найдено или недоступно.'}, status=status.HTTP_404_NOT_FOUND)
+
         header_map = {
             'unit_number': 'Номер объекта', 'floor': 'Этаж', 'entrance': 'Подъезд',
             'riser': 'Стояк', 'area': 'Площадь (кв.м)', 'price': 'Стоимость',
@@ -308,7 +280,15 @@ class PropertyUploadView(APIView):
             return Response({'error': 'Файл не найден', 'details': f'FILES: {list(request.FILES.keys())}, DATA: {list(request.data.keys())}'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             df = pd.read_excel(file_obj)
-            building = Building.objects.get(pk=building_pk, project_id=project_pk)
+            # Scope-check: проверяем доступ к зданию
+            building_qs = _filter_by_company_scope(
+                request.user,
+                Building.objects.filter(pk=building_pk, project_id=project_pk),
+                'project__company'
+            )
+            building = building_qs.first()
+            if not building:
+                return Response({'error': 'Здание не найдено или недоступно.'}, status=status.HTTP_404_NOT_FOUND)
             
             # Логирование для отладки
             total_rows = len(df)
@@ -550,20 +530,20 @@ class LayoutBulkUploadView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
             
-            # Проверяем доступ по компании
+            # Проверяем доступ по компании через стандартный scope helper
             user = request.user
             logger.info(f"[LayoutBulkUpload] Пользователь: {user.username}")
             
-            if hasattr(user, 'profile'):
-                profile = user.profile
-                if not profile.is_system_admin:
-                    if not profile.company or building.project.company != profile.company:
-                        logger.error(f"[LayoutBulkUpload] Пользователь {user.username} не имеет доступ к дому {building_pk}")
-                        return Response(
-                            {'error': 'Нет доступа к этому дому'},
-                            status=status.HTTP_403_FORBIDDEN
-                        )
-                logger.info(f"[LayoutBulkUpload] Доступ разрешён для пользователя {user.username}")
+            accessible_buildings = _filter_by_company_scope(
+                user, Building.objects.filter(pk=building_pk), 'project__company'
+            )
+            if not accessible_buildings.exists():
+                logger.error(f"[LayoutBulkUpload] Пользователь {user.username} не имеет доступ к дому {building_pk}")
+                return Response(
+                    {'error': 'Нет доступа к этому дому'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            logger.info(f"[LayoutBulkUpload] Доступ разрешён для пользователя {user.username}")
             
             results = {
                 'success': [],
@@ -698,22 +678,9 @@ class PropertyDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated, PropertyPermission]
 
     def get_queryset(self):
-        """
-        Фильтрация свойств по компании пользователя через цепочку building -> project.
-        """
         building_pk = self.kwargs['building_pk']
-        user = self.request.user
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return Property.objects.filter(building_id=building_pk)
-            if profile.company:
-                return Property.objects.filter(
-                    building_id=building_pk,
-                    building__project__company=profile.company
-                )
-        return Property.objects.none()
+        queryset = Property.objects.filter(building_id=building_pk)
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
 
 
 # --- Views for Layouts ---
@@ -722,25 +689,21 @@ class LayoutListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, LayoutPermission]
 
     def get_queryset(self):
-        """
-        Фильтрация планировок по компании пользователя через цепочку building -> project.
-        """
         building_pk = self.kwargs['building_pk']
-        user = self.request.user
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return Layout.objects.filter(building_id=building_pk)
-            if profile.company:
-                return Layout.objects.filter(
-                    building_id=building_pk,
-                    building__project__company=profile.company
-                )
-        return Layout.objects.none()
+        queryset = Layout.objects.filter(building_id=building_pk)
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
 
     def perform_create(self, serializer):
-        building = Building.objects.get(pk=self.kwargs['building_pk'])
+        # Scope-check: проверяем доступ к зданию
+        building_qs = _filter_by_company_scope(
+            self.request.user,
+            Building.objects.filter(pk=self.kwargs['building_pk']),
+            'project__company'
+        )
+        building = building_qs.first()
+        if not building:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Здание не найдено или недоступно.')
         serializer.save(building=building)
 
 
@@ -749,30 +712,25 @@ class LayoutDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, LayoutPermission]
 
     def get_queryset(self):
-        """
-        Фильтрация планировок по компании пользователя через цепочку building -> project.
-        """
         building_pk = self.kwargs['building_pk']
-        user = self.request.user
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return Layout.objects.filter(building_id=building_pk)
-            if profile.company:
-                return Layout.objects.filter(
-                    building_id=building_pk,
-                    building__project__company=profile.company
-                )
-        return Layout.objects.none()
+        queryset = Layout.objects.filter(building_id=building_pk)
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
 
 
 # --- Views for Discounts ---
 class DiscountListView(generics.ListCreateAPIView):
-    queryset = Discount.objects.prefetch_related('buildings').all()
-    # Используем сериализатор для СПИСКА
     serializer_class = DiscountListSerializer
     permission_classes = [IsAuthenticated, DiscountPermission]
+
+    def get_queryset(self):
+        from django.db.models import Q
+        queryset = Discount.objects.prefetch_related('buildings').all()
+        scoped = _filter_by_company_scope(
+            self.request.user, queryset, 'buildings__project__company'
+        )
+        # Включаем глобальные скидки (без привязки к домам)
+        global_discounts = queryset.filter(buildings__isnull=True)
+        return (scoped | global_discounts).distinct()
 
     def perform_create(self, serializer):
         instance = serializer.save(created_by=self.request.user)
@@ -785,10 +743,17 @@ class DiscountListView(generics.ListCreateAPIView):
 
 
 class DiscountDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Discount.objects.all()
-    # Используем ДЕТАЛЬНЫЙ сериализатор
     serializer_class = DiscountDetailSerializer
     permission_classes = [IsAuthenticated, DiscountPermission]
+
+    def get_queryset(self):
+        from django.db.models import Q
+        queryset = Discount.objects.all()
+        scoped = _filter_by_company_scope(
+            self.request.user, queryset, 'buildings__project__company'
+        )
+        global_discounts = queryset.filter(buildings__isnull=True)
+        return (scoped | global_discounts).distinct()
 
     def perform_update(self, serializer):
         # --- Логика логирования при обновлении ---
@@ -825,16 +790,14 @@ class BuildingImageCreateView(generics.CreateAPIView):
         project_pk = self.kwargs['project_pk']
         building_pk = self.kwargs['building_pk']
         
-        # Проверяем доступ к проекту через компанию
         queryset = Building.objects.filter(pk=building_pk, project_id=project_pk)
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if not profile.is_system_admin and profile.company:
-                queryset = queryset.filter(project__company=profile.company)
+        queryset = _filter_by_company_scope(user, queryset, 'project__company')
         
         building = queryset.first()
-        if building:
-            serializer.save(building=building)
+        if not building:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Здание не найдено или недоступно.')
+        serializer.save(building=building)
 
 
 class BuildingImageDetailView(generics.DestroyAPIView):
@@ -843,22 +806,9 @@ class BuildingImageDetailView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, BuildingPermission]
 
     def get_queryset(self):
-        """
-        Фильтрация изображений зданий по компании пользователя.
-        """
         building_pk = self.kwargs['building_pk']
-        user = self.request.user
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return BuildingImage.objects.filter(building_id=building_pk)
-            if profile.company:
-                return BuildingImage.objects.filter(
-                    building_id=building_pk,
-                    building__project__company=profile.company
-                )
-        return BuildingImage.objects.none()
+        queryset = BuildingImage.objects.filter(building_id=building_pk)
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
 
 # --- ДОБАВЬТЕ ЭТОТ НОВЫЙ КЛАСС В КОНЕЦ ФАЙЛА ---
 class BuildingListViewAll(generics.ListAPIView):
@@ -867,22 +817,11 @@ class BuildingListViewAll(generics.ListAPIView):
     """
     serializer_class = BuildingMiniSerializer
     permission_classes = [IsAuthenticated, BuildingPermission]
-    pagination_class = None # Отключаем пагинацию для этого эндпоинта
+    pagination_class = None
 
     def get_queryset(self):
-        """
-        Фильтрация домов по компании пользователя.
-        """
-        user = self.request.user
         queryset = Building.objects.select_related('project').all()
-        
-        if hasattr(user, 'profile'):
-            profile = user.profile
-            if profile.is_system_admin:
-                return queryset
-            if profile.company:
-                return queryset.filter(project__company=profile.company)
-        return queryset.none()
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
 
 
 # === PUBLIC API (для партнёров) ===

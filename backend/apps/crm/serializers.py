@@ -33,6 +33,7 @@ class ClientListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = ['id', 'full_name', 'primary_phone_number', 'email', 'created_at']
+        read_only_fields = ['created_at']
 
     def get_primary_phone_number(self, obj):
         primary_phone = obj.phone_numbers.filter(is_primary=True).first()
@@ -51,6 +52,7 @@ class ClientLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientLog
         fields = ['id', 'user', 'action', 'created_at']
+        read_only_fields = ['created_at']
 
 # --- Сериализаторы для Заявок ---
 class ApplicationListSerializer(serializers.ModelSerializer):
@@ -60,12 +62,14 @@ class ApplicationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Application
         fields = ['id', 'status', 'source', 'client', 'precise_source', 'created_by', 'created_at']
+        read_only_fields = ['created_at']
 
 class ApplicationLogSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
     class Meta:
         model = ApplicationLog
         fields = ['id', 'user', 'action', 'created_at']
+        read_only_fields = ['created_at']
 
 class RejectionReasonSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,6 +83,7 @@ class MeetingLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeetingLog
         fields = ['id', 'user', 'action', 'created_at']
+        read_only_fields = ['created_at']
 
 class MeetingSerializer(serializers.ModelSerializer):
     client = ClientListSerializer(read_only=True)
@@ -104,6 +109,34 @@ class MeetingSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'planned_date': {'required': True},
         }
+
+    def validate_executor_id(self, value):
+        """Проверяем что исполнитель из доступной компании"""
+        request_user = self.context['request'].user
+        if not request_user.is_superuser and hasattr(request_user, 'profile') and not request_user.profile.is_system_admin:
+            if request_user.profile.company and hasattr(value, 'profile') and value.profile.company != request_user.profile.company:
+                raise serializers.ValidationError('Исполнитель не принадлежит вашей компании.')
+        return value
+
+    def validate_client_id(self, value):
+        """Проверяем scope-доступ к клиенту"""
+        from permissions.backends import get_filtered_queryset
+        from .models import Client
+        user = self.context['request'].user
+        if not get_filtered_queryset(user, Client.objects.filter(pk=value), 'CLIENT').exists():
+            raise serializers.ValidationError('Клиент не найден или недоступен.')
+        return value
+
+    def validate_interested_building_id(self, value):
+        """Проверяем scope-доступ к зданию"""
+        if value is None:
+            return value
+        from apps.realty.views import _filter_by_company_scope
+        from apps.realty.models import Building
+        user = self.context['request'].user
+        if not _filter_by_company_scope(user, Building.objects.filter(pk=value), 'project__company').exists():
+            raise serializers.ValidationError('Здание не найдено или недоступно.')
+        return value
 
     def validate(self, data):
         """
@@ -141,6 +174,7 @@ class ClientDetailSerializer(serializers.ModelSerializer):
             'created_by', 'applications', 'logs', 'phone_numbers',
             'phone_number', 'meetings', 'files'
         ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
 
     def create(self, validated_data):
         phone_numbers_data = validated_data.pop('phone_numbers', [])
@@ -181,6 +215,16 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             'notes', 'created_by', 'created_at', 'updated_at',
             'rejection_reason', 'rejection_reason_id', 'logs', 'meetings'
         ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def validate_client_id(self, value):
+        """Проверяем scope-доступ к клиенту"""
+        from permissions.backends import get_filtered_queryset
+        from .models import Client
+        user = self.context['request'].user
+        if not get_filtered_queryset(user, Client.objects.filter(pk=value), 'CLIENT').exists():
+            raise serializers.ValidationError('Клиент не найден или недоступен.')
+        return value
 
     def create(self, validated_data):
         validated_data['client_id'] = validated_data.pop('client_id')

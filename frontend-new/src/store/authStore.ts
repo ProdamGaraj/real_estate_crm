@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { login as apiLogin, logout as apiLogout, fetchCurrentUser } from '../api/auth';
+import type { Role } from '../utils/permissions';
 
 interface User {
   id: number;
@@ -12,7 +13,7 @@ interface User {
   company_name?: string;
   department?: number;
   department_name?: string;
-  roles: any[];
+  roles: Role[];
 }
 
 interface AuthState {

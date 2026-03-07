@@ -22,20 +22,18 @@ class UserBriefSerializer(serializers.ModelSerializer):
 class TaskCommentSerializer(serializers.ModelSerializer):
     """Сериализатор для комментариев к задаче"""
     user = UserBriefSerializer(read_only=True)
-    user_id = serializers.IntegerField(write_only=True, required=False)
     
     class Meta:
         model = TaskComment
         fields = [
-            'id', 'task', 'user', 'user_id', 'text',
+            'id', 'task', 'user', 'text',
             'attachment', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
     
     def create(self, validated_data):
         # Автоматически устанавливаем текущего пользователя
         validated_data['user'] = self.context['request'].user
-        validated_data.pop('user_id', None)
         return super().create(validated_data)
 
 
@@ -59,7 +57,6 @@ class TaskSerializer(serializers.ModelSerializer):
     watchers = UserBriefSerializer(many=True, read_only=True)
     
     # Write-only поля для создания/обновления
-    creator_id = serializers.IntegerField(write_only=True, required=False)
     assignee_id = serializers.IntegerField(required=True, write_only=True)
     watcher_ids = serializers.ListField(
         child=serializers.IntegerField(),
@@ -82,7 +79,7 @@ class TaskSerializer(serializers.ModelSerializer):
         model = Task
         fields = [
             'id', 'title', 'description', 'status', 'priority',
-            'creator', 'creator_id', 'assignee', 'assignee_id',
+            'creator', 'assignee', 'assignee_id',
             'watchers', 'watcher_ids',
             'created_at', 'started_at', 'deadline', 'completed_at', 'completed_with_delay', 'updated_at',
             'company', 'company_name', 'department', 'department_name',
@@ -90,7 +87,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'parent_task', 'is_overdue', 'time_spent',
             'comments_count', 'subtasks_count'
         ]
-        read_only_fields = ['id', 'created_at', 'completed_at', 'completed_with_delay', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'completed_at', 'completed_with_delay', 'updated_at', 'company', 'department']
         extra_kwargs = {
             'company': {'required': False},  # Будет установлено автоматически из профиля
             'department': {'required': False},
@@ -118,9 +115,18 @@ class TaskSerializer(serializers.ModelSerializer):
         return value
     
     def validate_assignee_id(self, value):
-        """Проверка существования исполнителя"""
+        """Проверка существования исполнителя и scope-check компании"""
         if not User.objects.filter(id=value).exists():
             raise serializers.ValidationError("Пользователь не найден")
+        # Проверяем что исполнитель из той же компании
+        request_user = self.context['request'].user
+        if not request_user.is_superuser and hasattr(request_user, 'profile') and not request_user.profile.is_system_admin:
+            try:
+                assignee_profile = User.objects.get(id=value).profile
+                if request_user.profile.company and assignee_profile.company != request_user.profile.company:
+                    raise serializers.ValidationError("Исполнитель не принадлежит вашей компании.")
+            except Exception:
+                pass
         return value
     
     def validate(self, data):
@@ -362,6 +368,7 @@ class TaskListSerializer(serializers.ModelSerializer):
             'created_at', 'deadline', 'is_overdue',
             'company_name', 'department_name', 'tags'
         ]
+        read_only_fields = ['created_at']
 
 
 class TaskKanbanSerializer(serializers.Serializer):

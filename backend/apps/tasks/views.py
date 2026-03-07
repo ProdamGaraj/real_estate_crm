@@ -2,6 +2,8 @@
 Views для системы управления задачами
 Интегрировано с системой разрешений
 """
+import logging
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -18,6 +20,9 @@ from .serializers import (
 )
 from .filters import TaskFilter
 from .permissions import TaskPermission
+
+
+logger = logging.getLogger(__name__)
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -360,7 +365,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         except Exception as e:
             import traceback
             error_trace = traceback.format_exc()
-            print(f"Ошибка в reopen: {error_trace}")
+            logger.exception("Error in task reopen")
             return Response(
                 {'error': f'Произошла ошибка при возврате задачи: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -520,3 +525,15 @@ class TaskCommentViewSet(viewsets.ModelViewSet):
         accessible_tasks = get_filtered_queryset(user, Task.objects.all(), 'TASK')
         # Возвращаем только комментарии к доступным задачам
         return TaskComment.objects.filter(task__in=accessible_tasks).select_related('user', 'task')
+
+    def perform_create(self, serializer):
+        """Валидируем что задача доступна пользователю перед созданием комментария"""
+        task = serializer.validated_data.get('task')
+        if task:
+            accessible_tasks = get_filtered_queryset(
+                self.request.user, Task.objects.all(), 'TASK'
+            )
+            if not accessible_tasks.filter(pk=task.pk).exists():
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('У вас нет доступа к этой задаче')
+        serializer.save(user=self.request.user)

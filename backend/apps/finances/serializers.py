@@ -13,6 +13,7 @@ class BeneficiaryAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = BeneficiaryAccount
         fields = '__all__'
+        read_only_fields = ['company', 'created_by']
 
 class PaymentSerializer(serializers.ModelSerializer):
     payment_type = serializers.StringRelatedField(read_only=True)
@@ -36,7 +37,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             'created_by', 'responsible_employee', 'payment_type_id',
             'beneficiary_account_id', 'responsible_employee_id', 'client', 'deal'
         ]
-        read_only_fields = ['created_at', 'status_display', 'client']
+        read_only_fields = ['created_at', 'status_display', 'client', 'status']
 
     # ИСПРАВЛЕНИЕ: Добавляем метод для сериализации сделки
     def get_deal(self, obj):

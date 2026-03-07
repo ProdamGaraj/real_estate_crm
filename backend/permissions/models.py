@@ -271,7 +271,7 @@ class Role(models.Model):
     def __str__(self):
         try:
             return f"{self.name} ({self.get_scope_display()})"
-        except:
+        except Exception:
             return self.name or self.code
     
     @property
@@ -279,7 +279,7 @@ class Role(models.Model):
         """Человекочитаемое название области действия"""
         try:
             return self.get_scope_display()
-        except:
+        except Exception:
             return self.scope
     
     @property
@@ -287,7 +287,7 @@ class Role(models.Model):
         """Человекочитаемое название категории"""
         try:
             return self.get_category_display()
-        except:
+        except Exception:
             return self.category
 
 
@@ -358,6 +358,19 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"Профиль {self.user.get_full_name() or self.user.username}"
 
+    def _get_applicable_roles(self):
+        """
+        Получает роли пользователя, применимые к его компании.
+        Роль применима если: companies пусто (system-wide) или companies содержит компанию пользователя.
+        """
+        from django.db.models import Q
+        roles = self.roles.filter(is_active=True)
+        if self.company:
+            roles = roles.filter(
+                Q(companies__isnull=True) | Q(companies=self.company)
+            ).distinct()
+        return roles
+
     def has_permission(self, permission_code):
         """
         Проверка наличия разрешения у пользователя
@@ -366,11 +379,10 @@ class UserProfile(models.Model):
         if self.is_system_admin:
             return True
         
-        # Проверяем разрешения через роли
-        return self.roles.filter(
+        # Проверяем разрешения через применимые роли
+        return self._get_applicable_roles().filter(
             permissions__code=permission_code,
             permissions__is_active=True,
-            is_active=True
         ).exists()
 
     def has_permission_for_action(self, action, resource, scope=None):
@@ -392,11 +404,10 @@ class UserProfile(models.Model):
         
         # Если scope не указан, проверяем наличие разрешения с любым scope
         if scope is None:
-            return self.roles.filter(
+            return self._get_applicable_roles().filter(
                 permissions__action=action,
                 permissions__resource=resource,
                 permissions__is_active=True,
-                is_active=True
             ).exists()
         
         # Если scope указан, проверяем конкретное разрешение
@@ -411,7 +422,7 @@ class UserProfile(models.Model):
             return Permission.objects.filter(is_active=True)
         
         return Permission.objects.filter(
-            roles__in=self.roles.filter(is_active=True),
+            roles__in=self._get_applicable_roles(),
             is_active=True
         ).distinct()
 
@@ -451,14 +462,25 @@ class UserProfile(models.Model):
             scope=Role.RoleScope.DEPARTMENT,
             is_active=True
         ).exists():
-            # Получаем отдел и все его подотделы рекурсивно
-            departments = [self.department]
-            sub_departments = Department.objects.filter(
-                parent_department=self.department,
-                is_active=True
-            )
-            departments.extend(list(sub_departments))
-            return Department.objects.filter(id__in=[d.id for d in departments])
+            # Получаем отдел и все его подотделы рекурсивно (макс. 10 уровней)
+            MAX_DEPTH = 10
+            department_ids = {self.department.id}
+            current_level_ids = {self.department.id}
+            
+            for _ in range(MAX_DEPTH):
+                child_ids = set(
+                    Department.objects.filter(
+                        parent_department_id__in=current_level_ids,
+                        is_active=True
+                    ).values_list('id', flat=True)
+                )
+                new_ids = child_ids - department_ids
+                if not new_ids:
+                    break
+                department_ids |= new_ids
+                current_level_ids = new_ids
+            
+            return Department.objects.filter(id__in=department_ids)
         
         # Обычные пользователи видят только свой отдел
         if self.department:
@@ -503,9 +525,13 @@ class PermissionLog(models.Model):
 
 class PartnerAPIKey(models.Model):
     """
-    API-ключи для партнёров, имеющих доступ к публичному API
+    API-ключи для партнёров, имеющих доступ к публичному API.
+    
+    Безопасность хранения:
+    - key_hash: SHA-256 хеш ключа для быстрого поиска в БД (индексирован)
+    - key_encrypted: Fernet-зашифрованный оригинальный ключ (для отображения в админке)
+    - Оригинальный ключ в открытом виде НЕ хранится в БД
     """
-    import secrets
     
     # Доступные действия для API-ключа
     class AllowedScope(models.TextChoices):
@@ -515,7 +541,18 @@ class PartnerAPIKey(models.Model):
         CREATE_APPLICATION = 'CREATE_APPLICATION', 'Создание заявок'
     
     name = models.CharField(max_length=255, verbose_name="Название партнёра")
-    key = models.CharField(max_length=64, unique=True, verbose_name="API ключ", db_index=True)
+    
+    # SHA-256 хеш ключа для поиска (64 hex символа)
+    key_hash = models.CharField(
+        max_length=64, unique=True, verbose_name="Хеш API ключа",
+        db_index=True, editable=False
+    )
+    # Fernet-зашифрованный оригинальный ключ (для отображения на сайте)
+    key_encrypted = models.TextField(
+        verbose_name="Зашифрованный API ключ",
+        editable=False
+    )
+    
     description = models.TextField(blank=True, verbose_name="Описание")
     companies = models.ManyToManyField(
         Company,
@@ -568,14 +605,63 @@ class PartnerAPIKey(models.Model):
         else:
             return f"{self.name} ({companies_count} компаний)"
     
+    def set_key(self, plaintext_key):
+        """
+        Устанавливает API-ключ: сохраняет хеш и зашифрованную версию.
+        Вызывается при создании и перегенерации ключа.
+        """
+        from .crypto import hash_api_key, encrypt_api_key
+        self.key_hash = hash_api_key(plaintext_key)
+        self.key_encrypted = encrypt_api_key(plaintext_key)
+    
+    def get_key_display(self):
+        """
+        Возвращает расшифрованный оригинальный ключ для отображения.
+        """
+        from .crypto import decrypt_api_key
+        try:
+            return decrypt_api_key(self.key_encrypted)
+        except ValueError:
+            return '<ошибка дешифровки>'
+    
     def save(self, *args, **kwargs):
-        if not self.key:
+        is_new = not self.pk
+        # Генерируем ключ при первом создании, если хеш не задан
+        if not self.key_hash:
             import secrets
-            self.key = secrets.token_hex(32)
-        # Если scopes пустой, по умолчанию даём только просмотр
-        if not self.allowed_scopes:
+            plaintext_key = secrets.token_hex(32)
+            self.set_key(plaintext_key)
+        # Если scopes пустой и это новая запись, устанавливаем дефолтные
+        if is_new and not self.allowed_scopes:
             self.allowed_scopes = ['VIEW_PROJECTS', 'VIEW_BUILDINGS']
         super().save(*args, **kwargs)
+    
+    @staticmethod
+    def find_by_key(plaintext_key):
+        """
+        Ищет API-ключ по plaintext значению через HMAC-хеш.
+        Для обратной совместимости делает fallback на legacy SHA-256 хеш
+        и автоматически мигрирует найденный ключ на HMAC.
+        """
+        from .crypto import hash_api_key, _hash_api_key_legacy
+        
+        # Сначала ищем по HMAC-хешу
+        key_hash = hash_api_key(plaintext_key)
+        try:
+            return PartnerAPIKey.objects.prefetch_related('companies').get(key_hash=key_hash)
+        except PartnerAPIKey.DoesNotExist:
+            pass
+        
+        # Fallback: ищем по legacy SHA-256 хешу
+        legacy_hash = _hash_api_key_legacy(plaintext_key)
+        try:
+            api_key = PartnerAPIKey.objects.prefetch_related('companies').get(key_hash=legacy_hash)
+            # Автоматически мигрируем на HMAC-хеш
+            api_key.key_hash = key_hash
+            api_key.save(update_fields=['key_hash'])
+            return api_key
+        except PartnerAPIKey.DoesNotExist:
+            return None
     
     def is_valid(self):
         """Проверяет, валиден ли ключ"""
@@ -591,11 +677,67 @@ class PartnerAPIKey(models.Model):
         return scope in (self.allowed_scopes or [])
     
     def is_ip_allowed(self, ip_address):
-        """Проверяет, разрешён ли IP-адрес"""
+        """Проверяет, разрешён ли IP-адрес (поддержка CIDR нотации)"""
         if not self.allowed_ips:
             return True
+        import ipaddress as ipaddr_mod
+        try:
+            client_ip = ipaddr_mod.ip_address(ip_address.strip())
+        except ValueError:
+            return False
         allowed = [ip.strip() for ip in self.allowed_ips.split(',') if ip.strip()]
-        return ip_address in allowed
+        for entry in allowed:
+            try:
+                if '/' in entry:
+                    # CIDR нотация: 192.168.1.0/24
+                    if client_ip in ipaddr_mod.ip_network(entry, strict=False):
+                        return True
+                else:
+                    if client_ip == ipaddr_mod.ip_address(entry):
+                        return True
+            except ValueError:
+                continue
+        return False
+    
+    def check_rate_limit(self, client_ip):
+        """
+        Проверяет rate limit для данного API-ключа.
+        Использует Django cache для хранения счётчиков.
+        
+        Returns:
+            tuple: (allowed: bool, retry_after: int or None)
+        """
+        from django.core.cache import cache
+        from django.utils import timezone
+        import time
+        
+        key_id = self.pk
+        
+        # Используем атомарный cache.incr с try/except для TOCTOU safety
+        minute_key = f'crm:api_rate_minute:{key_id}'
+        day_key = f'crm:api_rate_day:{key_id}'
+        
+        # Проверяем и инкрементируем атомарно
+        try:
+            minute_count = cache.incr(minute_key)
+        except ValueError:
+            # Ключ не существует — создаём с начальным значением
+            cache.set(minute_key, 1, timeout=60)
+            minute_count = 1
+        
+        if minute_count > self.requests_per_minute:
+            return False, 60
+        
+        try:
+            day_count = cache.incr(day_key)
+        except ValueError:
+            cache.set(day_key, 1, timeout=86400)
+            day_count = 1
+        
+        if day_count > self.requests_per_day:
+            return False, 3600
+        
+        return True, None
     
     def update_last_used(self):
         """Обновляет время последнего использования"""

@@ -31,6 +31,7 @@ import type {
   PermissionsHierarchyV2,
   ResourcePermissions,
 } from '../../utils/permissionHierarchyV2';
+import { useAuthStore } from '../../store/authStore';
 
 interface RoleFormProps {
   role?: Role;
@@ -84,10 +85,11 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
     queryFn: getAccessibleDepartments,
   });
 
-  // TODO: Получить текущего пользователя для определения userCompanyId
-  // Для системного админа userCompanyId = undefined
-  // Для админа компании userCompanyId = его company_id
-  const userCompanyId = undefined; // Замените на: currentUser.is_superuser ? undefined : currentUser.company_id
+  // Получаем текущего пользователя для определения userCompanyId
+  // Для системного админа userCompanyId = undefined (видит всё, включая системные разрешения)
+  // Для админа компании userCompanyId = его company_id (ограничивает видимость)
+  const currentUser = useAuthStore((state) => state.user);
+  const userCompanyId = currentUser?.is_system_admin ? undefined : currentUser?.company;
 
   // Загрузка существующих разрешений роли
   React.useEffect(() => {

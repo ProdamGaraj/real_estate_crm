@@ -7,16 +7,36 @@ services:
     container_name: crm_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-real_estate_crm}
-      POSTGRES_USER: ${DB_USER:-crm_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-crm_password_2024}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     # Порт не выставлен наружу - доступ только из backend_network
     expose:
       - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-crm_user} -d ${DB_NAME:-real_estate_crm}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend_network
+
+  # =============================================================================
+  # Redis - Кеширование и rate limiting
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: crm_redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,25 +69,29 @@ services:
     environment:
       # База данных
       - USE_SQLITE=False
-      - DB_NAME=${DB_NAME:-real_estate_crm}
-      - DB_USER=${DB_USER:-crm_user}
-      - DB_PASSWORD=${DB_PASSWORD:-crm_password_2024}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_HOST=db
       - DB_PORT=5432
       # Django settings
       - DEBUG=${DEBUG:-False}
-      - SECRET_KEY=${SECRET_KEY:-django-insecure-change-this-in-production}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required — set it in .env file}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,nginx}
+      # Redis (для кеширования и rate limiting)
+      - REDIS_URL=redis://redis:6379/0
       # URLs
       - SITE_URL=${SITE_URL:-http://localhost}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - backend_network
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -95,7 +119,7 @@ services:
     networks:
       - frontend_network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -136,7 +160,7 @@ services:
       - frontend_network
       - backend_network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/nginx-health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -152,9 +176,9 @@ services:
       - ./backups:/backups
     environment:
       - POSTGRES_HOST=db
-      - POSTGRES_DB=${DB_NAME:-real_estate_crm}
-      - POSTGRES_USER=${DB_USER:-crm_user}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-crm_password_2024}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       # Расписание: каждое воскресенье в 3:00 ночи
       - SCHEDULE=0 3 * * 0
       # Хранить 4 еженедельных бэкапа (1 месяц)
@@ -177,6 +201,10 @@ services:
 volumes:
   # База данных PostgreSQL
   postgres_data:
+    driver: local
+  
+  # Redis данные
+  redis_data:
     driver: local
   
   # Статические файлы Django (CSS, JS для admin)

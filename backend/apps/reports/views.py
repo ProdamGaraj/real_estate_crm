@@ -18,7 +18,7 @@ from apps.finances.models import Payment
 from apps.realty.models import Project
 from django.contrib.auth.models import User
 from permissions.permissions import ReportPermission, PlanPermission
-from permissions.backends import get_filtered_queryset, get_user_max_scope
+from permissions.backends import get_filtered_queryset, get_user_max_scope, can_user_perform_action
 
 
 # --- Helper Function ---
@@ -144,7 +144,9 @@ class PlanFactReportView(APIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, PlanPermission])
 def plan_template_download(request):
-    projects = Project.objects.all().values('id', 'name')
+    # Фильтруем проекты по доступу пользователя
+    projects = get_filtered_queryset(request.user, Project.objects.all(), 'PROJECT')
+    projects = projects.values('id', 'name')
     df_data = []
     for project in projects:
         df_data.append({
@@ -179,12 +181,22 @@ class PlanUploadView(APIView):
                 'План поступлений, деньги': 'revenue_money_plan'
             }, inplace=True)
 
+            # Получаем доступные проекты для scope-фильтрации
+            accessible_project_ids = set(
+                get_filtered_queryset(request.user, Project.objects.all(), 'PROJECT')
+                .values_list('id', flat=True)
+            )
+
             for _, row in df.iterrows():
                 if pd.isna(row['month']):
                     continue
 
+                project_id = int(row['project_id'])
+                if project_id not in accessible_project_ids:
+                    continue  # Пропускаем проекты без доступа
+
                 Plan.objects.update_or_create(
-                    project_id=row['project_id'], year=int(row['year']), month=int(row['month']),
+                    project_id=project_id, year=int(row['year']), month=int(row['month']),
                     defaults={
                         'contracting_units_plan': int(row.get('contracting_units_plan', 0) or 0),
                         'contracting_money_plan': float(row.get('contracting_money_plan', 0) or 0),
@@ -228,6 +240,16 @@ class EmployeePlanFactReportView(APIView):
             return Response({"error": "Invalid period type"}, status=status.HTTP_400_BAD_REQUEST)
 
         employees = User.objects.filter(is_staff=True, is_active=True)
+        # Фильтруем сотрудников по scope пользователя
+        from permissions.models import UserProfile
+        if not (request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.is_system_admin)):
+            profile = getattr(request.user, 'profile', None)
+            if profile and profile.company:
+                employees = employees.filter(profile__company=profile.company, profile__is_active=True)
+            elif profile and profile.department:
+                employees = employees.filter(profile__department=profile.department, profile__is_active=True)
+            else:
+                employees = employees.filter(pk=request.user.pk)
         # Определяем scope отчёта
         report_scope = get_user_max_scope(request.user, 'REPORT')
         report_data = []
@@ -295,7 +317,17 @@ class EmployeePlanFactReportView(APIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, PlanPermission])
 def employee_plan_template_download(request):
-    employees = User.objects.filter(is_staff=True, is_active=True).values('id', 'first_name', 'last_name', 'username')
+    employees = User.objects.filter(is_staff=True, is_active=True)
+    # Фильтруем сотрудников по scope пользователя
+    if not (request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.is_system_admin)):
+        profile = getattr(request.user, 'profile', None)
+        if profile and profile.company:
+            employees = employees.filter(profile__company=profile.company, profile__is_active=True)
+        elif profile and profile.department:
+            employees = employees.filter(profile__department=profile.department, profile__is_active=True)
+        else:
+            employees = employees.filter(pk=request.user.pk)
+    employees = employees.values('id', 'first_name', 'last_name', 'username')
     df_data = []
     for emp in employees:
         full_name = f"{emp['first_name']} {emp['last_name']}".strip() or emp['username']
@@ -331,12 +363,28 @@ class EmployeePlanUploadView(APIView):
                 'План поступлений, деньги': 'revenue_money_plan'
             }, inplace=True)
 
+            # Получаем доступных сотрудников для scope-фильтрации
+            accessible_employees = User.objects.filter(is_staff=True, is_active=True)
+            if not (request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.is_system_admin)):
+                emp_profile = getattr(request.user, 'profile', None)
+                if emp_profile and emp_profile.company:
+                    accessible_employees = accessible_employees.filter(profile__company=emp_profile.company)
+                elif emp_profile and emp_profile.department:
+                    accessible_employees = accessible_employees.filter(profile__department=emp_profile.department)
+                else:
+                    accessible_employees = accessible_employees.filter(pk=request.user.pk)
+            accessible_employee_ids = set(accessible_employees.values_list('id', flat=True))
+
             for _, row in df.iterrows():
                 if pd.isna(row['month']) or pd.isna(row['employee_id']):
                     continue
 
+                employee_id = int(row['employee_id'])
+                if employee_id not in accessible_employee_ids:
+                    continue  # Пропускаем сотрудников без доступа
+
                 EmployeePlan.objects.update_or_create(
-                    employee_id=int(row['employee_id']),
+                    employee_id=employee_id,
                     year=int(row['year']),
                     month=int(row['month']),
                     defaults={

@@ -51,9 +51,22 @@ class PermissionBackend:
         try:
             profile = user_obj.profile
             
+            # Деактивированный или удалённый профиль = нет прав
+            if not profile.is_active or profile.is_deleted:
+                return False
+            
             # Системный администратор имеет все разрешения
             if profile.is_system_admin:
                 return True
+            
+            # Если передан объект, используем scope-aware проверку
+            if obj is not None:
+                # Парсим permission code: ACTION_RESOURCE_SCOPE
+                parts = perm.split('_')
+                if len(parts) >= 3:
+                    action = parts[0]
+                    resource = '_'.join(parts[1:-1])
+                    return can_user_perform_action(user_obj, action, resource, obj=obj)
             
             # Проверяем наличие разрешения
             return profile.has_permission(perm)
@@ -72,6 +85,8 @@ class PermissionBackend:
         
         try:
             profile = user_obj.profile
+            if not profile.is_active or profile.is_deleted:
+                return set()
             if profile.is_system_admin:
                 return set(Permission.objects.filter(is_active=True).values_list('code', flat=True))
             
@@ -99,6 +114,8 @@ def get_user_max_scope(user, resource_type):
     
     try:
         profile = user.profile
+        if not profile.is_active or profile.is_deleted:
+            return None
         if profile.is_system_admin:
             return 'SYSTEM'
         
@@ -134,6 +151,14 @@ def get_filtered_queryset(user, queryset, resource_type, max_scope=None):
     
     try:
         profile = user.profile
+        
+        # Деактивированный / удалённый профиль — пустой queryset
+        if not profile.is_active or profile.is_deleted:
+            return queryset.none()
+        
+        # Деактивированная компания — только system admin видит всё
+        if profile.company and not profile.company.is_active and not profile.is_system_admin:
+            return queryset.none()
         
         # Системный администратор видит все (но max_scope может ограничить)
         if profile.is_system_admin and not max_scope:
@@ -223,14 +248,15 @@ def get_filtered_queryset(user, queryset, resource_type, max_scope=None):
                 elif hasattr(queryset.model, 'created_by'):
                     filters |= Q(created_by__profile__company=profile.company)
             
-            # Разрешение DEPARTMENT - видит объекты своего отдела
+            # Разрешение DEPARTMENT - видит объекты своего отдела и подотделов
             if has_department_view and profile.department:
+                dept_ids = list(profile.get_accessible_departments().values_list('id', flat=True))
                 # Проверяем наличие поля department у модели
                 if hasattr(queryset.model, 'department'):
-                    filters |= Q(department=profile.department)
+                    filters |= Q(department__id__in=dept_ids)
                 # Проверяем через created_by
                 elif hasattr(queryset.model, 'created_by'):
-                    filters |= Q(created_by__profile__department=profile.department)
+                    filters |= Q(created_by__profile__department__id__in=dept_ids)
             
             # Разрешение OWN - видит только свои объекты
             if has_own_view:
@@ -279,6 +305,14 @@ def can_user_perform_action(user, action, resource_type, obj=None, scope=None):
     
     try:
         profile = user.profile
+        
+        # Деактивированный / удалённый профиль = нет прав
+        if not profile.is_active or profile.is_deleted:
+            return False
+        
+        # Деактивированная компания — только system admin может действовать
+        if profile.company and not profile.company.is_active and not profile.is_system_admin:
+            return False
         
         if profile.is_system_admin:
             return True

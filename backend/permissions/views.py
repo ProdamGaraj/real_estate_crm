@@ -1,12 +1,16 @@
 """
 Views для управления разрешениями, ролями и пользователями
 """
+import logging
+
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
@@ -27,6 +31,18 @@ from .permissions import (
 )
 from .backends import get_filtered_queryset, can_user_perform_action
 
+logger = logging.getLogger(__name__)
+
+
+def _is_request_user_system_admin(request):
+    """Helper: проверяет является ли текущий пользователь системным админом"""
+    if request.user.is_superuser:
+        return True
+    try:
+        return request.user.profile.is_system_admin
+    except Exception:
+        return False
+
 
 class CompanyViewSet(viewsets.ModelViewSet):
     """
@@ -41,8 +57,18 @@ class CompanyViewSet(viewsets.ModelViewSet):
     ordering = ['name']
     
     def get_queryset(self):
-        """Фильтруем компании на основе разрешений пользователя"""
-        queryset = super().get_queryset()
+        """Фильтруем компании на основе разрешений пользователя, аннотируем количества"""
+        from django.db.models import Count, Q
+        queryset = super().get_queryset().annotate(
+            _departments_count=Count(
+                'departments',
+                filter=Q(departments__is_active=True)
+            ),
+            _employees_count=Count(
+                'employees',
+                filter=Q(employees__is_active=True)
+            ),
+        )
         return get_filtered_queryset(self.request.user, queryset, 'COMPANY')
     
     @action(detail=False, methods=['get'])
@@ -77,8 +103,14 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     ordering = ['company', 'name']
     
     def get_queryset(self):
-        """Фильтруем отделы на основе разрешений пользователя"""
-        queryset = super().get_queryset()
+        """Фильтруем отделы на основе разрешений пользователя, аннотируем количества"""
+        from django.db.models import Count, Q
+        queryset = super().get_queryset().annotate(
+            _employees_count=Count(
+                'employees',
+                filter=Q(employees__is_active=True)
+            ),
+        )
         return get_filtered_queryset(self.request.user, queryset, 'DEPARTMENT')
     
     @action(detail=False, methods=['get'])
@@ -147,12 +179,110 @@ class RoleViewSet(viewsets.ModelViewSet):
         return RoleDetailSerializer
     
     def get_queryset(self):
-        """Фильтруем роли на основе разрешений пользователя"""
-        queryset = super().get_queryset()
+        """Фильтруем роли на основе разрешений пользователя, аннотируем количество пользователей"""
+        from django.db.models import Count, Q
+        queryset = super().get_queryset().annotate(
+            _users_count=Count(
+                'user_profiles',
+                filter=Q(user_profiles__is_active=True)
+            )
+        )
         return get_filtered_queryset(self.request.user, queryset, 'ROLE')
     
+    def _validate_permission_scope(self, request, permission_ids):
+        """
+        Проверяет что пользователь не назначает разрешения выше своего максимального scope.
+        Системные администраторы могут назначать любые разрешения.
+        """
+        if _is_request_user_system_admin(request):
+            return  # sysadmin может всё
+        
+        from .backends import get_user_max_scope, SCOPE_HIERARCHY
+        
+        if not permission_ids:
+            return
+        
+        # Получаем разрешения, которые пытаются назначить
+        perms_to_assign = Permission.objects.filter(id__in=permission_ids)
+        
+        for perm in perms_to_assign:
+            user_max = get_user_max_scope(request.user, perm.resource)
+            if not user_max:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied(
+                    f'У вас нет доступа к ресурсу {perm.resource}'
+                )
+            
+            user_idx = SCOPE_HIERARCHY.index(user_max) if user_max in SCOPE_HIERARCHY else len(SCOPE_HIERARCHY)
+            perm_idx = SCOPE_HIERARCHY.index(perm.scope) if perm.scope in SCOPE_HIERARCHY else len(SCOPE_HIERARCHY)
+            
+            if perm_idx < user_idx:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied(
+                    f'Нельзя назначить разрешение {perm.code} — его scope ({perm.scope}) '
+                    f'выше вашего максимального scope ({user_max}) для ресурса {perm.resource}'
+                )
+    
+    def _validate_role_scope(self, request, role_scope):
+        """
+        Проверяет что пользователь не создаёт роль с scope выше своего максимального.
+        Системные администраторы могут создавать роли с любым scope.
+        """
+        if _is_request_user_system_admin(request):
+            return
+        
+        from .backends import SCOPE_HIERARCHY
+        
+        if not role_scope:
+            return
+        
+        # Определяем максимальный scope пользователя (по любому ресурсу)
+        try:
+            profile = request.user.profile
+            user_max_scope = None
+            for scope in SCOPE_HIERARCHY:
+                if profile.roles.filter(
+                    scope=scope,
+                    is_active=True
+                ).exists():
+                    user_max_scope = scope
+                    break
+            
+            if not user_max_scope:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('У вас нет активных ролей для создания других ролей')
+            
+            user_idx = SCOPE_HIERARCHY.index(user_max_scope)
+            role_idx = SCOPE_HIERARCHY.index(role_scope) if role_scope in SCOPE_HIERARCHY else len(SCOPE_HIERARCHY)
+            
+            if role_idx < user_idx:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied(
+                    f'Нельзя создать роль с scope {role_scope} — '
+                    f'ваш максимальный scope: {user_max_scope}'
+                )
+        except UserProfile.DoesNotExist:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Профиль пользователя не найден')
+    
     def perform_create(self, serializer):
+        # Проверяем scope-эскалацию при назначении разрешений
+        permission_ids = self.request.data.get('permission_ids', [])
+        self._validate_permission_scope(self.request, permission_ids)
+        # Проверяем scope самой роли
+        role_scope = self.request.data.get('scope')
+        self._validate_role_scope(self.request, role_scope)
         serializer.save(created_by=self.request.user)
+    
+    def perform_update(self, serializer):
+        """Защита от scope-эскалации при обновлении роли"""
+        permission_ids = self.request.data.get('permission_ids', [])
+        self._validate_permission_scope(self.request, permission_ids)
+        # Проверяем scope самой роли
+        role_scope = self.request.data.get('scope')
+        if role_scope:
+            self._validate_role_scope(self.request, role_scope)
+        serializer.save()
     
     @action(detail=True, methods=['post'])
     def assign_permissions(self, request, pk=None):
@@ -172,6 +302,10 @@ class RoleViewSet(viewsets.ModelViewSet):
         
         permission_ids = serializer.validated_data['permission_ids']
         action_type = serializer.validated_data['action']
+        
+        # Проверяем scope-эскалацию при назначении разрешений
+        if action_type in ('add', 'set'):
+            self._validate_permission_scope(request, permission_ids)
         
         permissions = Permission.objects.filter(id__in=permission_ids)
         
@@ -236,12 +370,83 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset().filter(is_deleted=False)
         return get_filtered_queryset(self.request.user, queryset, 'USER')
     
+    def _validate_role_assignment(self, request, role_ids):
+        """
+        Проверяет что пользователь не назначает роли с scope выше своего.
+        Предотвращает эскалацию привилегий через назначение ролей.
+        """
+        if not role_ids:
+            return
+        
+        if _is_request_user_system_admin(request):
+            return
+        
+        from .backends import SCOPE_HIERARCHY
+        
+        try:
+            profile = request.user.profile
+            # Определяем максимальный scope текущего пользователя
+            user_max_scope = None
+            for scope in SCOPE_HIERARCHY:
+                if profile.roles.filter(scope=scope, is_active=True).exists():
+                    user_max_scope = scope
+                    break
+            
+            if not user_max_scope:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('У вас нет активных ролей для назначения ролей другим пользователям')
+            
+            user_idx = SCOPE_HIERARCHY.index(user_max_scope)
+            
+            # Проверяем каждую назначаемую роль
+            roles_to_assign = Role.objects.filter(id__in=role_ids, is_active=True)
+            for role in roles_to_assign:
+                role_idx = SCOPE_HIERARCHY.index(role.scope) if role.scope in SCOPE_HIERARCHY else len(SCOPE_HIERARCHY)
+                if role_idx < user_idx:
+                    from rest_framework.exceptions import PermissionDenied
+                    raise PermissionDenied(
+                        f'Нельзя назначить роль "{role.name}" (scope: {role.scope}) — '
+                        f'ваш максимальный scope: {user_max_scope}'
+                    )
+        except UserProfile.DoesNotExist:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Профиль пользователя не найден')
+    
+    def perform_update(self, serializer):
+        """Защита от эскалации привилегий при обновлении профиля"""
+        request = self.request
+        is_admin = _is_request_user_system_admin(request)
+        
+        # Только system admin может изменять поле is_system_admin (и назначать, и снимать)
+        if 'is_system_admin' in request.data and not is_admin:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied(
+                'Только системный администратор может изменять флаг системного администратора'
+            )
+        
+        # Валидация scope назначаемых ролей
+        role_ids = request.data.get('role_ids', [])
+        self._validate_role_assignment(request, role_ids)
+        
+        serializer.save()
+    
     @action(detail=False, methods=['post'])
     def create_user(self, request):
         """
         Создать нового пользователя с профилем
         """
         from .serializers import UserCreateSerializer
+        
+        # Защита от эскалации привилегий: только sysadmin может создавать других sysadminов
+        if request.data.get('is_system_admin') and not _is_request_user_system_admin(request):
+            return Response(
+                {'error': 'Только системный администратор может создавать других системных администраторов'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Валидация scope назначаемых ролей
+        role_ids = request.data.get('role_ids', [])
+        self._validate_role_assignment(request, role_ids)
         
         serializer = UserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -316,12 +521,30 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         Смена пароля пользователя администратором
         """
         profile = self.get_object()
+        
+        # Нельзя менять пароль sysadminу, если сам не sysadmin
+        if profile.is_system_admin and not _is_request_user_system_admin(request):
+            return Response(
+                {'error': 'Только системный администратор может менять пароль другим системным администраторам'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Устанавливаем новый пароль
+        # Валидация пароля через Django validators (AUTH_PASSWORD_VALIDATORS)
         user = profile.user
-        user.set_password(serializer.validated_data['new_password'])
+        new_password = serializer.validated_data['new_password']
+        try:
+            validate_password(new_password, user=user)
+        except DjangoValidationError as e:
+            return Response(
+                {'error': e.messages},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Устанавливаем новый пароль
+        user.set_password(new_password)
         user.save()
         
         # Логируем изменение пароля
@@ -356,6 +579,13 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Нельзя забанить системного админа (если ты сам не системный админ)
+        if profile.is_system_admin and not _is_request_user_system_admin(request):
+            return Response(
+                {'error': 'Только системный администратор может блокировать других системных администраторов'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         # Деактивируем и User, и UserProfile
         profile.is_active = False
         profile.save(update_fields=['is_active', 'updated_at'])
@@ -386,6 +616,13 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         Разблокировать пользователя (активировать User + UserProfile)
         """
         profile = self.get_object()
+        
+        # Нельзя разбанить системного админа (если ты сам не системный админ)
+        if profile.is_system_admin and not _is_request_user_system_admin(request):
+            return Response(
+                {'error': 'Только системный администратор может разблокировать других системных администраторов'},
+                status=status.HTTP_403_FORBIDDEN
+            )
         
         # Активируем и User, и UserProfile
         profile.is_active = True
@@ -425,6 +662,13 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # Нельзя удалить системного админа (если ты сам не системный админ)
+        if profile.is_system_admin and not _is_request_user_system_admin(request):
+            return Response(
+                {'error': 'Только системный администратор может удалять других системных администраторов'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         # Мягкое удаление: деактивация + флаг is_deleted
         profile.is_active = False
         profile.is_deleted = True
@@ -455,6 +699,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         if instance.user == self.request.user:
             from rest_framework.exceptions import ValidationError
             raise ValidationError('Нельзя удалить самого себя')
+        
+        if instance.is_system_admin and not _is_request_user_system_admin(self.request):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Только системный администратор может удалять других системных администраторов')
         
         instance.is_active = False
         instance.is_deleted = True
@@ -537,28 +785,60 @@ class PermissionStatsView(APIView):
     permission_classes = [IsAuthenticated, IsCompanyAdmin]
     
     def get(self, request):
+        user = request.user
+        profile = getattr(user, 'profile', None)
+        is_system_admin = profile and profile.is_system_admin
+        
+        # Определяем доступные компании и отделы
+        if is_system_admin:
+            companies_qs = Company.objects.filter(is_active=True)
+            departments_qs = Department.objects.filter(is_active=True)
+            users_qs = UserProfile.objects.filter(is_active=True)
+            roles_qs = Role.objects.filter(is_active=True)
+        elif profile:
+            companies_qs = profile.get_accessible_companies()
+            departments_qs = profile.get_accessible_departments()
+            company_ids = companies_qs.values_list('id', flat=True)
+            users_qs = UserProfile.objects.filter(
+                is_active=True, company_id__in=company_ids
+            )
+            roles_qs = Role.objects.filter(
+                is_active=True,
+                companies__in=company_ids
+            ).distinct()
+        else:
+            companies_qs = Company.objects.none()
+            departments_qs = Department.objects.none()
+            users_qs = UserProfile.objects.none()
+            roles_qs = Role.objects.none()
+        
         stats = {
-            'total_companies': Company.objects.filter(is_active=True).count(),
-            'total_departments': Department.objects.filter(is_active=True).count(),
-            'total_users': UserProfile.objects.filter(is_active=True).count(),
-            'total_roles': Role.objects.filter(is_active=True).count(),
-            'system_roles': Role.objects.filter(is_system=True, is_active=True).count(),
-            'custom_roles': Role.objects.filter(is_system=False, is_active=True).count(),
+            'total_companies': companies_qs.count(),
+            'total_departments': departments_qs.count(),
+            'total_users': users_qs.count(),
+            'total_roles': roles_qs.count(),
+            'system_roles': roles_qs.filter(is_system=True).count(),
+            'custom_roles': roles_qs.filter(is_system=False).count(),
             'total_permissions': Permission.objects.filter(is_active=True).count(),
-            'system_admins': UserProfile.objects.filter(
-                is_system_admin=True, is_active=True
-            ).count(),
+            'system_admins': users_qs.filter(is_system_admin=True).count(),
         }
         
-        # Распределение пользователей по ролям
-        role_distribution = []
-        for role in Role.objects.filter(is_active=True):
-            role_distribution.append({
-                'role': role.name,
-                'users_count': role.user_profiles.filter(is_active=True).count()
-            })
-        
-        stats['role_distribution'] = role_distribution
+        # Распределение пользователей по ролям (с учётом scope)
+        from django.db.models import Count, Q
+        role_distribution = list(
+            roles_qs
+            .annotate(
+                users_count=Count(
+                    'user_profiles',
+                    filter=Q(user_profiles__is_active=True)
+                )
+            )
+            .values('name', 'users_count')
+        )
+        stats['role_distribution'] = [
+            {'role': r['name'], 'users_count': r['users_count']}
+            for r in role_distribution
+        ]
         
         return Response(stats)
 
@@ -603,11 +883,16 @@ class PartnerAPIKeyViewSet(viewsets.ModelViewSet):
         """Перегенерировать API-ключ"""
         import secrets
         api_key = self.get_object()
-        api_key.key = secrets.token_hex(32)
+        plaintext_key = secrets.token_hex(32)
+        api_key.set_key(plaintext_key)
         api_key.save()
         
+        # Возвращаем данные с plaintext ключом (единственный раз!)
         serializer = self.get_serializer(api_key)
-        return Response(serializer.data)
+        data = serializer.data
+        data['key'] = plaintext_key
+        data['warning'] = 'Сохраните ключ! Он больше не будет показан целиком.'
+        return Response(data)
     
     @action(detail=True, methods=['post'])
     def toggle_active(self, request, pk=None):

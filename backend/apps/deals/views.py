@@ -17,7 +17,7 @@ from apps.finances.models import Payment
 import pandas as pd
 from django.http import HttpResponse
 from permissions.permissions import DealPermission, ReportPermission, DiscountPermission
-from permissions.backends import get_filtered_queryset
+from permissions.backends import get_filtered_queryset, can_user_perform_action
 
 
 class DealSummaryView(APIView):
@@ -150,11 +150,19 @@ class DealListView(generics.ListCreateAPIView):
         )
 
 
+class DealCancelOrTerminatePermission(DealPermission):
+    """POST на отмену/расторжение = EDIT, не ADD"""
+    def _get_action_from_method(self, method):
+        if method == 'POST':
+            return 'EDIT'
+        return super()._get_action_from_method(method)
+
+
 class DealCancelOrTerminateView(APIView):
     """
     View для отмены или расторжения сделки.
     """
-    permission_classes = [IsAuthenticated, DealPermission]
+    permission_classes = [IsAuthenticated, DealCancelOrTerminatePermission]
     parser_classes = [MultiPartParser]  # Для загрузки файлов
 
     def post(self, request, deal_pk, *args, **kwargs):
@@ -162,6 +170,10 @@ class DealCancelOrTerminateView(APIView):
             deal = Deal.objects.select_related('property').prefetch_related('payments').get(pk=deal_pk)
         except Deal.DoesNotExist:
             return Response({"error": "Сделка не найдена."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Проверяем что пользователь имеет доступ к этой сделке (scope-фильтрация)
+        if not can_user_perform_action(request.user, 'EDIT', 'DEAL', obj=deal):
+            return Response({"error": "У вас нет доступа к этой сделке."}, status=status.HTTP_403_FORBIDDEN)
 
         # Проверка, что сделка еще не в финальном статусе (отменена или расторгнута)
         # CLOSED_WON можно расторгнуть, поэтому не включаем в этот список
@@ -286,6 +298,9 @@ class AvailableDiscountsView(generics.ListAPIView):
         deal_id = self.kwargs['deal_pk']
         try:
             deal = Deal.objects.select_related('property__building').get(pk=deal_id)
+            # Проверяем что пользователь имеет доступ к этой сделке
+            if not can_user_perform_action(self.request.user, 'VIEW', 'DEAL', obj=deal):
+                return Discount.objects.none()
             property_obj = deal.property
             building_obj = property_obj.building
 

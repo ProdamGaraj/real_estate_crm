@@ -18,7 +18,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django.db.models import Sum, Count, Q
 from permissions.permissions import PaymentPermission, PaymentTypePermission, BeneficiaryAccountPermission, ReportPermission
-from permissions.backends import get_filtered_queryset
+from permissions.backends import get_filtered_queryset, can_user_perform_action
 
 
 class FinanceSummaryView(APIView):
@@ -101,9 +101,10 @@ class PaymentListView(generics.ListAPIView):
     filterset_class = PaymentFilter
 
     def get_queryset(self):
-        # Автоматически обновляем статусы просроченных платежей перед отдачей
+        # Автоматически обновляем статусы просроченных платежей (только в рамках доступных пользователю)
         today = timezone.now().date()
-        Payment.objects.filter(
+        scoped_payments = get_filtered_queryset(self.request.user, Payment.objects.all(), 'PAYMENT')
+        scoped_payments.filter(
             due_date__lt=today,
             status=Payment.PaymentStatus.PENDING
         ).update(status=Payment.PaymentStatus.OVERDUE)
@@ -118,6 +119,12 @@ class PaymentMarkAsReturnedView(APIView):
 
     def post(self, request, pk, *args, **kwargs):
         payment = get_object_or_404(Payment, pk=pk)
+        # Проверяем доступ к этому платежу (scope-фильтрация)
+        if not can_user_perform_action(request.user, 'EDIT', 'PAYMENT', obj=payment):
+            return Response(
+                {"error": "У вас нет доступа к этому платежу."},
+                status=status.HTTP_403_FORBIDDEN
+            )
         if payment.status == Payment.PaymentStatus.TO_BE_RETURNED:
             payment.status = Payment.PaymentStatus.RETURNED
             payment.save()
@@ -140,9 +147,21 @@ class PaymentTypeListView(generics.ListCreateAPIView):
 
 
 class BeneficiaryAccountListView(generics.ListCreateAPIView):
-    queryset = BeneficiaryAccount.objects.all()
     serializer_class = BeneficiaryAccountSerializer
     permission_classes = [IsAuthenticated, BeneficiaryAccountPermission]
+
+    def get_queryset(self):
+        return get_filtered_queryset(
+            self.request.user,
+            BeneficiaryAccount.objects.all(),
+            'BENEFICIARY_ACCOUNT'
+        )
+
+    def perform_create(self, serializer):
+        company = None
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
+            company = self.request.user.profile.company
+        serializer.save(company=company, created_by=self.request.user)
 
 
 class DealPaymentScheduleCreateView(APIView):
@@ -157,6 +176,10 @@ class DealPaymentScheduleCreateView(APIView):
             deal = Deal.objects.get(pk=deal_pk)
         except Deal.DoesNotExist:
             return Response({"error": "Сделка не найдена."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Проверяем доступ к этой сделке (scope-фильтрация)
+        if not can_user_perform_action(request.user, 'EDIT', 'DEAL', obj=deal):
+            return Response({"error": "У вас нет доступа к этой сделке."}, status=status.HTTP_403_FORBIDDEN)
 
         if not deal.contract_price:
             return Response({"error": "Для создания графика необходимо указать 'Стоимость по договору' в сделке."},
@@ -221,9 +244,15 @@ class PaymentTypeDetailView(generics.DestroyAPIView):
 
 
 class BeneficiaryAccountDetailView(generics.DestroyAPIView):
-    queryset = BeneficiaryAccount.objects.all()
     serializer_class = BeneficiaryAccountSerializer
     permission_classes = [IsAuthenticated, BeneficiaryAccountPermission]
+
+    def get_queryset(self):
+        return get_filtered_queryset(
+            self.request.user,
+            BeneficiaryAccount.objects.all(),
+            'BENEFICIARY_ACCOUNT'
+        )
 
 
 class PaymentDetailView(generics.RetrieveUpdateAPIView):
@@ -233,6 +262,10 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
     """
     queryset = Payment.objects.all()
     permission_classes = [IsAuthenticated, PaymentPermission]
+
+    def get_queryset(self):
+        queryset = Payment.objects.select_related('client', 'deal', 'payment_type').all()
+        return get_filtered_queryset(self.request.user, queryset, 'PAYMENT')
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

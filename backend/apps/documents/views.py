@@ -6,26 +6,46 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from docxtpl import DocxTemplate
+from jinja2.sandbox import SandboxedEnvironment
 import io
 
 from apps.deals.models import Deal
 from .models import Template
 from .serializers import TemplateSerializer
 from permissions.permissions import TemplatePermission
+from permissions.backends import can_user_perform_action, get_filtered_queryset
 
 
 class TemplateListCreateView(generics.ListCreateAPIView):
-    queryset = Template.objects.all()
     serializer_class = TemplateSerializer
     permission_classes = [IsAuthenticated, TemplatePermission]
     parser_classes = [MultiPartParser]
+
+    def get_queryset(self):
+        return get_filtered_queryset(
+            self.request.user,
+            Template.objects.all(),
+            'TEMPLATE'
+        )
+
+    def perform_create(self, serializer):
+        company = None
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
+            company = self.request.user.profile.company
+        serializer.save(company=company, created_by=self.request.user)
 
 
 class TemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Template.objects.all()
     serializer_class = TemplateSerializer
     permission_classes = [IsAuthenticated, TemplatePermission]
     parser_classes = [MultiPartParser]
+
+    def get_queryset(self):
+        return get_filtered_queryset(
+            self.request.user,
+            Template.objects.all(),
+            'TEMPLATE'
+        )
 
 
 class DealTemplatesListView(generics.ListAPIView):
@@ -37,6 +57,10 @@ class DealTemplatesListView(generics.ListAPIView):
         try:
             deal = Deal.objects.select_related('property__building__project').get(pk=deal_id)
         except Deal.DoesNotExist:
+            return Template.objects.none()
+
+        # Проверяем доступ к этой сделке
+        if not can_user_perform_action(self.request.user, 'VIEW', 'DEAL', obj=deal):
             return Template.objects.none()
 
         prop = deal.property
@@ -59,7 +83,11 @@ class DealTemplatesListView(generics.ListAPIView):
             if not applies_to_types or prop_type in applies_to_types:
                 filtered_pks.append(template.pk)
 
-        return Template.objects.filter(pk__in=filtered_pks)
+        return get_filtered_queryset(
+            self.request.user,
+            Template.objects.filter(pk__in=filtered_pks),
+            'TEMPLATE'
+        )
 
 
 class GenerateDocumentView(APIView):
@@ -68,9 +96,25 @@ class GenerateDocumentView(APIView):
     def get(self, request, deal_pk, template_pk, *args, **kwargs):
         try:
             deal = Deal.objects.select_related('client', 'property__building__project', 'created_by').get(pk=deal_pk)
-            template = Template.objects.get(pk=template_pk)
-        except (Deal.DoesNotExist, Template.DoesNotExist):
+        except Deal.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        # Проверяем доступ к этой сделке (scope-фильтрация)
+        if not can_user_perform_action(request.user, 'VIEW', 'DEAL', obj=deal):
+            return Response(
+                {"error": "У вас нет доступа к этой сделке."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Шаблон тоже фильтруем по scope (нельзя использовать чужой шаблон)
+        template_qs = get_filtered_queryset(request.user, Template.objects.all(), 'TEMPLATE')
+        try:
+            template = template_qs.get(pk=template_pk)
+        except Template.DoesNotExist:
+            return Response(
+                {"error": "Шаблон не найден или недоступен."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         doc = DocxTemplate(template.file.path)
         context = {
@@ -81,8 +125,8 @@ class GenerateDocumentView(APIView):
             'project': deal.property.building.project,
             'manager': deal.created_by,
         }
-
-        doc.render(context)
+        # Используем SandboxedEnvironment для защиты от SSTI/RCE
+        doc.render(context, jinja_env=SandboxedEnvironment())
 
         file_stream = io.BytesIO()
         doc.save(file_stream)
