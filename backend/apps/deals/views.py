@@ -113,7 +113,7 @@ class DealListView(generics.ListCreateAPIView):
         return get_filtered_queryset(self.request.user, queryset, 'DEAL')
 
     def create(self, request, *args, **kwargs):
-        serializer = DealCreateSerializer(data=request.data)
+        serializer = DealCreateSerializer(data=request.data, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
 
         property_instance = serializer.validated_data['property']
