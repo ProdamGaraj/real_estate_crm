@@ -37,6 +37,9 @@ export interface ApplicationDetail extends Application {
   logs: any[];
   rejection_reason: RejectionReason | null;
   meetings: Meeting[];  // Встречи по заявке
+  /** Заявка удалена (мягко): скрыта из списков, но её можно восстановить */
+  is_deleted?: boolean;
+  deleted_at?: string | null;
 }
 
 /**
@@ -55,6 +58,17 @@ export interface ApplicationPayload {
   min_floor?: number | null;
   max_floor?: number | null;
 }
+/**
+ * Восстанавливает удалённую заявку.
+ *
+ * Удаление мягкое: запись и её логи остаются в базе, поэтому возврат
+ * не теряет историю.
+ */
+export const restoreApplication = async (id: number): Promise<ApplicationDetail> => {
+  const response = await apiClient.post(`/applications/${id}/restore/`);
+  return response.data;
+};
+
 export const deleteApplication = async (id: number): Promise<void> => {
   await apiClient.delete(`/applications/${id}/`);
 };
@@ -73,7 +87,11 @@ export const getApplications = async (filters: ApplicationFilters = {}): Promise
  * Получает одну заявку по ее ID.
  */
 export const getApplicationById = async (id: number): Promise<ApplicationDetail> => {
-  const response = await apiClient.get(`/applications/${id}/`);
+  // include_deleted: карточка удалённой заявки должна открываться —
+  // иначе её нельзя ни посмотреть, ни восстановить
+  const response = await apiClient.get(`/applications/${id}/`, {
+    params: { include_deleted: 'true' },
+  });
   return response.data;
 };
 
@@ -105,6 +123,8 @@ export const updateApplication = async (
  * Тип для объекта с параметрами фильтрации заявок.
  */
 export interface ApplicationFilters {
+  /** true — показать в списке и удалённые заявки */
+  include_deleted?: boolean;
   status?: string;
   source?: string;
   client_id?: number | null;

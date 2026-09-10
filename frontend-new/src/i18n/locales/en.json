@@ -75,7 +75,8 @@
     "sqm": "sq.m.",
     "uploading": "Uploading...",
     "phone": "Phone",
-    "no_data": "No data to display"
+    "no_data": "No data to display",
+    "restore": "Restore"
   },
   "nav": {
     "app_title": "Real Estate CRM",
@@ -260,7 +261,9 @@
         "parking": "Parking",
         "storage": "Storage",
         "cottage": "Cottage"
-      }
+      },
+      "deleted_banner": "Application deleted. It can be restored.",
+      "show_deleted": "Show deleted"
     },
     "meetings": {
       "title": "Meetings",
@@ -459,7 +462,8 @@
       "status_terminated": "Terminated",
       "status_cancelled": "Cancelled",
       "booking_end_date": "Booking End Date",
-      "create_deal": "Create Deal"
+      "create_deal": "Create Deal",
+      "application_optional": "Application (optional)"
     },
     "projects": {
       "title": "Projects",

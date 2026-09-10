@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getApplicationById, updateApplication, getRejectionReasons, deleteApplication } from '../api/applications';
+import { getApplicationById, updateApplication, getRejectionReasons, deleteApplication, restoreApplication } from '../api/applications';
 import { getApplicationStatuses } from '../api/settings';
 import type { ApplicationPayload } from '../api/applications';
 import {
@@ -16,6 +16,7 @@ import LocalizedDataGrid from '../components/common/LocalizedDataGrid';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot, timelineOppositeContentClasses } from '@mui/lab';
 import { Controller, useForm } from 'react-hook-form';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RestoreIcon from '@mui/icons-material/Restore';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import InterestsIcon from '@mui/icons-material/Interests';
 import NotesIcon from '@mui/icons-material/Notes';
@@ -112,6 +113,15 @@ export default function ApplicationDetailPage() {
     },
   });
 
+  // Удаление мягкое, поэтому рядом с ним живёт и возврат заявки в работу
+  const restoreMutation = useMutation({
+    mutationFn: restoreApplication,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['application', applicationId] });
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: deleteApplication,
     onSuccess: () => {
@@ -202,7 +212,16 @@ export default function ApplicationDetailPage() {
             </Box>
             <Box sx={{ flexGrow: 1 }} />
             <Stack direction="row" spacing={2}>
-                {canDelete && (
+                {app.is_deleted ? (
+                  <Button
+                    variant="contained"
+                    startIcon={<RestoreIcon />}
+                    onClick={() => restoreMutation.mutate(Number(applicationId))}
+                    disabled={restoreMutation.isPending}
+                  >
+                    {t('common.restore')}
+                  </Button>
+                ) : canDelete && (
                   <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={() => setIsDeleteDialogOpen(true)}>
                       {t('common.delete')}
                   </Button>
@@ -211,6 +230,9 @@ export default function ApplicationDetailPage() {
         </Stack>
       </Paper>
 
+      {app.is_deleted && (
+        <Alert severity="warning" sx={{ mb: 2 }}>{t('pages.applications.deleted_banner')}</Alert>
+      )}
 
       <Box>
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} sx={{ borderBottom: 1, borderColor: 'divider' }}>

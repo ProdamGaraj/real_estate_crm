@@ -83,6 +83,11 @@ export interface DealPayload {
   client: number;
   property: number;
   booking_end_date: string;
+  /**
+   * Заявка, из которой выросла сделка. Необязательна, но с ней замыкается
+   * воронка: при успешном закрытии сделки заявка закрывается сама.
+   */
+  application?: number | null;
 }
 
 /**

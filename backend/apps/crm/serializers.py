@@ -133,9 +133,12 @@ class MeetingSerializer(serializers.ModelSerializer):
             'id', 'client', 'client_id', 'application_id', 'status', 'planned_date', 'actual_date',
             'creator', 'executor', 'executor_id', 'comment', 'result_comment',
             'interested_building', 'interested_building_id', 'is_auto_created',
-            'is_overdue', 'created_at', 'logs'
+            'is_overdue', 'created_at', 'logs', 'is_deleted', 'deleted_at'
         ]
-        read_only_fields = ['is_auto_created', 'is_overdue', 'created_at', 'logs', 'creator']
+        read_only_fields = [
+            'is_auto_created', 'is_overdue', 'created_at', 'logs', 'creator',
+            'is_deleted', 'deleted_at',
+        ]
         extra_kwargs = {
             'planned_date': {'required': True},
         }
@@ -378,9 +381,10 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             'min_area', 'max_area', 'min_floor', 'max_floor',
             'notes', 'created_by', 'created_at', 'updated_at',
             'rejection_reason', 'rejection_reason_id', 'logs', 'meetings',
-            'status_info'
+            'status_info', 'is_deleted', 'deleted_at'
         ]
-        read_only_fields = ['created_at', 'updated_at']
+        # Признак удаления меняется только кнопками удаления и восстановления
+        read_only_fields = ['created_at', 'updated_at', 'is_deleted', 'deleted_at']
 
     def validate_client_id(self, value):
         """Проверяем scope-доступ к клиенту"""

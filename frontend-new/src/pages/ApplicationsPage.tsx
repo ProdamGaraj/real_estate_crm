@@ -4,7 +4,7 @@ import {
   Box, Typography, Button, Dialog, DialogTitle, DialogContent,
   CircularProgress, Alert, Link as MuiLink, Paper, Grid, TextField, Stack,
   FormControl, InputLabel, Select, MenuItem, Tabs, Tab, ToggleButton, ToggleButtonGroup,
-  IconButton, Collapse
+  IconButton, Collapse, FormControlLabel, Checkbox
 } from '@mui/material';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
@@ -299,6 +299,27 @@ export default function ApplicationsPage() {
                     </Grid>
                   </>
                 )}
+                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Controller
+                    name="include_deleted"
+                    control={control}
+                    defaultValue={false}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            size="small"
+                            checked={Boolean(field.value)}
+                            onChange={(event) => field.onChange(event.target.checked)}
+                          />
+                        }
+                        // Удаление мягкое: удалённые заявки остаются в базе,
+                        // и через этот флажок их можно найти и восстановить
+                        label={t('pages.applications.show_deleted')}
+                      />
+                    )}
+                  />
+                </Grid>
               </Grid>
             </Paper>
           </Collapse>

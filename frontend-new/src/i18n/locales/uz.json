@@ -75,7 +75,8 @@
     "sqm": "kv.m.",
     "uploading": "Yuklanmoqda...",
     "phone": "Telefon",
-    "no_data": "Ko'rsatish uchun ma'lumot yo'q"
+    "no_data": "Ko'rsatish uchun ma'lumot yo'q",
+    "restore": "Tiklash"
   },
   "nav": {
     "app_title": "Ko'chmas mulk CRM",
@@ -260,7 +261,9 @@
         "parking": "Avtoturargoh",
         "storage": "Omborxona",
         "cottage": "Kottej"
-      }
+      },
+      "deleted_banner": "Ariza o'chirildi. Uni tiklash mumkin.",
+      "show_deleted": "O'chirilganlarni ko'rsatish"
     },
     "meetings": {
       "title": "Uchrashuvlar",
@@ -459,7 +462,8 @@
       "initial_price_per_sqm": "1 m² narxi (boshlang'ich)",
       "save_and_schedule": "Saqlash va jadvalga o'tish",
       "save_price_first": "Avval oldingi bosqichda \"Shartnoma narxi\" ni saqlang.",
-      "signed_uploaded": "Imzolangan hujjat yuklandi."
+      "signed_uploaded": "Imzolangan hujjat yuklandi.",
+      "application_optional": "Ariza (ixtiyoriy)"
     },
     "projects": {
       "title": "Loyihalar",

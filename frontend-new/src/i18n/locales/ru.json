@@ -75,7 +75,8 @@
     "sqm": "м²",
     "uploading": "Загрузка...",
     "phone": "Телефон",
-    "no_data": "Нет данных для отображения"
+    "no_data": "Нет данных для отображения",
+    "restore": "Восстановить"
   },
   "nav": {
     "app_title": "CRM Недвижимость",
@@ -260,7 +261,9 @@
         "parking": "Парковка",
         "storage": "Кладовка",
         "cottage": "Коттедж"
-      }
+      },
+      "deleted_banner": "Заявка удалена. Её можно восстановить.",
+      "show_deleted": "Показывать удалённые"
     },
     "meetings": {
       "title": "Встречи",
@@ -459,7 +462,8 @@
       "status_terminated": "Расторгнутые",
       "status_cancelled": "Отмененные",
       "booking_end_date": "Дата окончания брони",
-      "create_deal": "Создать сделку"
+      "create_deal": "Создать сделку",
+      "application_optional": "Заявка (необязательно)"
     },
     "projects": {
       "title": "Проекты",
