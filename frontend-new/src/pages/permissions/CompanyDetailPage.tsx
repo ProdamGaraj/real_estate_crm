@@ -131,6 +131,21 @@ export default function CompanyDetailPage() {
                   </Typography>
                   <Typography variant="body1">{company.code}</Typography>
                 </Box>
+                {/* Счётчики приходили с сервера, но нигде не показывались */}
+                <Box sx={{ display: 'flex', gap: 4 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('pages.settings.permissions.departments')}
+                    </Typography>
+                    <Typography variant="body1">{company.departments_count ?? 0}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('pages.settings.permissions.employees')}
+                    </Typography>
+                    <Typography variant="body1">{company.employees_count ?? 0}</Typography>
+                  </Box>
+                </Box>
                 {company.description && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">

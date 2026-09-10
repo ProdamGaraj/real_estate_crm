@@ -145,7 +145,7 @@
       "monthly_sales": "Monthly sales",
       "overdue_payments": "Overdue payments",
       "chart_placeholder": "(chart will be here)",
-      "applications_dynamics": "Application statuses",
+      "applications_dynamics": "Applications over the week",
       "application_sources": "Application sources",
       "manager_activity": "Manager activity",
       "top_sales_month": "Top sales this month",
@@ -908,7 +908,8 @@
         "user_banned": "User blocked",
         "user_unbanned": "User unblocked",
         "user_deleted": "User deleted",
-        "actions": "Actions"
+        "actions": "Actions",
+        "employees": "Employees"
       }
     },
     "api_keys": {
@@ -1321,7 +1322,9 @@
   "applications": {
     "client": "Client",
     "client_required": "Please select a client",
-    "create_application": "Create Application"
+    "create_application": "Create Application",
+    "source": "Source",
+    "notes": "Call notes"
   },
   "deal_cancellation": {
     "termination_title": "Deal Termination",

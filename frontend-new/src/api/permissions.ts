@@ -9,6 +9,9 @@ export interface Company {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  /** Счётчики приходят с сервера и показываются в карточке компании */
+  departments_count?: number;
+  employees_count?: number;
 }
 
 export interface Department {

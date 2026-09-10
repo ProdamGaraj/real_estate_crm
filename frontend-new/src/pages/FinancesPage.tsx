@@ -214,6 +214,26 @@ export default function FinancesPage() {
                                     />
                                 )} />
                             </Grid>
+                            {/* Вторая дата платежа: по ней собирают отчёт о поступлениях.
+                                Сводная таблица умела по ней фильтровать, список — нет. */}
+                            <Grid size={{ xs: 6, md: 3 }}>
+                                <Controller name="payment_date_after" control={control} render={({ field }) => (
+                                    <LocalizedDateField
+                                        label={t('pages.finances.payment_date_from')}
+                                        value={field.value || null}
+                                        onChange={field.onChange}
+                                    />
+                                )} />
+                            </Grid>
+                            <Grid size={{ xs: 6, md: 3 }}>
+                                <Controller name="payment_date_before" control={control} render={({ field }) => (
+                                    <LocalizedDateField
+                                        label={t('pages.finances.payment_date_to')}
+                                        value={field.value || null}
+                                        onChange={field.onChange}
+                                    />
+                                )} />
+                            </Grid>
                         </Grid>
                     </Paper>
 

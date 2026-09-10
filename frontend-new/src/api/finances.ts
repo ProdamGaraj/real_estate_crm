@@ -58,8 +58,12 @@ export interface PaymentFilters {
     client_name?: string;
     deal_id?: number | null;
     status?: string;
+    /** Плановый срок оплаты — для планирования */
     due_date_after?: string;
     due_date_before?: string;
+    /** Фактическая оплата — для отчёта о поступлениях */
+    payment_date_after?: string;
+    payment_date_before?: string;
 }
 
 export interface FinanceSummaryFilters {

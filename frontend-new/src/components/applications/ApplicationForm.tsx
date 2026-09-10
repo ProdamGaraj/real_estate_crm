@@ -7,7 +7,7 @@ import { getClients } from '../../api/clients';
 import type { Client } from '../../api/clients';
 import { createApplication } from '../../api/applications';
 import type { ApplicationPayload } from '../../api/applications';
-import { Box, Button, TextField, Stack, Autocomplete, CircularProgress } from '@mui/material';
+import { Box, Button, TextField, Stack, Autocomplete, CircularProgress, MenuItem } from '@mui/material';
 
 interface ApplicationFormProps {
   onSuccess: () => void;
@@ -70,7 +70,37 @@ export default function ApplicationForm({ onSuccess }: ApplicationFormProps) {
             />
           )}
         />
-        {/* TODO: Добавить остальные поля (статус, интересы и т.д.) */}
+        {/* Источник обязателен: по нему считается эффективность каналов
+            на дашборде. Пока поля не было, каждая заявка записывалась
+            как «Офис», и виджет «Источники заявок» ничего не показывал. */}
+        <Controller
+          name="source"
+          control={control}
+          rules={{ required: true }}
+          render={({ field }) => (
+            <TextField {...field} select fullWidth required label={t('applications.source')}>
+              <MenuItem value="INTERNET">{t('statuses.application_source.INTERNET')}</MenuItem>
+              <MenuItem value="SOCIAL_MEDIA">{t('statuses.application_source.SOCIAL_MEDIA')}</MenuItem>
+              <MenuItem value="OFFICE">{t('statuses.application_source.OFFICE')}</MenuItem>
+              <MenuItem value="CALL">{t('statuses.application_source.CALL')}</MenuItem>
+            </TextField>
+          )}
+        />
+
+        <Controller
+          name="notes"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              value={field.value ?? ''}
+              fullWidth
+              multiline
+              rows={3}
+              label={t('applications.notes')}
+            />
+          )}
+        />
 
         <Button type="submit" variant="contained" disabled={mutation.isPending}>
           {t('applications.create_application')}

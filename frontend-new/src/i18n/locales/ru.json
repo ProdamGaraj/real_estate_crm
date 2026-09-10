@@ -145,7 +145,7 @@
       "monthly_sales": "Продажи за месяц",
       "overdue_payments": "Просроченные платежи",
       "chart_placeholder": "(здесь будет график)",
-      "applications_dynamics": "Статусы заявок",
+      "applications_dynamics": "Динамика заявок за неделю",
       "application_sources": "Источники заявок",
       "manager_activity": "Активность менеджеров",
       "top_sales_month": "Топ по продажам за месяц",
@@ -910,7 +910,8 @@
         "user_banned": "Пользователь заблокирован",
         "user_unbanned": "Пользователь разблокирован",
         "user_deleted": "Пользователь удалён",
-        "actions": "Действия"
+        "actions": "Действия",
+        "employees": "Сотрудники"
       }
     },
     "api_keys": {
@@ -1323,7 +1324,9 @@
   "applications": {
     "client": "Клиент",
     "client_required": "Выберите клиента",
-    "create_application": "Создать заявку"
+    "create_application": "Создать заявку",
+    "source": "Источник",
+    "notes": "Заметки по разговору"
   },
   "deal_cancellation": {
     "termination_title": "Расторжение сделки",

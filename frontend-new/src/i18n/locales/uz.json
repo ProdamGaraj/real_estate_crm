@@ -145,7 +145,7 @@
       "monthly_sales": "Oylik sotuvlar",
       "overdue_payments": "Muddati o'tgan to'lovlar",
       "chart_placeholder": "(bu yerda grafik bo'ladi)",
-      "applications_dynamics": "Ariza holatlari",
+      "applications_dynamics": "Haftalik arizalar dinamikasi",
       "application_sources": "Ariza manbalari",
       "manager_activity": "Menejerlar faolligi",
       "top_sales_month": "Oylik eng ko'p sotuvlar",
@@ -889,7 +889,8 @@
         "user_banned": "Foydalanuvchi bloklandi",
         "user_unbanned": "Foydalanuvchi blokdan chiqarildi",
         "user_deleted": "Foydalanuvchi o'chirildi",
-        "actions": "Amallar"
+        "actions": "Amallar",
+        "employees": "Xodimlar"
       }
     },
     "api_keys": {
@@ -1259,7 +1260,9 @@
   "applications": {
     "client": "Mijoz",
     "client_required": "Mijozni tanlang",
-    "create_application": "Ariza yaratish"
+    "create_application": "Ariza yaratish",
+    "source": "Manba",
+    "notes": "Suhbat bo'yicha eslatmalar"
   },
   "deal_cancellation": {
     "termination_title": "Bitimni bekor qilish",
