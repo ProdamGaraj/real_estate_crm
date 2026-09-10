@@ -668,7 +668,8 @@
       "end_date_label": "End Date",
       "indefinite": "Indefinite",
       "no_building_restriction": "No restriction (all buildings)",
-      "no_comment": "No description"
+      "no_comment": "No description",
+      "end_date_error": "End date must be later than the start date"
     },
     "permissions": {
       "permissions_matrix": "Permissions Matrix"
@@ -909,7 +910,8 @@
         "user_unbanned": "User unblocked",
         "user_deleted": "User deleted",
         "actions": "Actions",
-        "employees": "Employees"
+        "employees": "Employees",
+        "company": "Company"
       }
     },
     "api_keys": {
@@ -968,6 +970,14 @@
       "apply_to_projects": "Apply to projects",
       "apply_to_buildings": "Apply to buildings",
       "property_types": "Property types"
+    },
+    "payments": {
+      "actually_paid": "Actually paid",
+      "cancel_payment": "Cancel payment",
+      "mark_as_paid": "Mark as paid",
+      "mark_as_returned": "Mark as returned",
+      "method": "Method",
+      "payment_number": "Payment #{{id}}"
     }
   },
   "documents": {
@@ -1249,7 +1259,10 @@
     "save_role_error": "Error saving role",
     "access_denied": "Access Denied",
     "admin_only": "This page is only available to system administrators",
-    "no_view_permission": "You do not have permission to view this page"
+    "no_view_permission": "You do not have permission to view this page",
+    "load_application_error": "Could not load application data.",
+    "load_discount_error": "Could not load discount data.",
+    "load_payment_error": "Could not load payment data."
   },
   "table": {
     "id": "ID",

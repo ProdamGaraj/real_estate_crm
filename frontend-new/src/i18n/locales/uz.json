@@ -541,7 +541,26 @@
         "load_error": "Planlarni yuklashda xatolik.",
         "not_loaded": "Bu bino uchun planlar hali Excel orqali yuklanmagan.",
         "upload_hint": "Planlarni yuklash uchun Excel shablonini yuklab oling, to'ldiring va yuklang."
-      }
+      },
+      "cadastre_date_plan": "Kadastrning rejadagi sanasi",
+      "details_tab": "Bino tafsilotlari",
+      "download_error": "Shablonni yuklab bo'lmadi.",
+      "gallery_tab": "Galereya",
+      "layouts_tab": "Planlar",
+      "logs_tab": "Loglar",
+      "main_info": "Asosiy ma'lumotlar",
+      "name_number": "Nomi/Raqami",
+      "project": "Loyiha",
+      "properties_tab": "Ob'ektlar",
+      "unit_number": "Ob'ekt raqami",
+      "update_success": "Bino ma'lumotlari yangilandi",
+      "upload": "Yuklash",
+      "upload_error": "Yuklashda xatolik",
+      "upload_excel": "Excel yuklash",
+      "upload_photo": "Rasm yuklash",
+      "usp_1": "USP 1",
+      "usp_2": "USP 2",
+      "usp_title": "Noyob savdo takliflari (USP)"
     },
     "properties": {
       "property_number": "Ob'ekt №{{number}}",
@@ -649,7 +668,8 @@
       "end_date_label": "Tugash sanasi",
       "indefinite": "Muddatsiz",
       "no_building_restriction": "Cheklov yo'q (barcha binolar)",
-      "no_comment": "Tavsif yo'q"
+      "no_comment": "Tavsif yo'q",
+      "end_date_error": "Tugash sanasi boshlanish sanasidan keyin bo'lishi kerak"
     },
     "permissions": {
       "permissions_matrix": "Ruxsatlar matritsasi"
@@ -890,7 +910,8 @@
         "user_unbanned": "Foydalanuvchi blokdan chiqarildi",
         "user_deleted": "Foydalanuvchi o'chirildi",
         "actions": "Amallar",
-        "employees": "Xodimlar"
+        "employees": "Xodimlar",
+        "company": "Kompaniya"
       }
     },
     "api_keys": {
@@ -949,6 +970,14 @@
       "apply_to_projects": "Loyihalarga qo'llash",
       "apply_to_buildings": "Binolarga qo'llash",
       "property_types": "Mulk turlari"
+    },
+    "payments": {
+      "actually_paid": "Haqiqatda to'langan",
+      "cancel_payment": "To'lovni bekor qilish",
+      "mark_as_paid": "To'langan deb belgilash",
+      "mark_as_returned": "Qaytarilgan deb belgilash",
+      "method": "To'lov usuli",
+      "payment_number": "To'lov №{{id}}"
     }
   },
   "documents": {
@@ -1187,7 +1216,13 @@
     "save_role_error": "Rolni saqlashda xatolik",
     "access_denied": "Kirish taqiqlangan",
     "admin_only": "Bu sahifa faqat tizim administratorlari uchun mavjud",
-    "no_view_permission": "Sizda ushbu sahifani ko'rish huquqi yo'q"
+    "no_view_permission": "Sizda ushbu sahifani ko'rish huquqi yo'q",
+    "load_application": "Ariza ma'lumotlarini yuklab bo'lmadi.",
+    "load_application_error": "Ariza ma'lumotlarini yuklab bo'lmadi.",
+    "load_building": "Bino ma'lumotlarini yuklab bo'lmadi.",
+    "load_deal": "Bitim ma'lumotlarini yuklab bo'lmadi.",
+    "load_discount_error": "Chegirma ma'lumotlarini yuklab bo'lmadi.",
+    "load_payment_error": "To'lov ma'lumotlarini yuklab bo'lmadi."
   },
   "table": {
     "id": "ID",
@@ -1301,7 +1336,12 @@
       "deal_number": "Bitim raqami",
       "total_price": "Umumiy narx",
       "paid_amount": "To'langan summa",
-      "remaining_amount": "Qoldiq summa"
+      "remaining_amount": "Qoldiq summa",
+      "comment": "Izoh",
+      "contract_price": "Shartnoma narxi",
+      "end_date": "Tugash sanasi",
+      "percentage_value": "Foiz",
+      "start_date": "Boshlanish sanasi"
     },
     "empty": "O'zgarishlar tarixi mavjud emas",
     "changed_from_to": "«{{from}}» dan «{{to}}» ga o'zgartirildi"
@@ -1333,7 +1373,15 @@
     "property_price_per_m2": "1 m² narxi",
     "building_name": "Bino nomi",
     "building_address": "Bino manzili",
-    "project_name": "Loyiha nomi"
+    "project_name": "Loyiha nomi",
+    "cheatsheet_description": "Bu belgilarni .docx faylida ishlating. Hujjat yaratilganda ular avtomatik ravishda haqiqiy ma'lumotlarga almashtiriladi.",
+    "cheatsheet_title": "Belgilar bo'yicha qo'llanma",
+    "deal_booking_end": "Bron tugash sanasi",
+    "deal_contract_date": "Shartnoma sanasi",
+    "deal_contract_number": "Shartnoma raqami",
+    "deal_contract_price": "Shartnoma narxi",
+    "deal_id": "Bitim ID",
+    "property_price": "Narxi (boshlang'ich)"
   },
   "months": {
     "1": "Yanvar",
