@@ -30,6 +30,8 @@ export interface DashboardData {
     charts: {
         applicationStatuses: ChartData[];
         applicationSources: ChartData[];
+        /** Заявки по дням за последнюю неделю: дата в формате ГГГГ-ММ-ДД */
+        applicationsPerDay?: { date: string; count: number }[];
     };
     topManagers: TopManager[];
     upcomingMeetings: UpcomingMeeting[];

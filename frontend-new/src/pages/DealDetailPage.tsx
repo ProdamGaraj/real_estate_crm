@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { extractApiError } from '../utils/apiError';
 
 type DealFormInputs = Pick<DealUpdatePayload, 'contract_price' | 'currency' | 'notes' | 'contract_number' | 'contract_date' | 'client_signature_date' | 'company_signature_date'> & {
   signed_document_scan?: FileList;
@@ -100,9 +101,8 @@ export default function DealDetailPage() {
         setActiveStep(2);
       }
     },
-    onError: (error: any) => {
-        const serverError = error.response?.data?.contract_number?.[0] || error.response?.data?.detail;
-        alert(`${t('errors.update_error')}: ${serverError || error.message}`);
+    onError: (error: unknown) => {
+        alert(extractApiError(error, t('errors.update_error')));
     }
   });
 
@@ -191,7 +191,7 @@ export default function DealDetailPage() {
                 variant={isMobile ? 'fullWidth' : 'standard'}
               >
                   <Tab label={t('pages.deals.deal_steps')} />
-                  <Tab label={isMobile ? `${deal.logs?.length || 0}` : `${t('pages.deals.logs_tab')} (${deal.logs?.length || 0})`} />
+                  <Tab label={isMobile ? `${deal.logs_total ?? deal.logs?.length ?? 0}` : `${t('pages.deals.logs_tab')} (${deal.logs_total ?? deal.logs?.length ?? 0})`} />
               </Tabs>
           </Box>
 

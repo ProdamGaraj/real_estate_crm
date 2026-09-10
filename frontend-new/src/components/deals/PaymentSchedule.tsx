@@ -17,6 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import UndoIcon from '@mui/icons-material/Undo';
 import { useMemo, useState, useEffect } from 'react';
 import LocalizedDateField from '../common/LocalizedDateField';
+import { extractApiError } from '../../utils/apiError';
 
 interface PaymentScheduleProps {
   dealId: number;
@@ -135,19 +136,23 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
       alert(t('finances.schedule_saved'));
       setIsEditing(false);
     },
-    onError: (error: any) => alert(`${t('finances.error_prefix')} ${error.response?.data?.error || error.message}`)
+    onError: (error: unknown) => alert(extractApiError(error, t('finances.error_prefix')))
   });
 
   const updatePaymentMutation = useMutation({
     mutationFn: updatePayment,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['deal', String(dealId)] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['deal', String(dealId)] }),
+    // Без этого отказ сервера (например, оплата по отменённой сделке)
+    // проходил незаметно: кнопка срабатывала, а статус не менялся
+    onError: (error: unknown) => alert(extractApiError(error, t('finances.error_prefix'))),
   });
 
   const returnPaymentMutation = useMutation({
     mutationFn: markPaymentAsReturned,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deal', String(dealId)] });
-    }
+    },
+    onError: (error: unknown) => alert(extractApiError(error, t('finances.error_prefix'))),
   });
 
 

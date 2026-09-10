@@ -941,6 +941,11 @@ class PublicProjectListView(generics.ListAPIView):
     serializer_class = PublicProjectListSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerViewProjectsScope]
+    # Частоту запросов партнёра ограничивает его собственный ключ
+    # (requests_per_minute / requests_per_day). Общий анонимный лимит
+    # здесь снят: иначе настройки ключа не действовали бы — партнёр
+    # упирался в 100 запросов в час независимо от того, что ему выдали.
+    throttle_classes = []
 
     def get_queryset(self):
         queryset = Project.objects.filter(
@@ -983,6 +988,11 @@ class PublicProjectDetailView(generics.RetrieveAPIView):
     serializer_class = PublicProjectDetailSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerViewProjectsScope]
+    # Частоту запросов партнёра ограничивает его собственный ключ
+    # (requests_per_minute / requests_per_day). Общий анонимный лимит
+    # здесь снят: иначе настройки ключа не действовали бы — партнёр
+    # упирался в 100 запросов в час независимо от того, что ему выдали.
+    throttle_classes = []
 
     def get_queryset(self):
         queryset = Project.objects.all()
@@ -1019,6 +1029,11 @@ class PublicBuildingDetailView(generics.RetrieveAPIView):
     serializer_class = PublicBuildingDetailSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerViewBuildingsScope]
+    # Частоту запросов партнёра ограничивает его собственный ключ
+    # (requests_per_minute / requests_per_day). Общий анонимный лимит
+    # здесь снят: иначе настройки ключа не действовали бы — партнёр
+    # упирался в 100 запросов в час независимо от того, что ему выдали.
+    throttle_classes = []
 
     def get_queryset(self):
         queryset = Building.objects.filter(status=Building.BuildingStatus.FOR_SALE)
@@ -1053,6 +1068,11 @@ class PublicLayoutListView(generics.ListAPIView):
     serializer_class = LayoutSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerViewLayoutsScope]
+    # Частоту запросов партнёра ограничивает его собственный ключ
+    # (requests_per_minute / requests_per_day). Общий анонимный лимит
+    # здесь снят: иначе настройки ключа не действовали бы — партнёр
+    # упирался в 100 запросов в час независимо от того, что ему выдали.
+    throttle_classes = []
     
     def get_queryset(self):
         building_id = self.kwargs.get('building_pk')

@@ -122,6 +122,14 @@ class Payment(models.Model):
         verbose_name = "Платёж"
         verbose_name_plural = "Платежи"
         ordering = ['-due_date']
+        # Просрочка ищется по паре «статус + срок», сводки — по компании
+        indexes = [
+            models.Index(fields=['status', 'due_date']),
+            models.Index(fields=['company', 'status']),
+            models.Index(fields=['payment_date']),
+            models.Index(fields=['deal']),
+            models.Index(fields=['responsible_employee', 'status']),
+        ]
 
     def __str__(self):
         return f"Платёж на {self.amount} {self.currency} от {self.client}"

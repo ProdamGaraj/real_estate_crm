@@ -43,6 +43,17 @@ class ClientPhoneNumber(models.Model):
         verbose_name = "Номер телефона клиента"
         verbose_name_plural = "Номера телефонов клиента"
         unique_together = ('client', 'phone_number') # Номер должен быть уникальным для клиента
+        indexes = [
+            models.Index(fields=['phone_number']),
+        ]
+
+    def save(self, *args, **kwargs):
+        # Номер хранится в едином виде: иначе «+998901234567» и «998 90 123 45 67»
+        # считаются разными, и на одного человека заводится вторая карточка
+        from .phones import normalize_phone
+
+        self.phone_number = normalize_phone(self.phone_number)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.phone_number
@@ -195,6 +206,13 @@ class Application(models.Model):
         verbose_name = "Заявка"
         verbose_name_plural = "Заявки"
         ordering = ['-created_at']
+        # is_deleted входит в фильтр каждого списка заявок
+        indexes = [
+            models.Index(fields=['company', 'status', 'is_deleted']),
+            models.Index(fields=['client', 'is_deleted']),
+            models.Index(fields=['created_by', '-created_at']),
+            models.Index(fields=['updated_at']),
+        ]
 
     def soft_delete(self, user=None):
         """Помечает запись удалённой, сохраняя её историю."""
@@ -313,6 +331,10 @@ class Client(models.Model):
         verbose_name_plural = "Клиенты"
         unique_together = ('company', 'email')
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['company', 'status']),
+            models.Index(fields=['created_by', '-created_at']),
+        ]
 
     def __str__(self):
         return self.full_name
@@ -422,6 +444,11 @@ class Meeting(models.Model):
         verbose_name = "Встреча"
         verbose_name_plural = "Встречи"
         ordering = ['-planned_date']
+        indexes = [
+            models.Index(fields=['status', 'planned_date']),
+            models.Index(fields=['executor', 'status']),
+            models.Index(fields=['company', 'is_deleted']),
+        ]
 
     def soft_delete(self, user=None):
         """Помечает запись удалённой, сохраняя её историю."""

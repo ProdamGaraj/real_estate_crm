@@ -7,6 +7,12 @@ from .models import (
 )
 from apps.realty.serializers import BuildingMiniSerializer
 
+# Сколько записей журнала отдавать в карточке.
+# Карточка возвращала всю историю целиком: у долгоживущей записи это сотни
+# строк, которые никто не читает целиком. Отдаём последние, а общее число —
+# отдельным полем, чтобы счётчик на вкладке оставался честным.
+LOG_PAGE_SIZE = 50
+
 
 # --- Сериализатор для статусов заявок ---
 
@@ -183,6 +189,24 @@ class MeetingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Здание не найдено или недоступно.')
         return value
 
+    def validate_planned_date(self, value):
+        """
+        Новую встречу нельзя назначить в прошлом.
+
+        Такая встреча сразу попадала в просроченные, а через неделю
+        закрывалась автоматически как несостоявшаяся. У существующей встречи
+        дату оставляем редактируемой: перенос назад бывает нужен, чтобы
+        привести запись в соответствие с тем, как всё прошло на самом деле.
+        """
+        from django.utils import timezone as dj_timezone
+
+        if self.instance is None and value and value < dj_timezone.now():
+            raise serializers.ValidationError(
+                'Плановая дата в прошлом. Если встреча уже прошла, создайте её '
+                'и сразу закройте результатом.'
+            )
+        return value
+
     def validate(self, data):
         """
         Проверяем, что при закрытии встречи (успешном или нет)
@@ -274,7 +298,14 @@ class ClientDetailSerializer(serializers.ModelSerializer):
         return value
 
     applications = ApplicationListSerializer(many=True, read_only=True)
-    logs = ClientLogSerializer(many=True, read_only=True)
+    logs = serializers.SerializerMethodField()
+    logs_total = serializers.SerializerMethodField()
+
+    def get_logs(self, obj):
+        return ClientLogSerializer(obj.logs.all()[:LOG_PAGE_SIZE], many=True).data
+
+    def get_logs_total(self, obj):
+        return obj.logs.count()
     phone_numbers = ClientPhoneNumberSerializer(many=True, required=False)
     meetings = MeetingSerializer(many=True, read_only=True)
     files = ClientFileSerializer(many=True, read_only=True)
@@ -288,7 +319,7 @@ class ClientDetailSerializer(serializers.ModelSerializer):
             'marital_status', 'passport_series', 'passport_number', 'passport_issued_by',
             'passport_issued_date', 'inn', 'pinfl', 'registration_address', 'billing_address',
             'comment', 'relatives', 'created_at', 'updated_at',
-            'created_by', 'applications', 'logs', 'phone_numbers',
+            'created_by', 'applications', 'logs', 'logs_total', 'phone_numbers',
             'phone_number', 'meetings', 'files'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
@@ -318,7 +349,14 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.StringRelatedField(read_only=True)
     client = ClientDetailSerializer(read_only=True)
     client_id = serializers.IntegerField(write_only=True)
-    logs = ApplicationLogSerializer(many=True, read_only=True)
+    logs = serializers.SerializerMethodField()
+    logs_total = serializers.SerializerMethodField()
+
+    def get_logs(self, obj):
+        return ApplicationLogSerializer(obj.logs.all()[:LOG_PAGE_SIZE], many=True).data
+
+    def get_logs_total(self, obj):
+        return obj.logs.count()
     rejection_reason = RejectionReasonSerializer(read_only=True)
     rejection_reason_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     meetings = MeetingSerializer(many=True, read_only=True)
@@ -400,7 +438,7 @@ class ApplicationDetailSerializer(serializers.ModelSerializer):
             'min_area', 'max_area', 'min_floor', 'max_floor',
             'notes', 'created_by', 'created_at', 'updated_at',
             'rejection_reason', 'rejection_reason_id', 'logs', 'meetings',
-            'status_info', 'is_deleted', 'deleted_at'
+            'status_info', 'is_deleted', 'deleted_at', 'logs_total'
         ]
         # Признак удаления меняется только кнопками удаления и восстановления
         read_only_fields = ['created_at', 'updated_at', 'is_deleted', 'deleted_at']

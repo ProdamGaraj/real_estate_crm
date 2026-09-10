@@ -10,7 +10,27 @@ class ClientFilter(filters.FilterSet):
     full_name = filters.CharFilter(field_name='full_name', lookup_expr='icontains')
 
     # Фильтр по номеру телефона (ищет в связанной модели)
-    phone_number = filters.CharFilter(field_name='phone_numbers__phone_number', lookup_expr='icontains')
+    phone_number = filters.CharFilter(method='filter_phone_number')
+
+    def filter_phone_number(self, queryset, name, value):
+        """
+        Ищет по любому написанию номера.
+
+        Пользователь набирает «90 123 45 67», а в базе лежит «+998901234567» —
+        поиск подстрокой их не сопоставлял. Сравниваем по цифрам.
+        """
+        from django.db.models import Q
+
+        from .phones import phone_search_variants
+
+        variants = phone_search_variants(value)
+        if not variants:
+            return queryset
+
+        condition = Q()
+        for variant in variants:
+            condition |= Q(phone_numbers__phone_number__icontains=variant)
+        return queryset.filter(condition).distinct()
 
     # Фильтр по email
     email = filters.CharFilter(field_name='email', lookup_expr='icontains')

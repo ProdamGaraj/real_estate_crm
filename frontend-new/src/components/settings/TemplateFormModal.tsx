@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import { extractApiError } from '../../utils/apiError';
 
 interface TemplateFormModalProps {
   open: boolean;
@@ -52,7 +53,7 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
       onClose();
       reset();
     },
-    onError: (error) => alert(`${t('common.error')}: ${error.message}`),
+    onError: (error: unknown) => alert(extractApiError(error, t('common.error'))),
   });
 
   const onSubmit = (data: FormInputs) => {

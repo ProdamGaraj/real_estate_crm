@@ -260,15 +260,25 @@ REST_FRAMEWORK = {
     # Пагинация включается запросом (?page=N) — см. real_estate_project/pagination.py
     'DEFAULT_PAGINATION_CLASS': 'real_estate_project.pagination.OptionalPageNumberPagination',
     'PAGE_SIZE': 50,
-    # Rate limiting для защиты от брутфорса
+    # Ограничение частоты запросов. Лимиты разведены по назначению:
+    # вход защищаем жёстко, обычную работу — свободно.
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
+        'permissions.throttles.BurstRateThrottle',
+        'permissions.throttles.SustainedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',      # Анонимные запросы (для /public/ с API-ключом)
-        'user': '1000/hour',     # Аутентифицированные пользователи
-        'login': '5/min',        # Попытки логина по IP
+        # Анонимные запросы вне партнёрского API (у партнёров лимит свой,
+        # из настроек их ключа, — см. PartnerAPIKey.check_rate_limit)
+        'anon': config('THROTTLE_ANON', default='100/hour'),
+        # Всплеск от одного пользователя: 5 запросов в секунду — заведомо выше
+        # человеческого темпа, но останавливает страницу, зациклившуюся на
+        # повторных запросах
+        'burst': config('THROTTLE_BURST', default='300/min'),
+        # Длительная нагрузка: рассчитано на полный рабочий день в системе
+        'sustained': config('THROTTLE_SUSTAINED', default='6000/hour'),
+        # Попытки входа по IP — отдельный жёсткий предел
+        'login': config('THROTTLE_LOGIN', default='5/min'),
     }
 }
 

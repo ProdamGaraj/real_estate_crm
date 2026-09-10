@@ -3,16 +3,18 @@ Throttle-классы для защиты эндпоинтов аутентиф�
 """
 from django.conf import settings
 from django.core.cache import cache
-from rest_framework.throttling import SimpleRateThrottle
+from rest_framework.throttling import SimpleRateThrottle, UserRateThrottle
 
 
 class LoginRateThrottle(SimpleRateThrottle):
     """
-    Ограничивает количество попыток логина по IP-адресу.
-    5 попыток в минуту.
+    Ограничивает попытки входа по IP-адресу.
+
+    Отдельный, намеренно жёсткий лимит: он защищает от перебора паролей
+    и не должен зависеть от того, сколько запросов делает работающий
+    в системе человек. Ставка берётся из настроек (scope 'login').
     """
     scope = 'login'
-    rate = '5/min'
 
     def get_cache_key(self, request, view):
         ident = self.get_ident(request)
@@ -20,6 +22,31 @@ class LoginRateThrottle(SimpleRateThrottle):
             'scope': self.scope,
             'ident': ident
         }
+
+
+class BurstRateThrottle(UserRateThrottle):
+    """
+    Потолок на короткий всплеск запросов от одного пользователя.
+
+    Считается в минутах и защищает сервер от лавины обращений — например,
+    когда страница циклически перезапрашивает данные из-за ошибки.
+    Обычной работе не мешает.
+    """
+    scope = 'burst'
+
+
+class SustainedRateThrottle(UserRateThrottle):
+    """
+    Потолок на длительную нагрузку от одного пользователя.
+
+    Считается в часах. Прежний общий лимит в 1000 запросов в час писался
+    как защита от перебора паролей, но применялся ко всей работе: фильтры
+    отправляют запрос при каждом изменении, списки и дашборд добавляют свои,
+    и активный менеджер упирался в предел за смену, получая отказы вместо
+    данных. Вход теперь ограничивается отдельно (см. LoginRateThrottle),
+    поэтому здесь ставка рассчитана на живую работу.
+    """
+    scope = 'sustained'
 
 
 # --- Account Lockout ---

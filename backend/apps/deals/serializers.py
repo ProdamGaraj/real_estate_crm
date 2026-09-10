@@ -2,6 +2,12 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from apps.finances.models import Payment
 
+# Сколько записей журнала отдавать в карточке.
+# Карточка возвращала всю историю целиком: у долгоживущей записи это сотни
+# строк, которые никто не читает целиком. Отдаём последние, а общее число —
+# отдельным полем, чтобы счётчик на вкладке оставался честным.
+LOG_PAGE_SIZE = 50
+
 from rest_framework import serializers
 from .models import Deal, DealLog
 from apps.crm.serializers import ClientListSerializer
@@ -95,7 +101,15 @@ class DealDetailSerializer(serializers.ModelSerializer):
     created_by = serializers.StringRelatedField(read_only=True)
     # ИСПРАВЛЕНИЕ: Заменяем прямое поле на SerializerMethodField
     payments = serializers.SerializerMethodField()
-    logs = DealLogSerializer(many=True, read_only=True)
+    logs = serializers.SerializerMethodField()
+    logs_total = serializers.SerializerMethodField()
+
+    def get_logs(self, obj):
+        recent = obj.logs.all()[:LOG_PAGE_SIZE]
+        return DealLogSerializer(recent, many=True).data
+
+    def get_logs_total(self, obj):
+        return obj.logs.count()
 
     # Поле только для записи (write-only), чтобы принимать массив ID скидок при обновлении
     applied_discounts_ids = serializers.PrimaryKeyRelatedField(
@@ -189,7 +203,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'id', 'status', 'booking_start_date', 'booking_end_date', 'client', 'property',
             'initial_price', 'initial_price_per_sqm', 'contract_price', 'currency', 'notes',
             'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
-            'payments', 'contract_number', 'contract_date', 'application',
+            'payments', 'contract_number', 'contract_date', 'application', 'logs_total',
             'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
         ]
         read_only_fields = [

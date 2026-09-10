@@ -326,6 +326,21 @@ class DashboardAnalyticsView(APIView):
         application_statuses = apps_qs.order_by().values('status').annotate(count=Count('id'))
         application_sources = apps_qs.order_by().values('source').annotate(count=Count('id'))
 
+        # Динамика заявок по дням за неделю. График с таким названием на дашборде
+        # был, но рисовал распределение по статусам — то есть отвечал на другой вопрос.
+        week_start = today - timedelta(days=6)
+        per_day_rows = apps_qs.filter(created_at__date__gte=week_start).order_by().values(
+            'created_at__date'
+        ).annotate(count=Count('id'))
+        counts_by_day = {row['created_at__date']: row['count'] for row in per_day_rows}
+        applications_per_day = [
+            {
+                'date': (week_start + timedelta(days=offset)).isoformat(),
+                'count': counts_by_day.get(week_start + timedelta(days=offset), 0),
+            }
+            for offset in range(7)
+        ]
+
         # Top Managers - на основе отфильтрованных сделок
         from django.db.models import OuterRef, Subquery
         # Одним запросом вместо выборки id и отдельного запроса на каждого
@@ -360,6 +375,7 @@ class DashboardAnalyticsView(APIView):
             'charts': {
                 'applicationStatuses': list(application_statuses),
                 'applicationSources': list(application_sources),
+                'applicationsPerDay': applications_per_day,
             },
             'topManagers': list(top_managers),
             'upcomingMeetings': [
@@ -617,6 +633,11 @@ class PublicApplicationCreateView(generics.CreateAPIView):
     serializer_class = PublicApplicationSerializer
     authentication_classes = []  # API-ключ проверяется в permission_classes
     permission_classes = [HasPartnerCreateApplicationScope]
+    # Частоту запросов партнёра ограничивает его собственный ключ
+    # (requests_per_minute / requests_per_day). Общий анонимный лимит
+    # здесь снят: иначе настройки ключа не действовали бы — партнёр
+    # упирался в 100 запросов в час независимо от того, что ему выдали.
+    throttle_classes = []
 
     def create(self, request, *args, **kwargs):
         from .models import ClientPhoneNumber
@@ -643,8 +664,19 @@ class PublicApplicationCreateView(generics.CreateAPIView):
         # Клиента ищем только среди клиентов этой компании. Глобальный поиск
         # по телефону отдавал партнёру карточку клиента другой компании
         # и затирал в ней ФИО.
+        # Ищем по любому написанию: сайт партнёра может прислать номер
+        # в своём формате, а в базе он уже приведён к единому виду
+        from django.db.models import Q
+
+        from .phones import normalize_phone, phone_search_variants
+
+        phone_number = normalize_phone(phone_number)
+        phone_condition = Q()
+        for variant in phone_search_variants(phone_number):
+            phone_condition |= Q(phone_number__icontains=variant)
+
         phone_obj = ClientPhoneNumber.objects.filter(
-            phone_number=phone_number,
+            phone_condition,
             client__company=partner_company,
         ).select_related('client').first()
 

@@ -238,7 +238,7 @@ export default function ApplicationDetailPage() {
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tab label={t('pages.applications.details_tab')} />
           <Tab label={`${t('pages.applications.meetings_tab')} (${app.meetings?.length || 0})`} />
-          <Tab label={`${t('pages.applications.logs_tab')} (${app.logs.length})`} />
+          <Tab label={`${t('pages.applications.logs_tab')} (${app.logs_total ?? app.logs.length})`} />
         </Tabs>
       </Box>
 

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getPlanFactReport, downloadPlanTemplate, uploadPlan, type ReportFilters } from '../../api/reports';
 import { useIsMobile } from '../../hooks/useMobile';
+import { extractApiError } from '../../utils/apiError';
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
@@ -65,7 +66,7 @@ export default function ProjectReport() {
             alert(data.status);
             queryClient.invalidateQueries({ queryKey: ['planFactReport'] });
         },
-        onError: (err) => alert(`${t('pages.reports.upload_error')} ${err.message}`),
+        onError: (err: unknown) => alert(extractApiError(err, t('pages.reports.upload_error'))),
     });
 
     const onGenerateReport = (data: ReportFilters) => {

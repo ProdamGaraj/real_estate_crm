@@ -8,6 +8,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack,
   Typography, TextField, Alert, Grid
 } from '@mui/material';
+import { extractApiError } from '../../utils/apiError';
 
 interface Props {
   meeting: Meeting | null;
@@ -55,7 +56,7 @@ export default function MeetingDetailModal({ meeting, open, onClose, onUpdate }:
       onClose();
       setIsCloseModalOpen(false);
     },
-    onError: (error) => alert(`${t('common.error')}: ${error.message}`)
+    onError: (error: unknown) => alert(extractApiError(error, t('common.error')))
   });
 
   if (!meeting) return null;

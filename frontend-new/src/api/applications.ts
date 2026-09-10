@@ -35,6 +35,8 @@ export interface ApplicationDetail extends Application {
   created_at: string;
   updated_at: string;
   logs: any[];
+  /** Всего записей в журнале; в logs приходят последние 50 */
+  logs_total?: number;
   rejection_reason: RejectionReason | null;
   meetings: Meeting[];  // Встречи по заявке
   /** Заявка удалена (мягко): скрыта из списков, но её можно восстановить */

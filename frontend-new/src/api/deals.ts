@@ -28,6 +28,8 @@ export interface Deal {
   client_signature_date: string | null;
   company_signature_date: string | null;
   logs: DealLog[];
+  /** Всего записей в журнале; в logs приходят последние 50 */
+  logs_total?: number;
   cancellation_reason: string | null;
   termination_document_scan: string | null;
   termination_date: string | null;

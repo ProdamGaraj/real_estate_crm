@@ -168,6 +168,16 @@ class Deal(models.Model):
         verbose_name_plural = "Сделки"
         unique_together = ('company', 'contract_number')
         ordering = ['-created_at']
+        # Списки и отчёты фильтруют сделки по компании, статусу и датам —
+        # без индексов каждый такой запрос читает таблицу целиком
+        indexes = [
+            models.Index(fields=['company', 'status']),
+            models.Index(fields=['status', '-created_at']),
+            models.Index(fields=['created_by', 'status']),
+            models.Index(fields=['closed_at']),
+            models.Index(fields=['contract_date']),
+            models.Index(fields=['booking_end_date']),
+        ]
 
     def __str__(self):
         return f"Сделка №{self.id} по объекту {self.property}"

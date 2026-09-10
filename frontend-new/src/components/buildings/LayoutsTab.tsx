@@ -16,6 +16,7 @@ import { getPropertyTemplateUrl } from '../../api/buildings';
 import LayoutCard from './LayoutCard';
 import { useAuthStore } from '../../store/authStore';
 import { hasPermission } from '../../utils/permissions';
+import { extractApiError } from '../../utils/apiError';
 
 interface LayoutsTabProps {
   projectId: number;
@@ -44,8 +45,8 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
       setUploadResult(result);
       setResultDialogOpen(true);
     },
-    onError: (error: Error) => {
-      alert(`${t('common.error')}: ${error.message}`);
+    onError: (error: unknown) => {
+      alert(extractApiError(error, t('common.error')));
     },
   });
 

@@ -57,6 +57,8 @@ export interface ClientDetail {
   updated_at: string;
   applications: Application[];
   logs: ClientLog[];
+  /** Всего записей в журнале; в logs приходят последние 50 */
+  logs_total?: number;
   phone_numbers: ClientPhoneNumber[];
   files: ClientFile[];
 }

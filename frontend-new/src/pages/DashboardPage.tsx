@@ -46,7 +46,7 @@ const sourceColors = [
 
 
 export default function DashboardPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const isMobile = useIsMobile();
   const { data, isLoading, isError } = useQuery({
@@ -75,11 +75,16 @@ export default function DashboardPage() {
     color: sourceColors[index % sourceColors.length],
   })) || [];
 
-  // Данные для bar chart (статусы)
-  const barChartData = charts?.applicationStatuses?.map(item => item.count) || [];
-  const barChartLabels = charts?.applicationStatuses?.map(item => 
-    t(`statuses.application.${item.status}`, item.status)
-  ) || [];
+  // Подписи дат — на языке интерфейса
+  const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
+  const dateLocale = localeMap[i18n.language] || 'ru-RU';
+
+  // Динамика заявок по дням: график назывался «Динамика», но показывал статусы
+  const perDay = charts?.applicationsPerDay ?? [];
+  const barChartData = perDay.map(item => item.count);
+  const barChartLabels = perDay.map(item =>
+    new Date(item.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' })
+  );
 
   // Adaptive chart height
   const chartHeight = isMobile ? 220 : 300;

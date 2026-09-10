@@ -3,14 +3,15 @@ import { useMemo, useState } from 'react';
 import {
   Box, Paper, Typography, Card, CardContent, CardActionArea,
   Chip, Stack, Skeleton, Alert, IconButton, Menu, MenuItem, ListItemIcon, ListItemText,
-  Snackbar
+  Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Button, Autocomplete, TextField
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getApplicationStatuses, type ApplicationStatus } from '../../api/settings';
-import { updateApplication, type Application } from '../../api/applications';
+import { updateApplication, getRejectionReasons, type Application } from '../../api/applications';
 import { translateApplicationSource } from '../../utils/translations';
+import { extractApiError } from '../../utils/apiError';
 import PersonIcon from '@mui/icons-material/Person';
 import SourceIcon from '@mui/icons-material/Campaign';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -249,21 +250,63 @@ export default function ApplicationsKanban({ applications, isLoading }: Applicat
     queryFn: () => getApplicationStatuses(true), // только активные
   });
 
+  // Эти статусы сервер не примет без указанной причины
+  const REASON_REQUIRED_STATUSES = ['JUNK', 'REJECTED'];
+
+  // Заявка, которую переводим в отказ, и выбранная причина
+  const [reasonTarget, setReasonTarget] = useState<{ id: number; status: string } | null>(null);
+  const [selectedReasonId, setSelectedReasonId] = useState<number | null>(null);
+
+  const { data: rejectionReasons, isLoading: reasonsLoading } = useQuery({
+    queryKey: ['rejectionReasons'],
+    queryFn: getRejectionReasons,
+    enabled: reasonTarget !== null,
+  });
+
   // Мутация для смены статуса
   const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) => 
-      updateApplication({ id, payload: { status } }),
+    mutationFn: ({ id, status, reasonId }: { id: number; status: string; reasonId?: number }) =>
+      updateApplication({
+        id,
+        payload: reasonId ? { status, rejection_reason_id: reasonId } : { status },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
+      closeReasonDialog();
       setSnackbar({ open: true, message: t('pages.applications.kanban.status_changed'), severity: 'success' });
     },
-    onError: () => {
-      setSnackbar({ open: true, message: t('pages.applications.kanban.status_change_error'), severity: 'error' });
+    onError: (error: unknown) => {
+      // Показываем, что именно ответил сервер: общее «ошибка» ничего не объясняет
+      setSnackbar({
+        open: true,
+        message: extractApiError(error, t('pages.applications.kanban.status_change_error')),
+        severity: 'error',
+      });
     }
   });
 
+  const closeReasonDialog = () => {
+    setReasonTarget(null);
+    setSelectedReasonId(null);
+  };
+
   const handleStatusChange = (appId: number, newStatus: string) => {
+    // «Отказ» и «Нецелевая» требуют причины — сначала спрашиваем её
+    if (REASON_REQUIRED_STATUSES.includes(newStatus)) {
+      setReasonTarget({ id: appId, status: newStatus });
+      setSelectedReasonId(null);
+      return;
+    }
     statusMutation.mutate({ id: appId, status: newStatus });
+  };
+
+  const handleReasonConfirm = () => {
+    if (!reasonTarget || !selectedReasonId) return;
+    statusMutation.mutate({
+      id: reasonTarget.id,
+      status: reasonTarget.status,
+      reasonId: selectedReasonId,
+    });
   };
 
   // Группируем заявки по статусам
@@ -344,6 +387,57 @@ export default function ApplicationsKanban({ applications, isLoading }: Applicat
           />
         ))}
       </Box>
+      
+      {/* «Отказ» и «Нецелевая» не сохранятся без причины — спрашиваем её здесь */}
+      
+      <Dialog open={reasonTarget !== null} onClose={closeReasonDialog} fullWidth maxWidth="xs">
+      
+        <DialogTitle>{t('pages.applications.specify_reason')}</DialogTitle>
+      
+        <DialogContent>
+      
+          <Autocomplete
+      
+            options={rejectionReasons || []}
+      
+            loading={reasonsLoading}
+      
+            getOptionLabel={(option) => option.name}
+      
+            onChange={(_, data) => setSelectedReasonId(data?.id ?? null)}
+      
+            renderInput={(params) => (
+      
+              <TextField {...params} sx={{ mt: 1 }} label={t('pages.applications.reason')} required />
+      
+            )}
+      
+          />
+      
+        </DialogContent>
+      
+        <DialogActions>
+      
+          <Button onClick={closeReasonDialog}>{t('common.cancel')}</Button>
+      
+          <Button
+      
+            variant="contained"
+      
+            onClick={handleReasonConfirm}
+      
+            disabled={!selectedReasonId || statusMutation.isPending}
+      
+          >
+      
+            {t('common.confirm')}
+      
+          </Button>
+      
+        </DialogActions>
+      
+      </Dialog>
+
       
       <Snackbar
         open={snackbar.open}

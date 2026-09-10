@@ -333,10 +333,38 @@ class RoleViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_destroy(self, instance):
-        """Системную роль удалить нельзя — на ней держатся базовые доступы"""
+        """
+        Системную роль удалить нельзя — на ней держатся базовые доступы.
+
+        Роль, назначенную сотрудникам, удаляем только по явному подтверждению:
+        вместе с ней люди молча теряли доступы и узнавали об этом, когда
+        раздел пропадал из меню.
+        """
         if instance.is_system and not _is_request_user_system_admin(self.request):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Системные роли не могут быть удалены')
+
+        holders = instance.user_profiles.filter(is_active=True, is_deleted=False)
+        confirmed = str(self.request.query_params.get('confirm', '')).lower() == 'true'
+        if holders.exists() and not confirmed:
+            from rest_framework.exceptions import ValidationError as DRFValidationError
+
+            names = ", ".join(
+                profile.user.get_full_name() or profile.user.username
+                for profile in holders[:5]
+            )
+            more = holders.count() - 5
+            if more > 0:
+                names += f" и ещё {more}"
+            raise DRFValidationError({
+                'detail': (
+                    f'Роль назначена сотрудникам ({holders.count()}): {names}. '
+                    f'После удаления они потеряют её права. '
+                    f'Повторите запрос с параметром confirm=true, если это осознанно.'
+                ),
+                'users_count': holders.count(),
+            })
+
         instance.delete()
     
     @action(detail=True, methods=['post'])

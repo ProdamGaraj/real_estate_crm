@@ -24,6 +24,7 @@ import MeetingForm from '../components/meetings/MeetingForm';
 import type { Meeting } from '../api/meetings';
 import ClientFilesTab from '../components/clients/ClientFilesTab';
 import { useIsMobile } from '../hooks/useMobile';
+import { extractApiError } from '../utils/apiError';
 
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
@@ -119,8 +120,8 @@ export default function ClientDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['client', clientId] });
       alert(t('pages.clients.data_updated'));
     },
-    onError: (err) => {
-      alert(`${t('common.error')}: ${err.message}`);
+    onError: (err: unknown) => {
+      alert(extractApiError(err, t('common.error')));
     }
   });
 
@@ -157,7 +158,7 @@ export default function ClientDetailPage() {
           <Tab label={isMobile ? `${client?.applications.length || 0}` : `${t('pages.clients.applications')} (${client?.applications.length || 0})`} />
           <Tab label={isMobile ? `${client?.meetings?.length || 0}` : `${t('pages.meetings.title')} (${client?.meetings?.length || 0})`} />
           <Tab label={isMobile ? `${client?.files?.length || 0}` : `${t('pages.clients.files')} (${client?.files?.length || 0})`} />
-          <Tab label={isMobile ? `${client?.logs.length || 0}` : `${t('common.logs')} (${client?.logs.length || 0})`} />
+          <Tab label={isMobile ? `${client?.logs_total ?? client?.logs.length ?? 0}` : `${t('common.logs')} (${client?.logs_total ?? client?.logs.length ?? 0})`} />
         </Tabs>
       </Box>
 
