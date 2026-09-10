@@ -40,6 +40,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuthStore } from '../store/authStore';
 import { hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
+import { SETTINGS_RESOURCES } from '../utils/settingsTabs';
 import type { ResourceType } from '../utils/permissions';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -53,6 +54,7 @@ interface NavItem {
   path: string;
   resource?: ResourceType; // Ресурс для проверки прав
   requireAdmin?: boolean; // Требуется ли админ
+  anyResource?: ResourceType[]; // Достаточно права VIEW на любой из ресурсов
 }
 
 const navItems: NavItem[] = [
@@ -66,7 +68,7 @@ const navItems: NavItem[] = [
   { textKey: 'nav.finances', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },
   { textKey: 'nav.reports', icon: <AssessmentIcon />, path: '/reports', resource: 'REPORT' },
   { textKey: 'nav.discounts', icon: <LocalOfferIcon />, path: '/discounts', resource: 'DISCOUNT' },
-  { textKey: 'nav.settings', icon: <SettingsIcon />, path: '/settings?tab=companies', requireAdmin: true },
+  { textKey: 'nav.settings', icon: <SettingsIcon />, path: '/settings', anyResource: SETTINGS_RESOURCES },
 ];
 
 export default function RootLayout() {
@@ -81,9 +83,14 @@ export default function RootLayout() {
   // Фильтруем пункты меню на основе прав доступа
   const visibleNavItems = useMemo(() => {
     return navItems.filter(item => {
-      // Пункты без resource и без requireAdmin - НЕ отображаются (все пункты должны иметь проверку)
-      if (!item.resource && !item.requireAdmin) {
+      // Пункты без проверки доступа НЕ отображаются
+      if (!item.resource && !item.requireAdmin && !item.anyResource) {
         return false;
+      }
+
+      // Достаточно права на любой из ресурсов (раздел-агрегатор вроде «Настроек»)
+      if (item.anyResource) {
+        return isSystemAdmin(user) || item.anyResource.some(r => hasAnyViewPermission(user, r));
       }
 
       // Проверяем требование администратора

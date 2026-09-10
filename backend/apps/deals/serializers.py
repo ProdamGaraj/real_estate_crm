@@ -1,3 +1,5 @@
+from decimal import Decimal, ROUND_HALF_UP
+
 from rest_framework import serializers
 from .models import Deal, DealLog
 from apps.crm.serializers import ClientListSerializer
@@ -13,7 +15,32 @@ class DealCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deal
-        fields = ['client', 'property', 'booking_end_date']
+        fields = ['client', 'property', 'booking_end_date', 'application']
+
+    def validate_application(self, value):
+        """Заявка должна быть доступна пользователю и принадлежать тому же клиенту"""
+        if value is None:
+            return value
+        from permissions.backends import get_filtered_queryset
+        from apps.crm.models import Application
+
+        user = self.context['request'].user
+        accessible = get_filtered_queryset(
+            user, Application.objects.filter(pk=value.pk), 'APPLICATION'
+        )
+        if not accessible.exists():
+            raise serializers.ValidationError('Заявка не найдена или недоступна.')
+        return value
+
+    def validate(self, data):
+        data = super().validate(data)
+        application = data.get('application')
+        client = data.get('client')
+        if application and client and application.client_id != client.pk:
+            raise serializers.ValidationError({
+                'application': 'Заявка оформлена на другого клиента.'
+            })
+        return data
 
     def validate_client(self, value):
         """Проверяем что клиент доступен пользователю (scope-check)"""
@@ -30,7 +57,7 @@ class DealCreateSerializer(serializers.ModelSerializer):
         from apps.realty.views import _filter_by_company_scope
         user = self.context['request'].user
         from apps.realty.models import Property
-        accessible = _filter_by_company_scope(user, Property.objects.filter(pk=value.pk), 'building__project__company')
+        accessible = _filter_by_company_scope(user, Property.objects.filter(pk=value.pk), 'building__project__company', 'PROPERTY')
         if not accessible.exists():
             raise serializers.ValidationError('Объект недвижимости не найден или недоступен.')
         return value
@@ -76,6 +103,53 @@ class DealDetailSerializer(serializers.ModelSerializer):
         source='applied_discounts'
     )
 
+    def validate(self, data):
+        """
+        Сверяем цену договора со скидками и с уже собранным графиком платежей.
+        """
+        data = super().validate(data)
+        instance = self.instance
+        if instance is None:
+            return data
+
+        discounts = data.get('applied_discounts', list(instance.applied_discounts.all()))
+        contract_price = data.get('contract_price', instance.contract_price)
+
+        # Суммарный процент ограничивался только у каждой скидки по отдельности
+        total_percent = sum((d.percentage_value or 0) for d in discounts)
+        if total_percent > 100:
+            raise serializers.ValidationError({
+                'applied_discounts_ids': f'Суммарная скидка {total_percent}% превышает 100%.'
+            })
+
+        if contract_price is not None and instance.initial_price:
+            expected = (instance.initial_price * (Decimal(100) - Decimal(total_percent)) / Decimal(100))
+            expected = expected.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            if Decimal(contract_price) > expected:
+                raise serializers.ValidationError({
+                    'contract_price': (
+                        f'Стоимость по договору ({contract_price}) больше цены со скидками '
+                        f'({expected}). Проверьте набор скидок.'
+                    )
+                })
+
+        # Цену договора можно было менять уже после сборки графика — суммы
+        # молча расходились до следующей правки графика
+        if 'contract_price' in data and instance.pk:
+            paid_total = sum(
+                (p.amount for p in instance.payments.all()), Decimal(0)
+            )
+            if instance.payments.exists() and contract_price is not None:
+                if Decimal(contract_price) != paid_total:
+                    raise serializers.ValidationError({
+                        'contract_price': (
+                            f'По сделке уже собран график на {paid_total}. '
+                            f'Сначала пересоберите график под новую стоимость.'
+                        )
+                    })
+
+        return data
+
     def validate_applied_discounts_ids(self, value):
         """Проверяем что скидки доступны пользователю (scope-check)"""
         from apps.realty.views import _filter_by_company_scope
@@ -83,7 +157,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         ids = [d.pk for d in value]
         accessible = _filter_by_company_scope(
-            user, Discount.objects.filter(pk__in=ids), 'buildings__project__company'
+            user, Discount.objects.filter(pk__in=ids), 'company', 'DISCOUNT'
         ).distinct()
         accessible_ids = set(accessible.values_list('pk', flat=True))
         denied = set(ids) - accessible_ids
@@ -97,11 +171,11 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'id', 'status', 'booking_start_date', 'booking_end_date', 'client', 'property',
             'initial_price', 'initial_price_per_sqm', 'contract_price', 'notes',
             'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
-            'payments', 'contract_number', 'contract_date',
+            'payments', 'contract_number', 'contract_date', 'application',
             'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
         ]
         read_only_fields = [
-            'id', 'status', 'booking_start_date', 'client', 'property',
+            'id', 'status', 'booking_start_date', 'client', 'property', 'application',
             'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
         ]
 
@@ -116,8 +190,14 @@ class DealDetailSerializer(serializers.ModelSerializer):
         if not value:
             return None
 
-        # Проверяем уникальность, исключая текущую сделку (при редактировании)
-        query = Deal.objects.filter(contract_number=value)
+        # Уникальность проверяем внутри компании: у каждой своя нумерация
+        company_id = getattr(self.instance, 'company_id', None)
+        if company_id is None:
+            request = self.context.get('request')
+            profile = getattr(getattr(request, 'user', None), 'profile', None)
+            company_id = getattr(profile, 'company_id', None)
+
+        query = Deal.objects.filter(contract_number=value, company_id=company_id)
         if self.instance:
             query = query.exclude(pk=self.instance.pk)
 
@@ -128,9 +208,13 @@ class DealDetailSerializer(serializers.ModelSerializer):
 
     # ИСПРАВЛЕНИЕ: Добавляем метод для возврата относительных путей к файлам
     def to_representation(self, instance):
+        from real_estate_project.media_access import build_media_url
+
         representation = super().to_representation(instance)
+        # Документы сделки отдаются по ссылке с подписанным токеном:
+        # прямой путь в media открыт любому, кто его угадает
         if instance.signed_document_scan:
-            representation['signed_document_scan'] = instance.signed_document_scan.url
+            representation['signed_document_scan'] = build_media_url(instance.signed_document_scan)
         if instance.termination_document_scan:
-            representation['termination_document_scan'] = instance.termination_document_scan.url
+            representation['termination_document_scan'] = build_media_url(instance.termination_document_scan)
         return representation

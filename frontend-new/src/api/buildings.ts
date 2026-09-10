@@ -1,4 +1,5 @@
 import apiClient from './axios';
+import { getAccessToken } from './tokenStore';
 
 /**
  * Минимальный интерфейс для планировки,
@@ -82,17 +83,8 @@ export const uploadProperties = async ({ projectId, buildingId, file }: { projec
   const formData = new FormData();
   formData.append('file', file);
 
-  // Получаем токен из localStorage
-  let accessToken = null;
-  try {
-    const authStorage = localStorage.getItem('auth-storage');
-    if (authStorage) {
-      const parsed = JSON.parse(authStorage);
-      accessToken = parsed.state?.accessToken;
-    }
-  } catch (error) {
-    console.error('Error reading auth token:', error);
-  }
+  // Токен берём из памяти: в localStorage его больше нет
+  const accessToken = getAccessToken();
 
   // Используем native fetch для загрузки файла, чтобы избежать проблем с axios headers
   const response = await fetch(`/api/projects/${projectId}/buildings/${buildingId}/upload-properties/`, {
@@ -100,6 +92,7 @@ export const uploadProperties = async ({ projectId, buildingId, file }: { projec
     headers: {
       ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
     },
+    credentials: 'include',
     body: formData,
   });
 

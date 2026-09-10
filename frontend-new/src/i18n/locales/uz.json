@@ -591,7 +591,8 @@
       "add_payment": "To'lov qo'shish",
       "save_schedule": "Jadvalni saqlash",
       "schedule_saved": "To'lov jadvali muvaffaqiyatli saqlandi!",
-      "error_prefix": "Xatolik:"
+      "error_prefix": "Xatolik:",
+      "currency": "Valyuta"
     },
     "reports": {
       "title": "Hisobotlar",

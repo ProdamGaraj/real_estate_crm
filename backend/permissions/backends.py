@@ -203,10 +203,16 @@ def get_filtered_queryset(user, queryset, resource_type, max_scope=None):
         if resource_type == 'CLIENT':
             if has_company_view and profile.company:
                 # Клиент виден если:
-                # 1. Клиент создан пользователем из этой компании
-                filters |= Q(created_by__profile__company=profile.company)
-                # 2. ИЛИ хотя бы одна заявка создана пользователем из этой компании
-                filters |= Q(applications__created_by__profile__company=profile.company)
+                # 1. Клиент принадлежит этой компании.
+                #    Раньше здесь стояла проверка компании АВТОРА записи, из-за
+                #    чего перевод менеджера уносил его клиентов в новую компанию,
+                #    а клиенты уволенных пропадали из выдачи.
+                filters |= Q(company=profile.company)
+                # 2. ИЛИ клиент создан пользователем из этой компании
+                #    (для записей, где компания ещё не проставлена)
+                filters |= Q(company__isnull=True, created_by__profile__company=profile.company)
+                # 3. ИЛИ по нему есть заявка этой компании
+                filters |= Q(applications__company=profile.company)
             
             if has_department_view and profile.department:
                 # Клиент виден если создан пользователем из этого отдела
@@ -244,6 +250,14 @@ def get_filtered_queryset(user, queryset, resource_type, max_scope=None):
                 # Проверяем наличие поля company у модели
                 if hasattr(queryset.model, 'company'):
                     filters |= Q(company=profile.company)
+                    # Поле company во всех моделях nullable и заполняется только
+                    # из профиля создающего. Записи, сделанные до мультитенантности
+                    # или пользователем без компании, иначе не видны никому.
+                    if hasattr(queryset.model, 'created_by'):
+                        filters |= Q(
+                            company__isnull=True,
+                            created_by__profile__company=profile.company,
+                        )
                 # Проверяем через created_by
                 elif hasattr(queryset.model, 'created_by'):
                     filters |= Q(created_by__profile__company=profile.company)

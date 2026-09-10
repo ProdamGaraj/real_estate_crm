@@ -29,6 +29,9 @@ export interface Payment {
   created_at: string;
   payment_type: string;
   beneficiary_account: string;
+  /** Идентификаторы справочников: по названию их искать нельзя — оно может измениться или запись быть удалена */
+  payment_type_ref: number | null;
+  beneficiary_account_ref: number | null;
   created_by: string;
   responsible_employee: string;
   client: { id: number; full_name: string; };
@@ -37,6 +40,12 @@ export interface Payment {
 
 // Данные для создания одного платежа в графике
 export interface PaymentSchedulePayloadItem {
+  /**
+   * ID существующего платежа. Передаётся при правке графика, чтобы бэкенд
+   * обновил строку на месте и не потерял отметку об оплате.
+   * У новых строк отсутствует.
+   */
+  id?: number;
   amount: number;
   due_date: string;
   payment_type_id: number;
@@ -61,11 +70,17 @@ export interface FinanceSummaryFilters {
     payment_date_before?: string;
 }
 
+/** Итоги по одной валюте: суммы разных валют не складываются в одно число */
+export interface FinanceCurrencyTotals {
+    currency: string;
+    overdue_sum: number;
+    paid_sum: number;
+}
+
 export interface FinanceSummaryResponse {
     summary: any[];
     widgets: {
-        overdue_sum: number;
-        paid_sum: number;
+        by_currency: FinanceCurrencyTotals[];
     };
 }
 

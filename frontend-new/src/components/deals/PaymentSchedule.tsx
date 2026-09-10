@@ -40,6 +40,10 @@ const getStatusChipColor = (status: Payment['status']) => {
   }
 }
 
+// Платежи, по которым уже прошли деньги: их нельзя удалить из графика
+// и нельзя переписать сумму или срок при правке
+const PROTECTED_STATUSES: Payment['status'][] = ['PAID', 'TO_BE_RETURNED', 'RETURNED'];
+
 
 export default function PaymentSchedule({ dealId, contractPrice, existingPayments, isDealTerminated, isReadOnly }: PaymentScheduleProps) {
   const { t } = useTranslation();
@@ -54,7 +58,19 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
     mode: 'onChange'
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: "payments" });
+  // keyName переопределён: по умолчанию useFieldArray кладёт свой ключ в поле `id`
+  // и затирает им ID платежа, который нужен бэкенду
+  const { fields, append, remove } = useFieldArray({ control, name: "payments", keyName: 'fieldKey' });
+
+  // Статусы существующих платежей — по ним определяем защищённые строки формы
+  const paymentStatusById = useMemo(
+    () => new Map(existingPayments.map(p => [p.id, p.status])),
+    [existingPayments]
+  );
+  const isProtectedRow = (paymentId?: number) => {
+    const status = paymentId ? paymentStatusById.get(paymentId) : undefined;
+    return status !== undefined && PROTECTED_STATUSES.includes(status);
+  };
 
   useEffect(() => {
     // Этот хук теперь срабатывает только один раз для установки начального шага
@@ -72,8 +88,17 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
 
   const handleEditClick = () => {
     const transformedPayments = existingPayments.map(p => ({
-      payment_type_id: paymentTypes?.find(pt => pt.name === p.payment_type)?.id || 0,
-      beneficiary_account_id: accounts?.find(ac => ac.name === p.beneficiary_account)?.id || 0,
+      // ID обязателен: без него бэкенд считает строку новой,
+      // а прежний платёж — удалённым вместе с отметкой об оплате
+      id: p.id,
+      // Берём id из ответа API. Поиск по названию давал 0, если справочник
+      // переименовали или удалили, и сохранение графика падало
+      payment_type_id: p.payment_type_ref
+        ?? paymentTypes?.find(pt => pt.name === p.payment_type)?.id
+        ?? 0,
+      beneficiary_account_id: p.beneficiary_account_ref
+        ?? accounts?.find(ac => ac.name === p.beneficiary_account)?.id
+        ?? 0,
       amount: Number(p.amount),
       due_date: p.due_date,
       currency: p.currency as 'UZS' | 'USD' | 'EUR',
@@ -85,7 +110,8 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
 
   const watchedPayments = watch('payments');
   const totalAmount = useMemo(() => watchedPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0), [watchedPayments]);
-  const remainingAmount = contractPrice - totalAmount;
+  // Округляем до копеек: остаток вида -1.4e-10 навсегда блокировал кнопку
+  const remainingAmount = Math.round((contractPrice - totalAmount) * 100) / 100;
 
   const handleAddPayment = () => {
     const currentPayments = getValues('payments');
@@ -126,7 +152,14 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
 
 
   const handleMarkAsPaid = (paymentId: number) => {
-    const today = new Date().toISOString().split('T')[0];
+    // Локальная дата, а не UTC: toISOString() до 05:00 по Ташкенту
+    // проставлял вчерашний день
+    const now = new Date();
+    const today = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('-');
     updatePaymentMutation.mutate({ id: paymentId, payload: { payment_date: today } });
   };
 
@@ -187,11 +220,13 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
           {t('finances.contract_amount')}: {contractPrice.toLocaleString()} | {t('finances.distributed')}: {totalAmount.toLocaleString()} | {t('finances.remaining')}: {remainingAmount.toLocaleString()}
         </Alert>
 
-        {fields.map((field, index) => (
-          <Paper key={field.id} variant="outlined" sx={{ p: 2 }}>
+        {fields.map((field, index) => {
+          const locked = isProtectedRow(field.id);
+          return (
+          <Paper key={field.fieldKey} variant="outlined" sx={{ p: 2 }}>
             <Grid container spacing={2} alignItems="center">
               <Grid item xs={12} md={2.5}>
-                <Controller name={`payments.${index}.amount`} control={control} render={({ field }) => <TextField {...field} label={t('finances.amount')} type="number" fullWidth required />} />
+                <Controller name={`payments.${index}.amount`} control={control} render={({ field }) => <TextField {...field} label={t('finances.amount')} type="number" fullWidth required disabled={locked} />} />
               </Grid>
               <Grid item xs={12} md={2.5}>
                 <Controller name={`payments.${index}.due_date`} control={control} render={({ field }) => (
@@ -200,12 +235,13 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
                     value={field.value || null}
                     onChange={(date) => field.onChange(date || '')}
                     fullWidth
+                    disabled={locked}
                   />
                 )} />
               </Grid>
               <Grid item xs={12} md={3}>
                 <Controller name={`payments.${index}.payment_type_id`} control={control} render={({ field }) => (
-                  <FormControl fullWidth>
+                  <FormControl fullWidth disabled={locked}>
                     <InputLabel>{t('finances.payment_type')}</InputLabel>
                     <Select {...field} label={t('finances.payment_type')} required>
                       {paymentTypes?.map(pt => <MenuItem key={pt.id} value={pt.id}>{pt.name}</MenuItem>)}
@@ -215,7 +251,7 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
               </Grid>
               <Grid item xs={12} md={3}>
                 <Controller name={`payments.${index}.beneficiary_account_id`} control={control} render={({ field }) => (
-                  <FormControl fullWidth>
+                  <FormControl fullWidth disabled={locked}>
                     <InputLabel>{t('finances.account')}</InputLabel>
                     <Select {...field} label={t('finances.account')} required>
                       {accounts?.map(ac => <MenuItem key={ac.id} value={ac.id}>{ac.name}</MenuItem>)}
@@ -224,13 +260,23 @@ export default function PaymentSchedule({ dealId, contractPrice, existingPayment
                 )} />
               </Grid>
               <Grid item xs={12} md={1}>
-                <IconButton onClick={() => remove(index)}>
-                  <RemoveCircleOutlineIcon color="error" />
-                </IconButton>
+                {locked ? (
+                  // Проведённый платёж из графика не убирается: сначала отменяется оплата
+                  <Chip
+                    size="small"
+                    label={existingPayments.find(p => p.id === field.id)?.status_display}
+                    color={getStatusChipColor(paymentStatusById.get(field.id!)!)}
+                  />
+                ) : (
+                  <IconButton onClick={() => remove(index)}>
+                    <RemoveCircleOutlineIcon color="error" />
+                  </IconButton>
+                )}
               </Grid>
             </Grid>
           </Paper>
-        ))}
+          );
+        })}
 
         <Box>
           <Button startIcon={<AddCircleOutlineIcon />} onClick={handleAddPayment}>

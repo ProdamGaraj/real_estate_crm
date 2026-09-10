@@ -1,9 +1,11 @@
 // real_estate_crm/frontend-new/src/pages/SettingsPage.tsx
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Box, Typography, Grid, Paper, Tabs, Tab } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import { getVisibleSettingsTabs } from '../utils/settingsTabs';
 import ReasonManager from '../components/settings/ReasonManager';
 import ApplicationStatusManager from '../components/settings/ApplicationStatusManager';
 import BuildingTypeManager from '../components/settings/BuildingTypeManager';
@@ -20,54 +22,55 @@ import UsersPage from './permissions/UsersPage';
 // Вспомогательный компонент TabPanel
 interface TabPanelProps {
   children?: React.ReactNode;
-  index: number;
-  value: number;
+  active: boolean;
 }
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+function TabPanel({ children, active }: TabPanelProps) {
   return (
-    <div role="tabpanel" hidden={value !== index} {...other}>
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    <div role="tabpanel" hidden={!active}>
+      {active && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
 
-const TABS = [
-  { id: 'companies', labelKey: 'pages.settings.companies_tab' },
-  { id: 'departments', labelKey: 'pages.settings.departments_tab' },
-  { id: 'roles', labelKey: 'pages.settings.roles_tab' },
-  { id: 'users', labelKey: 'pages.settings.users_tab' },
-  { id: 'applications', labelKey: 'pages.settings.applications_tab' },
-  { id: 'realty', labelKey: 'pages.settings.realty_tab' },
-  { id: 'finances', labelKey: 'pages.settings.finances_tab' },
-  { id: 'templates', labelKey: 'pages.settings.templates_tab' },
-  { id: 'api-keys', labelKey: 'pages.settings.api_keys_tab' },
-];
-
 export default function SettingsPage() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
-  
+
+  // Пользователь видит только те вкладки, на ресурсы которых у него есть права
+  const tabs = useMemo(() => getVisibleSettingsTabs(user), [user]);
+
   // Найти индекс вкладки по ID из URL параметра
   const getTabIndex = () => {
     if (!tabParam) return 0;
-    const index = TABS.findIndex(tab => tab.id === tabParam);
+    const index = tabs.findIndex(tab => tab.id === tabParam);
     return index >= 0 ? index : 0;
   };
 
   const [tabValue, setTabValue] = useState(getTabIndex());
 
-  // Синхронизация с URL при изменении параметра
+  // Синхронизация с URL при изменении параметра или состава вкладок
   useEffect(() => {
     setTabValue(getTabIndex());
-  }, [tabParam]);
+  }, [tabParam, tabs]);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
-    setSearchParams({ tab: TABS[newValue].id });
+    setSearchParams({ tab: tabs[newValue].id });
   };
+
+  const activeTabId = tabs[tabValue]?.id;
+
+  if (tabs.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h5" color="error" gutterBottom>{t('errors.access_denied')}</Typography>
+        <Typography variant="body1" color="text.secondary">{t('errors.no_view_permission')}</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -80,34 +83,34 @@ export default function SettingsPage() {
             variant="scrollable"
             scrollButtons="auto"
           >
-            {TABS.map((tab) => (
+            {tabs.map((tab) => (
               <Tab key={tab.id} label={t(tab.labelKey)} />
             ))}
           </Tabs>
         </Box>
 
         {/* Вкладка "Компании" */}
-        <TabPanel value={tabValue} index={0}>
+        <TabPanel active={activeTabId === 'companies'}>
           <CompaniesPage />
         </TabPanel>
 
         {/* Вкладка "Отделы" */}
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel active={activeTabId === 'departments'}>
           <DepartmentsPage />
         </TabPanel>
 
         {/* Вкладка "Роли" */}
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel active={activeTabId === 'roles'}>
           <RolesPage />
         </TabPanel>
 
         {/* Вкладка "Пользователи" */}
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel active={activeTabId === 'users'}>
           <UsersPage />
         </TabPanel>
 
         {/* Вкладка "Заявки" */}
-        <TabPanel value={tabValue} index={4}>
+        <TabPanel active={activeTabId === 'applications'}>
           <Box sx={{ mb: 4 }}>
             <ApplicationStatusManager />
           </Box>
@@ -123,13 +126,13 @@ export default function SettingsPage() {
         </TabPanel>
 
         {/* Вкладка "Недвижимость" */}
-        <TabPanel value={tabValue} index={5}>
+        <TabPanel active={activeTabId === 'realty'}>
             <Typography variant="h6" sx={{ mb: 2 }}>{t('pages.settings.building_types')}</Typography>
             <BuildingTypeManager />
         </TabPanel>
 
         {/* Вкладка "Финансы" */}
-        <TabPanel value={tabValue} index={6}>
+        <TabPanel active={activeTabId === 'finances'}>
            <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 6 }}>
               <PaymentTypeManager />
@@ -141,7 +144,7 @@ export default function SettingsPage() {
         </TabPanel>
 
         {/* Вкладка "Шаблоны" */}
-        <TabPanel value={tabValue} index={7}>
+        <TabPanel active={activeTabId === 'templates'}>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12, md: 7 }}>
               <TemplateManager />
@@ -153,7 +156,7 @@ export default function SettingsPage() {
         </TabPanel>
 
         {/* Вкладка "API-ключи" */}
-        <TabPanel value={tabValue} index={8}>
+        <TabPanel active={activeTabId === 'api-keys'}>
           <PartnerAPIKeyManager />
         </TabPanel>
 

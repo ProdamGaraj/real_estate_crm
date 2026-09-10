@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { refreshAccessToken } from './auth';
+import { clearAccessToken, getAccessToken, setAccessToken } from './tokenStore';
 
 // Используем переменную окружения или относительный путь для работы через nginx
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -9,6 +10,8 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Нужно, чтобы браузер отправлял httpOnly-cookie с refresh-токеном
+  withCredentials: true,
 });
 
 // Функция для декодирования JWT токена
@@ -39,45 +42,12 @@ const isTokenExpiringSoon = (token: string): boolean => {
   return timeUntilExpiration < 300000;
 };
 
-// Функция для получения токенов из localStorage (где Zustand их хранит)
-const getAuthTokens = () => {
-  try {
-    const authStorage = localStorage.getItem('auth-storage');
-    if (authStorage) {
-      const parsed = JSON.parse(authStorage);
-      return {
-        accessToken: parsed.state?.accessToken,
-        refreshToken: parsed.state?.refreshToken,
-      };
-    }
-  } catch (error) {
-    console.error('Error reading auth tokens:', error);
-  }
-  return { accessToken: null, refreshToken: null };
-};
+// Токены: access — в памяти вкладки, refresh — в httpOnly-cookie.
+// Раньше оба лежали в localStorage и были доступны любому скрипту на странице.
+const getAuthTokens = () => ({ accessToken: getAccessToken() });
 
-// Функция для обновления токенов в localStorage
-const setAuthTokens = (accessToken: string, refreshToken: string) => {
-  try {
-    const authStorage = localStorage.getItem('auth-storage');
-    if (authStorage) {
-      const parsed = JSON.parse(authStorage);
-      parsed.state.accessToken = accessToken;
-      parsed.state.refreshToken = refreshToken;
-      localStorage.setItem('auth-storage', JSON.stringify(parsed));
-    }
-  } catch (error) {
-    console.error('Error updating auth tokens:', error);
-  }
-};
-
-// Функция для очистки токенов
 const clearAuthTokens = () => {
-  try {
-    localStorage.removeItem('auth-storage');
-  } catch (error) {
-    console.error('Error clearing auth tokens:', error);
-  }
+  clearAccessToken();
 };
 
 // Эндпоинты которые не требуют авторизации
@@ -93,6 +63,30 @@ const isPublicEndpoint = (url: string | undefined): boolean => {
   return PUBLIC_ENDPOINTS.some(endpoint => url.includes(endpoint));
 };
 
+/**
+ * Обновление токена выполняется в одном экземпляре на всё приложение.
+ *
+ * Страница отправляет несколько запросов одновременно, и без этой блокировки
+ * каждый начинал собственное обновление. При включённой ротации refresh-токена
+ * первый ответ обесценивал токен для остальных, и пользователя выбрасывало
+ * на страницу входа.
+ */
+let refreshPromise: Promise<{ access: string }> | null = null;
+
+const refreshTokensOnce = () => {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken()
+      .then((response) => {
+        setAccessToken(response.access);
+        return response;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+};
+
 // Перехватчик ЗАПРОСОВ (добавляет токен в заголовок и проактивно обновляет его)
 apiClient.interceptors.request.use(
   async (config) => {
@@ -106,14 +100,12 @@ apiClient.interceptors.request.use(
       return config;
     }
 
-    const { accessToken, refreshToken } = getAuthTokens();
+    const { accessToken } = getAuthTokens();
 
     // Проверяем, нужно ли обновить токен заранее
-    if (accessToken && refreshToken && isTokenExpiringSoon(accessToken)) {
+    if (accessToken && isTokenExpiringSoon(accessToken)) {
       try {
-        console.log('Проактивное обновление токена...');
-        const response = await refreshAccessToken(refreshToken);
-        setAuthTokens(response.access, response.refresh || refreshToken);
+        const response = await refreshTokensOnce();
         config.headers.Authorization = `Bearer ${response.access}`;
         return config;
       } catch (error) {
@@ -149,18 +141,14 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const { refreshToken } = getAuthTokens();
-
-    // Если ошибка 401, токен истек и это не повторный запрос
-    if (error.response?.status === 401 && refreshToken && !originalRequest._retry) {
+    // Если ошибка 401 и это не повторный запрос — пробуем обновить токен
+    // по cookie. Есть ли refresh, знает только сервер: клиент его не видит.
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Запрашиваем новый access токен с помощью refresh токена
-        const response = await refreshAccessToken(refreshToken);
-
-        // Сохраняем новые токены
-        setAuthTokens(response.access, response.refresh || refreshToken);
+        // Параллельные 401 переиспользуют один и тот же запрос обновления
+        const response = await refreshTokensOnce();
 
         // Обновляем заголовок в оригинальном запросе
         originalRequest.headers.Authorization = `Bearer ${response.access}`;
@@ -180,16 +168,6 @@ apiClient.interceptors.response.use(
           setTimeout(() => { isRedirecting = false; }, 1000);
         }
         return Promise.reject(refreshError);
-      }
-    }
-
-    // Если 401 и нет refresh токена - редирект на логин
-    if (error.response?.status === 401 && !refreshToken) {
-      if (!isRedirecting && !window.location.pathname.includes('/login')) {
-        isRedirecting = true;
-        clearAuthTokens();
-        window.location.href = '/login';
-        setTimeout(() => { isRedirecting = false; }, 1000);
       }
     }
 

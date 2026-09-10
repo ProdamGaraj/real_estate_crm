@@ -4,11 +4,22 @@ from django.conf import settings
 
 class PurchasePurpose(models.Model):
     """ Справочник: Цель приобретения """
-    name = models.CharField(max_length=200, unique=True, verbose_name="Название цели")
+    # Справочник принадлежит компании. Пустое значение — общесистемная запись,
+    # заведённая администратором: видна всем, но редактируется только им.
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='%(app_label)s_%(class)ss',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    name = models.CharField(max_length=200, verbose_name="Название цели")
 
     class Meta:
         verbose_name = "Цель приобретения"
         verbose_name_plural = "Цели приобретения"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return self.name
@@ -16,11 +27,22 @@ class PurchasePurpose(models.Model):
 
 class PaymentType(models.Model):
     """ Справочник: Тип оплаты """
-    name = models.CharField(max_length=200, unique=True, verbose_name="Название типа оплаты")
+    # Справочник принадлежит компании. Пустое значение — общесистемная запись,
+    # заведённая администратором: видна всем, но редактируется только им.
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='%(app_label)s_%(class)ss',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    name = models.CharField(max_length=200, verbose_name="Название типа оплаты")
 
     class Meta:
         verbose_name = "Тип оплаты"
         verbose_name_plural = "Типы оплат"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return self.name
@@ -47,6 +69,16 @@ class Deal(models.Model):
 
     # --- Основные участники сделки ---
     client = models.ForeignKey('crm.Client', on_delete=models.PROTECT, related_name='deals', verbose_name="Клиент")
+    # Связь с заявкой замыкает воронку: без неё конверсию «заявка → сделка»
+    # посчитать было нечем, а заявка не закрывалась при продаже
+    application = models.ForeignKey(
+        'crm.Application',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='deals',
+        verbose_name="Заявка"
+    )
     property = models.ForeignKey(
         'realty.Property',
         on_delete=models.PROTECT,
@@ -59,6 +91,21 @@ class Deal(models.Model):
                               verbose_name="Статус сделки")
     booking_start_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата начала брони")
     booking_end_date = models.DateTimeField(verbose_name="Плановая дата окончания брони")
+
+    # --- Валюта сделки ---
+    class Currency(models.TextChoices):
+        UZS = 'UZS', 'Узбекский сум'
+        USD = 'USD', 'Доллар США'
+        EUR = 'EUR', 'Евро'
+
+    # Без валюты договора сумма графика сравнивалась со стоимостью вслепую:
+    # платежи в разных валютах складывались как одно число
+    currency = models.CharField(
+        max_length=3,
+        choices=Currency.choices,
+        default=Currency.UZS,
+        verbose_name="Валюта сделки"
+    )
 
     # --- Поля для фиксации стоимости на момент начала сделки ---
     initial_price = models.DecimalField(max_digits=12, decimal_places=2,
@@ -79,8 +126,9 @@ class Deal(models.Model):
     contract_number = models.CharField(
         max_length=100,
         blank=True,
-        null=True,  # <--- РАЗРЕШАЕМ NULL В БАЗЕ
-        unique=True,  # <--- ДОБАВЛЯЕМ УНИКАЛЬНОСТЬ
+        null=True,
+        # Номер договора уникален внутри компании: своя нумерация у каждой,
+        # глобальная уникальность мешала бы соседней компании завести свой №1
         verbose_name="Номер договора"
     )
     contract_date = models.DateField(null=True, blank=True, verbose_name="Дата договора")
@@ -100,6 +148,10 @@ class Deal(models.Model):
         verbose_name="Скан документа о расторжении"
     )
     termination_date = models.DateField(null=True, blank=True, verbose_name="Дата расторжения")
+    # Момент фактического закрытия сделки. Раньше отчёты брали updated_at,
+    # из-за чего любое редактирование старой сделки переносило её выручку
+    # в текущий месяц.
+    closed_at = models.DateTimeField(null=True, blank=True, verbose_name="Дата успешного закрытия")
     # --- Системные поля (Логи) ---
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
@@ -114,6 +166,7 @@ class Deal(models.Model):
     class Meta:
         verbose_name = "Сделка"
         verbose_name_plural = "Сделки"
+        unique_together = ('company', 'contract_number')
         ordering = ['-created_at']
 
     def __str__(self):

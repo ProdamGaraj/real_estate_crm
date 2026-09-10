@@ -20,6 +20,7 @@ from permissions.permissions import (
 from .serializers import (
     PublicProjectListSerializer, PublicProjectDetailSerializer, PublicBuildingDetailSerializer
 )
+from permissions.reference_scope import CompanyScopedReferenceMixin
 from .filters import ProjectFilter, BuildingFilter
 from .models import (
     Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog, ProjectImage, BuildingImage
@@ -32,13 +33,37 @@ from .serializers import (
 )
 
 
-def _filter_by_company_scope(user, queryset, company_field='company'):
+def _parse_excel_bool(value):
+    """
+    Разбор логического значения из Excel.
+
+    bool("FALSE") — истина, поэтому прямое приведение к bool превращало
+    все объекты из файла в «с отделкой», если столбец заполнен словами.
+    """
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return False
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    text = str(value).strip().lower()
+    return text in {'true', 'да', 'yes', '1', 'есть', '+', 'y'}
+
+
+def _filter_by_company_scope(user, queryset, company_field='company', resource_type=None):
     """
     Фильтрация queryset по доступным компаниям пользователя (scope-aware).
-    Заменяет ручные проверки is_system_admin / profile.company.
-    
+
     company_field — путь к FK компании (например 'company', 'project__company',
     'building__project__company').
+
+    resource_type — ресурс из Permission.Resource. Если у пользователя есть
+    право VIEW на этот ресурс с областью SYSTEM, он видит записи всех компаний.
+
+    Раньше «видит все компании» определялось областью РОЛИ
+    (Role.scope == SYSTEM), а во всех остальных модулях — областью РАЗРЕШЕНИЯ.
+    Из-за расхождения пользователь с системной ролью, но правами уровня
+    «только свои», видел недвижимость всех компаний.
     """
     if user.is_superuser:
         return queryset
@@ -53,11 +78,16 @@ def _filter_by_company_scope(user, queryset, company_field='company'):
     
     if profile.is_system_admin:
         return queryset
-    
-    companies = profile.get_accessible_companies()
-    if companies:
-        company_ids = [c.id for c in companies]
-        return queryset.filter(**{f'{company_field}__in': company_ids})
+
+    # Деактивированная компания — доступа нет
+    if profile.company and not profile.company.is_active:
+        return queryset.none()
+
+    if resource_type and profile.has_permission_for_action('VIEW', resource_type, 'SYSTEM'):
+        return queryset
+
+    if profile.company:
+        return queryset.filter(**{f'{company_field}': profile.company})
     
     return queryset.none()
 
@@ -72,7 +102,7 @@ class ProjectListView(generics.ListCreateAPIView):
         Фильтрация проектов по доступным компаниям пользователя.
         """
         queryset = Project.objects.all()
-        return _filter_by_company_scope(self.request.user, queryset, 'company')
+        return _filter_by_company_scope(self.request.user, queryset, 'company', 'PROJECT')
     
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -107,7 +137,7 @@ class ProjectImageDetailView(generics.DestroyAPIView):
     def get_queryset(self):
         project_pk = self.kwargs['project_pk']
         queryset = ProjectImage.objects.filter(project_id=project_pk)
-        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company', 'PROJECT')
 
 class ProjectImageCreateView(generics.CreateAPIView):
     """ View для загрузки нового изображения в галерею проекта """
@@ -120,7 +150,7 @@ class ProjectImageCreateView(generics.CreateAPIView):
         project_pk = self.kwargs['project_pk']
         
         queryset = Project.objects.filter(pk=project_pk)
-        queryset = _filter_by_company_scope(user, queryset, 'company')
+        queryset = _filter_by_company_scope(user, queryset, 'company', 'PROJECT')
         
         project = queryset.first()
         if not project:
@@ -134,7 +164,7 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     
     def get_queryset(self):
         queryset = Project.objects.all()
-        return _filter_by_company_scope(self.request.user, queryset, 'company')
+        return _filter_by_company_scope(self.request.user, queryset, 'company', 'PROJECT')
 
 
 # --- Views for Buildings ---
@@ -146,14 +176,15 @@ class BuildingListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         project_id = self.kwargs['project_pk']
         queryset = Building.objects.filter(project_id=project_id)
-        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company', 'BUILDING')
 
     def perform_create(self, serializer):
         # Scope-check: проверяем доступ к проекту
         project_qs = _filter_by_company_scope(
             self.request.user,
             Project.objects.filter(pk=self.kwargs['project_pk']),
-            'company'
+            'company',
+            'PROJECT',
         )
         project = project_qs.first()
         if not project:
@@ -169,7 +200,7 @@ class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         project_id = self.kwargs['project_pk']
         queryset = Building.objects.filter(project_id=project_id)
-        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company', 'BUILDING')
 
     # --- ДОБАВЬТЕ ЭТОТ МЕТОД ДЛЯ ЛОГИРОВАНИЯ ---
     def perform_update(self, serializer):
@@ -206,13 +237,13 @@ class BuildingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # --- Views for Building Types ---
-class BuildingTypeListView(generics.ListCreateAPIView):
+class BuildingTypeListView(CompanyScopedReferenceMixin, generics.ListCreateAPIView):
     queryset = BuildingType.objects.all()
     serializer_class = BuildingTypeSerializer
     permission_classes = [IsAuthenticated, BuildingTypePermission]
 
 
-class BuildingTypeDetailView(generics.DestroyAPIView):
+class BuildingTypeDetailView(CompanyScopedReferenceMixin, generics.DestroyAPIView):
     queryset = BuildingType.objects.all()
     serializer_class = BuildingTypeSerializer
     permission_classes = [IsAuthenticated, BuildingTypePermission]
@@ -227,7 +258,8 @@ class PropertyTemplateDownloadView(APIView):
         building_qs = _filter_by_company_scope(
             request.user,
             Building.objects.filter(pk=building_pk, project_id=project_pk),
-            'project__company'
+            'project__company',
+            'BUILDING',
         )
         if not building_qs.exists():
             return Response({'error': 'Здание не найдено или недоступно.'}, status=status.HTTP_404_NOT_FOUND)
@@ -284,7 +316,8 @@ class PropertyUploadView(APIView):
             building_qs = _filter_by_company_scope(
                 request.user,
                 Building.objects.filter(pk=building_pk, project_id=project_pk),
-                'project__company'
+                'project__company',
+                'BUILDING',
             )
             building = building_qs.first()
             if not building:
@@ -294,12 +327,10 @@ class PropertyUploadView(APIView):
             total_rows = len(df)
             columns = list(df.columns)
             
-            # Проверяем дубликаты в файле (по комбинации номер + подъезд + этаж)
+            # Проверяем дубликаты в файле по номеру объекта.
             # Заполняем NaN пустой строкой перед формированием ключа
-            df['_entrance_clean'] = df['Подъезд'].fillna('').astype(str).str.strip()
-            df['_unit_clean'] = df['Номер объекта'].fillna('').astype(str).str.strip()
-            df['_floor_clean'] = df['Этаж'].fillna('').astype(str).str.strip()
-            df['_unit_key'] = df['_unit_clean'] + '_' + df['_entrance_clean'] + '_' + df['_floor_clean']
+            # Номер объекта уникален в доме, поэтому и дубли в файле ищем по нему
+            df['_unit_key'] = df['Номер объекта'].fillna('').astype(str).str.strip()
             duplicates_in_file = df[df['_unit_key'].duplicated()]['_unit_key'].unique().tolist()
             
             # Маппинг кодов: код -> код (для валидации что код существует)
@@ -308,6 +339,7 @@ class PropertyUploadView(APIView):
             allowed_statuses_from_excel = [Property.PropertyStatus.SELECTION, Property.PropertyStatus.RESERVE]
             created_count = 0
             updated_count = 0
+            skipped_in_deal = 0
             skipped_empty = 0
             skipped_no_unit = 0
             skipped_duplicates = 0
@@ -330,14 +362,8 @@ class PropertyUploadView(APIView):
                 # Приводим к строке и убираем пробелы
                 unit_number = str(unit_number).strip()
                 
-                # Получаем подъезд и этаж для формирования уникального ключа
-                entrance_val = row.get('Подъезд')
-                floor_val = row.get('Этаж')
-                entrance_key = str(entrance_val).strip() if pd.notna(entrance_val) else ''
-                floor_key = str(int(floor_val)) if pd.notna(floor_val) else ''
-                unit_key = f"{unit_number}_{entrance_key}_{floor_key}"
-                
                 # Пропускаем дубликаты в файле (берём только первое вхождение)
+                unit_key = unit_number
                 if unit_key in processed_units:
                     skipped_duplicates += 1
                     continue
@@ -364,31 +390,52 @@ class PropertyUploadView(APIView):
                     'riser': str(riser_val).strip() if pd.notna(riser_val) else '',
                     'area': float(area_val) if pd.notna(area_val) else 0,
                     'price': float(price_val) if pd.notna(price_val) else 0,
-                    'has_finishing': bool(row.get('Наличие отделки (TRUE/FALSE)', False)),
+                    'has_finishing': _parse_excel_bool(row.get('Наличие отделки (TRUE/FALSE)')),
                     'description': str(row.get('Описание', '')).strip() if pd.notna(row.get('Описание')) else '',
                     'property_type': valid_types.get(row.get('Тип объекта'), Property.PropertyType.APARTMENT),
+                    # Значение по умолчанию оставлено, но о подмене сообщаем ниже
                     'layout': layout_obj,
                 }
                 
+                # Сообщаем о подменённых значениях: раньше опечатка в столбце
+                # молча превращала парковку в квартиру, и в отчёте это не отражалось
+                raw_type = row.get('Тип объекта')
+                if pd.notna(raw_type) and str(raw_type).strip() and str(raw_type).strip() not in valid_types:
+                    errors_list.append(
+                        f"Строка {index + 2}: неизвестный тип «{raw_type}» — записан как «Квартира»"
+                    )
+                raw_status = row.get('Статус')
+                if pd.notna(raw_status) and str(raw_status).strip() and str(raw_status).strip() not in valid_statuses:
+                    errors_list.append(
+                        f"Строка {index + 2}: неизвестный статус «{raw_status}» — записан как «Подбор»"
+                    )
+
                 status_from_file = valid_statuses.get(row.get('Статус'), Property.PropertyStatus.SELECTION)
                 
                 try:
-                    # Ищем по building + unit_number + entrance + floor
-                    entrance_for_search = str(entrance_val).strip() if pd.notna(entrance_val) else None
-                    floor_for_search = int(floor_val) if pd.notna(floor_val) else 0
+                    # Ищем по building + unit_number: этаж и подъезд у объекта
+                    # могут быть исправлены загрузкой, поэтому в поиск не входят
                     existing_property = Property.objects.filter(
-                        building=building, 
+                        building=building,
                         unit_number=unit_number,
-                        entrance=entrance_for_search,
-                        floor=floor_for_search
                     ).first()
                     if existing_property:
+                        # Объект в брони или сделке не трогаем: загрузка прайса
+                        # переписывала цену и площадь квартиры, по которой уже
+                        # зафиксированы условия договора
+                        if existing_property.status not in allowed_statuses_from_excel:
+                            skipped_in_deal += 1
+                            errors_list.append(
+                                f"Строка {index + 2}: объект {unit_number} занят "
+                                f"(«{existing_property.get_status_display()}») — пропущен"
+                            )
+                            continue
+
                         for key, value in property_data.items():
                             if value is not None:
                                 setattr(existing_property, key, value)
-                        if existing_property.status in allowed_statuses_from_excel:
-                            if status_from_file in allowed_statuses_from_excel:
-                                existing_property.status = status_from_file
+                        if status_from_file in allowed_statuses_from_excel:
+                            existing_property.status = status_from_file
                         existing_property.updated_by = request.user
                         existing_property.save()
                         updated_count += 1
@@ -407,8 +454,11 @@ class PropertyUploadView(APIView):
                     errors_list.append(f"Строка {index + 2}: {str(row_error)}")
             
             result_message = f'Успешно загружено. Создано: {created_count}, Обновлено: {updated_count}'
-            if skipped_empty > 0 or skipped_no_unit > 0 or skipped_duplicates > 0:
-                result_message += f'. Пропущено: {skipped_empty} пустых, {skipped_no_unit} без номера, {skipped_duplicates} дубликатов'
+            if skipped_empty > 0 or skipped_no_unit > 0 or skipped_duplicates > 0 or skipped_in_deal > 0:
+                result_message += (
+                    f'. Пропущено: {skipped_empty} пустых, {skipped_no_unit} без номера, '
+                    f'{skipped_duplicates} дубликатов, {skipped_in_deal} занятых сделкой'
+                )
             if duplicates_in_file:
                 result_message += f'. ВНИМАНИЕ: В файле найдены дубликаты номеров объектов!'
             if errors_list:
@@ -424,6 +474,7 @@ class PropertyUploadView(APIView):
                     'skipped_empty': skipped_empty,
                     'skipped_no_unit': skipped_no_unit,
                     'skipped_duplicates': skipped_duplicates,
+                    'skipped_in_deal': skipped_in_deal,
                     'duplicates_in_file': duplicates_in_file[:20] if duplicates_in_file else [],  # Первые 20 дубликатов
                     'errors': errors_list[:10] if errors_list else []  # Первые 10 ошибок
                 }
@@ -448,6 +499,9 @@ class LayoutBulkUploadView(APIView):
     parser_classes = [MultiPartParser]
     permission_classes = [IsAuthenticated, LayoutPermission]
     
+    # Файл пишется на диск в обход валидации ImageField, тип проверяем сами
+    ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
+
     IMAGE_TYPE_MAP = {
         'main': 'main_layout_image',
         'extra': 'extra_layout_image', 
@@ -535,7 +589,7 @@ class LayoutBulkUploadView(APIView):
             logger.info(f"[LayoutBulkUpload] Пользователь: {user.username}")
             
             accessible_buildings = _filter_by_company_scope(
-                user, Building.objects.filter(pk=building_pk), 'project__company'
+                user, Building.objects.filter(pk=building_pk), 'project__company', 'BUILDING'
             )
             if not accessible_buildings.exists():
                 logger.error(f"[LayoutBulkUpload] Пользователь {user.username} не имеет доступ к дому {building_pk}")
@@ -606,15 +660,34 @@ class LayoutBulkUploadView(APIView):
                     logger.debug(f"[LayoutBulkUpload] Сохраняем файл в поле {field_name} (прямой записью)")
                     try:
                         from django.conf import settings
+                        from django.utils.text import get_valid_filename
                         import os
+
+                        # Имя файла приходит из запроса, поэтому берём только базовое
+                        # имя и прогоняем через санитайзер: иначе '../' в имени уводит
+                        # запись за пределы MEDIA_ROOT.
+                        safe_name = get_valid_filename(os.path.basename(filename))
+                        if not safe_name or safe_name in ('.', '..'):
+                            raise ValueError(f'Недопустимое имя файла: {filename}')
+                        if file_ext not in self.ALLOWED_EXTENSIONS:
+                            raise ValueError(
+                                f'Недопустимый тип файла ".{file_ext}". '
+                                f'Разрешены: {", ".join(sorted(self.ALLOWED_EXTENSIONS))}'
+                            )
 
                         # Получаем upload_to из поля модели (например 'layouts/main/')
                         upload_to = layout._meta.get_field(field_name).upload_to or ''
-                        # Относительный путь внутри MEDIA_ROOT
-                        rel_path = os.path.join(upload_to, filename)
+                        # Раскладываем по домам: одноимённые планировки разных домов
+                        # иначе перезаписывали бы файлы друг друга
+                        rel_path = os.path.join(upload_to, str(building.pk), safe_name)
                         # Нормализация разделителей
-                        rel_path = rel_path.replace('\\', '/')
-                        abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+                        rel_path = rel_path.replace(os.sep, '/')
+
+                        media_root = os.path.realpath(settings.MEDIA_ROOT)
+                        abs_path = os.path.realpath(os.path.join(media_root, rel_path))
+                        # Страховка на случай, если санитайзер что-то пропустит
+                        if os.path.commonpath([media_root, abs_path]) != media_root:
+                            raise ValueError('Путь файла выходит за пределы каталога медиа')
                         os.makedirs(os.path.dirname(abs_path), exist_ok=True)
 
                         # Пишем файл по частям
@@ -656,7 +729,13 @@ class LayoutBulkUploadView(APIView):
             }, status=status.HTTP_200_OK)
             
         except TooManyFilesSent as e:
-            error_msg = f"Слишком много файлов. Максимум: 10000 файлов в одном запросе. Загружайте в несколько раз."
+            from django.conf import settings as django_settings
+
+            limit = getattr(django_settings, 'DATA_UPLOAD_MAX_NUMBER_FILES', None)
+            error_msg = (
+                f"Слишком много файлов. Максимум: {limit} файлов в одном запросе. "
+                f"Загружайте в несколько приёмов."
+            )
             logger.error(f"[LayoutBulkUpload] {error_msg}")
             return Response({
                 'error': error_msg,
@@ -680,7 +759,7 @@ class PropertyDetailView(generics.RetrieveUpdateAPIView):
     def get_queryset(self):
         building_pk = self.kwargs['building_pk']
         queryset = Property.objects.filter(building_id=building_pk)
-        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company', 'PROPERTY')
 
 
 # --- Views for Layouts ---
@@ -691,14 +770,15 @@ class LayoutListView(generics.ListCreateAPIView):
     def get_queryset(self):
         building_pk = self.kwargs['building_pk']
         queryset = Layout.objects.filter(building_id=building_pk)
-        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company', 'LAYOUT')
 
     def perform_create(self, serializer):
         # Scope-check: проверяем доступ к зданию
         building_qs = _filter_by_company_scope(
             self.request.user,
             Building.objects.filter(pk=self.kwargs['building_pk']),
-            'project__company'
+            'project__company',
+            'BUILDING',
         )
         building = building_qs.first()
         if not building:
@@ -714,7 +794,7 @@ class LayoutDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         building_pk = self.kwargs['building_pk']
         queryset = Layout.objects.filter(building_id=building_pk)
-        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company', 'LAYOUT')
 
 
 # --- Views for Discounts ---
@@ -723,17 +803,24 @@ class DiscountListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, DiscountPermission]
 
     def get_queryset(self):
-        from django.db.models import Q
+        # Скидка принадлежит компании. Раньше сюда добавлялись все скидки
+        # без домов — из-за чего условия одной компании видела другая.
         queryset = Discount.objects.prefetch_related('buildings').all()
-        scoped = _filter_by_company_scope(
-            self.request.user, queryset, 'buildings__project__company'
-        )
-        # Включаем глобальные скидки (без привязки к домам)
-        global_discounts = queryset.filter(buildings__isnull=True)
-        return (scoped | global_discounts).distinct()
+        return _filter_by_company_scope(self.request.user, queryset, 'company', 'DISCOUNT').distinct()
 
     def perform_create(self, serializer):
-        instance = serializer.save(created_by=self.request.user)
+        company = None
+        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
+            company = self.request.user.profile.company
+        if company is None and not self.request.user.is_superuser:
+            profile = getattr(self.request.user, 'profile', None)
+            if not (profile and profile.is_system_admin):
+                from rest_framework.exceptions import ValidationError as DRFValidationError
+                raise DRFValidationError(
+                    {'company': 'У вашего профиля не указана компания — скидку создать нельзя.'}
+                )
+
+        instance = serializer.save(created_by=self.request.user, company=company)
         # Создаем лог при создании
         DiscountLog.objects.create(
             discount=instance,
@@ -747,13 +834,8 @@ class DiscountDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, DiscountPermission]
 
     def get_queryset(self):
-        from django.db.models import Q
         queryset = Discount.objects.all()
-        scoped = _filter_by_company_scope(
-            self.request.user, queryset, 'buildings__project__company'
-        )
-        global_discounts = queryset.filter(buildings__isnull=True)
-        return (scoped | global_discounts).distinct()
+        return _filter_by_company_scope(self.request.user, queryset, 'company', 'DISCOUNT').distinct()
 
     def perform_update(self, serializer):
         # --- Логика логирования при обновлении ---
@@ -791,7 +873,7 @@ class BuildingImageCreateView(generics.CreateAPIView):
         building_pk = self.kwargs['building_pk']
         
         queryset = Building.objects.filter(pk=building_pk, project_id=project_pk)
-        queryset = _filter_by_company_scope(user, queryset, 'project__company')
+        queryset = _filter_by_company_scope(user, queryset, 'project__company', 'BUILDING')
         
         building = queryset.first()
         if not building:
@@ -808,7 +890,7 @@ class BuildingImageDetailView(generics.DestroyAPIView):
     def get_queryset(self):
         building_pk = self.kwargs['building_pk']
         queryset = BuildingImage.objects.filter(building_id=building_pk)
-        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'building__project__company', 'BUILDING')
 
 # --- ДОБАВЬТЕ ЭТОТ НОВЫЙ КЛАСС В КОНЕЦ ФАЙЛА ---
 class BuildingListViewAll(generics.ListAPIView):
@@ -821,7 +903,7 @@ class BuildingListViewAll(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Building.objects.select_related('project').all()
-        return _filter_by_company_scope(self.request.user, queryset, 'project__company')
+        return _filter_by_company_scope(self.request.user, queryset, 'project__company', 'BUILDING')
 
 
 # === PUBLIC API (для партнёров) ===
@@ -865,9 +947,10 @@ class PublicProjectListView(generics.ListAPIView):
             buildings__status=Building.BuildingStatus.FOR_SALE
         ).distinct()
         # Фильтруем по компаниям партнёра
+        # Фильтр применяется всегда: ключ без привязанных компаний не даёт
+        # доступа ни к чьим данным, а не доступ ко всем сразу.
         partner_companies = getattr(self.request, 'partner_companies', [])
-        if partner_companies:
-            queryset = queryset.filter(company__in=partner_companies)
+        queryset = queryset.filter(company__in=partner_companies)
         return queryset
 
 
@@ -903,9 +986,10 @@ class PublicProjectDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         queryset = Project.objects.all()
+        # Фильтр применяется всегда: ключ без привязанных компаний не даёт
+        # доступа ни к чьим данным, а не доступ ко всем сразу.
         partner_companies = getattr(self.request, 'partner_companies', [])
-        if partner_companies:
-            queryset = queryset.filter(company__in=partner_companies)
+        queryset = queryset.filter(company__in=partner_companies)
         return queryset
 
 
@@ -938,9 +1022,10 @@ class PublicBuildingDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         queryset = Building.objects.filter(status=Building.BuildingStatus.FOR_SALE)
+        # Фильтр применяется всегда: ключ без привязанных компаний не даёт
+        # доступа ни к чьим данным, а не доступ ко всем сразу.
         partner_companies = getattr(self.request, 'partner_companies', [])
-        if partner_companies:
-            queryset = queryset.filter(project__company__in=partner_companies)
+        queryset = queryset.filter(project__company__in=partner_companies)
         return queryset
 
 
@@ -976,7 +1061,8 @@ class PublicLayoutListView(generics.ListAPIView):
             building__status=Building.BuildingStatus.FOR_SALE
         )
         # Фильтруем по компаниям партнёра
+        # Фильтр применяется всегда: ключ без привязанных компаний не даёт
+        # доступа ни к чьим данным, а не доступ ко всем сразу.
         partner_companies = getattr(self.request, 'partner_companies', [])
-        if partner_companies:
-            queryset = queryset.filter(building__project__company__in=partner_companies)
+        queryset = queryset.filter(building__project__company__in=partner_companies)
         return queryset

@@ -14,6 +14,8 @@ from .views import (
     ApplicationSummaryView,
     ApplicationStatusListCreateView,
     ApplicationStatusDetailView,
+    ApplicationRestoreView,
+    MeetingRestoreView,
 )
 
 urlpatterns = [
@@ -29,6 +31,7 @@ urlpatterns = [
     # Applications
     path('applications/', ApplicationListView.as_view(), name='application-list-create'),
     path('applications/<int:pk>/', ApplicationDetailView.as_view(), name='application-detail'),
+    path('applications/<int:pk>/restore/', ApplicationRestoreView.as_view(), name='application-restore'),
     path('applications/summary/', ApplicationSummaryView.as_view(), name='application-summary'),
     path('users/', UserListView.as_view(), name='user-list'),
 
@@ -39,6 +42,7 @@ urlpatterns = [
     # Meetings
     path('meetings/', MeetingListCreateView.as_view(), name='meeting-list-create'),
     path('meetings/<int:pk>/', MeetingDetailView.as_view(), name='meeting-detail'),
+    path('meetings/<int:pk>/restore/', MeetingRestoreView.as_view(), name='meeting-restore'),
     path('meetings/summary/', MeetingSummaryView.as_view(), name='meeting-summary'),
 
     # Rejection Reasons

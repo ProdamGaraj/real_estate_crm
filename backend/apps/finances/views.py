@@ -4,13 +4,18 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from .models import PaymentLog
 from .models import Payment, PaymentType, BeneficiaryAccount
 from apps.deals.models import Deal, DealLog
 from apps.realty.models import Property
 from .serializers import PaymentSerializer, PaymentTypeSerializer, BeneficiaryAccountSerializer, PaymentDetailSerializer
+from .services import (
+    refresh_overdue_payments_throttled,
+    resolve_unpaid_status,
+)
 from datetime import date
+from django.db import transaction
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from .filters import PaymentFilter
@@ -19,6 +24,7 @@ from django.http import HttpResponse
 from django.db.models import Sum, Count, Q
 from permissions.permissions import PaymentPermission, PaymentTypePermission, BeneficiaryAccountPermission, ReportPermission
 from permissions.backends import get_filtered_queryset, can_user_perform_action
+from permissions.reference_scope import CompanyScopedReferenceMixin
 
 
 class FinanceSummaryView(APIView):
@@ -33,6 +39,12 @@ class FinanceSummaryView(APIView):
         due_date_before = request.query_params.get('due_date_before')
         payment_date_after = request.query_params.get('payment_date_after')
         payment_date_before = request.query_params.get('payment_date_before')
+
+        # Актуализируем просрочку до подсчёта витрин, иначе сумма зависит
+        # от того, открывал ли кто-то сегодня список платежей
+        refresh_overdue_payments_throttled(
+            get_filtered_queryset(request.user, Payment.objects.all(), 'PAYMENT')
+        )
 
         queryset = Payment.objects.all().select_related(
             'deal__property__building__project', 'responsible_employee'
@@ -49,31 +61,48 @@ class FinanceSummaryView(APIView):
         if payment_date_before:
             queryset = queryset.filter(payment_date__lte=payment_date_before)
 
-        # Widgets data
-        widgets_data = queryset.aggregate(
+        # Витрины считаются в разрезе валют: суммировать сумы с долларами
+        # в одно число нельзя — цифра получалась бессмысленной
+        widgets_rows = queryset.values('currency').annotate(
             overdue_sum=Sum('amount', filter=Q(status=Payment.PaymentStatus.OVERDUE)),
-            paid_sum=Sum('amount', filter=Q(status=Payment.PaymentStatus.PAID))
-        )
+            paid_sum=Sum('amount', filter=Q(status=Payment.PaymentStatus.PAID)),
+        ).order_by('currency')
+        widgets_data = {
+            'by_currency': [
+                {
+                    'currency': row['currency'],
+                    'overdue_sum': row['overdue_sum'] or 0,
+                    'paid_sum': row['paid_sum'] or 0,
+                }
+                for row in widgets_rows
+            ]
+        }
 
         if group_by == 'status':
-            summary = queryset.values('status').annotate(total_amount=Sum('amount')).order_by('-total_amount')
-            data_for_df = [{'Status': item['status'], 'Total Amount': item['total_amount']} for item in summary]
+            summary = queryset.values('status', 'currency').annotate(
+                total_amount=Sum('amount')).order_by('-total_amount')
+            data_for_df = [
+                {'Status': item['status'], 'Currency': item['currency'], 'Total Amount': item['total_amount']}
+                for item in summary
+            ]
 
         elif group_by == 'project':
-            summary = queryset.values('deal__property__building__project__name').annotate(
+            summary = queryset.values('deal__property__building__project__name', 'currency').annotate(
                 total_amount=Sum('amount')).order_by('-total_amount')
             data_for_df = [{'Project': item['deal__property__building__project__name'] or "N/A",
+                            'Currency': item['currency'],
                             'Total Amount': item['total_amount']} for item in summary]
 
         elif group_by == 'manager':
             summary = queryset.values('responsible_employee__first_name', 'responsible_employee__last_name',
-                                      'responsible_employee__username').annotate(total_amount=Sum('amount')).order_by(
-                '-total_amount')
+                                      'responsible_employee__username', 'currency').annotate(
+                total_amount=Sum('amount')).order_by('-total_amount')
             data_for_df = []
             for item in summary:
                 full_name = f"{item['responsible_employee__first_name']} {item['responsible_employee__last_name']}".strip()
                 data_for_df.append({
                     'Manager': full_name or item['responsible_employee__username'] or "N/A",
+                    'Currency': item['currency'],
                     'Total Amount': item['total_amount'],
                 })
 
@@ -102,20 +131,26 @@ class PaymentListView(generics.ListAPIView):
 
     def get_queryset(self):
         # Автоматически обновляем статусы просроченных платежей (только в рамках доступных пользователю)
-        today = timezone.now().date()
-        scoped_payments = get_filtered_queryset(self.request.user, Payment.objects.all(), 'PAYMENT')
-        scoped_payments.filter(
-            due_date__lt=today,
-            status=Payment.PaymentStatus.PENDING
-        ).update(status=Payment.PaymentStatus.OVERDUE)
+        refresh_overdue_payments_throttled(
+            get_filtered_queryset(self.request.user, Payment.objects.all(), 'PAYMENT')
+        )
 
         queryset = Payment.objects.select_related('client', 'deal', 'payment_type').all()
         # Фильтруем по разрешениям пользователя
         return get_filtered_queryset(self.request.user, queryset, 'PAYMENT')
 
 
+class PaymentEditPermission(PaymentPermission):
+    """POST на отметку возврата — это EDIT, а не ADD (как и у сделок)"""
+
+    def _get_action_from_method(self, method):
+        if method == 'POST':
+            return 'EDIT'
+        return super()._get_action_from_method(method)
+
+
 class PaymentMarkAsReturnedView(APIView):
-    permission_classes = [IsAuthenticated, PaymentPermission]
+    permission_classes = [IsAuthenticated, PaymentEditPermission]
 
     def post(self, request, pk, *args, **kwargs):
         payment = get_object_or_404(Payment, pk=pk)
@@ -126,21 +161,49 @@ class PaymentMarkAsReturnedView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         if payment.status == Payment.PaymentStatus.TO_BE_RETURNED:
-            payment.status = Payment.PaymentStatus.RETURNED
-            payment.save()
-            PaymentLog.objects.create(
-                payment=payment,
-                user=request.user,
-                action="Платеж отмечен как возвращенный."
-            )
+            with transaction.atomic():
+                payment.status = Payment.PaymentStatus.RETURNED
+                payment.save()
+                PaymentLog.objects.create(
+                    payment=payment,
+                    user=request.user,
+                    action="Платеж отмечен как возвращенный."
+                )
+                self._release_property_if_settled(payment, request.user)
             return Response(PaymentSerializer(payment).data, status=status.HTTP_200_OK)
         return Response(
             {"error": "Платеж не может быть отмечен как возвращенный."},
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    @staticmethod
+    def _release_property_if_settled(payment, user):
+        """
+        Освобождает объект расторгнутой сделки, когда возвращён последний платёж.
 
-class PaymentTypeListView(generics.ListCreateAPIView):
+        До этого момента объект намеренно остаётся занятым: продавать квартиру,
+        по которой ещё не рассчитались с прежним клиентом, нельзя.
+        """
+        deal = payment.deal
+        if not deal or deal.status != Deal.DealStatus.TERMINATED:
+            return
+        if deal.payments.filter(status=Payment.PaymentStatus.TO_BE_RETURNED).exists():
+            return
+
+        property_obj = deal.property
+        if property_obj.status == Property.PropertyStatus.SELECTION:
+            return
+
+        property_obj.status = Property.PropertyStatus.SELECTION
+        property_obj.save(update_fields=['status', 'updated_at'])
+        DealLog.objects.create(
+            deal=deal,
+            user=user,
+            action="Все платежи возвращены — объект освобождён и снова доступен для продажи."
+        )
+
+
+class PaymentTypeListView(CompanyScopedReferenceMixin, generics.ListCreateAPIView):
     queryset = PaymentType.objects.all()
     serializer_class = PaymentTypeSerializer
     permission_classes = [IsAuthenticated, PaymentTypePermission]
@@ -166,14 +229,26 @@ class BeneficiaryAccountListView(generics.ListCreateAPIView):
 
 class DealPaymentScheduleCreateView(APIView):
     """
-    Создает график платежей для сделки.
-    Принимает список объектов платежей.
+    Создаёт или обновляет график платежей сделки.
+
+    Принимает список платежей. Строки с существующим `id` обновляются на месте —
+    поэтому отметки об оплате и фактические даты не теряются при правке графика.
+    Строки без `id` создаются заново, отсутствующие в запросе — удаляются.
+    Удалить платёж, по которому уже прошли деньги, нельзя.
     """
     permission_classes = [IsAuthenticated, PaymentPermission]
 
+    # Статусы, которые отражают реальное движение денег: такие платежи
+    # нельзя молча удалить или сбросить при пересборке графика.
+    PROTECTED_STATUSES = (
+        Payment.PaymentStatus.PAID,
+        Payment.PaymentStatus.TO_BE_RETURNED,
+        Payment.PaymentStatus.RETURNED,
+    )
+
     def post(self, request, deal_pk, *args, **kwargs):
         try:
-            deal = Deal.objects.get(pk=deal_pk)
+            deal = Deal.objects.select_related('client', 'property').get(pk=deal_pk)
         except Deal.DoesNotExist:
             return Response({"error": "Сделка не найдена."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -181,63 +256,162 @@ class DealPaymentScheduleCreateView(APIView):
         if not can_user_perform_action(request.user, 'EDIT', 'DEAL', obj=deal):
             return Response({"error": "У вас нет доступа к этой сделке."}, status=status.HTTP_403_FORBIDDEN)
 
+        if deal.status in (Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED):
+            return Response(
+                {"error": "Сделка отменена или расторгнута — изменить график платежей нельзя."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if not deal.contract_price:
             return Response({"error": "Для создания графика необходимо указать 'Стоимость по договору' в сделке."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         payments_data = request.data
-        if not isinstance(payments_data, list):
+        if not isinstance(payments_data, list) or not all(isinstance(p, dict) for p in payments_data):
             return Response({"error": "Ожидается список платежей."}, status=status.HTTP_400_BAD_REQUEST)
 
-        total_amount = sum(Decimal(p.get('amount', 0)) for p in payments_data)
+        try:
+            # str() обязателен: Decimal(float) даёт двоичный «хвост»,
+            # из-за которого корректная сумма не сходится со стоимостью по договору.
+            total_amount = sum(Decimal(str(p.get('amount', 0))) for p in payments_data)
+        except (InvalidOperation, TypeError):
+            return Response({"error": "Некорректная сумма платежа."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Складывать суммы можно только в одной валюте. Раньше платежи в разных
+        # валютах суммировались как одно число и «сходились» со стоимостью договора.
+        currencies = {p.get('currency') or deal.currency for p in payments_data}
+        if len(currencies) > 1:
+            return Response({
+                "error": (
+                    f"В графике смешаны валюты: {', '.join(sorted(currencies))}. "
+                    f"Все платежи должны быть в валюте договора ({deal.currency})."
+                )
+            }, status=status.HTTP_400_BAD_REQUEST)
+        if currencies and currencies != {deal.currency}:
+            return Response({
+                "error": (
+                    f"Валюта платежей ({currencies.pop()}) не совпадает "
+                    f"с валютой договора ({deal.currency})."
+                )
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         if total_amount != deal.contract_price:
             return Response({
-                "error": f"Сумма платежей ({total_amount}) не совпадает со стоимостью по договору ({deal.contract_price})."
+                "error": f"Сумма платежей ({total_amount} {deal.currency}) не совпадает "
+                         f"со стоимостью по договору ({deal.contract_price} {deal.currency})."
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Удаляем старый график, если он был
-        deal.payments.all().delete()
+        existing_payments = {p.id: p for p in deal.payments.all()}
+        submitted_id_list = [p.get('id') for p in payments_data if p.get('id') in existing_payments]
+        if len(submitted_id_list) != len(set(submitted_id_list)):
+            # Иначе одна строка перезаписала бы другую и график сошёлся бы не на всю сумму
+            return Response({"error": "Один и тот же платёж передан в графике дважды."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        created_payments = []
-        for payment_data in payments_data:
-            serializer = PaymentSerializer(data=payment_data)
-            if serializer.is_valid(raise_exception=True):
-                # Сохраняем платеж, привязывая его к сделке, клиенту и текущему пользователю
-                # Компанию берём из сделки или из профиля пользователя
-                payment_company = deal.company
-                if not payment_company and hasattr(request.user, 'profile') and request.user.profile.company:
-                    payment_company = request.user.profile.company
-                payment = serializer.save(
-                    deal=deal,
-                    client=deal.client,
-                    created_by=request.user,
-                    status=Payment.PaymentStatus.PENDING,
-                    company=payment_company
+        submitted_ids = set(submitted_id_list)
+        removed_payments = [p for pid, p in existing_payments.items() if pid not in submitted_ids]
+
+        # Проведённые платежи из графика убрать нельзя — сначала отменяется оплата
+        blocked = [p for p in removed_payments if p.status in self.PROTECTED_STATUSES]
+        if blocked:
+            details = "; ".join(
+                f"{p.amount} {p.currency} от {p.due_date} ({p.get_status_display()})" for p in blocked
+            )
+            return Response({
+                "error": (
+                    f"Нельзя удалить из графика платежи, по которым уже прошли деньги: {details}. "
+                    f"Сначала отмените оплату по ним."
                 )
-                created_payments.append(PaymentSerializer(payment).data)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        if deal.status == Deal.DealStatus.BOOKING:
-            deal.status = Deal.DealStatus.IN_PROGRESS
-            deal.property.status = Property.PropertyStatus.IN_DEAL
-            deal.save()
-            deal.property.save()
-            DealLog.objects.create(
-                deal=deal,
-                user=request.user,
-                action=f"График платежей создан на сумму {total_amount}. Статус сделки изменен на 'В работе'."
-            )
-        else:  # Если график просто обновляется
-            DealLog.objects.create(
-                deal=deal,
-                user=self.request.user,
-                action=f"График платежей обновлен. Новая общая сумма: {total_amount}."
-            )
+        payment_company = deal.company
+        if not payment_company and hasattr(request.user, 'profile') and request.user.profile.company:
+            payment_company = request.user.profile.company
 
-        return Response(created_payments, status=status.HTTP_201_CREATED)
+        # Ответственный за платежи — менеджер сделки. Без этого поле оставалось
+        # пустым всегда, и отчёт по менеджерам показывал одну строку «N/A».
+        responsible_employee = deal.created_by or request.user
+
+        created_count = 0
+        updated_count = 0
+        resulting_payments = []
+
+        with transaction.atomic():
+            for payment_data in payments_data:
+                instance = existing_payments.get(payment_data.get('id'))
+                serializer = PaymentSerializer(instance=instance, data=payment_data)
+                serializer.is_valid(raise_exception=True)
+                due_date = serializer.validated_data.get('due_date')
+
+                if instance is None:
+                    payment = serializer.save(
+                        deal=deal,
+                        client=deal.client,
+                        created_by=request.user,
+                        company=payment_company,
+                        responsible_employee=responsible_employee,
+                        status=resolve_unpaid_status(due_date),
+                    )
+                    created_count += 1
+                else:
+                    # Проведённый платёж сохраняет свой статус и дату фактической оплаты.
+                    # Для непроведённого пересчитываем «К оплате»/«Просрочен» по новому сроку.
+                    new_status = instance.status
+                    if instance.status not in self.PROTECTED_STATUSES:
+                        new_status = resolve_unpaid_status(due_date)
+                    payment = serializer.save(
+                        deal=deal,
+                        client=deal.client,
+                        company=payment_company,
+                        responsible_employee=instance.responsible_employee or responsible_employee,
+                        status=new_status,
+                    )
+                    updated_count += 1
+
+                resulting_payments.append(PaymentSerializer(payment).data)
+
+            for payment in removed_payments:
+                # Логи платежа удаляются каскадом, поэтому переносим суть
+                # в журнал сделки — иначе история правки графика теряется
+                DealLog.objects.create(
+                    deal=deal,
+                    user=request.user,
+                    action=(
+                        f"Из графика удалён платёж на {payment.amount} {payment.currency} "
+                        f"со сроком {payment.due_date} (статус — {payment.get_status_display()})."
+                    )
+                )
+                payment.delete()
+
+            if deal.status == Deal.DealStatus.BOOKING:
+                deal.status = Deal.DealStatus.IN_PROGRESS
+                deal.property.status = Property.PropertyStatus.IN_DEAL
+                deal.save()
+                deal.property.save()
+                DealLog.objects.create(
+                    deal=deal,
+                    user=request.user,
+                    action=f"График платежей создан на сумму {total_amount}. Статус сделки изменен на 'В работе'."
+                )
+            else:  # Если график просто обновляется
+                changes = []
+                if created_count:
+                    changes.append(f"добавлено {created_count}")
+                if updated_count:
+                    changes.append(f"изменено {updated_count}")
+                if removed_payments:
+                    changes.append(f"удалено {len(removed_payments)}")
+                details = f" Платежей: {', '.join(changes)}." if changes else ""
+                DealLog.objects.create(
+                    deal=deal,
+                    user=request.user,
+                    action=f"График платежей обновлен. Новая общая сумма: {total_amount}.{details}"
+                )
+
+        return Response(resulting_payments, status=status.HTTP_201_CREATED)
 
 
-class PaymentTypeDetailView(generics.DestroyAPIView):
+class PaymentTypeDetailView(CompanyScopedReferenceMixin, generics.DestroyAPIView):
     queryset = PaymentType.objects.all()
     serializer_class = PaymentTypeSerializer
     permission_classes = [IsAuthenticated, PaymentTypePermission]
@@ -298,3 +472,32 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
                 user=self.request.user,
                 action=log_action
             )
+            self._log_full_payment(instance, self.request.user)
+
+    @staticmethod
+    def _log_full_payment(payment, user):
+        """
+        Отмечает в журнале сделки момент, когда график оплачен полностью.
+
+        Статус сделки при этом не меняется: успешное закрытие по-прежнему
+        требует подписей обеих сторон. Но факт полной оплаты раньше нигде
+        не фиксировался, и понять его можно было только вручную сверив график.
+        """
+        deal = payment.deal
+        if not deal or deal.status not in (Deal.DealStatus.BOOKING, Deal.DealStatus.IN_PROGRESS):
+            return
+        if deal.payments.exclude(status=Payment.PaymentStatus.PAID).exists():
+            return
+        already_logged = DealLog.objects.filter(
+            deal=deal, action__startswith='График платежей оплачен полностью'
+        ).exists()
+        if already_logged:
+            return
+        DealLog.objects.create(
+            deal=deal,
+            user=user,
+            action=(
+                'График платежей оплачен полностью. '
+                'Для закрытия сделки осталось загрузить подписи сторон.'
+            )
+        )

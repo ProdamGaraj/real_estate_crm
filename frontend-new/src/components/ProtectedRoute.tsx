@@ -8,8 +8,18 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, refreshUser } = useAuthStore();
+  const { isAuthenticated, isLoading, isRestoring, refreshUser, restoreSession } = useAuthStore();
   const hasRefreshed = useRef(false);
+  const hasRestored = useRef(false);
+
+  // После перезагрузки страницы access-токена в памяти нет: меняем
+  // httpOnly-cookie на новый токен, прежде чем решать про редирект на вход
+  useEffect(() => {
+    if (!hasRestored.current) {
+      hasRestored.current = true;
+      restoreSession();
+    }
+  }, [restoreSession]);
 
   // При загрузке приложения обновляем данные пользователя с сервера
   useEffect(() => {
@@ -20,7 +30,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }, [isAuthenticated, refreshUser]);
   const location = useLocation();
 
-  if (isLoading) {
+  if (isLoading || isRestoring) {
     return (
       <Box
         sx={{

@@ -8,7 +8,7 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   access: string;
-  refresh: string;
+  /** refresh не приходит в теле: он лежит в httpOnly-cookie */
   user: any; // UserProfile
 }
 
@@ -34,9 +34,9 @@ export const login = async (credentials: LoginCredentials): Promise<LoginRespons
 // Алиас для совместимости
 export const loginUser = login;
 
-// Выход пользователя
-export const logout = async (refreshToken: string): Promise<void> => {
-  await apiClient.post('/permissions/auth/logout/', { refresh: refreshToken });
+// Выход пользователя. Refresh-токен сервер берёт из cookie сам.
+export const logout = async (): Promise<void> => {
+  await apiClient.post('/permissions/auth/logout/', {});
 };
 
 // Запрос на восстановление пароля
@@ -57,8 +57,13 @@ export const fetchCurrentUser = async (): Promise<any> => {
   return response.data;
 };
 
-// Обновление access токена через refresh токен
-export const refreshAccessToken = async (refreshToken: string): Promise<{ access: string; refresh: string }> => {
-  const response = await apiClient.post('/token/refresh/', { refresh: refreshToken });
+/**
+ * Обновление access-токена.
+ *
+ * Refresh-токен не передаётся: браузер сам отправляет httpOnly-cookie,
+ * а сервер возвращает только новый access.
+ */
+export const refreshAccessToken = async (): Promise<{ access: string }> => {
+  const response = await apiClient.post('/token/refresh/', {});
   return response.data;
 };

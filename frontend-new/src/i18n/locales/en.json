@@ -610,7 +610,8 @@
       "add_payment": "Add Payment",
       "save_schedule": "Save Schedule",
       "schedule_saved": "Payment schedule saved successfully!",
-      "error_prefix": "Error:"
+      "error_prefix": "Error:",
+      "currency": "Currency"
     },
     "reports": {
       "title": "Reports",

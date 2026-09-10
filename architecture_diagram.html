@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Архитектура системы — Real Estate CRM</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1e1e2e; color: #cdd6f4; margin: 0; padding: 20px; }
+  h1 { text-align: center; color: #cba6f7; margin-bottom: 4px; font-size: 24px; }
+  p.subtitle { text-align: center; color: #a6adc8; margin-bottom: 16px; font-size: 13px; }
+
+  .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab {
+    background: #313244; color: #a6adc8; border: 1px solid #45475a;
+    padding: 7px 20px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all .2s;
+  }
+  .tab.active { background: #cba6f7; color: #1e1e2e; border-color: #cba6f7; font-weight: 600; }
+  .tab:hover:not(.active) { background: #45475a; color: #cdd6f4; }
+
+  .controls { text-align: center; margin-bottom: 14px; }
+  button {
+    background: #313244; color: #cdd6f4; border: 1px solid #585b70;
+    padding: 5px 14px; margin: 3px; border-radius: 6px; cursor: pointer; font-size: 12px;
+  }
+  button:hover { background: #45475a; }
+
+  .diagram-panel {
+    background: #181825; border-radius: 12px; padding: 24px;
+    overflow: auto; max-height: 75vh; box-shadow: 0 4px 24px #00000080;
+    cursor: grab; user-select: none;
+    display: none;
+  }
+  .diagram-panel.active { display: block; }
+  .diagram-panel:active { cursor: grabbing; }
+  .mermaid svg { max-width: none !important; }
+</style>
+</head>
+<body>
+
+<h1>Архитектура системы — Real Estate CRM</h1>
+<p class="subtitle">Компонентная схема · Инфраструктура · Потоки данных</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="showDiagram('infra')">🐳 Инфраструктура</div>
+  <div class="tab" onclick="showDiagram('flow')">🔄 Поток запросов</div>
+  <div class="tab" onclick="showDiagram('backend')">⚙️ Backend модули</div>
+  <div class="tab" onclick="showDiagram('frontend')">🖥️ Frontend</div>
+  <div class="tab" onclick="showDiagram('security')">🔐 Безопасность</div>
+</div>
+
+<div class="controls">
+  <button onclick="zoomIn()">➕ Zoom In</button>
+  <button onclick="zoomOut()">➖ Zoom Out</button>
+  <button onclick="resetZoom()">↺ Сброс</button>
+</div>
+
+<!-- ═══════════════ DIAGRAM 1: INFRASTRUCTURE ═══════════════ -->
+<div id="panel-infra" class="diagram-panel active">
+<div class="mermaid">
+graph TB
+    subgraph INTERNET["🌐  Интернет / Клиент"]
+        BROWSER["🖥️  Браузер\n(React SPA)"]
+        PARTNER["🤝  Партнёрский сайт\n(Public API)"]
+    end
+
+    subgraph DOCKER["🐳  Docker Compose"]
+        direction TB
+
+        subgraph NET_NGINX["Точка входа"]
+            NGINX["📡  Nginx\nReverse Proxy\n:80 / :443\n─────────────\n• Rate Limiting\n• SSL Termination\n• Gzip\n• Security Headers\n• Static / Media files"]
+        end
+
+        subgraph NET_FRONT["frontend_network (bridge)"]
+            FRONTEND["⚛️  Frontend Container\nReact 19 + Vite\n─────────────\nMUI v7 · Redux Toolkit\nReact Query · Axios\nReact Router v7\nZustand · i18next\n\nPort: 80 (prod)\nPort: 5173 (dev/HMR)"]
+        end
+
+        subgraph NET_BACK["backend_network (bridge, internal)"]
+            BACKEND["🐍  Backend Container\nDjango 5.2 + DRF\n─────────────\nGunicorn / runserver\nSimpleJWT · Spectacular\ndrf-spectacular (Swagger)\ndocxtpl · openpyxl\ncryptography · pandas\n\nPort: 8000"]
+
+            POSTGRES["🐘  PostgreSQL 16\n─────────────\nPrimary storage\nVolume: postgres_data\n\nPort: 5432 (internal)"]
+
+            REDIS["⚡  Redis 7\n─────────────\n• Rate Limiting\n• Кеширование\nmaxmemory: 128mb\nallkeys-lru\n\nPort: 6379 (internal)"]
+        end
+
+        subgraph VOLUMES["💾  Docker Volumes"]
+            V1["postgres_data"]
+            V2["redis_data"]
+            V3["static_files"]
+            V4["media/buildings\nmedia/deals\nmedia/layouts\nmedia/projects\nmedia/templates"]
+            V5["backend_logs\nnginx_logs\nfrontend_logs"]
+        end
+    end
+
+    BROWSER -->|"HTTPS :443\nHTTP :80"| NGINX
+    PARTNER -->|"HTTPS /api/public/"| NGINX
+
+    NGINX -->|"/ (SPA)\nfrontend_network"| FRONTEND
+    NGINX -->|"/api/ /admin/\nbackend_network"| BACKEND
+    NGINX -.->|"GET /media/ /static/\n(direct serve)"| V4
+    NGINX -.->|"GET /static/"| V3
+
+    BACKEND <-->|"SQL\npsycopg2-binary"| POSTGRES
+    BACKEND <-->|"redis-py"| REDIS
+
+    POSTGRES --- V1
+    REDIS --- V2
+    BACKEND -.-> V3
+    BACKEND -.-> V4
+    BACKEND -.-> V5
+
+    style INTERNET fill:#313244,stroke:#585b70,color:#cdd6f4
+    style DOCKER fill:#1e1e2e,stroke:#585b70,color:#cdd6f4
+    style NET_NGINX fill:#45475a,stroke:#cba6f7,color:#cdd6f4
+    style NET_FRONT fill:#2a273f,stroke:#89b4fa,color:#cdd6f4
+    style NET_BACK fill:#2a1f2f,stroke:#a6e3a1,color:#cdd6f4
+    style VOLUMES fill:#252535,stroke:#585b70,color:#a6adc8
+    style NGINX fill:#45475a,stroke:#cba6f7,color:#cba6f7
+    style FRONTEND fill:#2a273f,stroke:#89b4fa,color:#89b4fa
+    style BACKEND fill:#2a1f2f,stroke:#a6e3a1,color:#a6e3a1
+    style POSTGRES fill:#1e3a5f,stroke:#89dceb,color:#89dceb
+    style REDIS fill:#3a1f1f,stroke:#f38ba8,color:#f38ba8
+</div>
+</div>
+
+<!-- ═══════════════ DIAGRAM 2: REQUEST FLOW ═══════════════ -->
+<div id="panel-flow" class="diagram-panel">
+<div class="mermaid">
+sequenceDiagram
+    actor User as 🖥️ Браузер
+    participant Nginx as 📡 Nginx
+    participant Redis as ⚡ Redis
+    participant Django as 🐍 Django
+    participant DB as 🐘 PostgreSQL
+
+    Note over User,DB: Авторизация (Rate Limited)
+    User->>+Nginx: POST /api/token/ (login/password)
+    Nginx->>Redis: check rate limit (5 req/s)
+    Redis-->>Nginx: OK / 429
+    Nginx->>+Django: proxy → ThrottledTokenObtainPairView
+    Django->>DB: SELECT User WHERE username=...
+    DB-->>Django: User record
+    Django-->>-Nginx: {access, refresh} JWT tokens
+    Nginx-->>-User: 200 OK + Tokens
+
+    Note over User,DB: Обычный API запрос
+    User->>+Nginx: GET /api/clients/ + Bearer JWT
+    Nginx->>Redis: check rate limit (50 req/s)
+    Redis-->>Nginx: OK
+    Nginx->>+Django: proxy → ClientViewSet
+    Django->>Django: JWTAuthentication.authenticate()
+    Django->>Django: UserProfile.has_permission()
+    Django->>+DB: SELECT Client WHERE company=...
+    DB-->>-Django: QuerySet
+    Django-->>-Nginx: JSON response
+    Nginx-->>-User: 200 OK + data
+
+    Note over User,DB: Публичный Partner API
+    User->>+Nginx: GET /api/public/projects/ + X-API-Key
+    Nginx->>Redis: check rate limit (20 req/s)
+    Redis-->>Nginx: OK
+    Nginx->>+Django: proxy → PublicProjectsView
+    Django->>DB: SELECT hash(key) FROM PartnerAPIKey
+    DB-->>Django: APIKey + allowed_scopes
+    Django->>DB: SELECT Project...
+    DB-->>Django: data
+    Django-->>-Nginx: JSON
+    Nginx-->>-User: 200 OK
+
+    Note over User,DB: Генерация документа (docx)
+    User->>+Nginx: POST /api/documents/generate/
+    Nginx->>+Django: proxy → GenerateDocumentView
+    Django->>DB: SELECT Deal + Client + Property
+    DB-->>Django: data
+    Django->>Django: docxtpl.render(template, context)
+    Django-->>-Nginx: file stream (.docx)
+    Nginx-->>-User: 200 + attachment
+</div>
+</div>
+
+<!-- ═══════════════ DIAGRAM 3: BACKEND MODULES ═══════════════ -->
+<div id="panel-backend" class="diagram-panel">
+<div class="mermaid">
+graph TB
+    subgraph ENTRY["Точка входа"]
+        URLS["urls.py\n─────\n/api/ → app urls\n/api/token/ → JWT\n/api/public/ → public\n/admin/ → Django Admin\n/api/schema/ → Swagger"]
+        JWT["SimpleJWT\nTokenObtainPairView\nTokenRefreshView\n+ ThrottledView"]
+    end
+
+    subgraph APPS["Django Applications"]
+        direction TB
+
+        subgraph PERM["permissions/"]
+            P1["Company\nDepartment\nRole\nPermission\nUserProfile\nPartnerAPIKey"]
+            P2["RoleBasedPermission\nAPIKeyPermission\nLoginRateThrottle"]
+        end
+
+        subgraph REALTY["apps/realty/"]
+            R1["Project · ProjectImage\nBuilding · BuildingType\nBuildingImage · Layout\nProperty · Discount"]
+            R2["urls.py (CRM API)\nurls_public.py (Partner API)"]
+        end
+
+        subgraph CRM["apps/crm/"]
+            C1["Client · ClientPhone\nClientFile · ClientLog\nApplication · AppLog\nMeeting · MeetingLog\nPreciseSource\nRejectionReason"]
+        end
+
+        subgraph DEALS["apps/deals/"]
+            D1["Deal · DealLog\nPurchasePurpose\nPaymentType"]
+        end
+
+        subgraph FINANCES["apps/finances/"]
+            F1["Payment · PaymentLog\nBeneficiaryAccount\nPaymentType"]
+        end
+
+        subgraph DOCUMENTS["apps/documents/"]
+            DOC1["Template\n─────\ndocxtpl (Word)\nopenpyxl (Excel)"]
+        end
+
+        subgraph REPORTS["apps/reports/"]
+            REP1["Plan (по проектам)\nEmployeePlan\n─────\npandas · openpyxl\nExport в Excel"]
+        end
+
+        subgraph TASKS["apps/tasks/"]
+            T1["Task · TaskComment\nTaskLog\n─────\nSubtasks (parent_task)\nWatchers (M2M)"]
+        end
+    end
+
+    subgraph INFRA["Инфраструктура"]
+        DB["🐘 PostgreSQL\npsycopg2"]
+        REDIS2["⚡ Redis\nCaching & Throttle"]
+        CRYPTO["🔐 cryptography\nFernet для APIKey"]
+        MEDIA["📁 Media Files\nPillow (images)\npython-docx"]
+    end
+
+    subgraph SCHEMA["API Документация"]
+        SWAGGER["drf-spectacular\n─────\nSwagger UI\nRedoc\n/api/schema/"]
+    end
+
+    URLS --> APPS
+    JWT --> DB
+    PERM --> DB
+    REALTY --> DB
+    CRM --> DB
+    DEALS --> DB
+    FINANCES --> DB
+    DOCUMENTS --> DB
+    REPORTS --> DB
+    TASKS --> DB
+    P2 --> REDIS2
+    P1 --> CRYPTO
+    DOCUMENTS --> MEDIA
+    REPORTS --> MEDIA
+    REALTY --> MEDIA
+    CRM --> MEDIA
+    URLS --> SCHEMA
+
+    style ENTRY fill:#45475a,stroke:#cba6f7,color:#cdd6f4
+    style APPS fill:#1e1e2e,stroke:#585b70,color:#cdd6f4
+    style PERM fill:#2a1f3f,stroke:#cba6f7,color:#cba6f7
+    style REALTY fill:#1f2a1f,stroke:#a6e3a1,color:#a6e3a1
+    style CRM fill:#1f2a2f,stroke:#89dceb,color:#89dceb
+    style DEALS fill:#2a1f1f,stroke:#fab387,color:#fab387
+    style FINANCES fill:#2a1a1a,stroke:#f38ba8,color:#f38ba8
+    style DOCUMENTS fill:#2a2a1f,stroke:#f9e2af,color:#f9e2af
+    style REPORTS fill:#1f2a2a,stroke:#94e2d5,color:#94e2d5
+    style TASKS fill:#1f1f2a,stroke:#89b4fa,color:#89b4fa
+    style INFRA fill:#252535,stroke:#585b70,color:#cdd6f4
+    style SCHEMA fill:#252535,stroke:#585b70,color:#cdd6f4
+</div>
+</div>
+
+<!-- ═══════════════ DIAGRAM 4: FRONTEND ═══════════════ -->
+<div id="panel-frontend" class="diagram-panel">
+<div class="mermaid">
+graph TB
+    subgraph VITE["Vite 7 + TypeScript 5.8"]
+
+        subgraph STORE["Глобальное состояние"]
+            REDUX["Redux Toolkit\n+ redux-persist\n─────\nauthSlice\nuserSlice"]
+            ZUSTAND["Zustand\n─────\nUI state\nFilters / Modals"]
+        end
+
+        subgraph DATA["Серверное состояние"]
+            RQ["TanStack React Query v5\n─────\n• Кеширование запросов\n• Инвалидация\n• Оптимистичные обновления\n• Infinite scroll"]
+            AXIOS["Axios\n─────\n• baseURL: /api\n• JWT interceptor\n• Token refresh\n• Error handling"]
+        end
+
+        subgraph PAGES["Страницы / Роуты\nReact Router v7"]
+            direction LR
+            PG1["🏠 Dashboard"]
+            PG2["👥 CRM\n(Clients, Apps,\nMeetings)"]
+            PG3["🏗️ Realty\n(Projects,\nBuildings,\nProperties)"]
+            PG4["🤝 Deals"]
+            PG5["💰 Finances\n(Payments)"]
+            PG6["📄 Documents\n(Templates)"]
+            PG7["📊 Reports\n& Plans"]
+            PG8["✅ Tasks"]
+            PG9["🔐 Permissions\n(Users, Roles)"]
+        end
+
+        subgraph UI["UI Framework"]
+            MUI["MUI v7\n─────\nMaterial Design\nDataGrid (таблицы)\nDatePickers\nCharts\nTreeView\nLab components"]
+            FORMS["React Hook Form v7\n─────\nZod validation"]
+            I18N["i18next\n─────\nRU локализация"]
+        end
+
+    end
+
+    subgraph API_LAYER["API слой (Nginx → Django)"]
+        PUB["GET /api/public/\n(Partner API)"]
+        INT["GET/POST /api/\n(CRM API + JWT)"]
+        ADM["GET /admin/\n(Django Admin)"]
+    end
+
+    STORE --> PAGES
+    ZUSTAND --> PAGES
+    DATA --> PAGES
+    AXIOS --> INT
+    AXIOS --> PUB
+    RQ --> AXIOS
+    PAGES --> UI
+    PAGES --> FORMS
+    PAGES --> I18N
+
+    style VITE fill:#1e1e2e,stroke:#89b4fa,color:#cdd6f4
+    style STORE fill:#2a2735,stroke:#cba6f7,color:#cba6f7
+    style DATA fill:#252535,stroke:#a6e3a1,color:#a6e3a1
+    style PAGES fill:#1f2535,stroke:#89b4fa,color:#89b4fa
+    style UI fill:#25201f,stroke:#fab387,color:#fab387
+    style API_LAYER fill:#252535,stroke:#585b70,color:#a6adc8
+</div>
+</div>
+
+<!-- ═══════════════ DIAGRAM 5: SECURITY ═══════════════ -->
+<div id="panel-security" class="diagram-panel">
+<div class="mermaid">
+graph LR
+    subgraph L1["Уровень 1: Сеть (Nginx)"]
+        RL1["Rate Limit\n/api/token/\n5 req/s, burst 10"]
+        RL2["Rate Limit\n/api/public/\n20 req/s, burst 40"]
+        RL3["Rate Limit\n/api/\n50 req/s, burst 100"]
+        SEC["Security Headers\nX-Frame-Options\nX-Content-Type\nX-XSS-Protection"]
+        SSL["SSL Termination\nLet's Encrypt\n(HTTPS conf)"]
+        NET_ISO["Сетевая изоляция\nbackend_network internal\nFrontend ≠ DB прямой доступ"]
+    end
+
+    subgraph L2["Уровень 2: Аутентификация (Django)"]
+        JWT2["SimpleJWT\naccess token: short-lived\nrefresh token: long-lived\nHS256 signing"]
+        APIKEY["Partner API Key\n─────\nSHA-256 hash (поиск)\nFernet encrypted (отображение)\nОткрытый ключ НЕ хранится\nIP whitelist (опционально)\nRate limit per key"]
+    end
+
+    subgraph L3["Уровень 3: Авторизация (Permissions)"]
+        RBAC["RBAC\nRole-Based Access Control\n─────\nPermission = Action × Resource × Scope\nRole = набор Permission\nUserProfile → Roles"]
+        SCOPE["Scope (область видимости)\n─────\nOWN – только свои объекты\nDEPARTMENT – отдел\nCOMPANY – компания\nSYSTEM – вся система"]
+        SYSADM["is_system_admin\n→ bypass all checks"]
+    end
+
+    subgraph L4["Уровень 4: Данные"]
+        MULTI["Multi-tenancy\nCompany FK на всех записях\nQuerySet автофильтрация\nпо company пользователя"]
+        AUDIT["Audit Logs\n─────\nClientLog · AppLog\nDealLog · PaymentLog\nTaskLog · PermissionLog\nMeetingLog · BuildingLog\nDiscountLog"]
+        MEDIA_SEC["Media Security\nЗапрет .php .py .sh\nexpires 1d (no stale)"]
+    end
+
+    L1 --> L2 --> L3 --> L4
+
+    style L1 fill:#2a1f1f,stroke:#f38ba8,color:#f38ba8
+    style L2 fill:#2a271f,stroke:#fab387,color:#fab387
+    style L3 fill:#1f2a1f,stroke:#a6e3a1,color:#a6e3a1
+    style L4 fill:#1f1f2a,stroke:#89b4fa,color:#89b4fa
+</div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 50 }
+  });
+
+  function showDiagram(name) {
+    document.querySelectorAll('.diagram-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+    event.target.classList.add('active');
+    scale = 1;
+  }
+
+  let scale = 1;
+  function activePanel() { return document.querySelector('.diagram-panel.active'); }
+  function zoomIn()    { scale = Math.min(scale + 0.15, 4);   applyZoom(); }
+  function zoomOut()   { scale = Math.max(scale - 0.15, 0.2); applyZoom(); }
+  function resetZoom() { scale = 1; applyZoom(); }
+  function applyZoom() {
+    const svg = activePanel().querySelector('svg');
+    if (svg) { svg.style.transformOrigin = '0 0'; svg.style.transform = `scale(${scale})`; }
+  }
+
+  // Drag to pan
+  let isDragging = false, startX, startY, scrollLeft, scrollTop;
+  document.addEventListener('mousedown', e => {
+    const panel = e.target.closest('.diagram-panel');
+    if (!panel) return;
+    isDragging = true;
+    startX = e.pageX - panel.offsetLeft;
+    startY = e.pageY - panel.offsetTop;
+    scrollLeft = panel.scrollLeft;
+    scrollTop  = panel.scrollTop;
+    panel._drag = { startX, startY, scrollLeft, scrollTop };
+  });
+  document.addEventListener('mouseleave', () => isDragging = false);
+  document.addEventListener('mouseup',    () => isDragging = false);
+  document.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const panel = document.querySelector('.diagram-panel.active');
+    if (!panel || !panel._drag) return;
+    e.preventDefault();
+    panel.scrollLeft = panel._drag.scrollLeft - (e.pageX - panel.offsetLeft - panel._drag.startX);
+    panel.scrollTop  = panel._drag.scrollTop  - (e.pageY - panel.offsetTop  - panel._drag.startY);
+  });
+
+  // Wheel zoom
+  document.querySelectorAll('.diagram-panel').forEach(panel => {
+    panel.addEventListener('wheel', e => {
+      e.preventDefault();
+      e.deltaY < 0 ? zoomIn() : zoomOut();
+    }, { passive: false });
+  });
+</script>
+</body>
+</html>

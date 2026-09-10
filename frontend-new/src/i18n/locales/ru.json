@@ -610,7 +610,8 @@
       "add_payment": "Добавить платеж",
       "save_schedule": "Сохранить график",
       "schedule_saved": "График платежей успешно сохранен!",
-      "error_prefix": "Ошибка:"
+      "error_prefix": "Ошибка:",
+      "currency": "Валюта"
     },
     "reports": {
       "title": "Отчеты",

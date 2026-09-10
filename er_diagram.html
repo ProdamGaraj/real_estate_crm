@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>ER Схема — Real Estate CRM</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; background: #1e1e2e; color: #cdd6f4; margin: 0; padding: 20px; }
+  h1 { text-align: center; color: #cba6f7; margin-bottom: 8px; }
+  p.subtitle { text-align: center; color: #a6adc8; margin-bottom: 20px; font-size: 14px; }
+  .controls { text-align: center; margin-bottom: 16px; }
+  button {
+    background: #313244; color: #cdd6f4; border: 1px solid #585b70;
+    padding: 6px 16px; margin: 4px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  button:hover { background: #45475a; }
+  #diagram-container {
+    background: #181825; border-radius: 10px; padding: 24px;
+    overflow: auto; max-width: 100%; box-shadow: 0 4px 24px #00000080;
+    cursor: grab;
+  }
+  #diagram-container:active { cursor: grabbing; }
+  .mermaid svg { max-width: none !important; }
+  #legend {
+    margin-top: 24px; background: #181825; border-radius: 10px; padding: 20px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;
+  }
+  .module { background: #313244; border-radius: 8px; padding: 14px; border-left: 4px solid; }
+  .module h3 { margin: 0 0 8px 0; font-size: 14px; }
+  .module ul { margin: 0; padding-left: 16px; font-size: 12px; color: #a6adc8; }
+  .m-permissions { border-color: #cba6f7; } .m-permissions h3 { color: #cba6f7; }
+  .m-realty     { border-color: #a6e3a1; } .m-realty h3     { color: #a6e3a1; }
+  .m-crm        { border-color: #89dceb; } .m-crm h3        { color: #89dceb; }
+  .m-deals      { border-color: #fab387; } .m-deals h3      { color: #fab387; }
+  .m-documents  { border-color: #f9e2af; } .m-documents h3  { color: #f9e2af; }
+  .m-finances   { border-color: #f38ba8; } .m-finances h3   { color: #f38ba8; }
+  .m-reports    { border-color: #94e2d5; } .m-reports h3    { color: #94e2d5; }
+  .m-tasks      { border-color: #89b4fa; } .m-tasks h3      { color: #89b4fa; }
+</style>
+</head>
+<body>
+
+<h1>ER Схема базы данных</h1>
+<p class="subtitle">Real Estate CRM — 8 модулей · ~45 сущностей · 11 M2M связей</p>
+
+<div class="controls">
+  <button onclick="zoomIn()">➕ Zoom In</button>
+  <button onclick="zoomOut()">➖ Zoom Out</button>
+  <button onclick="resetZoom()">↺ Сброс</button>
+</div>
+
+<div id="diagram-container">
+<div class="mermaid">
+erDiagram
+
+    User {
+        int id PK
+        string username UK
+        string first_name
+        string last_name
+        string email
+        bool is_active
+    }
+
+    Company {
+        int id PK
+        string name UK
+        string code UK
+        bool is_active
+        datetime created_at
+    }
+
+    Department {
+        int id PK
+        int company_id FK
+        int parent_department_id FK
+        string name
+        string code
+        bool is_active
+    }
+
+    Permission {
+        int id PK
+        string code UK
+        string action
+        string resource
+        string scope
+        bool is_active
+    }
+
+    Role {
+        int id PK
+        string name
+        string code UK
+        string category
+        string scope
+        bool is_system
+        int created_by_id FK
+    }
+
+    UserProfile {
+        int id PK
+        int user_id FK
+        int company_id FK
+        int department_id FK
+        string position
+        string phone
+        bool is_system_admin
+        bool is_active
+    }
+
+    PermissionLog {
+        int id PK
+        int user_id FK
+        string action
+        string entity_type
+        int entity_id
+        string ip_address
+        datetime created_at
+    }
+
+    PartnerAPIKey {
+        int id PK
+        string name
+        string key_hash UK
+        json allowed_scopes
+        bool is_active
+        datetime expires_at
+    }
+
+    Project {
+        int id PK
+        int company_id FK
+        int created_by_id FK
+        string name
+        string address
+        string logo
+        int min_floors
+        int max_floors
+        datetime created_at
+    }
+
+    ProjectImage {
+        int id PK
+        int project_id FK
+        string image
+        string caption
+    }
+
+    BuildingType {
+        int id PK
+        string name UK
+    }
+
+    Building {
+        int id PK
+        int project_id FK
+        int building_type_id FK
+        int created_by_id FK
+        string name
+        string status
+        int floors_count
+        date sales_start_date
+        datetime created_at
+    }
+
+    BuildingImage {
+        int id PK
+        int building_id FK
+        string image
+    }
+
+    Layout {
+        int id PK
+        int building_id FK
+        string name
+        string main_layout_image
+    }
+
+    Property {
+        int id PK
+        int building_id FK
+        int layout_id FK
+        int created_by_id FK
+        string property_type
+        string status
+        string unit_number
+        int floor
+        decimal area
+        decimal price
+        bool has_finishing
+    }
+
+    Discount {
+        int id PK
+        int created_by_id FK
+        string name
+        decimal percentage_value
+        date start_date
+        date end_date
+        string property_type
+        bool is_active
+    }
+
+    PreciseSource {
+        int id PK
+        int created_by_id FK
+        string name UK
+    }
+
+    RejectionReason {
+        int id PK
+        string name
+        string reason_type
+        bool is_active
+    }
+
+    Client {
+        int id PK
+        int company_id FK
+        int created_by_id FK
+        string full_name
+        string email UK
+        string status
+        string inn
+        string pinfl
+        date date_of_birth
+        string gender
+        string marital_status
+    }
+
+    ClientPhoneNumber {
+        int id PK
+        int client_id FK
+        string phone_number
+        bool is_primary
+    }
+
+    ClientFile {
+        int id PK
+        int client_id FK
+        int uploaded_by_id FK
+        string file
+    }
+
+    Application {
+        int id PK
+        int company_id FK
+        int client_id FK
+        int precise_source_id FK
+        int rejection_reason_id FK
+        int created_by_id FK
+        string status
+        string source
+        string interested_property_type
+        decimal min_area
+        decimal max_area
+    }
+
+    Meeting {
+        int id PK
+        int company_id FK
+        int client_id FK
+        int application_id FK
+        int interested_building_id FK
+        int creator_id FK
+        int executor_id FK
+        string status
+        datetime planned_date
+        datetime actual_date
+    }
+
+    PurchasePurpose {
+        int id PK
+        string name UK
+    }
+
+    DealPaymentType {
+        int id PK
+        string name UK
+    }
+
+    Deal {
+        int id PK
+        int company_id FK
+        int client_id FK
+        int property_id FK
+        int purchase_purpose_id FK
+        int payment_type_id FK
+        int created_by_id FK
+        string status
+        decimal initial_price
+        decimal contract_price
+        string contract_number UK
+        date contract_date
+    }
+
+    Template {
+        int id PK
+        int company_id FK
+        int created_by_id FK
+        string name
+        string file
+        json applies_to_property_types
+    }
+
+    FinancesPaymentType {
+        int id PK
+        string name UK
+    }
+
+    BeneficiaryAccount {
+        int id PK
+        int company_id FK
+        int created_by_id FK
+        string name
+        text details
+    }
+
+    Payment {
+        int id PK
+        int company_id FK
+        int deal_id FK
+        int client_id FK
+        int payment_type_id FK
+        int beneficiary_account_id FK
+        int created_by_id FK
+        decimal amount
+        string currency
+        string method
+        string status
+        date due_date
+        date payment_date
+    }
+
+    Plan {
+        int id PK
+        int project_id FK
+        int year
+        int month
+        int contracting_units_plan
+        decimal contracting_money_plan
+        decimal revenue_money_plan
+    }
+
+    EmployeePlan {
+        int id PK
+        int employee_id FK
+        int year
+        int month
+        int contracting_units_plan
+        decimal contracting_money_plan
+        decimal revenue_money_plan
+    }
+
+    Task {
+        int id PK
+        int company_id FK
+        int department_id FK
+        int creator_id FK
+        int assignee_id FK
+        int parent_task_id FK
+        string title
+        string status
+        string priority
+        datetime deadline
+        decimal estimated_hours
+    }
+
+    TaskComment {
+        int id PK
+        int task_id FK
+        int user_id FK
+        text text
+        string attachment
+        datetime created_at
+    }
+
+    TaskLog {
+        int id PK
+        int task_id FK
+        int user_id FK
+        text action
+        json old_value
+        json new_value
+        datetime created_at
+    }
+
+    %% PERMISSIONS
+    Company ||--o{ Department : "departments"
+    Department }o--o| Department : "parent"
+    Role }o--o{ Permission : "M2M"
+    Role }o--o{ Company : "M2M"
+    UserProfile ||--|| User : "1:1"
+    UserProfile }o--o| Company : "company"
+    UserProfile }o--o| Department : "department"
+    UserProfile }o--o{ Role : "M2M"
+    PermissionLog }o--o| User : "user"
+    PartnerAPIKey }o--o{ Company : "M2M"
+
+    %% REALTY
+    Company ||--o{ Project : "projects"
+    Project ||--o{ Building : "buildings"
+    Project ||--o{ ProjectImage : "gallery"
+    Project ||--o{ Plan : "plans"
+    BuildingType ||--o{ Building : "type"
+    Building ||--o{ BuildingImage : "gallery"
+    Building ||--o{ Layout : "layouts"
+    Building ||--o{ Property : "properties"
+    Layout ||--o{ Property : "layout"
+    Discount }o--o{ Building : "M2M"
+
+    %% CRM
+    Company ||--o{ Client : "clients"
+    Company ||--o{ Application : "applications"
+    Company ||--o{ Meeting : "meetings"
+    Client ||--o{ ClientPhoneNumber : "phones"
+    Client ||--o{ ClientFile : "files"
+    Client ||--o{ Application : "applications"
+    Client ||--o{ Meeting : "meetings"
+    Client }o--o{ Client : "relatives M2M"
+    PreciseSource ||--o{ Application : "source"
+    RejectionReason ||--o{ Application : "reason"
+    Application }o--o{ Project : "interested M2M"
+    Application ||--o{ Meeting : "meetings"
+    Building ||--o{ Meeting : "interested"
+
+    %% DEALS
+    Company ||--o{ Deal : "deals"
+    Client ||--o{ Deal : "deals"
+    Property ||--o{ Deal : "deals"
+    PurchasePurpose ||--o{ Deal : "purpose"
+    DealPaymentType ||--o{ Deal : "payment_type"
+    Deal }o--o{ Discount : "applied M2M"
+
+    %% DOCUMENTS
+    Template }o--o| Company : "company"
+    Template }o--o{ Project : "M2M"
+    Template }o--o{ Building : "M2M"
+
+    %% FINANCES
+    Company ||--o{ BeneficiaryAccount : "accounts"
+    Company ||--o{ Payment : "payments"
+    Deal ||--o{ Payment : "payments"
+    Client ||--o{ Payment : "payments"
+    FinancesPaymentType ||--o{ Payment : "type"
+    BeneficiaryAccount ||--o{ Payment : "account"
+
+    %% REPORTS
+    User ||--o{ EmployeePlan : "plans"
+
+    %% TASKS
+    Company ||--o{ Task : "tasks"
+    Department ||--o{ Task : "tasks"
+    Task }o--o| Task : "subtasks"
+    Task ||--o{ TaskComment : "comments"
+    Task ||--o{ TaskLog : "logs"
+    Task }o--o{ User : "watchers M2M"
+</div>
+</div>
+
+<div id="legend">
+  <div class="module m-permissions">
+    <h3>🔐 permissions</h3>
+    <ul>
+      <li>Company</li><li>Department</li><li>Permission</li>
+      <li>Role</li><li>UserProfile</li><li>PermissionLog</li><li>PartnerAPIKey</li>
+    </ul>
+  </div>
+  <div class="module m-realty">
+    <h3>🏗️ realty</h3>
+    <ul>
+      <li>Project · ProjectImage</li><li>BuildingType · Building · BuildingImage</li>
+      <li>Layout · Property · Discount</li>
+    </ul>
+  </div>
+  <div class="module m-crm">
+    <h3>👥 crm</h3>
+    <ul>
+      <li>Client · ClientPhoneNumber · ClientFile</li>
+      <li>Application · PreciseSource · RejectionReason</li>
+      <li>Meeting</li>
+    </ul>
+  </div>
+  <div class="module m-deals">
+    <h3>🤝 deals</h3>
+    <ul>
+      <li>Deal</li><li>PurchasePurpose</li><li>DealPaymentType</li>
+    </ul>
+  </div>
+  <div class="module m-documents">
+    <h3>📄 documents</h3>
+    <ul><li>Template</li></ul>
+  </div>
+  <div class="module m-finances">
+    <h3>💰 finances</h3>
+    <ul>
+      <li>Payment</li><li>BeneficiaryAccount</li><li>FinancesPaymentType</li>
+    </ul>
+  </div>
+  <div class="module m-reports">
+    <h3>📊 reports</h3>
+    <ul><li>Plan</li><li>EmployeePlan</li></ul>
+  </div>
+  <div class="module m-tasks">
+    <h3>✅ tasks</h3>
+    <ul><li>Task</li><li>TaskComment</li><li>TaskLog</li></ul>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', er: { diagramPadding: 20 } });
+
+  let scale = 1;
+  const container = document.getElementById('diagram-container');
+
+  function zoomIn()    { scale = Math.min(scale + 0.15, 3);   applyZoom(); }
+  function zoomOut()   { scale = Math.max(scale - 0.15, 0.3); applyZoom(); }
+  function resetZoom() { scale = 1; applyZoom(); }
+  function applyZoom() {
+    const svg = container.querySelector('svg');
+    if (svg) svg.style.transform = `scale(${scale})`;
+  }
+
+  // Drag to pan
+  let isDragging = false, startX, startY, scrollLeft, scrollTop;
+  container.addEventListener('mousedown', e => {
+    isDragging = true;
+    startX = e.pageX - container.offsetLeft;
+    startY = e.pageY - container.offsetTop;
+    scrollLeft = container.scrollLeft;
+    scrollTop  = container.scrollTop;
+  });
+  container.addEventListener('mouseleave', () => isDragging = false);
+  container.addEventListener('mouseup',    () => isDragging = false);
+  container.addEventListener('mousemove',  e => {
+    if (!isDragging) return;
+    e.preventDefault();
+    container.scrollLeft = scrollLeft - (e.pageX - container.offsetLeft - startX);
+    container.scrollTop  = scrollTop  - (e.pageY - container.offsetTop  - startY);
+  });
+
+  // Wheel zoom
+  container.addEventListener('wheel', e => {
+    e.preventDefault();
+    e.deltaY < 0 ? zoomIn() : zoomOut();
+  }, { passive: false });
+</script>
+</body>
+</html>

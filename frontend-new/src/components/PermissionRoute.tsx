@@ -1,6 +1,6 @@
 // real_estate_crm/frontend-new/src/components/PermissionRoute.tsx
 import { useAuthStore } from '../store/authStore';
-import { hasPermission, isSystemAdmin } from '../utils/permissions';
+import { hasPermission, hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
 import type { ActionType, ResourceType, ScopeType } from '../utils/permissions';
 import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,12 @@ interface PermissionRouteProps {
   resource?: ResourceType;
   scope?: ScopeType;
   requireAdmin?: boolean;
+  /**
+   * Доступ, если есть право VIEW хотя бы на один из ресурсов.
+   * Нужен для страниц-агрегаторов вроде «Настроек», где каждая вкладка
+   * управляет своим ресурсом.
+   */
+  anyResource?: ResourceType[];
 }
 
 /**
@@ -34,9 +40,28 @@ export default function PermissionRoute({
   resource,
   scope,
   requireAdmin = false,
+  anyResource,
 }: PermissionRouteProps) {
   const { user } = useAuthStore();
   const { t } = useTranslation();
+
+  // Доступ по любому из перечисленных ресурсов
+  if (anyResource && anyResource.length > 0) {
+    const allowed = isSystemAdmin(user) || anyResource.some(r => hasAnyViewPermission(user, r));
+    if (!allowed) {
+      return (
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h5" color="error" gutterBottom>
+            {t('errors.access_denied')}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {t('errors.no_view_permission')}
+          </Typography>
+        </Box>
+      );
+    }
+    return <>{children}</>;
+  }
 
   // Если требуется админ
   if (requireAdmin) {

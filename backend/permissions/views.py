@@ -29,6 +29,7 @@ from .permissions import (
     CompanyPermission, DepartmentPermission, RolePermission,
     UserPermission, PartnerAPIKeyPermission
 )
+from .token_serializers import revoke_refresh_tokens
 from .backends import get_filtered_queryset, can_user_perform_action
 
 logger = logging.getLogger(__name__)
@@ -187,7 +188,22 @@ class RoleViewSet(viewsets.ModelViewSet):
                 filter=Q(user_profiles__is_active=True)
             )
         )
-        return get_filtered_queryset(self.request.user, queryset, 'ROLE')
+        # Роль — справочник, а не объект «своей» компании: фильтрация по автору
+        # прятала базовые роли, созданные системным администратором.
+        user = self.request.user
+        if user.is_superuser:
+            return queryset
+        profile = getattr(user, 'profile', None)
+        if profile is None or not profile.is_active or profile.is_deleted:
+            return queryset.none()
+        if profile.is_system_admin or profile.has_permission_for_action('VIEW', 'ROLE', 'SYSTEM'):
+            return queryset
+        if profile.company:
+            # Видны роли своей компании и роли, действующие во всей системе
+            return queryset.filter(
+                Q(companies__isnull=True) | Q(companies=profile.company)
+            ).distinct()
+        return queryset.none()
     
     def _validate_permission_scope(self, request, permission_ids):
         """
@@ -265,6 +281,31 @@ class RoleViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('Профиль пользователя не найден')
     
+    def _validate_role_companies(self, request, company_ids):
+        """
+        Роль без списка компаний применяется во всех компаниях сразу.
+        Создавать такие роли и привязывать роль к чужой компании может
+        только системный администратор.
+        """
+        if _is_request_user_system_admin(request):
+            return
+
+        from rest_framework.exceptions import PermissionDenied
+        from .serializers import accessible_company_ids
+
+        allowed = accessible_company_ids(request)
+        if not company_ids:
+            raise PermissionDenied(
+                'Укажите компании, в которых действует роль: '
+                'роль без компаний применяется во всей системе.'
+            )
+        if allowed is not None:
+            denied = {int(cid) for cid in company_ids} - set(allowed)
+            if denied:
+                raise PermissionDenied(
+                    f'Компании {sorted(denied)} недоступны — нельзя создать в них роль.'
+                )
+
     def perform_create(self, serializer):
         # Проверяем scope-эскалацию при назначении разрешений
         permission_ids = self.request.data.get('permission_ids', [])
@@ -272,10 +313,17 @@ class RoleViewSet(viewsets.ModelViewSet):
         # Проверяем scope самой роли
         role_scope = self.request.data.get('scope')
         self._validate_role_scope(self.request, role_scope)
+        self._validate_role_companies(self.request, self.request.data.get('company_ids', []))
         serializer.save(created_by=self.request.user)
     
     def perform_update(self, serializer):
         """Защита от scope-эскалации при обновлении роли"""
+        # Системные роли неизменны. Проверка стояла только в assign_permissions,
+        # поэтому обычный PATCH позволял переписать их состав разрешений.
+        if serializer.instance.is_system and not _is_request_user_system_admin(self.request):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Системные роли не могут быть изменены')
+
         permission_ids = self.request.data.get('permission_ids', [])
         self._validate_permission_scope(self.request, permission_ids)
         # Проверяем scope самой роли
@@ -283,6 +331,13 @@ class RoleViewSet(viewsets.ModelViewSet):
         if role_scope:
             self._validate_role_scope(self.request, role_scope)
         serializer.save()
+
+    def perform_destroy(self, instance):
+        """Системную роль удалить нельзя — на ней держатся базовые доступы"""
+        if instance.is_system and not _is_request_user_system_admin(self.request):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Системные роли не могут быть удалены')
+        instance.delete()
     
     @action(detail=True, methods=['post'])
     def assign_permissions(self, request, pk=None):
@@ -448,7 +503,8 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         role_ids = request.data.get('role_ids', [])
         self._validate_role_assignment(request, role_ids)
         
-        serializer = UserCreateSerializer(data=request.data)
+        # Контекст обязателен: по нему проверяется доступ к выбранной компании
+        serializer = UserCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         profile = serializer.save()
         
@@ -546,6 +602,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         # Устанавливаем новый пароль
         user.set_password(new_password)
         user.save()
+
+        # Отзываем ранее выданные refresh-токены: без этого смена пароля
+        # не выбивала того, кто уже вошёл со старым
+        revoke_refresh_tokens(user)
         
         # Логируем изменение пароля
         PermissionLog.objects.create(

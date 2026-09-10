@@ -130,29 +130,109 @@ class PropertyListSerializer(serializers.ModelSerializer):
 
 
 class PropertyDetailSerializer(serializers.ModelSerializer):
+    """
+    Ручное редактирование объекта.
+
+    Статусы «Бронь», «Сделка в работе» и «Сделка проведена» ставит и снимает
+    только сам процесс сделки — руками их менять нельзя, иначе проданный объект
+    возвращается в подбор и продаётся повторно.
+    """
+
+    # Статусы, которыми управляет сделка, а не пользователь
+    DEAL_MANAGED_STATUSES = (
+        Property.PropertyStatus.BOOKING,
+        Property.PropertyStatus.IN_DEAL,
+        Property.PropertyStatus.SOLD,
+    )
+
     class Meta:
         model = Property
         fields = ['status', 'description']
 
+    def validate_status(self, value):
+        current_status = self.instance.status if self.instance else None
+        if value == current_status:
+            return value
+
+        if value in self.DEAL_MANAGED_STATUSES:
+            raise serializers.ValidationError(
+                'Этот статус выставляется автоматически при работе со сделкой.'
+            )
+
+        if current_status in self.DEAL_MANAGED_STATUSES:
+            raise serializers.ValidationError(
+                f'Объект занят сделкой (статус — «{self.instance.get_status_display()}»). '
+                f'Сначала отмените или расторгните сделку.'
+            )
+
+        return value
+
 
 # --- Сериализаторы Скидок (Discount) ---
 
-class DiscountListSerializer(serializers.ModelSerializer):
+class DiscountBuildingsScopeMixin:
+    """
+    Общая проверка домов, к которым привязывают скидку.
+
+    Дома должны быть доступны пользователю: иначе скидку можно привязать
+    к чужому проекту и раздать свои условия соседней компании.
+    """
+
+    def validate_buildings(self, value):
+        from .views import _filter_by_company_scope
+
+        if not value:
+            return value
+
+        request = self.context.get('request')
+        if request is None:
+            return value
+
+        ids = [building.pk for building in value]
+        accessible = _filter_by_company_scope(
+            request.user, Building.objects.filter(pk__in=ids), 'project__company', 'BUILDING'
+        )
+        denied = set(ids) - set(accessible.values_list('pk', flat=True))
+        if denied:
+            raise serializers.ValidationError(
+                f'Дома {sorted(denied)} не найдены или недоступны.'
+            )
+        return value
+
+    def validate(self, data):
+        data = super().validate(data)
+        start_date = data.get('start_date', getattr(self.instance, 'start_date', None))
+        end_date = data.get('end_date', getattr(self.instance, 'end_date', None))
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError(
+                {'end_date': 'Дата окончания не может быть раньше даты начала.'}
+            )
+        return data
+
+
+class DiscountListSerializer(DiscountBuildingsScopeMixin, serializers.ModelSerializer):
     buildings_info = serializers.StringRelatedField(source='buildings', many=True, read_only=True)
 
     class Meta:
         model = Discount
-        fields = ['id', 'name', 'percentage_value', 'property_type', 'start_date', 'end_date', 'buildings_info']
+        # buildings доступно на запись: без него любая созданная скидка
+        # становилась глобальной, хотя интерфейс предлагал выбрать дома
+        fields = [
+            'id', 'name', 'percentage_value', 'property_type', 'start_date', 'end_date',
+            'buildings', 'buildings_info', 'comment', 'is_active',
+        ]
 
 
-class DiscountDetailSerializer(serializers.ModelSerializer):
+class DiscountDetailSerializer(DiscountBuildingsScopeMixin, serializers.ModelSerializer):
     buildings_info = serializers.StringRelatedField(source='buildings', many=True, read_only=True)
     logs = DiscountLogSerializer(many=True, read_only=True)
 
     class Meta:
         model = Discount
         fields = '__all__'
-        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'buildings']
+        # buildings убрано из read_only: привязку к домам нужно уметь менять.
+        # company назначается по профилю создателя и вручную не переносится.
+        read_only_fields = ['created_by', 'updated_by', 'created_at', 'updated_at', 'company']
 
 
 # --- Сериализаторы Проектов (Project) ---

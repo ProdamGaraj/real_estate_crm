@@ -55,10 +55,13 @@ services:
     volumes:
       # Медиа файлы (изображения, документы) - прямые пути на диск
       - ./backend/media/buildings:/app/media/buildings
+      - ./backend/media/client_files:/app/media/client_files
       - ./backend/media/deals:/app/media/deals
       - ./backend/media/layouts:/app/media/layouts
       - ./backend/media/projects:/app/media/projects
+      - ./backend/media/tasks:/app/media/tasks
       - ./backend/media/templates:/app/media/templates
+      - ./backend/media/avatars:/app/media/avatars
       # Статические файлы Django
       - static_files:/app/staticfiles
       # Логи
@@ -96,6 +99,51 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  # =============================================================================
+  # Планировщик регулярных задач
+  # Без него статус «Просрочен» пересчитывался только при заходе пользователя
+  # в раздел «Финансы», а истёкшие брони не снимались вовсе.
+  # =============================================================================
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm_scheduler
+    restart: unless-stopped
+    command: >
+      sh -c "while true; do
+      python manage.py refresh_overdue_payments || true;
+      python manage.py expire_bookings || true;
+      python manage.py close_stale_meetings || true;
+      sleep 3600;
+      done"
+    volumes:
+      - backend_logs:/app/logs
+    environment:
+      # База данных
+      - USE_SQLITE=False
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+      # Django settings
+      - DEBUG=${DEBUG:-False}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required — set it in .env file}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,backend,nginx}
+      # Redis (для кеширования и rate limiting)
+      - REDIS_URL=redis://redis:6379/0
+      # URLs
+      - SITE_URL=${SITE_URL:-http://localhost}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend_network
 
   # =============================================================================
   # Frontend React/Vite (Production с nginx)

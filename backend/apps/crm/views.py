@@ -51,6 +51,7 @@ from datetime import date, timedelta
 from django.db.models import Count, Sum, F, Q
 from apps.deals.models import Deal
 from apps.finances.models import Payment
+from apps.finances.services import refresh_overdue_payments_throttled
 import pandas as pd
 from django.http import HttpResponse
 from permissions.permissions import (
@@ -59,6 +60,35 @@ from permissions.permissions import (
     HasPartnerCreateApplicationScope, ApplicationStatusPermission
 )
 from permissions.backends import get_filtered_queryset, get_user_max_scope, can_user_perform_action
+from permissions.reference_scope import CompanyScopedReferenceMixin, scope_reference_queryset
+
+
+class SoftDeleteMixin:
+    """
+    Удаление скрывает запись, но оставляет её в базе.
+
+    Физическое удаление уносило с собой и журнал изменений (CASCADE),
+    поэтому восстановить, кто и что делал с заявкой или встречей, было нельзя.
+    Удалённые записи пропадают из выдачи; посмотреть их можно запросом
+    с ``?include_deleted=true``.
+    """
+
+    log_model = None
+    log_field = None
+
+    def filter_deleted(self, queryset):
+        if self.request.query_params.get('include_deleted') == 'true':
+            return queryset
+        return queryset.filter(is_deleted=False)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete(user=self.request.user)
+        if self.log_model and self.log_field:
+            self.log_model.objects.create(
+                **{self.log_field: instance},
+                user=self.request.user,
+                action="Запись удалена (перемещена в удалённые)."
+            )
 
 
 class ApplicationSummaryView(APIView):
@@ -76,7 +106,8 @@ class ApplicationSummaryView(APIView):
         except (ValueError, TypeError):
             days_since_update = 7
 
-        queryset = Application.objects.all().select_related('created_by', 'client')
+        # Удалённые заявки в отчёт не попадают
+        queryset = Application.objects.filter(is_deleted=False).select_related('created_by', 'client')
         # Фильтруем по разрешениям пользователя с учётом scope отчёта
         report_scope = get_user_max_scope(request.user, 'REPORT')
         queryset = get_filtered_queryset(request.user, queryset, 'APPLICATION', max_scope=report_scope)
@@ -152,12 +183,19 @@ class MeetingSummaryView(APIView):
         actual_date_after = request.query_params.get('actual_date_after')
         actual_date_before = request.query_params.get('actual_date_before')
 
-        queryset = Meeting.objects.all().select_related(
+        # Удалённые встречи в отчёт не попадают
+        queryset = Meeting.objects.filter(is_deleted=False).select_related(
             'executor', 'interested_building__project', 'client'
         )
         # Фильтруем по разрешениям пользователя с учётом scope отчёта
         report_scope = get_user_max_scope(request.user, 'REPORT')
         queryset = get_filtered_queryset(request.user, queryset, 'MEETING', max_scope=report_scope)
+
+        # Встречи, заведённые системой при регистрации клиента, — не работа
+        # менеджера. Пока они попадали в отчёт, у каждого было ровно столько
+        # «состоявшихся встреч», сколько заведённых клиентов.
+        if request.query_params.get('include_auto') != 'true':
+            queryset = queryset.filter(is_auto_created=False)
 
         # Apply date filters
         if planned_date_after:
@@ -260,20 +298,27 @@ class DashboardAnalyticsView(APIView):
 
         # KPIs - фильтруем по разрешениям с учётом scope дашборда
         clients_qs = get_filtered_queryset(request.user, Client.objects.all(), 'CLIENT', max_scope=dashboard_scope)
-        apps_qs = get_filtered_queryset(request.user, Application.objects.all(), 'APPLICATION', max_scope=dashboard_scope)
+        apps_qs = get_filtered_queryset(request.user, Application.objects.filter(is_deleted=False), 'APPLICATION', max_scope=dashboard_scope)
         deals_qs = get_filtered_queryset(request.user, Deal.objects.all(), 'DEAL', max_scope=dashboard_scope)
         payments_qs = get_filtered_queryset(request.user, Payment.objects.all(), 'PAYMENT', max_scope=dashboard_scope)
-        meetings_qs = get_filtered_queryset(request.user, Meeting.objects.all(), 'MEETING', max_scope=dashboard_scope)
+        meetings_qs = get_filtered_queryset(request.user, Meeting.objects.filter(is_deleted=False), 'MEETING', max_scope=dashboard_scope)
         
         new_clients_today = clients_qs.filter(created_at__date=today).count()
         new_applications_today = apps_qs.filter(created_at__date=today).count()
-        monthly_sales = deals_qs.filter(
+        # Считаем по дате закрытия сделки: по updated_at любая правка старой
+        # сделки переносила её сумму в текущий месяц
+        closed_this_month = deals_qs.filter(
             status=Deal.DealStatus.CLOSED_WON,
-            updated_at__gte=start_of_month
-        ).aggregate(total=Sum('contract_price'))['total'] or 0
+            closed_at__gte=start_of_month
+        )
+        monthly_sales = closed_this_month.aggregate(total=Sum('contract_price'))['total'] or 0
+        # Актуализируем просрочку, иначе цифра зависит от того, открывал ли
+        # кто-то сегодня раздел «Финансы»
+        refresh_overdue_payments_throttled(payments_qs)
+        # Берём тот же признак, что и витрина «Финансы»: раньше дашборд
+        # добавлял сюда ещё и PENDING, и две цифры просрочки не сходились
         overdue_payments = payments_qs.filter(
-            due_date__lt=today,
-            status=Payment.PaymentStatus.PENDING
+            status=Payment.PaymentStatus.OVERDUE
         ).aggregate(total=Sum('amount'))['total'] or 0
 
         # Charts - используем отфильтрованный queryset
@@ -283,27 +328,21 @@ class DashboardAnalyticsView(APIView):
 
         # Top Managers - на основе отфильтрованных сделок
         from django.db.models import OuterRef, Subquery
-        top_manager_ids = deals_qs.filter(
-            status=Deal.DealStatus.CLOSED_WON,
-            updated_at__gte=start_of_month
-        ).order_by().values('created_by').annotate(
+        # Одним запросом вместо выборки id и отдельного запроса на каждого
+        top_rows = closed_this_month.order_by().values(
+            'created_by', 'created_by__first_name', 'created_by__last_name'
+        ).annotate(
             total_sales=Sum('contract_price')
-        ).order_by('-total_sales')[:5].values_list('created_by', flat=True)
-        
-        top_managers = []
-        for user_id in top_manager_ids:
-            user = User.objects.filter(id=user_id).first()
-            if user:
-                sale = deals_qs.filter(
-                    status=Deal.DealStatus.CLOSED_WON,
-                    updated_at__gte=start_of_month,
-                    created_by=user
-                ).aggregate(total_sales=Sum('contract_price'))['total_sales'] or 0
-                top_managers.append({
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
-                    'total_sales': sale
-                })
+        ).order_by('-total_sales')[:5]
+
+        top_managers = [
+            {
+                'first_name': row['created_by__first_name'] or '',
+                'last_name': row['created_by__last_name'] or '',
+                'total_sales': row['total_sales'] or 0,
+            }
+            for row in top_rows if row['created_by']
+        ]
 
         # Upcoming Meetings - используем отфильтрованный queryset
         upcoming_meetings = meetings_qs.filter(
@@ -360,12 +399,13 @@ class ClientFileView(APIView):
             return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RejectionReasonListView(generics.ListCreateAPIView):
+class RejectionReasonListView(CompanyScopedReferenceMixin, generics.ListCreateAPIView):
     serializer_class = RejectionReasonSerializer
     permission_classes = [IsAuthenticated, SettingsPermission]
+    queryset = RejectionReason.objects.filter(is_active=True)
 
     def get_queryset(self):
-        queryset = RejectionReason.objects.filter(is_active=True)
+        queryset = super().get_queryset()
         reason_type = self.request.query_params.get('type')
         if reason_type:
             queryset = queryset.filter(reason_type=reason_type)
@@ -379,6 +419,9 @@ class ClientListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        # Архивные клиенты в общем списке не показываются
+        if self.request.query_params.get('include_archived') != 'true':
+            queryset = queryset.exclude(status=Client.ClientStatus.ARCHIVED)
         return get_filtered_queryset(self.request.user, queryset, 'CLIENT')
 
     def get_serializer_class(self):
@@ -419,7 +462,24 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        if self.request.query_params.get('include_archived') != 'true':
+            queryset = queryset.exclude(status=Client.ClientStatus.ARCHIVED)
         return get_filtered_queryset(self.request.user, queryset, 'CLIENT')
+
+    def perform_destroy(self, instance):
+        """
+        Клиент переводится в архив, а не удаляется.
+
+        Физическое удаление уносило каскадом заявки, встречи, файлы и все
+        журналы — вместе с историей работы по клиенту.
+        """
+        instance.status = Client.ClientStatus.ARCHIVED
+        instance.save(update_fields=['status', 'updated_at'])
+        ClientLog.objects.create(
+            client=instance,
+            user=self.request.user,
+            action="Клиент перемещён в архив."
+        )
 
     def perform_update(self, serializer):
         old_instance = self.get_object()
@@ -454,7 +514,8 @@ class ApplicationListView(generics.ListCreateAPIView):
     filterset_class = ApplicationFilter
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # Удалённые заявки в списке не показываем
+        queryset = super().get_queryset().filter(is_deleted=False)
         return get_filtered_queryset(self.request.user, queryset, 'APPLICATION')
 
     def get_serializer_class(self):
@@ -478,20 +539,23 @@ class ApplicationListView(generics.ListCreateAPIView):
         )
 
 
-class RejectionReasonDetailView(generics.RetrieveUpdateAPIView):
+class RejectionReasonDetailView(CompanyScopedReferenceMixin, generics.RetrieveUpdateAPIView):
     queryset = RejectionReason.objects.all()
     serializer_class = RejectionReasonSerializer
     permission_classes = [IsAuthenticated, SettingsPermission]
 
 
-class ApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
+class ApplicationDetailView(SoftDeleteMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationDetailSerializer
     permission_classes = [IsAuthenticated, ApplicationPermission]
+    log_model = ApplicationLog
+    log_field = 'application'
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return get_filtered_queryset(self.request.user, queryset, 'APPLICATION')
+        queryset = get_filtered_queryset(self.request.user, queryset, 'APPLICATION')
+        return self.filter_deleted(queryset)
 
     def perform_update(self, serializer):
         old_instance = self.get_object()
@@ -539,36 +603,46 @@ class PublicApplicationCreateView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         from .models import ClientPhoneNumber
-        
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         phone_number = data.get('phone_number')
         full_name = data.get('full_name', '')
-        
-        # Ищем клиента по номеру телефона
-        phone_obj = ClientPhoneNumber.objects.filter(phone_number=phone_number).first()
-        
-        if phone_obj:
-            # Клиент существует
-            client = phone_obj.client
-            if full_name and client.full_name != full_name:
-                client.full_name = full_name
-                client.save()
-        else:
-            # Создаём нового клиента
-            client = Client.objects.create(full_name=full_name)
-            ClientPhoneNumber.objects.create(client=client, phone_number=phone_number)
-        
+
         # Определяем компанию из API-ключа партнёра
         partner_company = None
         if hasattr(request, 'partner_api_key') and request.partner_api_key:
-            partner_company = request.partner_api_key.companies.first()
-        
-        # Привязываем клиента к компании, если у него ещё нет компании
-        if partner_company and not client.company:
-            client.company = partner_company
-            client.save(update_fields=['company'])
+            # Порядок задаём явно, иначе при нескольких компаниях у ключа
+            # заявки распределялись бы непредсказуемо
+            partner_company = request.partner_api_key.companies.order_by('id').first()
+
+        if partner_company is None:
+            return Response(
+                {'error': 'API-ключ не привязан ни к одной компании — заявку принять некуда.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Клиента ищем только среди клиентов этой компании. Глобальный поиск
+        # по телефону отдавал партнёру карточку клиента другой компании
+        # и затирал в ней ФИО.
+        phone_obj = ClientPhoneNumber.objects.filter(
+            phone_number=phone_number,
+            client__company=partner_company,
+        ).select_related('client').first()
+
+        if phone_obj:
+            # Клиент существует
+            client = phone_obj.client
+            # Имя заполняем только если его ещё нет: данные из формы на сайте
+            # партнёра не должны затирать то, что менеджер уточнил вручную
+            if full_name and not client.full_name:
+                client.full_name = full_name
+                client.save(update_fields=['full_name', 'updated_at'])
+        else:
+            # Создаём нового клиента сразу в компании партнёра
+            client = Client.objects.create(full_name=full_name, company=partner_company)
+            ClientPhoneNumber.objects.create(client=client, phone_number=phone_number)
         
         application = Application.objects.create(
             client=client,
@@ -610,6 +684,8 @@ class MeetingListCreateView(generics.ListCreateAPIView):
         )
         if client_id:
             queryset = queryset.filter(client_id=client_id)
+        # Удалённые встречи в списке не показываем
+        queryset = queryset.filter(is_deleted=False)
         return get_filtered_queryset(self.request.user, queryset, 'MEETING')
 
     def perform_create(self, serializer):
@@ -620,22 +696,84 @@ class MeetingListCreateView(generics.ListCreateAPIView):
         serializer.save(creator=self.request.user, company=company)
 
 
-class MeetingDetailView(generics.RetrieveUpdateDestroyAPIView):
+class MeetingDetailView(SoftDeleteMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Meeting.objects.all()
     serializer_class = MeetingSerializer
     permission_classes = [IsAuthenticated, MeetingPermission]
+    log_model = MeetingLog
+    log_field = 'meeting'
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return get_filtered_queryset(self.request.user, queryset, 'MEETING')
+        queryset = get_filtered_queryset(self.request.user, queryset, 'MEETING')
+        return self.filter_deleted(queryset)
 
     def perform_update(self, serializer):
+        old_instance = self.get_object()
+        tracked = ['status', 'planned_date', 'actual_date', 'executor',
+                   'comment', 'result_comment', 'interested_building']
+        before = {field: getattr(old_instance, field) for field in tracked}
+
         instance = serializer.save()
+
+        # Раньше в журнал попадало безликое «Встреча обновлена» — по нему нельзя
+        # было понять, что именно изменилось, в отличие от клиентов и заявок
+        changes = []
+        for field in tracked:
+            new_value = getattr(instance, field)
+            if before[field] != new_value:
+                changes.append(_format_change(Meeting, field, before[field], new_value))
+
+        action_text = "Встреча обновлена."
+        if changes:
+            action_text += " " + "; ".join(changes)
         MeetingLog.objects.create(
             meeting=instance,
             user=self.request.user,
-            action="Встреча обновлена."
+            action=action_text
         )
+
+
+class ApplicationRestoreView(APIView):
+    """Возвращает удалённую заявку в работу."""
+    permission_classes = [IsAuthenticated, ApplicationPermission]
+
+    def post(self, request, pk, *args, **kwargs):
+        queryset = get_filtered_queryset(request.user, Application.objects.all(), 'APPLICATION')
+        application = queryset.filter(pk=pk, is_deleted=True).first()
+        if application is None:
+            return Response(
+                {'error': 'Удалённая заявка не найдена или недоступна.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        application.restore()
+        ApplicationLog.objects.create(
+            application=application,
+            user=request.user,
+            action="Заявка восстановлена из удалённых."
+        )
+        return Response(ApplicationDetailSerializer(application).data, status=status.HTTP_200_OK)
+
+
+class MeetingRestoreView(APIView):
+    """Возвращает удалённую встречу в работу."""
+    permission_classes = [IsAuthenticated, MeetingPermission]
+
+    def post(self, request, pk, *args, **kwargs):
+        queryset = get_filtered_queryset(request.user, Meeting.objects.all(), 'MEETING')
+        meeting = queryset.filter(pk=pk, is_deleted=True).first()
+        if meeting is None:
+            return Response(
+                {'error': 'Удалённая встреча не найдена или недоступна.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        meeting.restore()
+        MeetingLog.objects.create(
+            meeting=meeting,
+            user=request.user,
+            action="Встреча восстановлена из удалённых."
+        )
+        return Response(MeetingSerializer(meeting).data, status=status.HTTP_200_OK)
 
 
 class UserListView(generics.ListAPIView):
@@ -670,7 +808,7 @@ class UserListView(generics.ListAPIView):
 
 
 # --- Views для статусов заявок ---
-class ApplicationStatusListCreateView(generics.ListCreateAPIView):
+class ApplicationStatusListCreateView(CompanyScopedReferenceMixin, generics.ListCreateAPIView):
     """
     GET: Список всех статусов заявок (доступно всем авторизованным пользователям)
     POST: Создание нового статуса заявки (требует разрешение APPLICATION_STATUS)
@@ -688,6 +826,7 @@ class ApplicationStatusListCreateView(generics.ListCreateAPIView):
         return [IsAuthenticated(), ApplicationStatusPermission()]
 
     def get_queryset(self):
+        # super() уже ограничил выборку компанией пользователя
         queryset = super().get_queryset()
         # Фильтр по активным статусам (опционально)
         is_active = self.request.query_params.get('is_active')
@@ -696,7 +835,7 @@ class ApplicationStatusListCreateView(generics.ListCreateAPIView):
         return queryset
 
 
-class ApplicationStatusDetailView(generics.RetrieveUpdateDestroyAPIView):
+class ApplicationStatusDetailView(CompanyScopedReferenceMixin, generics.RetrieveUpdateDestroyAPIView):
     """
     GET: Детали статуса заявки (доступно всем авторизованным пользователям)
     PUT/PATCH: Обновление статуса заявки (требует разрешение APPLICATION_STATUS)

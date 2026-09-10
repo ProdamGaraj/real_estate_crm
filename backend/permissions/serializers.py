@@ -6,6 +6,29 @@ from django.contrib.auth.models import User
 from .models import Company, Department, Permission, Role, UserProfile, PermissionLog, PartnerAPIKey
 
 
+def accessible_company_ids(request):
+    """
+    Компании, в которые запрашивающий вправе помещать пользователей.
+
+    None означает «без ограничений» (суперпользователь или системный
+    администратор). Для остальных — только собственная компания: иначе
+    администратор одной компании заводит сотрудников в другой.
+    """
+    if request is None:
+        return None
+    user = getattr(request, 'user', None)
+    if user is None or not user.is_authenticated:
+        return set()
+    if user.is_superuser:
+        return None
+    profile = getattr(user, 'profile', None)
+    if profile is None:
+        return set()
+    if profile.is_system_admin:
+        return None
+    return set(profile.get_accessible_companies().values_list('id', flat=True))
+
+
 class CompanySerializer(serializers.ModelSerializer):
     departments_count = serializers.SerializerMethodField()
     employees_count = serializers.SerializerMethodField()
@@ -87,6 +110,11 @@ class RoleListSerializer(serializers.ModelSerializer):
     permissions = PermissionSerializer(many=True, read_only=True)
     permissions_count = serializers.SerializerMethodField()
     users_count = serializers.SerializerMethodField()
+    # Компании, в которых действует роль. Пустой список = роль общесистемная.
+    # Клиенту это нужно, чтобы считать права так же, как считает сервер.
+    company_ids = serializers.PrimaryKeyRelatedField(
+        source='companies', many=True, read_only=True
+    )
     
     class Meta:
         model = Role
@@ -95,6 +123,7 @@ class RoleListSerializer(serializers.ModelSerializer):
             'scope', 'scope_display',
             'category', 'category_display',
             'permissions', 'permissions_count', 'users_count',
+            'company_ids',
             'is_system', 'is_active',
             'created_at', 'updated_at'
         ]
@@ -278,10 +307,19 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
         permissions = obj.get_all_permissions()
         return PermissionSerializer(permissions, many=True).data
     
+    def validate_company_id(self, value):
+        # Перенос профиля в компанию, к которой нет доступа, — эскалация
+        allowed = accessible_company_ids(self.context.get('request'))
+        if value is not None and allowed is not None and value.pk not in allowed:
+            raise serializers.ValidationError(
+                "Нельзя перевести пользователя в компанию, к которой у вас нет доступа"
+            )
+        return value
+
     def validate(self, data):
         # Проверяем что отдел принадлежит компании
         department = data.get('department')
-        company = data.get('company')
+        company = data.get('company', getattr(self.instance, 'company', None))
         
         if department and company:
             if department.company != company:
@@ -443,6 +481,12 @@ class UserCreateSerializer(serializers.Serializer):
                 Company.objects.get(id=value, is_active=True)
             except Company.DoesNotExist:
                 raise serializers.ValidationError("Компания не найдена")
+            # Проверка доступа: без неё пользователя можно завести в чужой компании
+            allowed = accessible_company_ids(self.context.get('request'))
+            if allowed is not None and value not in allowed:
+                raise serializers.ValidationError(
+                    "Нельзя создать пользователя в компании, к которой у вас нет доступа"
+                )
         return value
     
     def validate_department_id(self, value):
@@ -452,6 +496,24 @@ class UserCreateSerializer(serializers.Serializer):
             except Department.DoesNotExist:
                 raise serializers.ValidationError("Отдел не найден")
         return value
+
+    def validate(self, data):
+        data = super().validate(data)
+        company_id = data.get('company_id')
+        department_id = data.get('department_id')
+        if department_id:
+            department = Department.objects.filter(id=department_id).first()
+            # Отдел обязан относиться к той же компании — иначе профиль
+            # оказывается в одной компании, а его отдел в другой
+            if department and company_id and department.company_id != company_id:
+                raise serializers.ValidationError(
+                    {'department_id': 'Отдел должен принадлежать выбранной компании'}
+                )
+            if department and not company_id:
+                raise serializers.ValidationError(
+                    {'company_id': 'Укажите компанию, которой принадлежит отдел'}
+                )
+        return data
     
     def validate_role_ids(self, value):
         if value:

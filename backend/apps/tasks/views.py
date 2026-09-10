@@ -107,18 +107,19 @@ class TaskViewSet(viewsets.ModelViewSet):
         """
         queryset = self.filter_queryset(self.get_queryset())
         
-        # Группируем задачи по статусам
+        # Одна выборка вместо отдельного запроса и count() на каждый статус
+        tasks_by_status = {}
+        for task in queryset:
+            tasks_by_status.setdefault(task.status, []).append(task)
+
         kanban_data = []
-        for status_choice in Task.TaskStatus.choices:
-            status_code = status_choice[0]
-            status_label = status_choice[1]
-            
-            status_tasks = queryset.filter(status=status_code)
+        for status_code, status_label in Task.TaskStatus.choices:
+            status_tasks = tasks_by_status.get(status_code, [])
             kanban_data.append({
                 'status': status_code,
                 'status_label': status_label,
                 'tasks': TaskListSerializer(status_tasks, many=True).data,
-                'count': status_tasks.count()
+                'count': len(status_tasks)
             })
         
         return Response(kanban_data)
@@ -190,6 +191,14 @@ class TaskViewSet(viewsets.ModelViewSet):
         if task.status == Task.TaskStatus.COMPLETED:
             return Response(
                 {'error': 'Задача уже завершена'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Отменённую задачу сначала возвращают в работу — иначе она попадала
+        # в статистику выполненных в обход процедуры возврата
+        if task.status == Task.TaskStatus.CANCELLED:
+            return Response(
+                {'error': 'Отменённую задачу нельзя завершить. Сначала верните её в работу.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
@@ -275,101 +284,94 @@ class TaskViewSet(viewsets.ModelViewSet):
         Body: {"started_at": "2025-11-26T10:00:00Z", "deadline": "2025-11-30T18:00:00Z"}
         """
         from permissions.backends import can_user_perform_action
-        from django.utils.dateparse import parse_datetime
         from dateutil import parser as date_parser
-        
-        try:
-            task = self.get_object()
-            
-            # Проверяем права на возврат задачи
-            if not can_user_perform_action(request.user, 'REOPEN', 'TASK', obj=task):
-                return Response(
-                    {'error': 'У вас нет прав для возврата отменённой задачи'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            if task.status != Task.TaskStatus.CANCELLED:
-                return Response(
-                    {'error': 'Можно вернуть только отменённую задачу'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Получаем новые сроки из запроса
-            new_started_at = request.data.get('started_at')
-            new_deadline = request.data.get('deadline')
-            
-            if not new_deadline:
-                return Response(
-                    {'error': 'Необходимо указать новый дедлайн'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Валидация дедлайна
-            if isinstance(new_deadline, str):
-                try:
-                    new_deadline = date_parser.parse(new_deadline)
-                    if timezone.is_naive(new_deadline):
-                        new_deadline = timezone.make_aware(new_deadline)
-                except (ValueError, TypeError) as e:
-                    return Response(
-                        {'error': f'Неверный формат дедлайна: {str(e)}'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            
-            if new_deadline < timezone.now():
-                return Response(
-                    {'error': 'Дедлайн не может быть в прошлом'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Валидация времени начала
-            if new_started_at:
-                if isinstance(new_started_at, str):
-                    try:
-                        new_started_at = date_parser.parse(new_started_at)
-                        if timezone.is_naive(new_started_at):
-                            new_started_at = timezone.make_aware(new_started_at)
-                    except (ValueError, TypeError) as e:
-                        return Response(
-                            {'error': f'Неверный формат времени начала: {str(e)}'},
-                            status=status.HTTP_400_BAD_REQUEST
-                        )
-                
-                if new_started_at < timezone.now():
-                    return Response(
-                        {'error': 'Время начала не может быть в прошлом'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            
-            # Обновляем задачу
-            task.status = Task.TaskStatus.RETURNED
-            task.started_at = new_started_at
-            task.deadline = new_deadline
-            task.save()
-            
-            # Создаем лог
-            TaskLog.objects.create(
-                task=task,
-                user=request.user,
-                action='Задача возвращена в работу',
-                new_value={
-                    'status': task.status,
-                    'started_at': task.started_at.isoformat() if task.started_at else None,
-                    'deadline': task.deadline.isoformat()
-                }
-            )
-            
-            serializer = self.get_serializer(task)
-            return Response(serializer.data)
-            
-        except Exception as e:
-            import traceback
-            error_trace = traceback.format_exc()
-            logger.exception("Error in task reopen")
+
+        def parse_moment(value, label):
+            """Разбор даты из запроса. Возвращает пару (значение, текст ошибки)."""
+            if not isinstance(value, str):
+                return value, None
+            try:
+                parsed = date_parser.parse(value)
+            except (ValueError, TypeError, OverflowError):
+                return None, f'Неверный формат поля «{label}»'
+            if timezone.is_naive(parsed):
+                parsed = timezone.make_aware(parsed)
+            return parsed, None
+
+        task = self.get_object()
+
+        # Проверяем права на возврат задачи
+        if not can_user_perform_action(request.user, 'REOPEN', 'TASK', obj=task):
             return Response(
-                {'error': f'Произошла ошибка при возврате задачи: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {'error': 'У вас нет прав для возврата отменённой задачи'},
+                status=status.HTTP_403_FORBIDDEN
             )
+
+        if task.status != Task.TaskStatus.CANCELLED:
+            return Response(
+                {'error': 'Можно вернуть только отменённую задачу'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Получаем новые сроки из запроса
+        new_deadline, error = parse_moment(request.data.get('deadline'), 'дедлайн')
+        if error:
+            return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
+        if not new_deadline:
+            return Response(
+                {'error': 'Необходимо указать новый дедлайн'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if new_deadline < timezone.now():
+            return Response(
+                {'error': 'Дедлайн не может быть в прошлом'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        new_started_at = None
+        if request.data.get('started_at'):
+            new_started_at, error = parse_moment(request.data.get('started_at'), 'время начала')
+            if error:
+                return Response({'error': error}, status=status.HTTP_400_BAD_REQUEST)
+            if new_started_at < timezone.now():
+                return Response(
+                    {'error': 'Время начала не может быть в прошлом'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if new_started_at > new_deadline:
+                return Response(
+                    {'error': 'Время начала не может быть позже дедлайна'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        old_status = task.status
+
+        # Возвращённая задача снова активна, но работа над ней ещё не начата,
+        # поэтому статус NEW. Запланированное время начала при этом сохраняется:
+        # Task.save() перезапишет его только при переходе в IN_PROGRESS без даты.
+        task.status = Task.TaskStatus.NEW
+        task.started_at = new_started_at
+        task.deadline = new_deadline
+        # Отметки о завершении относились к прошлому циклу задачи
+        task.completed_at = None
+        task.completed_with_delay = False
+        task.save()
+
+        # Создаем лог
+        TaskLog.objects.create(
+            task=task,
+            user=request.user,
+            action='Задача возвращена в работу',
+            old_value={'status': old_status},
+            new_value={
+                'status': task.status,
+                'started_at': task.started_at.isoformat() if task.started_at else None,
+                'deadline': task.deadline.isoformat()
+            }
+        )
+
+        serializer = self.get_serializer(task)
+        return Response(serializer.data)
     
     @action(detail=True, methods=['get'])
     def comments(self, request, pk=None):
@@ -489,22 +491,24 @@ class TaskViewSet(viewsets.ModelViewSet):
             'created_by_me': queryset.filter(creator=request.user).count(),
         }
         
-        # Статистика по статусам
-        for status_choice in Task.TaskStatus.choices:
-            status_code = status_choice[0]
-            status_label = status_choice[1]
+        # Две агрегации вместо запроса на каждое значение статуса и приоритета
+        status_counts = dict(
+            queryset.order_by().values_list('status').annotate(n=Count('id'))
+        )
+        priority_counts = dict(
+            queryset.order_by().values_list('priority').annotate(n=Count('id'))
+        )
+
+        for status_code, status_label in Task.TaskStatus.choices:
             stats['by_status'][status_code] = {
                 'label': status_label,
-                'count': queryset.filter(status=status_code).count()
+                'count': status_counts.get(status_code, 0)
             }
         
-        # Статистика по приоритетам
-        for priority_choice in Task.TaskPriority.choices:
-            priority_code = priority_choice[0]
-            priority_label = priority_choice[1]
+        for priority_code, priority_label in Task.TaskPriority.choices:
             stats['by_priority'][priority_code] = {
                 'label': priority_label,
-                'count': queryset.filter(priority=priority_code).count()
+                'count': priority_counts.get(priority_code, 0)
             }
         
         return Response(stats)

@@ -178,7 +178,17 @@ class Task(models.Model):
         # Устанавливаем время завершения при переходе в COMPLETED
         if self.status == self.TaskStatus.COMPLETED and not self.completed_at:
             self.completed_at = timezone.now()
-        
+            # Признак просрочки считаем здесь, а не только в действии complete:
+            # иначе завершение через обычное редактирование его не проставляло
+            if self.deadline and self.completed_at > self.deadline:
+                self.completed_with_delay = True
+
+        if 'update_fields' in kwargs and kwargs['update_fields'] is not None:
+            update_fields = set(kwargs['update_fields'])
+            if 'status' in update_fields:
+                update_fields.update({'completed_at', 'completed_with_delay', 'started_at'})
+                kwargs['update_fields'] = update_fields
+
         super().save(*args, **kwargs)
 
 

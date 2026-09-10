@@ -76,11 +76,22 @@ class ProjectImage(models.Model):
 
 class BuildingType(models.Model):
     """ Тип дома (например, Монолитный, Кирпичный) """
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название типа")
+    # Справочник принадлежит компании. Пустое значение — общесистемная запись,
+    # заведённая администратором: видна всем, но редактируется только им.
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='%(app_label)s_%(class)ss',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    name = models.CharField(max_length=100, verbose_name="Название типа")
 
     class Meta:
         verbose_name = "Тип дома"
         verbose_name_plural = "Типы домов"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return self.name
@@ -237,7 +248,9 @@ class Property(models.Model):
     class Meta:
         verbose_name = "Объект недвижимости"
         verbose_name_plural = "Объекты недвижимости"
-        unique_together = ('building', 'unit_number', 'entrance', 'floor')
+        # Номер объекта уникален в пределах дома. Прежняя связка с этажом
+        # и подъездом допускала две квартиры с одним номером в одном доме.
+        unique_together = ('building', 'unit_number')
         ordering = ['-created_at']
 
     def __str__(self):
@@ -252,6 +265,16 @@ class Property(models.Model):
 
 class Discount(models.Model):
     """ Скидка """
+    # Скидка — коммерческое условие конкретной компании, а не общий справочник:
+    # без этой привязки условия одной компании видны и применимы в другой
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.PROTECT,
+        related_name='discounts',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
     name = models.CharField(max_length=150, verbose_name="Название скидки")
     percentage_value = models.DecimalField(
         max_digits=5,

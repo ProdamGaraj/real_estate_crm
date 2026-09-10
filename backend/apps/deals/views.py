@@ -16,8 +16,15 @@ from .filters import DealFilter
 from apps.finances.models import Payment
 import pandas as pd
 from django.http import HttpResponse
+from django.db import transaction
+from django.utils import timezone
+from apps.realty.views import _filter_by_company_scope
 from permissions.permissions import DealPermission, ReportPermission, DiscountPermission
 from permissions.backends import get_filtered_queryset, can_user_perform_action
+
+
+class PropertyUnavailable(Exception):
+    """Объект нельзя взять в новую сделку: бронь отклоняется, транзакция откатывается."""
 
 
 class DealSummaryView(APIView):
@@ -112,37 +119,75 @@ class DealListView(generics.ListCreateAPIView):
         ).select_related('client', 'property', 'created_by').order_by('-is_terminated_with_payments', '-created_at')
         return get_filtered_queryset(self.request.user, queryset, 'DEAL')
 
+    # Статусы сделки, при которых объект уже занят. CLOSED_WON обязателен:
+    # без него проданный объект можно было продать повторно.
+    BLOCKING_DEAL_STATUSES = (
+        Deal.DealStatus.BOOKING,
+        Deal.DealStatus.IN_PROGRESS,
+        Deal.DealStatus.CLOSED_WON,
+    )
+    # Статусы объекта, из которых допустимо начинать новую сделку
+    AVAILABLE_PROPERTY_STATUSES = (
+        Property.PropertyStatus.SELECTION,
+        Property.PropertyStatus.RESERVE,
+    )
+
     def create(self, request, *args, **kwargs):
         serializer = DealCreateSerializer(data=request.data, context=self.get_serializer_context())
         serializer.is_valid(raise_exception=True)
 
-        property_instance = serializer.validated_data['property']
-        active_statuses = [Deal.DealStatus.BOOKING, Deal.DealStatus.IN_PROGRESS]
-        if Deal.objects.filter(property=property_instance, status__in=active_statuses).exists():
-            return Response(
-                {"error": "Этот объект уже находится в другой активной сделке."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        try:
+            with transaction.atomic():
+                # Блокируем объект до конца транзакции: без этого два менеджера
+                # проходят проверку одновременно и создают две брони на одну квартиру
+                property_instance = Property.objects.select_for_update().get(
+                    pk=serializer.validated_data['property'].pk
+                )
 
-        self.perform_create(serializer)
+                if Deal.objects.filter(
+                    property=property_instance,
+                    status__in=self.BLOCKING_DEAL_STATUSES,
+                ).exists():
+                    raise PropertyUnavailable("Этот объект уже находится в другой активной сделке.")
+
+                if property_instance.status not in self.AVAILABLE_PROPERTY_STATUSES:
+                    raise PropertyUnavailable(
+                        f"Объект недоступен для брони: текущий статус — "
+                        f"«{property_instance.get_status_display()}»."
+                    )
+
+                self.perform_create(serializer, property_instance)
+        except PropertyUnavailable as error:
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+
         response_serializer = DealDetailSerializer(serializer.instance)
         headers = self.get_success_headers(response_serializer.data)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer):
-        property_instance = serializer.validated_data['property']
+    def perform_create(self, serializer, property_instance=None):
+        if property_instance is None:
+            property_instance = serializer.validated_data['property']
         # Определяем компанию из профиля пользователя
         company = None
         if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
             company = self.request.user.profile.company
+
+        # У объекта с нулевой площадью цена за м² не считается, а поле обязательное
+        price_per_sqm = property_instance.price_per_sqm
+        if price_per_sqm is None:
+            raise PropertyUnavailable(
+                "У объекта не заполнены площадь или стоимость — "
+                "невозможно зафиксировать цену сделки."
+            )
+
         deal = serializer.save(
             created_by=self.request.user,
             initial_price=property_instance.price,
-            initial_price_per_sqm=property_instance.price_per_sqm,
+            initial_price_per_sqm=price_per_sqm,
             company=company
         )
         property_instance.status = Property.PropertyStatus.BOOKING
-        property_instance.save()
+        property_instance.save(update_fields=['status', 'updated_at'])
         DealLog.objects.create(
             deal=deal,
             user=self.request.user,
@@ -186,43 +231,55 @@ class DealCancelOrTerminateView(APIView):
         is_closed_won = deal.status == Deal.DealStatus.CLOSED_WON
 
         action_log = ""
+        pending_refund = False
 
-        if is_closed_won or has_paid_payments or is_signed:
-            # --- ЛОГИКА РАСТОРЖЕНИЯ ---
-            document = request.data.get('termination_document_scan')
-            date = request.data.get('termination_date')
-            if not document or not date:
-                return Response({"error": "Для расторжения необходимо загрузить документ и указать дату."},
-                                status=status.HTTP_400_BAD_REQUEST)
+        # Вся смена статусов идёт одной транзакцией: иначе сбой на середине
+        # оставляет объект свободным при живой сделке
+        with transaction.atomic():
+            if is_closed_won or has_paid_payments or is_signed:
+                # --- ЛОГИКА РАСТОРЖЕНИЯ ---
+                document = request.data.get('termination_document_scan')
+                date = request.data.get('termination_date')
+                if not document or not date:
+                    return Response({"error": "Для расторжения необходимо загрузить документ и указать дату."},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
-            deal.status = Deal.DealStatus.TERMINATED
-            deal.termination_document_scan = document
-            deal.termination_date = date
-            action_log = f"Сделка расторгнута. Дата: {date}."
+                deal.status = Deal.DealStatus.TERMINATED
+                deal.termination_document_scan = document
+                deal.termination_date = date
+                action_log = f"Сделка расторгнута. Дата: {date}."
 
-            # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-            # Меняем статус оплаченных платежей на "К возврату"
-            deal.payments.filter(status=Payment.PaymentStatus.PAID).update(status=Payment.PaymentStatus.TO_BE_RETURNED)
+                # Меняем статус оплаченных платежей на "К возврату"
+                refunds = deal.payments.filter(status=Payment.PaymentStatus.PAID).update(
+                    status=Payment.PaymentStatus.TO_BE_RETURNED
+                )
+                # Пока деньги клиенту не вернули, объект остаётся занятым:
+                # иначе его перепродают при незакрытых обязательствах
+                pending_refund = refunds > 0
+                if pending_refund:
+                    action_log += f" Платежей к возврату: {refunds}."
+            else:
+                # --- ЛОГИКА ОТМЕНЫ ---
+                reason = request.data.get('cancellation_reason')
+                if not reason:
+                    return Response({"error": "Для отмены необходимо указать причину."},
+                                    status=status.HTTP_400_BAD_REQUEST)
+                deal.status = Deal.DealStatus.CANCELLED
+                deal.cancellation_reason = reason
+                action_log = f"Сделка отменена. Причина: {reason}."
 
+            # Обновляем статус объекта недвижимости
+            if pending_refund:
+                action_log += " Объект освободится после возврата всех платежей."
+            else:
+                property_obj = deal.property
+                property_obj.status = Property.PropertyStatus.SELECTION
+                property_obj.save(update_fields=['status', 'updated_at'])
 
-        else:
-            # --- ЛОГИКА ОТМЕНЫ ---
-            reason = request.data.get('cancellation_reason')
-            if not reason:
-                return Response({"error": "Для отмены необходимо указать причину."}, status=status.HTTP_400_BAD_REQUEST)
-            deal.status = Deal.DealStatus.CANCELLED
-            deal.cancellation_reason = reason
-            action_log = f"Сделка отменена. Причина: {reason}."
+            deal.save()
 
-        # Обновляем статус объекта недвижимости
-        property_obj = deal.property
-        property_obj.status = Property.PropertyStatus.SELECTION
-        property_obj.save()
-
-        deal.save()
-
-        # Логируем действие
-        DealLog.objects.create(deal=deal, user=request.user, action=action_log)
+            # Логируем действие
+            DealLog.objects.create(deal=deal, user=request.user, action=action_log)
 
         return Response(DealDetailSerializer(deal).data, status=status.HTTP_200_OK)
 
@@ -276,15 +333,48 @@ class DealDetailView(generics.RetrieveUpdateAPIView):
             )
 
         if instance.status == Deal.DealStatus.IN_PROGRESS and instance.client_signature_date and instance.company_signature_date:
-            instance.status = Deal.DealStatus.CLOSED_WON
-            instance.property.status = Property.PropertyStatus.SOLD
-            instance.save()
-            instance.property.save()
-            DealLog.objects.create(
-                deal=instance,
-                user=self.request.user,
-                action="Статус сделки изменен на 'Успешно закрыта'."
-            )
+            # Смена статуса сделки и объекта — одной транзакцией
+            with transaction.atomic():
+                instance.status = Deal.DealStatus.CLOSED_WON
+                # Фиксируем момент закрытия: отчёты считают выручку по нему,
+                # а не по времени последнего редактирования записи
+                instance.closed_at = timezone.now()
+                instance.property.status = Property.PropertyStatus.SOLD
+                instance.save(update_fields=['status', 'closed_at', 'updated_at'])
+                instance.property.save(update_fields=['status', 'updated_at'])
+                DealLog.objects.create(
+                    deal=instance,
+                    user=self.request.user,
+                    action="Статус сделки изменен на 'Успешно закрыта'."
+                )
+                self._close_related_application(instance)
+
+    def _close_related_application(self, deal):
+        """
+        Закрывает заявку, из которой выросла сделка.
+
+        Раньше заявку приходилось закрывать руками, и воронка обрывалась:
+        по данным нельзя было понять, чем закончилось обращение.
+        """
+        from apps.crm.models import Application, ApplicationLog
+
+        application = deal.application
+        if application is None:
+            return
+        final_statuses = (
+            Application.ApplicationStatusChoices.CLOSED_WON,
+            Application.ApplicationStatusChoices.CLOSED_LOST,
+        )
+        if application.status in final_statuses:
+            return
+
+        application.status = Application.ApplicationStatusChoices.CLOSED_WON
+        application.save(update_fields=['status', 'updated_at'])
+        ApplicationLog.objects.create(
+            application=application,
+            user=self.request.user,
+            action=f"Заявка закрыта успешно: по ней проведена сделка №{deal.id}."
+        )
 
 
 class AvailableDiscountsView(generics.ListAPIView):
@@ -297,24 +387,34 @@ class AvailableDiscountsView(generics.ListAPIView):
     def get_queryset(self):
         deal_id = self.kwargs['deal_pk']
         try:
-            deal = Deal.objects.select_related('property__building').get(pk=deal_id)
-            # Проверяем что пользователь имеет доступ к этой сделке
-            if not can_user_perform_action(self.request.user, 'VIEW', 'DEAL', obj=deal):
-                return Discount.objects.none()
-            property_obj = deal.property
-            building_obj = property_obj.building
-
-            # --- ИСПРАВЛЕННАЯ ЛОГИКА ФИЛЬТРАЦИИ ---
-            return Discount.objects.filter(
-                # Условие 1: Скидка привязана к конкретному дому ИЛИ
-                Q(buildings=building_obj) |
-                # Условие 2: Скидка привязана к типу недвижимости нашего объекта
-                Q(property_type=property_obj.property_type) |
-                # Условие 3: Скидка общая для всех (не привязана ни к дому, ни к типу)
-                Q(buildings__isnull=True, property_type__isnull=True),
-                is_active=True
-            ).distinct()
-            # -----------------------------------------
-
+            deal = Deal.objects.select_related('property__building__project').get(pk=deal_id)
         except Deal.DoesNotExist:
             return Discount.objects.none()
+
+        # Проверяем что пользователь имеет доступ к этой сделке
+        if not can_user_perform_action(self.request.user, 'VIEW', 'DEAL', obj=deal):
+            return Discount.objects.none()
+
+        property_obj = deal.property
+        building_obj = property_obj.building
+        today = timezone.now().date()
+
+        # Ограничения складываются, а не заменяют друг друга: скидка подходит,
+        # если её ограничение по дому И ограничение по типу недвижимости
+        # выполняются одновременно. При ИЛИ скидка одного дома попадала
+        # в подбор для другого — достаточно было совпадения типа объекта.
+        matches_building = Q(buildings__isnull=True) | Q(buildings=building_obj)
+        matches_type = Q(property_type__isnull=True) | Q(property_type='') | \
+            Q(property_type=property_obj.property_type)
+        # Скидка действует, если период начался и ещё не закончился
+        in_period = Q(start_date__lte=today) & (Q(end_date__isnull=True) | Q(end_date__gte=today))
+
+        queryset = Discount.objects.filter(
+            matches_building,
+            matches_type,
+            in_period,
+            is_active=True,
+        ).distinct()
+
+        # Скидка принадлежит компании — чужие условия к сделке не предлагаем
+        return _filter_by_company_scope(self.request.user, queryset, 'company', 'DISCOUNT').distinct()

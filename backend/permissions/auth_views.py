@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -23,6 +24,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from .models import UserProfile
+from .token_cookies import clear_refresh_cookie, get_refresh_token, set_refresh_cookie
 from .serializers import UserProfileDetailSerializer
 from .throttles import (
     LoginRateThrottle,
@@ -88,31 +90,29 @@ def login_view(request):
             status=status.HTTP_403_FORBIDDEN
         )
     
-    # Проверяем профиль пользователя
-    try:
-        profile = user.profile
-        if not profile.is_active:
-            return Response(
-                {'error': 'Профиль пользователя отключён'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-    except UserProfile.DoesNotExist:
-        return Response(
-            {'error': 'Профиль пользователя не найден'},
-            status=status.HTTP_404_NOT_FOUND
-        )
+    # Проверяем профиль пользователя: и активность, и мягкое удаление
+    from .token_serializers import profile_login_error
+
+    profile_error = profile_login_error(user)
+    if profile_error == 'Профиль пользователя не найден':
+        return Response({'error': profile_error}, status=status.HTTP_404_NOT_FOUND)
+    if profile_error:
+        return Response({'error': profile_error}, status=status.HTTP_403_FORBIDDEN)
+    profile = user.profile
     
     # Успешный логин — сбрасываем счётчик
     reset_failed_logins(username)
     
     # Генерация JWT токенов
     refresh = RefreshToken.for_user(user)
-    
-    return Response({
+
+    # refresh уходит в httpOnly cookie и в теле ответа не возвращается:
+    # из localStorage его мог прочитать любой скрипт на странице
+    response = Response({
         'access': str(refresh.access_token),
-        'refresh': str(refresh),
         'user': UserProfileDetailSerializer(profile).data
     })
+    return set_refresh_cookie(response, refresh)
 
 
 @api_view(['POST'])
@@ -248,6 +248,12 @@ def password_reset_confirm(request):
     # Устанавливаем новый пароль
     user.set_password(new_password)
     user.save()
+
+    # Отзываем ранее выданные токены и снимаем блокировку по неудачным попыткам
+    from .token_serializers import revoke_refresh_tokens
+
+    revoke_refresh_tokens(user)
+    reset_failed_logins(user.username)
     
     return Response({
         'message': 'Пароль успешно изменён. Теперь вы можете войти с новым паролем'
@@ -257,29 +263,22 @@ def password_reset_confirm(request):
 @api_view(['POST'])
 def logout_view(request):
     """
-    Выход пользователя (добавление refresh токена в черный список)
+    Выход пользователя.
+
+    Refresh-токен берётся из httpOnly cookie (или из тела — для совместимости
+    со старыми клиентами), помещается в чёрный список, cookie удаляется.
+
     POST /api/auth/logout/
-    
-    Body: {
-        "refresh": "..."
-    }
-    
-    Response: {
-        "message": "Выход выполнен успешно"
-    }
     """
+    refresh_token = get_refresh_token(request)
+    if not refresh_token:
+        # Сессии и так нет — считаем выход выполненным и чистим cookie
+        return clear_refresh_cookie(Response({'message': 'Выход выполнен успешно'}))
+
     try:
-        refresh_token = request.data.get('refresh')
-        if not refresh_token:
-            return Response(
-                {'error': 'Необходимо указать refresh токен'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        token = RefreshToken(refresh_token)
-        token.blacklist()
-        return Response({'message': 'Выход выполнен успешно'})
-    except Exception:
-        return Response(
-            {'error': 'Неверный токен'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        RefreshToken(refresh_token).blacklist()
+    except TokenError:
+        # Токен уже недействителен: для пользователя это всё равно выход
+        logger.info('Logout with an already invalid refresh token')
+
+    return clear_refresh_cookie(Response({'message': 'Выход выполнен успешно'}))

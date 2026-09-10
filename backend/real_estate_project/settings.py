@@ -154,7 +154,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+# Система работает с узбекским рынком: «сегодня», просрочка платежей и дата
+# оплаты должны считаться по местному времени, а не по UTC (разница 5 часов).
+TIME_ZONE = config('TIME_ZONE', default='Asia/Tashkent')
 
 USE_I18N = True
 
@@ -173,6 +175,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Refresh-токен хранится в httpOnly-cookie (см. permissions/token_cookies.py).
+# secure=True требует HTTPS: если продакшен пока работает по http, cookie
+# без этой настройки просто не установится и вход перестанет работать.
+REFRESH_COOKIE_SECURE = config('REFRESH_COOKIE_SECURE', default=not DEBUG, cast=bool)
+
+# Документы (сканы паспортов, договоры, вложения) отдаются только по ссылке
+# с подписанным токеном — см. real_estate_project/media_access.py.
+# Время жизни такой ссылки в секундах.
+MEDIA_LINK_TTL = config('MEDIA_LINK_TTL', default=3600, cast=int)
+# В продакшене файл отдаёт nginx через internal-локацию, Django лишь проверяет доступ
+MEDIA_USE_ACCEL_REDIRECT = config('MEDIA_USE_ACCEL_REDIRECT', default=not DEBUG, cast=bool)
+MEDIA_ACCEL_LOCATION = '/protected-media/'
 
 # Статические файлы для production (collectstatic)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -242,6 +257,9 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend'
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Пагинация включается запросом (?page=N) — см. real_estate_project/pagination.py
+    'DEFAULT_PAGINATION_CLASS': 'real_estate_project.pagination.OptionalPageNumberPagination',
+    'PAGE_SIZE': 50,
     # Rate limiting для защиты от брутфорса
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
@@ -330,14 +348,20 @@ SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
 
 # Email settings (для восстановления пароля)
 # В продакшене замените на реальные настройки SMTP
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Для разработки - письма в консоль
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Для продакшена
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'your-email@gmail.com'
-# EMAIL_HOST_PASSWORD = 'your-app-password'
-DEFAULT_FROM_EMAIL = 'noreply@crm.local'
+# Отправка почты. Без заданного EMAIL_HOST письма уходят в консоль —
+# это режим разработки; в продакшене восстановление пароля так не работает.
+EMAIL_HOST = config('EMAIL_HOST', default='')
+if EMAIL_HOST:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+    EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@crm.local')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')  # URL фронтенда для ссылок в письмах
 
 # =============================================================================

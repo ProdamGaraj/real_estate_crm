@@ -99,8 +99,14 @@ class PlanFactReportView(APIView):
                 revenue=Sum('revenue_money_plan')
             )
 
-            deals_qs = Deal.objects.filter(contract_date__range=[start_date, end_date],
-                                           status=Deal.DealStatus.CLOSED_WON, property__building__project=project)
+            # Дата договора необязательна, поэтому при её отсутствии берём
+            # дату закрытия сделки: иначе закрытые сделки выпадали из факта
+            deals_qs = Deal.objects.filter(
+                Q(contract_date__range=[start_date, end_date])
+                | Q(contract_date__isnull=True, closed_at__date__range=[start_date, end_date]),
+                status=Deal.DealStatus.CLOSED_WON,
+                property__building__project=project,
+            )
             # Фильтруем сделки по разрешениям
             deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL', max_scope=report_scope)
             payments_qs = Payment.objects.filter(payment_date__range=[start_date, end_date],

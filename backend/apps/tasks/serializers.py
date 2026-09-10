@@ -36,6 +36,14 @@ class TaskCommentSerializer(serializers.ModelSerializer):
         validated_data['user'] = self.context['request'].user
         return super().create(validated_data)
 
+    def to_representation(self, instance):
+        from real_estate_project.media_access import build_media_url
+
+        representation = super().to_representation(instance)
+        if instance.attachment:
+            representation['attachment'] = build_media_url(instance.attachment)
+        return representation
+
 
 class TaskLogSerializer(serializers.ModelSerializer):
     """Сериализатор для логов задачи"""
@@ -102,8 +110,17 @@ class TaskSerializer(serializers.ModelSerializer):
         return obj.subtasks.count()
     
     def validate_deadline(self, value):
-        """Проверка дедлайна"""
+        """
+        Проверка дедлайна.
+
+        У существующей задачи прежний срок можно оставить как есть: раньше
+        просроченную задачу нельзя было отредактировать вовсе, потому что
+        форма всегда присылала дедлайн вместе с остальными полями.
+        """
         from datetime import datetime, date
+
+        if self.instance and value == self.instance.deadline:
+            return value
         # Если value это date, сравниваем с сегодняшней датой
         if isinstance(value, date) and not isinstance(value, datetime):
             if value < timezone.now().date():
@@ -116,17 +133,24 @@ class TaskSerializer(serializers.ModelSerializer):
     
     def validate_assignee_id(self, value):
         """Проверка существования исполнителя и scope-check компании"""
-        if not User.objects.filter(id=value).exists():
+        assignee = User.objects.filter(id=value).select_related('profile').first()
+        if assignee is None:
             raise serializers.ValidationError("Пользователь не найден")
-        # Проверяем что исполнитель из той же компании
+
+        # Проверяем что исполнитель из той же компании.
+        # Раньше исключение валидации перехватывалось общим except и проверка
+        # не срабатывала никогда — задачи уходили в чужие компании.
         request_user = self.context['request'].user
-        if not request_user.is_superuser and hasattr(request_user, 'profile') and not request_user.profile.is_system_admin:
-            try:
-                assignee_profile = User.objects.get(id=value).profile
-                if request_user.profile.company and assignee_profile.company != request_user.profile.company:
-                    raise serializers.ValidationError("Исполнитель не принадлежит вашей компании.")
-            except Exception:
-                pass
+        if request_user.is_superuser:
+            return value
+        request_profile = getattr(request_user, 'profile', None)
+        if request_profile is None or request_profile.is_system_admin:
+            return value
+
+        assignee_profile = getattr(assignee, 'profile', None)
+        if request_profile.company:
+            if assignee_profile is None or assignee_profile.company_id != request_profile.company_id:
+                raise serializers.ValidationError("Исполнитель не принадлежит вашей компании.")
         return value
     
     def validate(self, data):

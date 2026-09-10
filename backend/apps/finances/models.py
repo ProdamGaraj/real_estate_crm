@@ -5,11 +5,22 @@ from django.utils import timezone
 
 class PaymentType(models.Model):
     """ Справочник: Тип платежа (например, Первоначальный взнос, Ежемесячный платеж) """
-    name = models.CharField(max_length=200, unique=True, verbose_name="Название типа платежа")
+    # Справочник принадлежит компании. Пустое значение — общесистемная запись,
+    # заведённая администратором: видна всем, но редактируется только им.
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='%(app_label)s_%(class)ss',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    name = models.CharField(max_length=200, verbose_name="Название типа платежа")
 
     class Meta:
         verbose_name = "Тип платежа"
         verbose_name_plural = "Типы платежей"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return self.name

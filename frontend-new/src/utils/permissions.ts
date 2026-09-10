@@ -74,6 +74,9 @@ export interface Role {
   permissions: Permission[];
   scope?: ScopeType;
   category?: string;
+  is_active?: boolean;
+  /** Компании, в которых действует роль. Пусто — роль общесистемная. */
+  company_ids?: number[];
 }
 
 /**
@@ -106,6 +109,28 @@ const SCOPE_HIERARCHY: ScopeType[] = ['SYSTEM', 'COMPANY', 'DEPARTMENT', 'OWN'];
  *   COMPANY-разрешение покрывает DEPARTMENT, OWN
  *   и т.д.
  */
+/**
+ * Разрешения пользователя — ровно те, что учитывает сервер.
+ *
+ * Раньше клиент складывал разрешения всех ролей подряд. Сервер же отбрасывает
+ * неактивные роли и разрешения, а также роли, не применимые к компании
+ * пользователя. Из-за расхождения интерфейс показывал разделы и кнопки,
+ * на которые сервер отвечал 403, а отключение роли на экране не отражалось.
+ */
+function collectPermissions(user: UserWithRoles): Permission[] {
+  return user.roles
+    .filter(role => role.is_active !== false)
+    .filter(role => {
+      const companies = role.company_ids;
+      // Роль без списка компаний действует во всей системе
+      if (!companies || companies.length === 0) return true;
+      if (user.company == null) return false;
+      return companies.includes(user.company);
+    })
+    .flatMap(role => role.permissions || [])
+    .filter(permission => (permission as Permission & { is_active?: boolean }).is_active !== false);
+}
+
 export function hasPermission(
   user: UserWithRoles | null,
   action: ActionType,
@@ -120,7 +145,7 @@ export function hasPermission(
     return false;
   }
 
-  const allPermissions = user.roles.flatMap(role => role.permissions || []);
+  const allPermissions = collectPermissions(user);
 
   if (!scope) {
     return allPermissions.some(
@@ -181,7 +206,7 @@ export function getMaxScope(
     return null;
   }
 
-  const allPermissions = user.roles.flatMap(role => role.permissions || []);
+  const allPermissions = collectPermissions(user);
   const relevantPermissions = allPermissions.filter(
     perm => perm.action === action && perm.resource === resource
   );

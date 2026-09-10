@@ -1,4 +1,4 @@
-from datetime import timezone
+from django.utils import timezone
 
 from django.db import models
 from django.conf import settings  # Используем для ссылки на модель User
@@ -7,7 +7,17 @@ from apps.realty.models import Property, Building
 
 class PreciseSource(models.Model):
     """ Точный источник (например, рекламная кампания) """
-    name = models.CharField(max_length=200, unique=True, verbose_name="Название точного источника")
+    # Справочник принадлежит компании. Пустое значение — общесистемная запись,
+    # заведённая администратором: видна всем, но редактируется только им.
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='%(app_label)s_%(class)ss',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    name = models.CharField(max_length=200, verbose_name="Название точного источника")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -19,6 +29,7 @@ class PreciseSource(models.Model):
     class Meta:
         verbose_name = "Точный источник"
         verbose_name_plural = "Точные источники"
+        unique_together = ('company', 'name')
 
     def __str__(self):
         return self.name
@@ -41,14 +52,39 @@ class RejectionReason(models.Model):
         JUNK = 'JUNK', 'Нецелевая'
         REJECTED = 'REJECTED', 'Отказ'
 
+    # Справочник принадлежит компании. Пустое значение — общесистемная запись,
+    # заведённая администратором: видна всем, но редактируется только им.
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='%(app_label)s_%(class)ss',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
     name = models.CharField(max_length=255, verbose_name="Причина")
     reason_type = models.CharField(max_length=10, choices=ReasonType.choices, verbose_name="Тип причины")
     is_active = models.BooleanField(default=True, verbose_name="Активна")
 
+    class Meta:
+        verbose_name = "Причина отказа"
+        verbose_name_plural = "Причины отказа"
+        unique_together = ('company', 'name', 'reason_type')
+
 
 class ApplicationStatus(models.Model):
     """ Статус заявки (настраиваемый справочник) """
-    code = models.CharField(max_length=50, unique=True, verbose_name="Код статуса")
+    # Справочник принадлежит компании. Пустое значение — общесистемная запись,
+    # заведённая администратором: видна всем, но редактируется только им.
+    company = models.ForeignKey(
+        'permissions.Company',
+        on_delete=models.CASCADE,
+        related_name='%(app_label)s_%(class)ss',
+        verbose_name="Компания",
+        null=True,
+        blank=True
+    )
+    code = models.CharField(max_length=50, verbose_name="Код статуса")
     name = models.CharField(max_length=100, verbose_name="Название статуса")
     color = models.CharField(max_length=7, default='#9e9e9e', verbose_name="Цвет (HEX)")
     order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортировки")
@@ -59,6 +95,7 @@ class ApplicationStatus(models.Model):
     class Meta:
         verbose_name = "Статус заявки"
         verbose_name_plural = "Статусы заявок"
+        unique_together = ('company', 'code')
         ordering = ['order', 'name']
 
     def __str__(self):
@@ -139,10 +176,41 @@ class Application(models.Model):
         verbose_name="Кем создана (менеджер)"
     )
 
+
+    # --- Мягкое удаление ---
+    # Физическое удаление уносило вместе с записью весь её журнал (CASCADE),
+    # поэтому запись помечается удалённой и пропадает из выдачи, но остаётся
+    # в базе вместе с историей.
+    is_deleted = models.BooleanField(default=False, verbose_name="Удалена")
+    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="Когда удалена")
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='deleted_%(class)ss',
+        verbose_name="Кем удалена"
+    )
+
     class Meta:
         verbose_name = "Заявка"
         verbose_name_plural = "Заявки"
         ordering = ['-created_at']
+
+    def soft_delete(self, user=None):
+        """Помечает запись удалённой, сохраняя её историю."""
+        from django.utils import timezone as dj_timezone
+
+        self.is_deleted = True
+        self.deleted_at = dj_timezone.now()
+        self.deleted_by = user
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
+
+    def restore(self):
+        """Возвращает запись в работу."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.deleted_by = None
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
 
     def __str__(self):
         return f"Заявка №{self.id} от {self.client.full_name}"
@@ -200,7 +268,10 @@ class Client(models.Model):
     # --- Основная информация ---
     full_name = models.CharField(max_length=255, verbose_name="Полное имя")
     # УДАЛЕНО: phone_number = models.CharField(max_length=20, unique=True, verbose_name="Номер телефона")
-    email = models.EmailField(unique=True, blank=True, null=True, verbose_name="Email")
+    # Один и тот же человек может быть клиентом нескольких компаний: это
+    # разные, никак не связанные карточки. Поэтому email уникален в пределах
+    # компании, а не во всей системе.
+    email = models.EmailField(blank=True, null=True, verbose_name="Email")
     date_of_birth = models.DateField(blank=True, null=True, verbose_name="Дата рождения")
     gender = models.CharField(max_length=10, choices=Gender.choices, blank=True, verbose_name="Пол")
     marital_status = models.CharField(max_length=10, choices=MaritalStatus.choices, blank=True,
@@ -240,6 +311,7 @@ class Client(models.Model):
     class Meta:
         verbose_name = "Клиент"
         verbose_name_plural = "Клиенты"
+        unique_together = ('company', 'email')
         ordering = ['-created_at']
 
     def __str__(self):
@@ -331,10 +403,42 @@ class Meeting(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
 
+
+    # --- Мягкое удаление ---
+    # Физическое удаление уносило вместе с записью весь её журнал (CASCADE),
+    # поэтому запись помечается удалённой и пропадает из выдачи, но остаётся
+    # в базе вместе с историей.
+    is_deleted = models.BooleanField(default=False, verbose_name="Удалена")
+    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="Когда удалена")
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='deleted_%(class)ss',
+        verbose_name="Кем удалена"
+    )
+
     class Meta:
         verbose_name = "Встреча"
         verbose_name_plural = "Встречи"
         ordering = ['-planned_date']
+
+    def soft_delete(self, user=None):
+        """Помечает запись удалённой, сохраняя её историю."""
+        from django.utils import timezone as dj_timezone
+
+        self.is_deleted = True
+        self.deleted_at = dj_timezone.now()
+        self.deleted_by = user
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
+
+    def restore(self):
+        """Возвращает запись в работу."""
+        self.is_deleted = False
+        self.deleted_at = None
+        self.deleted_by = None
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
+
 
     @property
     def is_overdue(self):

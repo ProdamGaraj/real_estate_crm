@@ -71,6 +71,7 @@ export default function FinanceSummary() {
 
     const columns: GridColDef[] = [
         { field: Object.keys(data?.summary[0] || {})[0], headerName: t('pages.finances.summary_group'), flex: 1 },
+        { field: 'Currency', headerName: t('pages.finances.currency'), width: 110 },
         { field: 'Total Amount', headerName: t('pages.finances.total_amount'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '0' },
     ];
 
@@ -83,24 +84,27 @@ export default function FinanceSummary() {
 
     return (
         <Stack spacing={2}>
-            <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                    <KpiCard
-                        title={t('pages.finances.overdue_payments')}
-                        value={data?.widgets.overdue_sum || 0}
-                        color="error.main"
-                        linkTo={{ tab: 0, filters: { status: 'OVERDUE' } }}
-                    />
+            {/* По карточке на валюту: суммы в разных валютах не складываются */}
+            {(data?.widgets.by_currency ?? []).map((totals) => (
+                <Grid container spacing={2} key={totals.currency}>
+                    <Grid item xs={12} md={6}>
+                        <KpiCard
+                            title={`${t('pages.finances.overdue_payments')}, ${totals.currency}`}
+                            value={totals.overdue_sum || 0}
+                            color="error.main"
+                            linkTo={{ tab: 0, filters: { status: 'OVERDUE' } }}
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <KpiCard
+                            title={`${t('pages.finances.paid_payments')}, ${totals.currency}`}
+                            value={totals.paid_sum || 0}
+                            color="success.main"
+                            linkTo={{ tab: 0, filters: { status: 'PAID' } }}
+                        />
+                    </Grid>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                    <KpiCard
-                        title={t('pages.finances.paid_payments')}
-                        value={data?.widgets.paid_sum || 0}
-                        color="success.main"
-                        linkTo={{ tab: 0, filters: { status: 'PAID' } }}
-                    />
-                </Grid>
-            </Grid>
+            ))}
 
             <Paper sx={{ p: 2 }}>
                 <Typography variant="h6" sx={{ mb: 2 }}>{t('common.filters')}</Typography>

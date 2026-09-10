@@ -30,6 +30,7 @@ import RoleDetailPage from './pages/permissions/RoleDetailPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PermissionRoute from './components/PermissionRoute';
 import SmartRedirect from './components/SmartRedirect';
+import { SETTINGS_RESOURCES } from './utils/settingsTabs';
 
 // Компонент-обертка для защиты маршрутов (используя новую систему авторизации)
 const ProtectedRouteWrapper = () => {
@@ -193,7 +194,8 @@ const router = createBrowserRouter([
           {
             path: 'settings',
             element: (
-              <PermissionRoute requireAdmin>
+              // Не только системный админ: доступ открывает право на любую из вкладок
+              <PermissionRoute anyResource={SETTINGS_RESOURCES}>
                 <SettingsPage />
               </PermissionRoute>
             )
