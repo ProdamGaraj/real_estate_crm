@@ -40,7 +40,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { useAuthStore } from '../store/authStore';
 import { hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
-import { SETTINGS_RESOURCES } from '../utils/settingsTabs';
+import { canAccessSettings } from '../utils/settingsTabs';
 import type { ResourceType } from '../utils/permissions';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -54,7 +54,11 @@ interface NavItem {
   path: string;
   resource?: ResourceType; // Ресурс для проверки прав
   requireAdmin?: boolean; // Требуется ли админ
-  anyResource?: ResourceType[]; // Достаточно права VIEW на любой из ресурсов
+  /**
+   * Собственная проверка доступа — для разделов, где одного права VIEW
+   * на ресурс недостаточно (см. «Настройки» в utils/settingsTabs.ts)
+   */
+  canAccess?: (user: Parameters<typeof canAccessSettings>[0]) => boolean;
 }
 
 const navItems: NavItem[] = [
@@ -68,7 +72,7 @@ const navItems: NavItem[] = [
   { textKey: 'nav.finances', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },
   { textKey: 'nav.reports', icon: <AssessmentIcon />, path: '/reports', resource: 'REPORT' },
   { textKey: 'nav.discounts', icon: <LocalOfferIcon />, path: '/discounts', resource: 'DISCOUNT' },
-  { textKey: 'nav.settings', icon: <SettingsIcon />, path: '/settings', anyResource: SETTINGS_RESOURCES },
+  { textKey: 'nav.settings', icon: <SettingsIcon />, path: '/settings', canAccess: canAccessSettings },
 ];
 
 export default function RootLayout() {
@@ -84,13 +88,14 @@ export default function RootLayout() {
   const visibleNavItems = useMemo(() => {
     return navItems.filter(item => {
       // Пункты без проверки доступа НЕ отображаются
-      if (!item.resource && !item.requireAdmin && !item.anyResource) {
+      if (!item.resource && !item.requireAdmin && !item.canAccess) {
         return false;
       }
 
-      // Достаточно права на любой из ресурсов (раздел-агрегатор вроде «Настроек»)
-      if (item.anyResource) {
-        return isSystemAdmin(user) || item.anyResource.some(r => hasAnyViewPermission(user, r));
+      // Раздел со своей логикой доступа («Настройки»): пункт меню
+      // появляется ровно тогда, когда внутри есть хотя бы одна вкладка
+      if (item.canAccess) {
+        return isSystemAdmin(user) || item.canAccess(user);
       }
 
       // Проверяем требование администратора

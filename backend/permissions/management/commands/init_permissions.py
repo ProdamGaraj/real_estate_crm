@@ -9,7 +9,20 @@ from permissions.models import Permission, Role
 class Command(BaseCommand):
     help = 'Инициализирует базовые разрешения и роли в системе'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--sync-roles',
+            action='store_true',
+            help=(
+                'Пересобрать наборы разрешений у существующих системных ролей. '
+                'Нужно после появления новых ресурсов: без этого права на них '
+                'не попадут в уже созданные роли. Ручные правки состава '
+                'системных ролей при этом теряются.'
+            ),
+        )
+
     def handle(self, *args, **options):
+        self.sync_roles = options.get('sync_roles', False)
         self.stdout.write(self.style.SUCCESS('Начинаем инициализацию разрешений и ролей...'))
         
         # Создаем все возможные разрешения
@@ -26,19 +39,15 @@ class Command(BaseCommand):
         """
         self.stdout.write('Создание разрешений...')
         
+        # Базовые действия для каждого ресурса. Расширенные (возврат задачи,
+        # принудительное редактирование и прочие) заводятся отдельно для задач.
         actions = ['VIEW', 'ADD', 'EDIT', 'DELETE']
         scopes = ['OWN', 'DEPARTMENT', 'COMPANY', 'SYSTEM']
-        resources = [
-            'CLIENT', 'APPLICATION', 'MEETING',
-            'PROJECT', 'BUILDING', 'PROPERTY', 'LAYOUT', 'DISCOUNT',
-            'DEAL',
-            'PAYMENT', 'PAYMENT_TYPE', 'BENEFICIARY_ACCOUNT',
-            'TEMPLATE',
-            'REPORT', 'PLAN',
-            'TASK',  # Задачи
-            'USER', 'ROLE', 'PERMISSION', 'COMPANY', 'DEPARTMENT',
-            'DASHBOARD', 'SETTINGS'
-        ]
+        # Список берём из модели: раньше он дублировался здесь вручную и отстал —
+        # для APPLICATION_STATUS, BUILDING_TYPE, PARTNER_API_KEY и TASK_LOG
+        # разрешения не создавались вовсе, поэтому выдать их роли было нельзя,
+        # а соответствующие вкладки настроек видел только системный администратор.
+        resources = list(Permission.Resource.values)
         
         created_count = 0
         
@@ -97,7 +106,8 @@ class Command(BaseCommand):
             }
         )
         
-        if created:
+        # При --sync-roles состав прав обновляется и у существующей роли
+        if created or self.sync_roles:
             # Все разрешения уровня SYSTEM
             permissions = Permission.objects.filter(scope='SYSTEM')
             role.permissions.set(permissions)
@@ -118,7 +128,8 @@ class Command(BaseCommand):
             }
         )
         
-        if created:
+        # При --sync-roles состав прав обновляется и у существующей роли
+        if created or self.sync_roles:
             # Все разрешения уровня COMPANY + VIEW SYSTEM для некоторых справочников
             permissions = Permission.objects.filter(
                 scope__in=['COMPANY', 'DEPARTMENT', 'OWN']
@@ -150,7 +161,8 @@ class Command(BaseCommand):
             }
         )
         
-        if created:
+        # При --sync-roles состав прав обновляется и у существующей роли
+        if created or self.sync_roles:
             # Все разрешения уровня DEPARTMENT и OWN для основных ресурсов
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',
@@ -196,7 +208,8 @@ class Command(BaseCommand):
             }
         )
         
-        if created:
+        # При --sync-roles состав прав обновляется и у существующей роли
+        if created or self.sync_roles:
             # Полный доступ к своим клиентам, заявкам, встречам, сделкам, задачам
             own_resources = ['CLIENT', 'APPLICATION', 'MEETING', 'DEAL', 'PAYMENT', 'TASK']
             own_permissions = Permission.objects.filter(
@@ -248,7 +261,8 @@ class Command(BaseCommand):
             }
         )
         
-        if created:
+        # При --sync-roles состав прав обновляется и у существующей роли
+        if created or self.sync_roles:
             # Только VIEW разрешения уровня COMPANY для основных ресурсов
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',

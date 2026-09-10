@@ -1,7 +1,7 @@
 // real_estate_crm/frontend-new/src/components/PermissionRoute.tsx
 import { useAuthStore } from '../store/authStore';
-import { hasPermission, hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
-import type { ActionType, ResourceType, ScopeType } from '../utils/permissions';
+import { hasPermission, isSystemAdmin } from '../utils/permissions';
+import type { ActionType, ResourceType, ScopeType, UserWithRoles } from '../utils/permissions';
 import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
@@ -12,11 +12,11 @@ interface PermissionRouteProps {
   scope?: ScopeType;
   requireAdmin?: boolean;
   /**
-   * Доступ, если есть право VIEW хотя бы на один из ресурсов.
-   * Нужен для страниц-агрегаторов вроде «Настроек», где каждая вкладка
-   * управляет своим ресурсом.
+   * Собственная проверка доступа — для страниц-агрегаторов вроде
+   * «Настроек», где право VIEW на ресурс выдаётся и ради форм,
+   * а раздел должен открываться только тем, кто им распоряжается.
    */
-  anyResource?: ResourceType[];
+  canAccess?: (user: UserWithRoles | null) => boolean;
 }
 
 /**
@@ -40,14 +40,14 @@ export default function PermissionRoute({
   resource,
   scope,
   requireAdmin = false,
-  anyResource,
+  canAccess,
 }: PermissionRouteProps) {
   const { user } = useAuthStore();
   const { t } = useTranslation();
 
-  // Доступ по любому из перечисленных ресурсов
-  if (anyResource && anyResource.length > 0) {
-    const allowed = isSystemAdmin(user) || anyResource.some(r => hasAnyViewPermission(user, r));
+  // Раздел со своей логикой доступа
+  if (canAccess) {
+    const allowed = isSystemAdmin(user) || canAccess(user);
     if (!allowed) {
       return (
         <Box sx={{ p: 3, textAlign: 'center' }}>
