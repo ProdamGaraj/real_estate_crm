@@ -19,6 +19,8 @@ export interface Deal {
   initial_price: string;
   initial_price_per_sqm: string;
   contract_price: string | null;
+  /** Валюта договора. Весь график платежей ведётся в ней же */
+  currency: 'UZS' | 'USD' | 'EUR';
   notes: string;
   applied_discounts: Discount[];
   payments: Payment[];
@@ -94,6 +96,7 @@ export interface DealPayload {
  * Тип для данных при обновлении сделки.
  */
 export interface DealUpdatePayload {
+    currency?: 'UZS' | 'USD' | 'EUR';
     notes?: string;
     contract_price?: number;
     applied_discounts_ids?: number[];

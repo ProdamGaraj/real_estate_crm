@@ -1304,7 +1304,8 @@
     "save_schedule": "Save Schedule",
     "contract_amount": "Contract Amount",
     "distributed": "Distributed",
-    "remaining": "Remaining"
+    "remaining": "Remaining",
+    "currency_label": "Currency"
   },
   "buildings": {
     "chessboard": {

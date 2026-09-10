@@ -1,5 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 
+from apps.finances.models import Payment
+
 from rest_framework import serializers
 from .models import Deal, DealLog
 from apps.crm.serializers import ClientListSerializer
@@ -133,18 +135,34 @@ class DealDetailSerializer(serializers.ModelSerializer):
                     )
                 })
 
-        # Цену договора можно было менять уже после сборки графика — суммы
-        # молча расходились до следующей правки графика
+        # Валюта задаётся до сборки графика: платежи уже созданы в ней,
+        # и молчаливая смена валюты превратила бы суммы в бессмыслицу
+        if 'currency' in data and instance.pk:
+            if data['currency'] != instance.currency and instance.payments.exists():
+                raise serializers.ValidationError({
+                    'currency': (
+                        'По сделке уже есть график платежей — валюту сменить нельзя. '
+                        'Удалите платежи и соберите график заново.'
+                    )
+                })
+
+        # Стоимость договора и график должны сойтись, но требовать этого
+        # в момент смены цены нельзя: график пересобирается только под уже
+        # сохранённую стоимость, и взаимная проверка запирала бы сделку —
+        # ни цену поменять, ни график переделать. Поэтому здесь запрещаем
+        # менять цену лишь тогда, когда по сделке реально прошли деньги.
         if 'contract_price' in data and instance.pk:
-            paid_total = sum(
-                (p.amount for p in instance.payments.all()), Decimal(0)
-            )
-            if instance.payments.exists() and contract_price is not None:
-                if Decimal(contract_price) != paid_total:
+            settled = instance.payments.filter(status__in=(
+                Payment.PaymentStatus.PAID,
+                Payment.PaymentStatus.TO_BE_RETURNED,
+                Payment.PaymentStatus.RETURNED,
+            ))
+            if settled.exists() and contract_price is not None:
+                if Decimal(contract_price) != Decimal(instance.contract_price or 0):
                     raise serializers.ValidationError({
                         'contract_price': (
-                            f'По сделке уже собран график на {paid_total}. '
-                            f'Сначала пересоберите график под новую стоимость.'
+                            'По сделке уже прошли платежи, поэтому стоимость по договору '
+                            'менять нельзя. Отмените оплату или расторгните сделку.'
                         )
                     })
 
@@ -169,7 +187,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
         model = Deal
         fields = [
             'id', 'status', 'booking_start_date', 'booking_end_date', 'client', 'property',
-            'initial_price', 'initial_price_per_sqm', 'contract_price', 'notes',
+            'initial_price', 'initial_price_per_sqm', 'contract_price', 'currency', 'notes',
             'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
             'payments', 'contract_number', 'contract_date', 'application',
             'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date'

@@ -21,6 +21,22 @@ from permissions.permissions import ReportPermission, PlanPermission
 from permissions.backends import get_filtered_queryset, get_user_max_scope, can_user_perform_action
 
 
+def active_crm_employees():
+    """
+    Сотрудники CRM для планов и отчётов по сотрудникам.
+
+    Раньше здесь стоял фильтр по `is_staff` — это флаг доступа в админку
+    Django, который учётным записям CRM не выставляется. Из-за этого отчёт
+    план-факт по сотрудникам, шаблон плана и его загрузка оставались пустыми.
+    Сотрудник — тот, у кого есть действующий профиль.
+    """
+    return User.objects.filter(
+        is_active=True,
+        profile__is_active=True,
+        profile__is_deleted=False,
+    )
+
+
 # --- Helper Function ---
 def calculate_metrics(plan, fact, start_date, end_date):
     plan = plan or Decimal(0)
@@ -245,7 +261,7 @@ class EmployeePlanFactReportView(APIView):
         else:
             return Response({"error": "Invalid period type"}, status=status.HTTP_400_BAD_REQUEST)
 
-        employees = User.objects.filter(is_staff=True, is_active=True)
+        employees = active_crm_employees()
         # Фильтруем сотрудников по scope пользователя
         from permissions.models import UserProfile
         if not (request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.is_system_admin)):
@@ -273,8 +289,13 @@ class EmployeePlanFactReportView(APIView):
                 revenue=Sum('revenue_money_plan')
             )
 
-            deals_qs = Deal.objects.filter(contract_date__range=[start_date, end_date],
-                                           status=Deal.DealStatus.CLOSED_WON, created_by=emp)
+            # Дата договора необязательна — при её отсутствии берём дату закрытия
+            deals_qs = Deal.objects.filter(
+                Q(contract_date__range=[start_date, end_date])
+                | Q(contract_date__isnull=True, closed_at__date__range=[start_date, end_date]),
+                status=Deal.DealStatus.CLOSED_WON,
+                created_by=emp,
+            )
             # Фильтруем сделки по разрешениям
             deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL', max_scope=report_scope)
             payments_qs = Payment.objects.filter(payment_date__range=[start_date, end_date],
@@ -323,7 +344,7 @@ class EmployeePlanFactReportView(APIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, PlanPermission])
 def employee_plan_template_download(request):
-    employees = User.objects.filter(is_staff=True, is_active=True)
+    employees = active_crm_employees()
     # Фильтруем сотрудников по scope пользователя
     if not (request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.is_system_admin)):
         profile = getattr(request.user, 'profile', None)
@@ -370,7 +391,7 @@ class EmployeePlanUploadView(APIView):
             }, inplace=True)
 
             # Получаем доступных сотрудников для scope-фильтрации
-            accessible_employees = User.objects.filter(is_staff=True, is_active=True)
+            accessible_employees = active_crm_employees()
             if not (request.user.is_superuser or (hasattr(request.user, 'profile') and request.user.profile.is_system_admin)):
                 emp_profile = getattr(request.user, 'profile', None)
                 if emp_profile and emp_profile.company:

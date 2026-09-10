@@ -1242,7 +1242,8 @@
     "save_schedule": "Jadvalni saqlash",
     "contract_amount": "Shartnoma summasi",
     "distributed": "Taqsimlangan",
-    "remaining": "Qoldiq"
+    "remaining": "Qoldiq",
+    "currency_label": "Valyuta"
   },
   "buildings": {
     "chessboard": {

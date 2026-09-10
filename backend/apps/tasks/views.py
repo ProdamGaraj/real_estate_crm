@@ -201,6 +201,17 @@ class TaskViewSet(viewsets.ModelViewSet):
                 {'error': 'Отменённую задачу нельзя завершить. Сначала верните её в работу.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Родительская задача не может быть выполнена раньше своих частей
+        open_subtasks = task.subtasks.exclude(
+            status__in=[Task.TaskStatus.COMPLETED, Task.TaskStatus.CANCELLED]
+        )
+        if open_subtasks.exists():
+            titles = ", ".join(f'#{sub.id} {sub.title}' for sub in open_subtasks[:5])
+            return Response(
+                {'error': f'Сначала закройте подзадачи: {titles}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         task.status = Task.TaskStatus.COMPLETED
         task.completed_at = timezone.now()

@@ -132,9 +132,11 @@ class Task(models.Model):
     )
     
     # Родительская задача (для подзадач)
+    # SET_NULL, а не CASCADE: удаление родителя не должно уносить подзадачи
+    # вместе с их перепиской и историей — они просто становятся отдельными
     parent_task = models.ForeignKey(
         'self',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='subtasks',

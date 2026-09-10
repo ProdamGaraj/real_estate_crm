@@ -1317,7 +1317,8 @@
     "save_schedule": "Сохранить график",
     "contract_amount": "Сумма по договору",
     "distributed": "Распределено",
-    "remaining": "Остаток"
+    "remaining": "Остаток",
+    "currency_label": "Валюта"
   },
   "applications": {
     "client": "Клиент",

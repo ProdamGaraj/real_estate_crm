@@ -20,7 +20,7 @@ import {
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
-type DealFormInputs = Pick<DealUpdatePayload, 'contract_price' | 'notes' | 'contract_number' | 'contract_date' | 'client_signature_date' | 'company_signature_date'> & {
+type DealFormInputs = Pick<DealUpdatePayload, 'contract_price' | 'currency' | 'notes' | 'contract_number' | 'contract_date' | 'client_signature_date' | 'company_signature_date'> & {
   signed_document_scan?: FileList;
 };
 
@@ -80,6 +80,7 @@ export default function DealDetailPage() {
     if (deal) {
       reset({
         contract_price: Number(deal.contract_price || deal.initial_price),
+        currency: deal.currency,
         notes: deal.notes || '',
         contract_number: deal.contract_number || '',
         contract_date: deal.contract_date || '',
@@ -109,6 +110,7 @@ export default function DealDetailPage() {
     const payload: DealUpdatePayload = {
       notes: data.notes,
       contract_price: Number(data.contract_price),
+      currency: data.currency,
       contract_number: data.contract_number,
       contract_date: data.contract_date,
       client_signature_date: data.client_signature_date,
@@ -223,6 +225,22 @@ export default function DealDetailPage() {
                           <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.deals.initial_price')} value={Number(deal.initial_price).toLocaleString(getDateLocale())} fullWidth InputProps={{ readOnly: true }}/></Grid>
                           <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.deals.initial_price_per_sqm')} value={Number(deal.initial_price_per_sqm).toLocaleString(getDateLocale())} fullWidth InputProps={{ readOnly: true }}/></Grid>
                           <Grid size={{ xs: 12, sm: 6, md: 3 }}><TextField label={t('pages.deals.contract_price')} type="number" fullWidth {...register('contract_price')} disabled={isDealReadOnly} /></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+                            {/* Валюта задаётся до сборки графика: платежи создаются в ней же */}
+                            <TextField
+                              select
+                              label={t('finances.currency_label')}
+                              fullWidth
+                              {...register('currency')}
+                              defaultValue={deal.currency}
+                              disabled={isDealReadOnly || deal.payments.length > 0}
+                              SelectProps={{ native: true }}
+                            >
+                              <option value="UZS">UZS</option>
+                              <option value="USD">USD</option>
+                              <option value="EUR">EUR</option>
+                            </TextField>
+                          </Grid>
                           <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>{t('pages.deals.apply_discounts')}</Button> <Typography component="span">{t('pages.deals.applied')}: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || t('common.none')}</Typography></Grid>
                           <Grid size={{ xs: 12 }}><TextField label={t('pages.deals.deal_notes')} multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
                         </Grid>

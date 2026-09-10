@@ -1,6 +1,7 @@
 # real_estate_crm/backend/apps/finances/serializers.py
 
 from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework import serializers
 from .models import Payment, PaymentType, BeneficiaryAccount
 from apps.crm.serializers import ClientListSerializer
@@ -103,6 +104,25 @@ class PaymentSerializer(serializers.ModelSerializer):
             Payment.PaymentStatus.TO_BE_RETURNED,
             Payment.PaymentStatus.RETURNED,
         )
+        # Отметить оплату по недействующей сделке нельзя: деньги по такой
+        # сделке уже не принимаются, остаётся только возврат
+        payment_date = data.get('payment_date', ...)
+        if payment_date is not ... and payment_date and not instance.payment_date:
+            from apps.deals.models import Deal
+
+            deal = instance.deal
+            if deal and deal.status in (Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED):
+                raise serializers.ValidationError({
+                    'payment_date': (
+                        f'Сделка {deal.get_status_display().lower()} — '
+                        f'отметить оплату по ней нельзя.'
+                    )
+                })
+            if payment_date > timezone.localdate():
+                raise serializers.ValidationError({
+                    'payment_date': 'Дата оплаты не может быть в будущем.'
+                })
+
         if instance.status in locked_statuses:
             protected = {'amount': 'сумму', 'due_date': 'срок оплаты', 'currency': 'валюту'}
             changed = [

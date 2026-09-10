@@ -106,6 +106,15 @@ class GenerateDocumentView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+        # По отменённой или расторгнутой сделке договор печатать нельзя:
+        # документ выглядел бы действующим, хотя сделки уже нет
+        if deal.status in (Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED):
+            return Response(
+                {"error": f"Сделка {deal.get_status_display().lower()} — "
+                          f"документы по ней больше не формируются."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Шаблон тоже фильтруем по scope (нельзя использовать чужой шаблон)
         template_qs = get_filtered_queryset(request.user, Template.objects.all(), 'TEMPLATE')
         try:

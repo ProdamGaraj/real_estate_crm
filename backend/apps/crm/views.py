@@ -473,6 +473,23 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
         Физическое удаление уносило каскадом заявки, встречи, файлы и все
         журналы — вместе с историей работы по клиенту.
         """
+        # По клиенту с незакрытой сделкой работа продолжается: спрятав его
+        # карточку, менеджер потерял бы контакты и историю прямо посреди сделки
+        from apps.deals.models import Deal
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        active_deals = instance.deals.filter(status__in=(
+            Deal.DealStatus.BOOKING, Deal.DealStatus.IN_PROGRESS
+        ))
+        if active_deals.exists():
+            numbers = ", ".join(f"№{deal.id}" for deal in active_deals[:5])
+            raise DRFValidationError({
+                'detail': (
+                    f'По клиенту идут сделки: {numbers}. '
+                    f'Сначала завершите, отмените или расторгните их.'
+                )
+            })
+
         instance.status = Client.ClientStatus.ARCHIVED
         instance.save(update_fields=['status', 'updated_at'])
         ClientLog.objects.create(
@@ -644,21 +661,57 @@ class PublicApplicationCreateView(generics.CreateAPIView):
             client = Client.objects.create(full_name=full_name, company=partner_company)
             ClientPhoneNumber.objects.create(client=client, phone_number=phone_number)
         
-        application = Application.objects.create(
+        # Повторная отправка формы на сайте партнёра не должна плодить заявки:
+        # если по этому клиенту уже есть открытая заявка того же источника,
+        # заведённая только что, дополняем её, а не создаём вторую
+        recent_threshold = timezone.now() - timedelta(hours=24)
+        application = Application.objects.filter(
             client=client,
+            company=partner_company,
             source=data.get('source'),
-            notes=data.get('notes', ''),
-            company=partner_company
-        )
+            created_at__gte=recent_threshold,
+            is_deleted=False,
+        ).exclude(
+            status__in=(
+                Application.ApplicationStatusChoices.CLOSED_WON,
+                Application.ApplicationStatusChoices.CLOSED_LOST,
+            )
+        ).order_by('-created_at').first()
+
+        duplicate = application is not None
+        if duplicate:
+            extra_notes = data.get('notes', '')
+            if extra_notes and extra_notes not in (application.notes or ''):
+                application.notes = "\n".join(
+                    part for part in (application.notes, extra_notes) if part
+                ).strip()
+                application.save(update_fields=['notes', 'updated_at'])
+        else:
+            application = Application.objects.create(
+                client=client,
+                source=data.get('source'),
+                notes=data.get('notes', ''),
+                company=partner_company
+            )
 
         # Логируем создание заявки через партнёрский API
         partner_name = ''
         if hasattr(request, 'partner_api_key') and request.partner_api_key:
             partner_name = request.partner_api_key.name
+        if duplicate:
+            log_action = (
+                f"Повторное обращение через партнёрский API (партнёр: {partner_name})."
+                if partner_name else "Повторное обращение через партнёрский API."
+            )
+        else:
+            log_action = (
+                f"Заявка создана через партнёрский API (партнёр: {partner_name})."
+                if partner_name else "Заявка создана через партнёрский API."
+            )
         ApplicationLog.objects.create(
             application=application,
             user=None,
-            action=f"Заявка создана через партнёрский API (партнёр: {partner_name})." if partner_name else "Заявка создана через партнёрский API."
+            action=log_action
         )
 
         # Логируем создание клиента, если он был создан

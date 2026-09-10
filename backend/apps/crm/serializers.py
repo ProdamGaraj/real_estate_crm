@@ -229,6 +229,25 @@ class ClientDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Клиент с таким email уже есть в вашей компании.')
         return value
 
+    def validate_status(self, value):
+        """Архивировать клиента с незакрытой сделкой нельзя — работа не окончена."""
+        if value != Client.ClientStatus.ARCHIVED or self.instance is None:
+            return value
+        if self.instance.status == Client.ClientStatus.ARCHIVED:
+            return value
+
+        from apps.deals.models import Deal
+
+        active = self.instance.deals.filter(status__in=(
+            Deal.DealStatus.BOOKING, Deal.DealStatus.IN_PROGRESS
+        ))
+        if active.exists():
+            numbers = ", ".join(f"№{deal.id}" for deal in active[:5])
+            raise serializers.ValidationError(
+                f'По клиенту идут сделки: {numbers}. Сначала завершите или отмените их.'
+            )
+        return value
+
     def validate_relatives(self, value):
         """
         Родственниками могут быть только клиенты той же компании.

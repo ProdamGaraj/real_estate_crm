@@ -27,6 +27,31 @@ from permissions.backends import get_filtered_queryset, can_user_perform_action
 from permissions.reference_scope import CompanyScopedReferenceMixin
 
 
+class ProtectedReferenceDeleteMixin:
+    """
+    Отказ вместо ошибки сервера, когда справочник ещё используется.
+
+    Счёт получателя защищён от удаления на уровне базы (PROTECT), поэтому
+    попытка убрать используемый счёт превращалась в 500-ю ошибку без
+    объяснения. Показываем, сколько платежей на него ссылается.
+    """
+
+    protected_message = 'Запись используется и не может быть удалена.'
+
+    def perform_destroy(self, instance):
+        from django.db.models import ProtectedError
+        from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        try:
+            instance.delete()
+        except ProtectedError as error:
+            used_by = len(getattr(error, 'protected_objects', []) or [])
+            detail = self.protected_message
+            if used_by:
+                detail += f' Связанных записей: {used_by}.'
+            raise DRFValidationError({'detail': detail})
+
+
 class FinanceSummaryView(APIView):
     permission_classes = [IsAuthenticated, ReportPermission]
 
@@ -411,15 +436,20 @@ class DealPaymentScheduleCreateView(APIView):
         return Response(resulting_payments, status=status.HTTP_201_CREATED)
 
 
-class PaymentTypeDetailView(CompanyScopedReferenceMixin, generics.DestroyAPIView):
+class PaymentTypeDetailView(ProtectedReferenceDeleteMixin, CompanyScopedReferenceMixin, generics.DestroyAPIView):
     queryset = PaymentType.objects.all()
     serializer_class = PaymentTypeSerializer
     permission_classes = [IsAuthenticated, PaymentTypePermission]
+    protected_message = 'Этот тип платежа используется в графиках платежей.'
 
 
-class BeneficiaryAccountDetailView(generics.DestroyAPIView):
+class BeneficiaryAccountDetailView(ProtectedReferenceDeleteMixin, generics.DestroyAPIView):
     serializer_class = BeneficiaryAccountSerializer
     permission_classes = [IsAuthenticated, BeneficiaryAccountPermission]
+    protected_message = (
+        'По этому счёту получателя есть платежи, поэтому удалить его нельзя. '
+        'Заведите новый счёт, а этот оставьте для истории.'
+    )
 
     def get_queryset(self):
         return get_filtered_queryset(

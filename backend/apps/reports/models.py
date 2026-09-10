@@ -1,12 +1,12 @@
 from django.db import models
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from apps.realty.models import Project
 
 class Plan(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name="Проект")
     year = models.IntegerField(verbose_name="Год")
-    month = models.IntegerField(verbose_name="Месяц", validators=[MinValueValidator(1)])
+    month = models.IntegerField(verbose_name="Месяц", validators=[MinValueValidator(1), MaxValueValidator(12)])
     contracting_units_plan = models.IntegerField(verbose_name="План по контрактации (штуки)", default=0)
     contracting_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по контрактации (деньги)", default=0)
     revenue_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по поступлениям (деньги)", default=0)
@@ -23,7 +23,7 @@ class Plan(models.Model):
 class EmployeePlan(models.Model):
     employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name="Сотрудник")
     year = models.IntegerField(verbose_name="Год")
-    month = models.IntegerField(verbose_name="Месяц", validators=[MinValueValidator(1)])
+    month = models.IntegerField(verbose_name="Месяц", validators=[MinValueValidator(1), MaxValueValidator(12)])
     contracting_units_plan = models.IntegerField(verbose_name="План по контрактации (штуки)", default=0)
     contracting_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по контрактации (деньги)", default=0)
     revenue_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по поступлениям (деньги)", default=0)

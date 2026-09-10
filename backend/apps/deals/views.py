@@ -16,6 +16,8 @@ from .filters import DealFilter
 from apps.finances.models import Payment
 import pandas as pd
 from django.http import HttpResponse
+from decimal import Decimal
+
 from django.db import transaction
 from django.utils import timezone
 from apps.realty.views import _filter_by_company_scope
@@ -281,7 +283,37 @@ class DealCancelOrTerminateView(APIView):
             # Логируем действие
             DealLog.objects.create(deal=deal, user=request.user, action=action_log)
 
+            self._reopen_related_application(deal, request.user)
+
         return Response(DealDetailSerializer(deal).data, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _reopen_related_application(deal, user):
+        """
+        Возвращает заявку в работу, если сделка по ней не состоялась.
+
+        Заявку закрывает успешное завершение сделки. Если сделку потом
+        отменили или расторгли, закрытая заявка осталась бы в воронке как
+        успешная — конверсия считалась бы по несостоявшейся продаже.
+        """
+        from apps.crm.models import Application, ApplicationLog
+
+        application = deal.application
+        if application is None or application.is_deleted:
+            return
+        if application.status != Application.ApplicationStatusChoices.CLOSED_WON:
+            return
+
+        application.status = Application.ApplicationStatusChoices.IN_PROGRESS
+        application.save(update_fields=['status', 'updated_at'])
+        ApplicationLog.objects.create(
+            application=application,
+            user=user,
+            action=(
+                f"Заявка возвращена в работу: сделка №{deal.id} "
+                f"{deal.get_status_display().lower()}."
+            )
+        )
 
 
 class DealDetailView(generics.RetrieveUpdateAPIView):
@@ -331,6 +363,21 @@ class DealDetailView(generics.RetrieveUpdateAPIView):
                 user=self.request.user,
                 action=action_text
             )
+
+        # После смены стоимости график остаётся собранным под прежнюю сумму.
+        # Он не сойдётся при следующей правке, поэтому предупреждаем сразу.
+        if old_instance.contract_price != instance.contract_price and instance.payments.exists():
+            scheduled = sum((p.amount for p in instance.payments.all()), Decimal(0))
+            if scheduled != (instance.contract_price or Decimal(0)):
+                DealLog.objects.create(
+                    deal=instance,
+                    user=self.request.user,
+                    action=(
+                        f"Внимание: график платежей собран на {scheduled} {instance.currency}, "
+                        f"а стоимость по договору теперь {instance.contract_price} {instance.currency}. "
+                        f"Пересоберите график."
+                    )
+                )
 
         if instance.status == Deal.DealStatus.IN_PROGRESS and instance.client_signature_date and instance.company_signature_date:
             # Смена статуса сделки и объекта — одной транзакцией
