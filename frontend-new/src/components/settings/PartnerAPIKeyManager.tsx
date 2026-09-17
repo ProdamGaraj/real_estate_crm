@@ -12,8 +12,6 @@ import {
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   ContentCopy as CopyIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
   PowerSettingsNew as PowerIcon,
   Edit as EditIcon
 } from '@mui/icons-material';
@@ -54,8 +52,10 @@ export default function PartnerAPIKeyManager() {
     CREATE_APPLICATION: t('pages.api_keys.create_application')
   };
   const [editingKey, setEditingKey] = useState<PartnerAPIKey | null>(null);
-  const [visibleKeys, setVisibleKeys] = useState<Set<number>>(new Set());
-  const [copiedId, setCopiedId] = useState<number | null>(null);
+  // Ключ, выданный только что: сервер показывает его один раз, поэтому
+  // держим его в состоянии, пока пользователь не закроет окно
+  const [issuedKey, setIssuedKey] = useState<{ name: string; key: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Все возможные scopes
   const ALL_SCOPES: AllowedScope[] = ['VIEW_PROJECTS', 'VIEW_BUILDINGS', 'VIEW_LAYOUTS', 'CREATE_APPLICATION'];
@@ -105,9 +105,10 @@ export default function PartnerAPIKeyManager() {
   // Мутации
   const createMutation = useMutation({
     mutationFn: createPartnerAPIKey,
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ['partnerApiKeys'] });
       closeModal();
+      showIssuedKey(created);
     }
   });
 
@@ -126,7 +127,10 @@ export default function PartnerAPIKeyManager() {
 
   const regenerateMutation = useMutation({
     mutationFn: regeneratePartnerAPIKey,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['partnerApiKeys'] })
+    onSuccess: (regenerated) => {
+      queryClient.invalidateQueries({ queryKey: ['partnerApiKeys'] });
+      showIssuedKey(regenerated);
+    }
   });
 
   const toggleMutation = useMutation({
@@ -179,31 +183,29 @@ export default function PartnerAPIKeyManager() {
     }
   };
 
-  const toggleKeyVisibility = (id: number) => {
-    setVisibleKeys(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
+  // Ключ приходит в открытом виде только от создания и перегенерации.
+  // Если сервер его не прислал, показывать нечего — окно не открываем
+  const showIssuedKey = (apiKey: PartnerAPIKey) => {
+    if (apiKey.key) {
+      setIssuedKey({ name: apiKey.name, key: apiKey.key });
+      setCopied(false);
+    }
   };
 
-  const copyToClipboard = async (key: string, id: number) => {
+  const closeIssuedKey = () => {
+    setIssuedKey(null);
+    setCopied(false);
+  };
+
+  const copyToClipboard = async (key: string) => {
     await navigator.clipboard.writeText(key);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleString('ru-RU');
-  };
-
-  const maskKey = (key: string) => {
-    return key.substring(0, 8) + '••••••••••••••••' + key.substring(key.length - 8);
   };
 
   if (isLoading) {
@@ -282,21 +284,10 @@ export default function PartnerAPIKeyManager() {
                   </Box>
                 </TableCell>
                 <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
-                      {visibleKeys.has(apiKey.id) ? apiKey.key : maskKey(apiKey.key)}
-                    </Typography>
-                    <Tooltip title={visibleKeys.has(apiKey.id) ? t('common.hide') : t('common.show')}>
-                      <IconButton size="small" onClick={() => toggleKeyVisibility(apiKey.id)}>
-                        {visibleKeys.has(apiKey.id) ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={copiedId === apiKey.id ? t('pages.api_keys.key_copied') : t('common.copy')}>
-                      <IconButton size="small" onClick={() => copyToClipboard(apiKey.key, apiKey.id)}>
-                        <CopyIcon fontSize="small" color={copiedId === apiKey.id ? "success" : "inherit"} />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                  {/* Целиком ключ не показывается: он есть только в момент выдачи */}
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    {apiKey.key_masked || '—'}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   {apiKey.is_expired ? (
@@ -537,6 +528,46 @@ export default function PartnerAPIKeyManager() {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Выданный ключ: единственный раз, когда его видно целиком */}
+      <Dialog open={!!issuedKey} onClose={closeIssuedKey} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('pages.api_keys.new_key_created')}</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {t('pages.api_keys.copy_key_warning')}
+          </Alert>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            {issuedKey?.name}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontFamily: 'monospace',
+                fontSize: '0.8rem',
+                wordBreak: 'break-all',
+                bgcolor: 'action.hover',
+                borderRadius: 1,
+                p: 1.5,
+                flexGrow: 1,
+              }}
+            >
+              {issuedKey?.key}
+            </Typography>
+            <Tooltip title={copied ? t('pages.api_keys.key_copied') : t('common.copy')}>
+              <IconButton
+                onClick={() => issuedKey && copyToClipboard(issuedKey.key)}
+                color={copied ? 'success' : 'default'}
+              >
+                <CopyIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={closeIssuedKey}>{t('common.close')}</Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

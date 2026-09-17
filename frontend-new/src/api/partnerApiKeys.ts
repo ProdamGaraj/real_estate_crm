@@ -10,10 +10,19 @@ export interface ScopeOption {
   label: string;
 }
 
+/**
+ * Ключ в списке приходит замаскированным: сервер хранит только хеш и
+ * шифротекст, а в открытом виде отдаёт ключ ровно один раз — в ответе на
+ * создание и на перегенерацию. Поэтому `key` необязательный: в списке его
+ * не бывает, и рассчитывать на него в таблице нельзя.
+ */
 export interface PartnerAPIKey {
   id: number;
   name: string;
-  key: string;
+  /** Первые 8 символов и многоточие — то, что видно в списке */
+  key_masked: string;
+  /** Полный ключ. Приходит только сразу после создания или перегенерации */
+  key?: string;
   description: string;
   companies: number[];
   companies_data: Company[];
