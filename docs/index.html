@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM Недвижимость — документация</title>
+<style>
+:root{
+  --ground:#F2F6F8; --surface:#FFFFFF; --surface-2:#E9F0F4;
+  --ink:#16232B; --ink-2:#41535E; --muted:#6B7F8B; --rule:#D6E1E8;
+  --accent:#1D5B79; --accent-ink:#12455E; --accent-soft:#E1EDF4;
+  --sans:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --slab:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36;
+    --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48;
+    --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36;
+  --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48;
+  --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.6 var(--sans);
+  padding-inline:20px;padding-block:44px 72px;-webkit-font-smoothing:antialiased}
+a{color:var(--accent-ink);text-underline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto}
+header{margin-bottom:40px}
+.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 clamp(28px,4.4vw,40px)/1.15 var(--slab);margin:12px 0 10px}
+.sub{color:var(--ink-2);max-width:68ch;margin:0}
+.sub i{font-style:normal;color:var(--muted)}
+h2{font:700 22px/1.25 var(--slab);margin:44px 0 6px}
+h2 + p{margin:0 0 18px;color:var(--ink-2)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:18px 18px 16px;
+  display:flex;flex-direction:column;gap:8px}
+.card h3{font:600 17px/1.3 var(--sans);margin:0}
+.card .uz{font-size:14px;color:var(--muted);margin-top:-6px}
+.card p{margin:0;font-size:14.5px;color:var(--ink-2);flex:1}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.links a{font:600 13px/1 var(--mono);padding:8px 11px;border-radius:5px;text-decoration:none;
+  background:var(--accent-soft);color:var(--accent-ink);border:1px solid transparent}
+.links a:hover{border-color:var(--accent)}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14.5px}
+th{text-align:left;font:600 11.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-2);padding:11px 14px}
+td{padding:11px 14px;border-top:1px solid var(--rule);vertical-align:top}
+td.code{font:500 13px/1.4 var(--mono);color:var(--accent-ink);white-space:nowrap}
+td.std{color:var(--muted);white-space:nowrap}
+td .links{margin:0}
+.note{margin-top:18px;font-size:14.5px;color:var(--ink-2);border-left:3px solid var(--accent);
+  background:var(--surface);padding:12px 16px;border-radius:0 6px 6px 0}
+code{font:500 13px/1 var(--mono);background:var(--surface-2);padding:2px 5px;border-radius:3px}
+footer{margin-top:48px;color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">CRM Недвижимость &middot; Ko&lsquo;chmas mulk CRM</div>
+    <h1>Документация системы</h1>
+    <p class="sub">Инструкции для сотрудников по ролям и проектная документация по ГОСТ. <i>Rollar bo&lsquo;yicha xodimlar uchun qo&lsquo;llanmalar va GOST bo&lsquo;yicha loyiha hujjatlari.</i></p>
+  </header>
+
+  <h2>Инструкции по ролям</h2>
+  <p>Откройте инструкцию своей должности: в ней поиск, печать и частые вопросы. <i>O&lsquo;z lavozimingiz qo&lsquo;llanmasini oching.</i></p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Менеджер по продажам</h3>
+      <div class="uz">Sotuv menejeri</div>
+      <p>Клиенты, заявки, встречи, подбор объекта, бронь, сделка и график платежей.</p>
+      <div class="links"><a href="Инструкция-Менеджер-RU.html">RU</a><a href="Yoriqnoma-Menejer-UZ.html">UZ</a></div>
+    </div>
+    <div class="card">
+      <h3>Руководитель отдела продаж</h3>
+      <div class="uz">Bo&lsquo;lim boshlig&lsquo;i</div>
+      <p>Контроль воронки, планы продаж, отчёт план-факт, задачи, логи и аудит.</p>
+      <div class="links"><a href="Инструкция-Руководитель-RU.html">RU</a><a href="Yoriqnoma-Boshliq-UZ.html">UZ</a></div>
+    </div>
+    <div class="card">
+      <h3>Специалист по оформлению</h3>
+      <div class="uz">Rasmiylashtirish mutaxassisi</div>
+      <p>Проверка данных, номер договора, формирование документа, подписание, расторжение.</p>
+      <div class="links"><a href="Инструкция-Оформление-RU.html">RU</a><a href="Yoriqnoma-Rasmiylashtirish-UZ.html">UZ</a></div>
+    </div>
+    <div class="card">
+      <h3>Финансист</h3>
+      <div class="uz">Moliyachi</div>
+      <p>График платежей, отметка оплат, просрочка, возвраты, сверка с бухгалтерией.</p>
+      <div class="links"><a href="Инструкция-Финансист-RU.html">RU</a><a href="Yoriqnoma-Moliyachi-UZ.html">UZ</a></div>
+    </div>
+    <div class="card">
+      <h3>Наблюдатель (руководство компании)</h3>
+      <div class="uz">Kuzatuvchi (kompaniya rahbariyati)</div>
+      <p>Дашборд, воронка, сделки, деньги и выполнение плана без права изменять данные.</p>
+      <div class="links"><a href="Инструкция-Наблюдатель-RU.html">RU</a><a href="Yoriqnoma-Kuzatuvchi-UZ.html">UZ</a></div>
+    </div>
+    <div class="card">
+      <h3>Администратор системы</h3>
+      <div class="uz">Tizim administratori</div>
+      <p>Компании, отделы, пользователи, роли и права, каталог, справочники, шаблоны, API-ключи.</p>
+      <div class="links"><a href="Инструкция-Администратор-RU.html">RU</a><a href="Yoriqnoma-Administrator-UZ.html">UZ</a></div>
+    </div>
+  </div>
+
+  <h2>Проектная документация</h2>
+  <p>Комплект по ГОСТ 34 и ЕСПД. Каждый документ — в формате Word и PDF. <i>GOST 34 va YeSPD bo&lsquo;yicha hujjatlar to&lsquo;plami (rus tilida).</i></p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Код</th><th>Документ</th><th>Стандарт</th><th>Файлы</th></tr></thead>
+      <tbody>
+        <tr><td class="code">ТЗ</td><td>Техническое задание</td><td class="std">ГОСТ 34.602-2020</td><td><div class="links"><a href="gost/out/01_ТЗ_Техническое_задание.pdf">PDF</a><a href="gost/out/01_ТЗ_Техническое_задание.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">П2</td><td>Пояснительная записка к техническому проекту</td><td class="std">ГОСТ Р 59795-2021</td><td><div class="links"><a href="gost/out/02_П2_Пояснительная_записка.pdf">PDF</a><a href="gost/out/02_П2_Пояснительная_записка.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">П3</td><td>Описание автоматизированных функций</td><td class="std">ГОСТ Р 59795-2021</td><td><div class="links"><a href="gost/out/03_П3_Описание_автоматизированных_функций.pdf">PDF</a><a href="gost/out/03_П3_Описание_автоматизированных_функций.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">П5</td><td>Описание информационного обеспечения системы</td><td class="std">ГОСТ Р 59795-2021</td><td><div class="links"><a href="gost/out/04_П5_Описание_информационного_обеспечения.pdf">PDF</a><a href="gost/out/04_П5_Описание_информационного_обеспечения.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">ПА</td><td>Описание программного обеспечения</td><td class="std">ГОСТ Р 59795-2021</td><td><div class="links"><a href="gost/out/05_ПА_Описание_программного_обеспечения.pdf">PDF</a><a href="gost/out/05_ПА_Описание_программного_обеспечения.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">ПМ</td><td>Программа и методика испытаний</td><td class="std">ГОСТ Р 59795-2021</td><td><div class="links"><a href="gost/out/06_ПМ_Программа_и_методика_испытаний.pdf">PDF</a><a href="gost/out/06_ПМ_Программа_и_методика_испытаний.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">И3</td><td>Руководство пользователя</td><td class="std">ГОСТ Р 59795-2021</td><td><div class="links"><a href="gost/out/07_И3_Руководство_пользователя.pdf">PDF</a><a href="gost/out/07_И3_Руководство_пользователя.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">32</td><td>Руководство системного программиста</td><td class="std">ГОСТ 19.503-79</td><td><div class="links"><a href="gost/out/08_32_Руководство_системного_программиста.pdf">PDF</a><a href="gost/out/08_32_Руководство_системного_программиста.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">33</td><td>Руководство программиста</td><td class="std">ГОСТ 19.504-79</td><td><div class="links"><a href="gost/out/09_33_Руководство_программиста.pdf">PDF</a><a href="gost/out/09_33_Руководство_программиста.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">12</td><td>Текст программы (опись исходных текстов)</td><td class="std">ГОСТ 19.401-78</td><td><div class="links"><a href="gost/out/10_12_Текст_программы.pdf">PDF</a><a href="gost/out/10_12_Текст_программы.docx">DOCX</a></div></td></tr>
+        <tr><td class="code">20</td><td>Ведомость эксплуатационных документов</td><td class="std">ГОСТ 19.507-79</td><td><div class="links"><a href="gost/out/11_20_Ведомость_эксплуатационных_документов.pdf">PDF</a><a href="gost/out/11_20_Ведомость_эксплуатационных_документов.docx">DOCX</a></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    Исходные тексты документов хранятся в репозитории: инструкции — <code>docs/_src</code>, проектная документация — <code>docs/gost/src</code>. Порядок обновления описан в <code>docs/gost/README.md</code>.
+  </div>
+
+  <footer>CRM Недвижимость &middot; комплект документации, редакция 1.0, октябрь 2026.</footer>
+</div>
+</body>
+</html>

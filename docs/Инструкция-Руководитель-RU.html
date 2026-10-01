@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<title>Руководство руководителя отдела</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F2F6F8; --surface:#FFFFFF; --surface-2:#E9F0F4; --surface-3:#F7FAFB;
+  --ink:#16232B; --ink-2:#41535E; --muted:#6B7F8B; --rule:#D6E1E8; --rule-2:#E7EEF2;
+  --accent:#1D5B79; --accent-ink:#12455E; --accent-soft:#E1EDF4;
+  --ok:#2E7D52; --ok-soft:#E4F2EA;
+  --info:#2A6FB0; --info-soft:#E4EDF8;
+  --warn:#9C6B12; --warn-soft:#F7EEDC;
+  --purple:#65499B; --purple-soft:#ECE6F6;
+  --danger:#A94036; --danger-soft:#F8E6E3;
+  --step-fg:#FFFFFF;
+  --sans:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --slab:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+    --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+    --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+    --ok:#6BC492; --ok-soft:#15291F;
+    --info:#7BB3E8; --info-soft:#152634;
+    --warn:#D6A85B; --warn-soft:#2C2415;
+    --purple:#A88FD8; --purple-soft:#241E33;
+    --danger:#E08579; --danger-soft:#2E1A17;
+    --step-fg:#0E161B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+  --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+  --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+  --ok:#6BC492; --ok-soft:#15291F;
+  --info:#7BB3E8; --info-soft:#152634;
+  --warn:#D6A85B; --warn-soft:#2C2415;
+  --purple:#A88FD8; --purple-soft:#241E33;
+  --danger:#E08579; --danger-soft:#2E1A17;
+  --step-fg:#0E161B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr);max-width:1360px;margin:0 auto;
+  background:var(--surface);min-height:100vh;border-inline:1px solid var(--rule-2)}
+.side{border-right:1px solid var(--rule);background:var(--surface-3);position:sticky;top:0;height:100vh;
+  overflow-y:auto;padding:26px 20px 32px;display:flex;flex-direction:column;gap:18px}
+.main{padding:34px 56px 96px;min-width:0}
+
+/* ---------- masthead ---------- */
+.brand{display:flex;flex-direction:column;gap:9px}
+.mark{display:flex;align-items:center;gap:9px}
+.mark svg{flex:none}
+.mark b{font:600 12.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.brand h1{font:700 20px/1.25 var(--slab);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.brand .role{font:500 11.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.finder{position:relative}
+.finder input{width:100%;font:400 14px/1 var(--sans);color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule);border-radius:7px;padding:9px 11px 9px 31px}
+.finder input::placeholder{color:var(--muted)}
+.finder svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.55}
+
+nav.toc{font-size:14px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav.toc a{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;
+  padding:6px 9px;border-radius:6px;color:var(--ink-2);text-decoration:none;line-height:1.35}
+nav.toc a span{font:500 11px/1.4 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+nav.toc a.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+nav.toc a.on span{color:var(--accent-ink)}
+nav.toc li.hide{display:none}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.btn{font:500 13px/1 var(--sans);color:var(--ink-2);background:var(--surface);border:1px solid var(--rule);
+  border-radius:7px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- doc head ---------- */
+.doc-head{border-bottom:2px solid var(--ink);padding-bottom:22px}
+.doc-head .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent-ink);margin-bottom:14px}
+.doc-head h2{font:700 clamp(28px,4vw,40px)/1.1 var(--slab);margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance}
+.doc-head p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:18px;font:500 12px/1.5 var(--mono);color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- chapters ---------- */
+section.ch{padding-top:52px;scroll-margin-top:20px}
+section.ch>h3{font:700 25px/1.25 var(--slab);margin:0 0 6px;letter-spacing:-.01em;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;text-wrap:balance}
+section.ch>h3 em{font:600 13px/1 var(--mono);font-style:normal;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+section.ch>.lede{margin:0 0 24px 41px;color:var(--muted);max-width:62ch}
+section.ch.hide{display:none}
+h4{font:600 16.5px/1.35 var(--sans);margin:34px 0 10px;letter-spacing:-.005em}
+h5{font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+p{margin:0 0 14px;max-width:68ch}
+.main ul,.main ol{max-width:68ch}
+.main li{margin:4px 0}
+
+/* ---------- ui chips ---------- */
+.ui{font:500 13.5px/1.35 var(--mono);background:var(--surface-2);border:1px solid var(--rule);
+  border-radius:5px;padding:1px 6px;white-space:nowrap;color:var(--ink)}
+.path{font:500 13.5px/1.35 var(--mono);color:var(--accent-ink);white-space:nowrap}
+.path i{font-style:normal;opacity:.5;padding:0 3px}
+code{font:500 13.5px/1.4 var(--mono);background:var(--surface-2);border-radius:4px;padding:1px 5px}
+
+/* ---------- steps ---------- */
+ol.steps{counter-reset:s;list-style:none;margin:18px 0 22px;padding:0 0 0 40px;
+  border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:15px}
+ol.steps>li{counter-increment:s;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:-51.5px;top:0;width:23px;height:23px;
+  display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:var(--step-fg);font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+ol.steps>li>p{margin:0 0 8px}
+ol.steps>li>p:last-child{margin-bottom:0}
+ol.steps ul{margin:8px 0 0;padding-left:19px}
+
+/* ---------- callouts ---------- */
+.note,.warn,.tip{border-left:3px solid;padding:13px 16px;margin:20px 0;border-radius:0 6px 6px 0;font-size:15px}
+.note{border-color:var(--info);background:var(--info-soft)}
+.warn{border-color:var(--danger);background:var(--danger-soft)}
+.tip{border-color:var(--ok);background:var(--ok-soft)}
+.note>:last-child,.warn>:last-child,.tip>:last-child{margin-bottom:0}
+.note b,.warn b,.tip b{font-weight:600}
+.warn b{color:var(--danger)}
+.tip b{color:var(--ok)}
+.note b{color:var(--info)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;margin:18px 0 24px;border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+thead th{font:600 11.5px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-3);border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+table .ui{font-size:12.5px}
+
+/* ---------- status chips ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1 var(--mono);
+  padding:5px 9px;border-radius:20px;white-space:nowrap}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chip.g{color:var(--ok);background:var(--ok-soft)}
+.chip.b{color:var(--info);background:var(--info-soft)}
+.chip.y{color:var(--warn);background:var(--warn-soft)}
+.chip.p{color:var(--purple);background:var(--purple-soft)}
+.chip.r{color:var(--danger);background:var(--danger-soft)}
+.chip.n{color:var(--muted);background:var(--surface-2)}
+
+/* ---------- pipeline ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:22px 0 26px;
+  padding:16px;background:var(--surface-3);border:1px solid var(--rule);border-radius:8px}
+.flow .st{flex:1 1 118px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+  padding:10px 12px;min-width:0}
+.flow .st b{display:block;font:600 14px/1.3 var(--sans)}
+.flow .st span{display:block;font:400 12.5px/1.4 var(--sans);color:var(--muted);margin-top:3px}
+.flow .ar{align-self:center;color:var(--muted);font-size:15px;flex:none}
+@media (max-width:640px){.flow .ar{display:none}.flow .st{flex:1 1 100%}}
+
+/* ---------- chessboard mini ---------- */
+.board{display:inline-grid;grid-template-columns:repeat(6,28px);gap:3px;margin:8px 0 4px}
+.board i{height:28px;border-radius:4px;display:grid;place-items:center;
+  font:500 10px/1 var(--mono);font-style:normal;color:var(--ink-2)}
+.board i.g{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.board i.b{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info)}
+.board i.y{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
+.board i.p{background:var(--purple-soft);box-shadow:inset 0 0 0 1px var(--purple)}
+.board i.r{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger)}
+
+/* ---------- misc ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin:18px 0 24px}
+.cols>div{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;background:var(--surface-3)}
+.cols h6{font:600 14px/1.3 var(--sans);margin:0 0 6px}
+.cols p{font-size:14px;color:var(--ink-2);margin:0}
+dl.qa{margin:18px 0}
+dl.qa dt{font-weight:600;margin-top:22px}
+dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
+.end{margin-top:64px;padding-top:20px;border-top:2px solid var(--ink);font-size:13.5px;color:var(--muted)}
+.no-hit{display:none;padding:40px 0;color:var(--muted)}
+.no-hit.on{display:block}
+
+/* ---------- responsive ---------- */
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:20px 22px}
+  .side-foot{margin-top:6px}
+  .main{padding:26px 22px 72px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--ground:#fff;--surface:#fff;--surface-2:#F2F2F2;--surface-3:#FAFAFA;
+        --rule:#BBB;--rule-2:#DDD;--ink:#111;--ink-2:#333;--muted:#666}
+  body{background:#fff;font-size:11pt}
+  .shell{display:block;max-width:none;border:0}
+  .side{display:none}
+  .main{padding:0}
+  section.ch{padding-top:26px}
+  section.ch>h3,h4{page-break-after:avoid}
+  ol.steps>li,.note,.warn,.tip,.scroll,.flow,.cols>div{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>CRM Недвижимость</b>
+    </div>
+    <h1>Руководство руководителя отдела</h1>
+    <div class="role">Роль: Руководитель отдела / РОП</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Поиск по разделам" aria-label="Поиск по разделам">
+  </div>
+
+  <nav class="toc" aria-label="Содержание">
+    <ol>
+      <li><a href="#c1"><span>01</span>Что вы видите и почему</a></li>
+      <li><a href="#c2"><span>02</span>Дашборд отдела</a></li>
+      <li><a href="#c3"><span>03</span>Контроль воронки</a></li>
+      <li><a href="#c4"><span>04</span>Сводные таблицы и Excel</a></li>
+      <li><a href="#c5"><span>05</span>Планы продаж</a></li>
+      <li><a href="#c6"><span>06</span>Отчёт план-факт</a></li>
+      <li><a href="#c7"><span>07</span>Контроль сделок</a></li>
+      <li><a href="#c8"><span>08</span>Контроль платежей</a></li>
+      <li><a href="#c9"><span>09</span>Задачи и поручения</a></li>
+      <li><a href="#c10"><span>10</span>Скидки</a></li>
+      <li><a href="#c11"><span>11</span>Логи и аудит</a></li>
+      <li><a href="#c12"><span>12</span>Ритм управления</a></li>
+      <li><a href="#c13"><span>13</span>Частые вопросы</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Распечатать
+    </button>
+    <div>Версия 1.0 &middot; сентябрь 2026</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Инструкция пользователя</div>
+    <h2>Как руководителю управлять отделом в CRM</h2>
+    <p>Руководство по контролю: где смотреть воронку и просрочки, как загружать планы продаж, читать отчёт план-факт, ставить задачи и проверять, кто и что менял в системе.</p>
+    <div class="meta">
+      <span>Для кого: <b>руководитель отдела, РОП</b></span>
+      <span>Разделов: <b>13</b></span>
+      <span>Предполагается: <b>вы знаете работу менеджера</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Ничего не найдено. Очистите поиск или введите другое слово.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Что вы видите и почему</h3>
+    <p class="lede">Прежде чем требовать цифры от системы, поймите границу своей видимости.</p>
+
+    <p>Доступ в CRM складывается из трёх вещей: <b>действие</b> (просмотр, создание, редактирование, удаление, экспорт), <b>раздел</b> (клиенты, сделки, платежи и так далее) и <b>область видимости</b> — сколько данных попадает в ваши списки.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Область</th><th>Что попадает в списки</th><th>Типично для</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Только свои данные</span></td><td>Записи, созданные вами или назначенные на вас</td><td>Менеджер</td></tr>
+          <tr><td><span class="ui">Отдел</span></td><td>Данные всех сотрудников вашего отдела</td><td><b>Руководитель отдела</b></td></tr>
+          <tr><td><span class="ui">Компания</span></td><td>Все данные компании</td><td>Администратор компании, коммерческий директор</td></tr>
+          <tr><td><span class="ui">Вся система</span></td><td>Все компании целиком</td><td>Системный администратор</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p><b>Все цифры в отчётах и на дашборде считаются в пределах вашей области.</b> Если в отчёте нет сотрудника или проекта, которого вы ждёте, — скорее всего, он вне вашего отдела. Расширить область может только администратор.</p>
+    </div>
+
+    <p>В правом верхнем углу нажмите на аватар: система покажет вашу компанию и отдел. Это и есть граница ваших данных.</p>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Дашборд отдела</h3>
+    <p class="lede">Первый экран дня: четыре цифры и четыре графика.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Блок</th><th>Что показывает</th><th>На что реагировать</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Новых клиентов сегодня</span></td><td>Заведённые за день карточки</td><td>Ноль в рабочий день — вопрос к загрузке отдела</td></tr>
+          <tr><td><span class="ui">Новых заявок сегодня</span></td><td>Поступившие заявки</td><td>Резкое падение — проверьте источники трафика</td></tr>
+          <tr><td><span class="ui">Продажи за месяц</span></td><td>Сделки, <b>закрытые</b> в этом месяце — считается по дате закрытия, а не по дате последней правки</td><td>Сверяйте с планом в отчёте план-факт</td></tr>
+          <tr><td><span class="ui">Просроченные платежи</span></td><td>Сумма просрочки</td><td>Ежедневный контроль дебиторки</td></tr>
+          <tr><td><span class="ui">Динамика заявок за неделю</span></td><td>График по дням</td><td>Провалы по дням недели</td></tr>
+          <tr><td><span class="ui">Источники заявок</span></td><td>Распределение по каналам</td><td>Куда имеет смысл вкладываться</td></tr>
+          <tr><td><span class="ui">Топ по продажам за месяц</span></td><td>Рейтинг сотрудников</td><td>Материал для планёрки</td></tr>
+          <tr><td><span class="ui">Ближайшие встречи</span></td><td>План отдела на ближайшие дни</td><td>Загрузка на неделю</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Дашборд отвечает на вопрос «что происходит сейчас». Для разбора причин переходите в сводные таблицы разделов (глава 04) и в отчёт план-факт (глава 06).</p>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>Контроль воронки</h3>
+    <p class="lede">Два индикатора, которые показывают, где воронка встала.</p>
+
+    <h4>Забытые заявки</h4>
+    <ol class="steps">
+      <li><p>Откройте <span class="path">Заявки</span> и перейдите на вкладку <span class="ui">Сводная таблица</span>.</p></li>
+      <li><p>Найдите блок <span class="ui">&laquo;Забытые&raquo; заявки</span> — это заявки, которые давно никто не трогал.</p></li>
+      <li><p>Задайте порог в поле <span class="ui">не обновлялись более … дней</span>. По умолчанию 7 — уменьшите до 3, если цикл сделки короткий.</p></li>
+      <li><p>Кликните по цифре — система откроет список именно этих заявок с уже наложенным фильтром.</p></li>
+      <li><p>Сгруппируйте таблицу <span class="ui">По пользователю</span>, чтобы увидеть, у кого их больше всего.</p></li>
+    </ol>
+
+    <div class="tip">
+      <p><b>Что считать нормой.</b> Заявка в статусе <span class="ui">Новая</span> старше суток — это потерянный контакт. Заявка <span class="ui">В работе</span> без движения неделю — нужен либо следующий шаг, либо честный <span class="ui">Отказ</span> с причиной. Незакрытые заявки искажают конверсию всего отдела.</p>
+    </div>
+
+    <h4>Просроченные встречи</h4>
+    <ol class="steps">
+      <li><p>Откройте <span class="path">Встречи</span> и перейдите на <span class="ui">Сводная таблица</span>.</p></li>
+      <li><p>Смотрите счётчик <span class="ui">Просроченные встречи</span> — плановое время прошло, а результат не заполнен.</p></li>
+      <li><p>Сгруппируйте <span class="ui">По исполнителю</span> — сразу видно, кто не закрывает встречи.</p></li>
+    </ol>
+
+    <p>Незаполненный результат встречи означает, что вы не знаете, что произошло с клиентом. Требуйте закрывать встречу в день её проведения.</p>
+
+    <div class="note">
+      <p><b>Забытые встречи закрываются сами.</b> Встреча, простоявшая просроченной больше недели, автоматически переходит в <span class="chip r">Не состоялась</span> с пометкой в журнале. Это чистит списки, но не заменяет работу: закрытая таким образом встреча означает, что контакт с клиентом потерян.</p>
+      <p>Встречи, которые система заводит сама при регистрации клиента, в отчёт не попадают — счётчики показывают только реальную работу менеджеров.</p>
+    </div>
+
+    <h4>Анализ причин отказов</h4>
+    <p>В сводной таблице заявок сгруппируйте данные <span class="ui">По источнику</span> и сопоставьте с причинами отказа в списке заявок. Регулярно повторяющаяся причина — это либо проблема продукта, либо неверно настроенные ожидания в рекламе.</p>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Сводные таблицы и Excel</h3>
+    <p class="lede">Один и тот же механизм в четырёх разделах — освойте один раз.</p>
+
+    <p>В разделах <span class="path">Заявки</span>, <span class="path">Встречи</span>, <span class="path">Сделки</span> и <span class="path">Финансы</span> рядом со списком есть вкладка <span class="ui">Сводная таблица</span>. Она устроена одинаково: фильтры по периоду сверху, выбор <span class="ui">Группировать по</span>, счётчики-виджеты и кнопка <span class="ui">Выгрузить в Excel</span>.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Раздел</th><th>Группировки</th><th>Что смотреть</th></tr></thead>
+        <tbody>
+          <tr><td>Заявки</td><td>Пользователю, Источнику</td><td>Всего заявок, забытые заявки</td></tr>
+          <tr><td>Встречи</td><td>Исполнителю, Проекту, Статусу</td><td>Всего, новые, завершённые, отменённые, просроченные</td></tr>
+          <tr><td>Сделки</td><td>Менеджеру, Проекту, Статусу</td><td>Всего сделок; брони, в работе, завершённые, расторгнутые, отменённые</td></tr>
+          <tr><td>Финансы</td><td>Статусу, Проекту, Менеджеру</td><td>Общая сумма, просроченные и оплаченные платежи</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ol class="steps">
+      <li><p>Задайте период: <span class="ui">Дата создания от</span> и <span class="ui">до</span> (в финансах — по дате к оплате или по факту оплаты).</p></li>
+      <li><p>Выберите <span class="ui">Группировать по</span> — по менеджеру для оценки людей, по проекту для оценки продукта, по статусу для оценки этапов.</p></li>
+      <li><p>Нажмите <span class="ui">Выгрузить в Excel</span>, если нужно свести данные с внешним отчётом.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Сводная считает по тем же правам, что и список.</b> Выгрузка в Excel содержит ровно то, что вы видите на экране, — не больше.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>Планы продаж</h3>
+    <p class="lede">Без загруженного плана отчёт план-факт покажет только факт.</p>
+
+    <p>Планы бывают двух видов и загружаются раздельно: <b>по проектам</b> и <b>по сотрудникам</b>. Каждый вид — на своей вкладке раздела <span class="path">Отчеты</span>.</p>
+
+    <ol class="steps">
+      <li><p>Откройте <span class="path">Отчеты</span> и выберите вкладку: <span class="ui">Отчет по проектам</span> или <span class="ui">Отчет по сотрудникам</span>.</p></li>
+      <li><p>Нажмите <span class="ui">Скачать шаблон</span> — получите файл Excel с нужной структурой колонок.</p></li>
+      <li><p>Заполните шаблон. <b>Не переименовывайте и не переставляйте колонки</b> — файл разбирается по их названиям.</p></li>
+      <li><p>Нажмите <span class="ui">Загрузить план</span> и выберите заполненный файл.</p></li>
+      <li><p>Нажмите <span class="ui">Сформировать</span> — таблица пересчитается уже с планом.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Повторная загрузка перезаписывает план за тот же период.</b> Загружайте исправленный файл целиком, а не одну изменённую строку.</p>
+    </div>
+
+    <div class="note">
+      <p>Кнопки <span class="ui">Скачать шаблон</span> и <span class="ui">Загрузить план</span> видны всем, но работают только при праве на ресурс <span class="ui">Планы продаж</span>: без него система ответит отказом. Если так и происходит, попросите администратора выдать доступ к этому ресурсу.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Отчёт план-факт</h3>
+    <p class="lede">Главный управленческий отчёт: сравнение плана с фактом в трёх измерениях.</p>
+
+    <ol class="steps">
+      <li><p>Откройте <span class="path">Отчеты</span> и выберите вкладку — по проектам или по сотрудникам.</p></li>
+      <li><p>Задайте <span class="ui">Год</span>.</p></li>
+      <li><p>Выберите <span class="ui">Период</span>: <span class="ui">Месяц</span>, <span class="ui">Квартал</span>, <span class="ui">Полугодие</span> или <span class="ui">Год</span>.</p></li>
+      <li><p>Укажите <span class="ui">Значение</span> — конкретный месяц, квартал или полугодие.</p></li>
+      <li><p>Нажмите <span class="ui">Сформировать</span>.</p></li>
+    </ol>
+
+    <h4>Как читать таблицу</h4>
+    <p>Строки — проекты или сотрудники. Колонки сгруппированы в три блока, и в каждом блоке одни и те же четыре показателя:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Блок</th><th>Что измеряет</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Кол-во, шт.</span></td><td>Количество проданных объектов</td></tr>
+          <tr><td><span class="ui">Контрактация</span></td><td>Сумма заключённых договоров</td></tr>
+          <tr><td><span class="ui">Поступления</span></td><td>Фактически полученные деньги</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Показатель</th><th>Смысл</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">План</span></td><td>Загруженное вами значение из шаблона</td></tr>
+          <tr><td><span class="ui">Факт</span></td><td>Что система насчитала по реальным сделкам и платежам</td></tr>
+          <tr><td><span class="ui">% факт</span></td><td>Выполнение плана на текущий момент</td></tr>
+          <tr><td><span class="ui">% прогноз</span></td><td>Ожидаемое выполнение к концу периода при текущем темпе</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Разрыв между контрактацией и поступлениями — это ваша дебиторка.</b> Договоров подписано много, а денег пришло мало: смотрите просроченные платежи в разделе Финансы. Читайте <span class="ui">% прогноз</span> в середине месяца — по нему видно, успевает отдел или уже нет.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Контроль сделок</h3>
+    <p class="lede">Где сделки застревают и на что смотреть в первую очередь.</p>
+
+    <p>Сделка проходит четыре шага: <b>Информация &rarr; Условия &rarr; График платежей &rarr; Документы</b>. Статус меняется автоматически, по факту действий менеджера.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Статус сделки</th><th>Что уже сделано</th><th>Риск застревания</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip y">Бронь</span></td><td>Объект придержан за клиентом, есть дата окончания брони</td><td>Бронь истекает, а объект не продан и не освобождён</td></tr>
+          <tr><td><span class="chip b">В работе</span></td><td>Согласована цена и сохранён график платежей</td><td>Договор не подписан неделями</td></tr>
+          <tr><td><span class="chip g">Успешно закрыта</span></td><td>Обе стороны подписали договор</td><td>&mdash;</td></tr>
+          <tr><td><span class="chip n">Отменена</span></td><td>Отменена без оплат</td><td>Много отмен у одного менеджера</td></tr>
+          <tr><td><span class="chip r">Расторгнута</span></td><td>Расторгнута с документом, есть возвраты</td><td>Деньги к возврату висят непроведёнными</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Что контролировать еженедельно</h4>
+    <ul>
+      <li><b>Брони с истекающим сроком.</b> В списке сделок отфильтруйте статус <span class="ui">Бронь</span> и отсортируйте по <span class="ui">Дата окончания брони</span>. Истёкшие брони система снимает сама: сделка получает статус <span class="chip n">Отменена</span> с пометкой о сроке, объект возвращается в продажу. Ваш контроль — успеть продлить бронь до этого момента.</li>
+      <li><b>Сделки «В работе» без договора.</b> График есть, номер договора пуст — значит, застряли на шаге 4.</li>
+      <li><b>Скидки.</b> В карточке сделки на шаге <span class="ui">Условия сделки</span> видно поле <span class="ui">Применено</span> со списком скидок и процентов. Аномальные скидки видны здесь и в логах.</li>
+      <li><b>Отмены и расторжения.</b> В сводной таблице сделок сгруппируйте <span class="ui">По менеджеру</span> и сравните долю расторжений. Заявка отменённой сделки автоматически возвращается в работу, поэтому конверсия воронки не завышается несостоявшимися продажами.</li>
+      <li><b>Объекты в резерве.</b> В шахматке дома это синие ячейки. Каждая — квартира, выведенная из продажи; чем дольше она там висит, тем больше замороженной выручки.</li>
+    </ul>
+
+    <h4>Резерв — ваше решение</h4>
+    <p>Статус <span class="chip b">Резерв</span> означает, что объект заведён в системе, но <b>не продаётся</b>: формально есть, фактически недоступен. Менеджеры его видят и клиентам не предлагают.</p>
+    <p>Вывести объект из продажи и вернуть обратно может только руководитель — распоряжением администратору, который меняет статус в карточке объекта и фиксирует основание в комментарии. Менеджер этого не делает.</p>
+
+    <div class="tip">
+      <p><b>Раз в месяц пересматривайте резерв.</b> У объекта нет истории изменений, поэтому единственный след решения — комментарий, который оставил администратор. Пройдитесь по синим ячейкам в шахматках и решите по каждой: возвращаем в продажу или оставляем. Объекты, про которые все забыли, — самая тихая статья потерь.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Расторжение всегда требует документа-основания.</b> Если по сделке были оплаченные платежи или стоит дата подписания клиентом, простая отмена невозможна — менеджер обязан приложить скан. Это ваша защита при разборе спорных ситуаций.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>Контроль платежей</h3>
+    <p class="lede">Раздел «Финансы» — это дебиторка отдела в реальном времени.</p>
+
+    <ol class="steps">
+      <li><p>Откройте <span class="path">Финансы</span>. На вкладке <span class="ui">Список платежей</span> задайте <span class="ui">Дата к оплате (от / до)</span>.</p></li>
+      <li><p>Перейдите на <span class="ui">Сводная таблица</span> и посмотрите виджеты <span class="ui">Просроченные платежи</span> и <span class="ui">Оплаченные платежи</span>. Если в компании есть сделки в разных валютах, показывается отдельная пара цифр на каждую валюту — суммы не складываются в одно число.</p></li>
+      <li><p>Сгруппируйте <span class="ui">По менеджеру</span> — увидите, чья дебиторка растёт, и <span class="ui">По проекту</span> — где хуже собираемость.</p></li>
+      <li><p>Выгрузите в Excel для сверки с бухгалтерией.</p></li>
+    </ol>
+
+    <h5>Статусы платежа</h5>
+    <p><span class="chip b">К оплате</span> <span class="chip g">Оплачен</span> <span class="chip r">Просрочен</span> <span class="chip y">К возврату</span> <span class="chip n">Возвращен</span></p>
+
+    <div class="warn">
+      <p><b>Статус <span class="ui">К возврату</span> требует действия.</b> Он появляется после расторжения сделки с оплаченными платежами. Пока по такому платежу не нажали <span class="ui">Вернуть</span>, обязательство перед клиентом остаётся открытым. Отдельно проверяйте этот статус каждую неделю.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Задачи и поручения</h3>
+    <p class="lede">Как ставить задачи, принимать работу и возвращать её на доработку.</p>
+
+    <div class="flow">
+      <div class="st"><b>Новая</b><span>Вы поставили</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>В работе</b><span>Исполнитель начал</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>На проверке</b><span>Ваш ход</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Завершена</b><span>Приняли</span></div>
+    </div>
+
+    <h4>Поставить задачу</h4>
+    <ol class="steps">
+      <li><p>В разделе <span class="path">Задачи</span> нажмите <span class="ui">Создать задачу</span>.</p></li>
+      <li><p>Заполните <span class="ui">Название</span> и <span class="ui">Описание</span> — формулируйте результат, а не процесс.</p></li>
+      <li><p>Выберите <span class="ui">Исполнитель</span> и <span class="ui">Срок выполнения</span>.</p></li>
+      <li><p>Поставьте <span class="ui">Приоритет</span>: <span class="chip n">Низкий</span> <span class="chip b">Обычный</span> <span class="chip y">Высокий</span> <span class="chip r">Срочный</span></p></li>
+      <li><p>Добавьте <span class="ui">Наблюдатели</span>, если задача касается нескольких людей, и <span class="ui">Оценка времени</span> — потом сравните с фактом.</p></li>
+      <li><p>Разбейте крупное поручение через <span class="ui">Подзадачи</span>.</p></li>
+    </ol>
+
+    <h4>Права руководителя по задачам</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Возможность</th><th>Что даёт</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Редактирование задачи в работе</span></td><td>Менять условия задачи, которую исполнитель уже начал</td></tr>
+          <tr><td><span class="ui">Вернуть в работу</span></td><td>Открыть отменённую задачу заново. Система попросит новый дедлайн (и, если нужно, время начала) и вернёт задачу в статус <span class="chip b">Новая</span> — исполнитель начинает её заново кнопкой <span class="ui">Начать</span></td></tr>
+          <tr><td>Принудительное редактирование</td><td>Править завершённые и отменённые задачи</td></tr>
+          <tr><td colspan="2">Родительскую задачу нельзя завершить, пока открыта хотя бы одна подзадача — это правило действует для всех, включая руководителя</td></tr>
+          <tr><td>Удаление логов</td><td>Убирать ошибочные записи из истории задачи</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>Эти права выдаёт администратор и они есть не у каждого руководителя. Если нужной кнопки нет — запросите доступ, назвав действие из таблицы.</p>
+    </div>
+
+    <p>Режимы <span class="ui">Канбан</span> и <span class="ui">Календарь</span> удобны для планёрки: канбан показывает, где скопились задачи, календарь — как распределены дедлайны по дням.</p>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Скидки</h3>
+    <p class="lede">Инструмент управления ценой. Смотрите, что действует прямо сейчас.</p>
+
+    <p>Раздел <span class="path">Скидки</span> содержит акции вашей компании — чужие скидки сюда не попадают и на ваши сделки не влияют. У каждой скидки есть <span class="ui">Процент (%)</span>, <span class="ui">Дата начала</span>, <span class="ui">Дата окончания</span> (пусто — бессрочно), <span class="ui">Тип недвижимости</span> и список домов. Ограничения складываются: скидка для дома №2 и типа «Квартира» действует только на квартиры дома №2, а пустое поле снимает ограничение по этому признаку.</p>
+
+    <p>Менеджер в сделке видит только те скидки, которые действуют для конкретного объекта на текущую дату, — вручную «придумать» скидку он не может. Поэтому контроль скидочной политики сводится к контролю этого справочника.</p>
+
+    <div class="tip">
+      <p><b>Проверяйте даты окончания.</b> Скидка без даты окончания действует бессрочно и незаметно съедает маржу месяцами. Раз в месяц просматривайте список и закрывайте отработавшие акции — или попросите об этом администратора, если у вас нет прав на редактирование.</p>
+    </div>
+
+    <p>В карточке скидки есть история изменений: кто менял процент и даты.</p>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Логи и аудит</h3>
+    <p class="lede">Система запоминает каждое значимое изменение. Это ваш инструмент разбора спорных ситуаций.</p>
+
+    <p>Вкладка <span class="ui">Логи</span> есть в карточках заявки, клиента, встречи, сделки, дома, скидки, платежа и задачи. Записи ведутся автоматически и содержат: кто, когда, что именно изменил — со старым и новым значением.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Где смотреть</th><th>Что покажет</th></tr></thead>
+        <tbody>
+          <tr><td>Логи сделки</td><td>Изменения стоимости по договору, скидок, номера и даты договора, дат подписания, загрузку скана, создание и обновление графика платежей</td></tr>
+          <tr><td>Логи заявки</td><td>Смену статусов и причин отказа</td></tr>
+          <tr><td>Логи клиента</td><td>Правки контактных и паспортных данных</td></tr>
+          <tr><td>Логи скидки</td><td>Изменение процента и сроков действия</td></tr>
+          <tr><td>История задачи</td><td>Смену статуса, исполнителя, дедлайна</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Типичный разбор.</b> Клиент утверждает, что ему обещали другую цену. Откройте сделку &rarr; вкладка <span class="ui">Логи</span>: там видно, кто и когда менял <span class="ui">Стоимость по договору</span> и какие скидки применял. Разговор становится предметным за минуту.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>Ритм управления</h3>
+    <p class="lede">Готовый распорядок контроля. Можно распечатать и повесить рядом с монитором.</p>
+
+    <div class="cols">
+      <div>
+        <h6>Каждый день</h6>
+        <p>Дашборд: новые заявки и просроченные платежи. Заявки в статусе <span class="ui">Новая</span> старше суток. Встречи вчерашнего дня без результата.</p>
+      </div>
+      <div>
+        <h6>Каждую неделю</h6>
+        <p>Забытые заявки по сотрудникам. Брони с истекающим сроком. Сделки <span class="ui">В работе</span> без номера договора. Платежи в статусе <span class="ui">К возврату</span>.</p>
+      </div>
+      <div>
+        <h6>Каждый месяц</h6>
+        <p>Загрузка планов на новый период. Отчёт план-факт по проектам и сотрудникам. Ревизия действующих скидок. Доля отмен и расторжений по менеджерам.</p>
+      </div>
+    </div>
+
+    <h5>Пять цифр для планёрки</h5>
+    <ol>
+      <li>Новых заявок за неделю и распределение по источникам.</li>
+      <li>Забытые заявки — сколько и у кого.</li>
+      <li>Просроченные встречи по исполнителям.</li>
+      <li>Просроченные платежи — сумма и динамика.</li>
+      <li>% факт и % прогноз по контрактации из отчёта план-факт.</li>
+    </ol>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Частые вопросы</h3>
+
+    <dl class="qa">
+      <dt>В отчёте нет одного из моих сотрудников</dt>
+      <dd>Он не привязан к вашему отделу либо у него другая компания. Проверьте у администратора привязку пользователя к отделу.</dd>
+
+      <dt>В отчёте план-факт колонка «План» пустая</dt>
+      <dd>План на этот период не загружен. Скачайте шаблон, заполните и загрузите его на той же вкладке.</dd>
+
+      <dt>Загрузил план, но цифры не изменились</dt>
+      <dd>После загрузки нажмите <span class="ui">Сформировать</span> — таблица не пересчитывается сама. Также проверьте, что в фильтрах выбран тот же год и период, что и в файле.</dd>
+
+      <dt>«Загрузить план» отвечает отказом</dt>
+      <dd>Нет права на ресурс <span class="ui">Планы продаж</span>: кнопка видна всем, но работает только с ним. Запросите право у администратора.</dd>
+
+      <dt>Цифры на дашборде и в сводной таблице расходятся</dt>
+      <dd>Проверьте период. Дашборд показывает сегодня и текущий месяц, сводная — выбранный вами диапазон дат.</dd>
+
+      <dt>Менеджер не может закрыть сделку</dt>
+      <dd>Сделка закрывается автоматически, когда заполнены <b>обе</b> даты подписания — клиентом и компанией. Отдельной кнопки нет.</dd>
+
+      <dt>Нужно изменить чужую сделку или заявку</dt>
+      <dd>Требуется область <span class="ui">Отдел</span> и право на редактирование этого раздела. Если кнопки неактивны — запросите доступ у администратора.</dd>
+
+      <dt>Нужно вернуть в работу завершённую задачу</dt>
+      <dd>Завершённую — нужно право принудительного редактирования. Отменённую возвращает право <span class="ui">Возврат отменённой задачи</span>: кнопка запросит новый дедлайн и вернёт задачу в статус <span class="chip b">Новая</span>. Оба права выдаёт администратор.</dd>
+
+      <dt>Сотрудник уволился — что делать с его данными</dt>
+      <dd>Не удаляйте пользователя: вместе с ним пропадёт авторство записей. Попросите администратора деактивировать учётную запись — данные и история сохранятся.</dd>
+    </dl>
+
+    <div class="end">
+      Руководство руководителя отдела &middot; CRM Недвижимость &middot; версия 1.0, сентябрь 2026.<br>
+      Расширение прав, планы продаж, справочники и шаблоны &mdash; через администратора CRM.
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+(function () {
+  var chapters = [].slice.call(document.querySelectorAll("section.ch"));
+  var links = [].slice.call(document.querySelectorAll("nav.toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+
+  /* --- highlight the chapter currently in view --- */
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove("on"); });
+    if (byId[id]) byId[id].classList.add("on");
+  }
+  if ("IntersectionObserver" in window) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+      for (var i = 0; i < chapters.length; i++) {
+        if (seen[chapters[i].id]) { mark(chapters[i].id); break; }
+      }
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    chapters.forEach(function (c) { io.observe(c); });
+  }
+  if (chapters.length) mark(chapters[0].id);
+
+  /* --- filter chapters by text --- */
+  var box = document.getElementById("finder");
+  var empty = document.getElementById("no-hit");
+  if (box) {
+    var haystack = chapters.map(function (c) {
+      return (c.textContent || "").toLowerCase().replace(/\s+/g, " ");
+    });
+    var run = function () {
+      var q = box.value.trim().toLowerCase();
+      var hits = 0;
+      chapters.forEach(function (c, i) {
+        var hit = !q || haystack[i].indexOf(q) > -1;
+        c.classList.toggle("hide", !hit);
+        var a = byId[c.id];
+        if (a && a.parentNode) a.parentNode.classList.toggle("hide", !hit);
+        if (hit) hits++;
+      });
+      if (empty) empty.classList.toggle("on", hits === 0);
+    };
+    box.addEventListener("input", run);
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { box.value = ""; run(); }
+    });
+  }
+
+  /* --- print --- */
+  var p = document.getElementById("print");
+  if (p) p.addEventListener("click", function () { window.print(); });
+})();
+</script>
+</body>
+</html>

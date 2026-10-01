@@ -454,6 +454,9 @@ class ClientListView(generics.ListCreateAPIView):
 
         today = timezone.now()
         Meeting.objects.create(
+            # Компания обязательна для изоляции: встреча без неё выпадала из
+            # выборок по компании и нарушала правило «каждая запись — своей компании»
+            company=company,
             client=client_instance,
             creator=None,
             executor=self.request.user,

@@ -76,7 +76,13 @@
     "uploading": "Yuklanmoqda...",
     "phone": "Telefon",
     "no_data": "Ko'rsatish uchun ma'lumot yo'q",
-    "restore": "Tiklash"
+    "restore": "Tiklash",
+    "action_irreversible": "Bu amalni qaytarib bo‘lmaydi.",
+    "department": "Bo‘lim",
+    "errors": "Xatolar",
+    "no_client": "Mijoz ko‘rsatilmagan",
+    "success": "Muvaffaqiyatli",
+    "updated_at": "Yangilangan"
   },
   "nav": {
     "app_title": "Ko'chmas mulk CRM",
@@ -135,7 +141,8 @@
       "enter_email_error": "Emailni kiriting",
       "invalid_email": "To'g'ri email kiriting",
       "request_error": "So'rov yuborishda xatolik"
-    }
+    },
+    "login_error": "Kirishda xatolik"
   },
   "pages": {
     "dashboard": {
@@ -422,10 +429,10 @@
       "save_data": "Ma'lumotlarni saqlash",
       "deal_completed": "Bitim yakunlandi",
       "cancelled_label": "Bekor qilingan",
-      "terminated_label": "Bekor qilingan",
-      "termination_date": "Bekor qilish sanasi:",
+      "terminated_label": "Shartnoma buzilgan",
+      "termination_date": "Shartnoma buzilgan sana:",
       "termination_doc": "Asos hujjati:",
-      "cancel_or_terminate": "Bekor qilish",
+      "cancel_or_terminate": "Bekor qilish / Shartnomani buzish",
       "changes_saved": "O'zgarishlar saqlandi!",
       "status": "Holat",
       "client": "Mijoz",
@@ -444,13 +451,13 @@
       "status_booking": "Bron",
       "status_in_progress": "Jarayonda",
       "status_completed": "Yakunlangan",
-      "status_terminated": "Bekor qilingan",
+      "status_terminated": "Shartnomasi buzilgan",
       "status_cancelled": "Rad etilgan",
       "deal_title": "Bitim №{{id}} (Holat: {{status}})",
-      "cancel_terminate": "Bekor qilish",
+      "cancel_terminate": "Bekor qilish / Shartnomani buzish",
       "deal_closed": "Bitim yakunlandi ({{status}})",
       "cancelled": "Rad etilgan",
-      "terminated": "Bekor qilingan",
+      "terminated": "Shartnoma buzilgan",
       "reason": "Sabab",
       "termination_document": "Asos hujjati",
       "deal_steps": "Bitim bosqichlari",
@@ -540,7 +547,16 @@
       "layouts": {
         "load_error": "Planlarni yuklashda xatolik.",
         "not_loaded": "Bu bino uchun planlar hali Excel orqali yuklanmagan.",
-        "upload_hint": "Planlarni yuklash uchun Excel shablonini yuklab oling, to'ldiring va yuklang."
+        "upload_hint": "Planlarni yuklash uchun Excel shablonini yuklab oling, to'ldiring va yuklang.",
+        "bulk_upload": "Ommaviy yuklash",
+        "bulk_upload_example": "Masalan: Studiya_main.jpg, 1-xonali 35m_floor.png",
+        "bulk_upload_hint": "Ommaviy yuklash uchun fayl nomi formatidan foydalaning: nomi_turi.kengaytma",
+        "bulk_upload_types": "Turlari: main (plan), extra (qo‘shimcha plan), floor (qavatdagi joyi), usp (UTP)",
+        "created_layouts": "Yangi planlar yaratildi",
+        "failed_files": "Xatolik bo‘lgan fayllar",
+        "upload_result": "Yuklash natijasi",
+        "uploaded_files": "Yuklangan fayllar",
+        "uploading_files": "Fayllar yuklanmoqda..."
       },
       "cadastre_date_plan": "Kadastrning rejadagi sanasi",
       "details_tab": "Bino tafsilotlari",
@@ -1008,7 +1024,8 @@
       "in_progress": "Jarayonda",
       "junk": "Maqsadsiz",
       "rejected": "Rad etilgan",
-      "closed_won": "Muvaffaqiyatli yopilgan"
+      "closed_won": "Muvaffaqiyatli yopilgan",
+      "CLOSED_LOST": "Muvaffaqiyatsiz yopilgan"
     },
     "application_source": {
       "INTERNET": "Internet",
@@ -1033,7 +1050,7 @@
       "IN_PROGRESS": "Jarayonda",
       "CLOSED_WON": "Muvaffaqiyatli yopilgan",
       "CANCELLED": "Bekor qilingan",
-      "TERMINATED": "Bekor qilingan"
+      "TERMINATED": "Shartnoma buzilgan"
     },
     "task": {
       "NEW": "Yangi",
@@ -1098,7 +1115,15 @@
       "VIEW": "Ko'rish",
       "ADD": "Yaratish",
       "EDIT": "Tahrirlash",
-      "DELETE": "O'chirish"
+      "DELETE": "O'chirish",
+      "APPROVE": "Tasdiqlash",
+      "ASSIGN": "Tayinlash",
+      "DELETE_LOG": "Loglarni o‘chirish",
+      "EDIT_IN_PROGRESS": "Jarayondagini tahrirlash",
+      "EXPORT": "Eksport",
+      "FORCE_EDIT": "Majburiy tahrirlash",
+      "IMPORT": "Import",
+      "REOPEN": "Qayta ochish"
     },
     "permission_scope": {
       "OWN": "O'ziniki",
@@ -1142,7 +1167,9 @@
     "SETTINGS": "Sozlamalar",
     "TEMPLATE": "Shablonlar",
     "TASK": "Vazifalar",
-    "OTHER": "Boshqa"
+    "OTHER": "Boshqa",
+    "PARTNER_API_KEY": "Hamkor API kalitlari",
+    "TASK_LOG": "Vazifa loglari"
   },
   "forms": {
     "full_name": "F.I.O.",
@@ -1222,7 +1249,8 @@
     "load_building": "Bino ma'lumotlarini yuklab bo'lmadi.",
     "load_deal": "Bitim ma'lumotlarini yuklab bo'lmadi.",
     "load_discount_error": "Chegirma ma'lumotlarini yuklab bo'lmadi.",
-    "load_payment_error": "To'lov ma'lumotlarini yuklab bo'lmadi."
+    "load_payment_error": "To'lov ma'lumotlarini yuklab bo'lmadi.",
+    "load_error": "Yuklashda xatolik"
   },
   "table": {
     "id": "ID",
@@ -1300,14 +1328,14 @@
     "notes": "Suhbat bo'yicha eslatmalar"
   },
   "deal_cancellation": {
-    "termination_title": "Bitimni bekor qilish",
+    "termination_title": "Bitim shartnomasini buzish",
     "cancellation_title": "Bitimni bekor qilish",
-    "termination_warning": "Bitimda amalga oshirilgan to'lovlar yoki mijoz imzosi mavjud. Hujjat bilan bekor qilish talab qilinadi.",
+    "termination_warning": "Bitimda amalga oshirilgan to'lovlar yoki mijoz imzosi mavjud. Asos hujjati bilan shartnomani buzish talab qilinadi.",
     "simple_cancellation_info": "Bitimda amalga oshirilgan to'lovlar yo'q. Oddiy bekor qilish amalga oshiriladi.",
-    "termination_date": "Bekor qilish sanasi",
+    "termination_date": "Shartnoma buzilgan sana",
     "document_scan": "Asos hujjatining skanerlangan nusxasi",
     "cancellation_reason": "Bekor qilish sababi",
-    "terminate": "Bekor qilish",
+    "terminate": "Shartnomani buzish",
     "cancel_deal": "Bitimni bekor qilish"
   },
   "logs": {
@@ -1315,7 +1343,7 @@
       "full_name": "To'liq ism",
       "phone_number": "Telefon raqami",
       "email": "Email",
-      "status": "Status",
+      "status": "Holat",
       "assigned_user": "Tayinlangan foydalanuvchi",
       "source": "Manba",
       "notes": "Eslatmalar",

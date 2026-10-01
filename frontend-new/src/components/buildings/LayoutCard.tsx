@@ -22,6 +22,7 @@ const ImageUploader = ({
   onFileSelect,
   onDelete,
   replaceLabel,
+  deleteLabel,
   uploadLabel,
   downloadLabel,
   canEdit
@@ -31,6 +32,7 @@ const ImageUploader = ({
   onFileSelect: (file: File) => void,
   onDelete?: () => void,
   replaceLabel: string,
+  deleteLabel: string,
   uploadLabel: string,
   downloadLabel: string,
   canEdit: boolean
@@ -58,7 +60,7 @@ const ImageUploader = ({
         </Typography>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1 }}>
           {canEdit && imageUrl && onDelete && (
-            <Tooltip title="Удалить">
+            <Tooltip title={deleteLabel}>
               <IconButton size="small" color="error" onClick={onDelete}>
                 <DeleteIcon />
               </IconButton>
@@ -113,7 +115,7 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
       queryClient.invalidateQueries({ queryKey: ['layouts', buildingId] });
     },
     onError: () => {
-      alert(t('buildings.image_upload_error'));
+      alert(t('pages.buildings.image_upload_error'));
     }
   });
 
@@ -123,7 +125,7 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
       queryClient.invalidateQueries({ queryKey: ['layouts', buildingId] });
     },
     onError: () => {
-      alert(t('common.error_occurred'));
+      alert(t('errors.error_occurred'));
     }
   });
 
@@ -139,7 +141,6 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
     }
   };
 
-  const replaceLabel = t('buildings.replace', 'Заменить');
   const uploadLabel = t('common.upload');
   const downloadLabel = t('common.download');
 
@@ -155,7 +156,8 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
           imageUrl={layout.main_layout_image ? getMediaUrl(layout.main_layout_image) : null}
           onFileSelect={(file) => handleFileUpdate('main_layout_image', file)}
           onDelete={() => handleFileDelete('main_layout_image')}
-          replaceLabel={t('pages.buildings.replace', 'Заменить')}
+          replaceLabel={t('pages.buildings.replace')}
+          deleteLabel={t('common.delete')}
           uploadLabel={uploadLabel}
           downloadLabel={downloadLabel}
           canEdit={canEdit}
@@ -165,7 +167,8 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
           imageUrl={layout.extra_layout_image ? getMediaUrl(layout.extra_layout_image) : null}
           onFileSelect={(file) => handleFileUpdate('extra_layout_image', file)}
           onDelete={() => handleFileDelete('extra_layout_image')}
-          replaceLabel={t('pages.buildings.replace', 'Заменить')}
+          replaceLabel={t('pages.buildings.replace')}
+          deleteLabel={t('common.delete')}
           uploadLabel={uploadLabel}
           downloadLabel={downloadLabel}
           canEdit={canEdit}
@@ -175,7 +178,8 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
           imageUrl={layout.floor_plan_image ? getMediaUrl(layout.floor_plan_image) : null}
           onFileSelect={(file) => handleFileUpdate('floor_plan_image', file)}
           onDelete={() => handleFileDelete('floor_plan_image')}
-          replaceLabel={t('pages.buildings.replace', 'Заменить')}
+          replaceLabel={t('pages.buildings.replace')}
+          deleteLabel={t('common.delete')}
           uploadLabel={uploadLabel}
           downloadLabel={downloadLabel}
           canEdit={canEdit}
@@ -185,7 +189,8 @@ export default function LayoutCard({ layout, buildingId }: LayoutCardProps) {
           imageUrl={layout.usp_image ? getMediaUrl(layout.usp_image) : null}
           onFileSelect={(file) => handleFileUpdate('usp_image', file)}
           onDelete={() => handleFileDelete('usp_image')}
-          replaceLabel={t('pages.buildings.replace', 'Заменить')}
+          replaceLabel={t('pages.buildings.replace')}
+          deleteLabel={t('common.delete')}
           uploadLabel={uploadLabel}
           downloadLabel={downloadLabel}
           canEdit={canEdit}

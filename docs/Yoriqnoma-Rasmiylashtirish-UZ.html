@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<title>Rasmiylashtirish bo'limi qo'llanmasi</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F2F6F8; --surface:#FFFFFF; --surface-2:#E9F0F4; --surface-3:#F7FAFB;
+  --ink:#16232B; --ink-2:#41535E; --muted:#6B7F8B; --rule:#D6E1E8; --rule-2:#E7EEF2;
+  --accent:#1D5B79; --accent-ink:#12455E; --accent-soft:#E1EDF4;
+  --ok:#2E7D52; --ok-soft:#E4F2EA;
+  --info:#2A6FB0; --info-soft:#E4EDF8;
+  --warn:#9C6B12; --warn-soft:#F7EEDC;
+  --purple:#65499B; --purple-soft:#ECE6F6;
+  --danger:#A94036; --danger-soft:#F8E6E3;
+  --step-fg:#FFFFFF;
+  --sans:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --slab:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+    --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+    --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+    --ok:#6BC492; --ok-soft:#15291F;
+    --info:#7BB3E8; --info-soft:#152634;
+    --warn:#D6A85B; --warn-soft:#2C2415;
+    --purple:#A88FD8; --purple-soft:#241E33;
+    --danger:#E08579; --danger-soft:#2E1A17;
+    --step-fg:#0E161B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+  --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+  --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+  --ok:#6BC492; --ok-soft:#15291F;
+  --info:#7BB3E8; --info-soft:#152634;
+  --warn:#D6A85B; --warn-soft:#2C2415;
+  --purple:#A88FD8; --purple-soft:#241E33;
+  --danger:#E08579; --danger-soft:#2E1A17;
+  --step-fg:#0E161B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr);max-width:1360px;margin:0 auto;
+  background:var(--surface);min-height:100vh;border-inline:1px solid var(--rule-2)}
+.side{border-right:1px solid var(--rule);background:var(--surface-3);position:sticky;top:0;height:100vh;
+  overflow-y:auto;padding:26px 20px 32px;display:flex;flex-direction:column;gap:18px}
+.main{padding:34px 56px 96px;min-width:0}
+
+/* ---------- masthead ---------- */
+.brand{display:flex;flex-direction:column;gap:9px}
+.mark{display:flex;align-items:center;gap:9px}
+.mark svg{flex:none}
+.mark b{font:600 12.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.brand h1{font:700 20px/1.25 var(--slab);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.brand .role{font:500 11.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.finder{position:relative}
+.finder input{width:100%;font:400 14px/1 var(--sans);color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule);border-radius:7px;padding:9px 11px 9px 31px}
+.finder input::placeholder{color:var(--muted)}
+.finder svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.55}
+
+nav.toc{font-size:14px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav.toc a{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;
+  padding:6px 9px;border-radius:6px;color:var(--ink-2);text-decoration:none;line-height:1.35}
+nav.toc a span{font:500 11px/1.4 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+nav.toc a.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+nav.toc a.on span{color:var(--accent-ink)}
+nav.toc li.hide{display:none}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.btn{font:500 13px/1 var(--sans);color:var(--ink-2);background:var(--surface);border:1px solid var(--rule);
+  border-radius:7px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- doc head ---------- */
+.doc-head{border-bottom:2px solid var(--ink);padding-bottom:22px}
+.doc-head .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent-ink);margin-bottom:14px}
+.doc-head h2{font:700 clamp(28px,4vw,40px)/1.1 var(--slab);margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance}
+.doc-head p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:18px;font:500 12px/1.5 var(--mono);color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- chapters ---------- */
+section.ch{padding-top:52px;scroll-margin-top:20px}
+section.ch>h3{font:700 25px/1.25 var(--slab);margin:0 0 6px;letter-spacing:-.01em;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;text-wrap:balance}
+section.ch>h3 em{font:600 13px/1 var(--mono);font-style:normal;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+section.ch>.lede{margin:0 0 24px 41px;color:var(--muted);max-width:62ch}
+section.ch.hide{display:none}
+h4{font:600 16.5px/1.35 var(--sans);margin:34px 0 10px;letter-spacing:-.005em}
+h5{font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+p{margin:0 0 14px;max-width:68ch}
+.main ul,.main ol{max-width:68ch}
+.main li{margin:4px 0}
+
+/* ---------- ui chips ---------- */
+.ui{font:500 13.5px/1.35 var(--mono);background:var(--surface-2);border:1px solid var(--rule);
+  border-radius:5px;padding:1px 6px;white-space:nowrap;color:var(--ink)}
+.path{font:500 13.5px/1.35 var(--mono);color:var(--accent-ink);white-space:nowrap}
+.path i{font-style:normal;opacity:.5;padding:0 3px}
+code{font:500 13.5px/1.4 var(--mono);background:var(--surface-2);border-radius:4px;padding:1px 5px}
+
+/* ---------- steps ---------- */
+ol.steps{counter-reset:s;list-style:none;margin:18px 0 22px;padding:0 0 0 40px;
+  border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:15px}
+ol.steps>li{counter-increment:s;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:-51.5px;top:0;width:23px;height:23px;
+  display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:var(--step-fg);font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+ol.steps>li>p{margin:0 0 8px}
+ol.steps>li>p:last-child{margin-bottom:0}
+ol.steps ul{margin:8px 0 0;padding-left:19px}
+
+/* ---------- callouts ---------- */
+.note,.warn,.tip{border-left:3px solid;padding:13px 16px;margin:20px 0;border-radius:0 6px 6px 0;font-size:15px}
+.note{border-color:var(--info);background:var(--info-soft)}
+.warn{border-color:var(--danger);background:var(--danger-soft)}
+.tip{border-color:var(--ok);background:var(--ok-soft)}
+.note>:last-child,.warn>:last-child,.tip>:last-child{margin-bottom:0}
+.note b,.warn b,.tip b{font-weight:600}
+.warn b{color:var(--danger)}
+.tip b{color:var(--ok)}
+.note b{color:var(--info)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;margin:18px 0 24px;border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+thead th{font:600 11.5px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-3);border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+table .ui{font-size:12.5px}
+
+/* ---------- status chips ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1 var(--mono);
+  padding:5px 9px;border-radius:20px;white-space:nowrap}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chip.g{color:var(--ok);background:var(--ok-soft)}
+.chip.b{color:var(--info);background:var(--info-soft)}
+.chip.y{color:var(--warn);background:var(--warn-soft)}
+.chip.p{color:var(--purple);background:var(--purple-soft)}
+.chip.r{color:var(--danger);background:var(--danger-soft)}
+.chip.n{color:var(--muted);background:var(--surface-2)}
+
+/* ---------- pipeline ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:22px 0 26px;
+  padding:16px;background:var(--surface-3);border:1px solid var(--rule);border-radius:8px}
+.flow .st{flex:1 1 118px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+  padding:10px 12px;min-width:0}
+.flow .st b{display:block;font:600 14px/1.3 var(--sans)}
+.flow .st span{display:block;font:400 12.5px/1.4 var(--sans);color:var(--muted);margin-top:3px}
+.flow .ar{align-self:center;color:var(--muted);font-size:15px;flex:none}
+@media (max-width:640px){.flow .ar{display:none}.flow .st{flex:1 1 100%}}
+
+/* ---------- chessboard mini ---------- */
+.board{display:inline-grid;grid-template-columns:repeat(6,28px);gap:3px;margin:8px 0 4px}
+.board i{height:28px;border-radius:4px;display:grid;place-items:center;
+  font:500 10px/1 var(--mono);font-style:normal;color:var(--ink-2)}
+.board i.g{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.board i.b{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info)}
+.board i.y{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
+.board i.p{background:var(--purple-soft);box-shadow:inset 0 0 0 1px var(--purple)}
+.board i.r{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger)}
+
+/* ---------- misc ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin:18px 0 24px}
+.cols>div{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;background:var(--surface-3)}
+.cols h6{font:600 14px/1.3 var(--sans);margin:0 0 6px}
+.cols p{font-size:14px;color:var(--ink-2);margin:0}
+dl.qa{margin:18px 0}
+dl.qa dt{font-weight:600;margin-top:22px}
+dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
+.end{margin-top:64px;padding-top:20px;border-top:2px solid var(--ink);font-size:13.5px;color:var(--muted)}
+.no-hit{display:none;padding:40px 0;color:var(--muted)}
+.no-hit.on{display:block}
+
+/* ---------- responsive ---------- */
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:20px 22px}
+  .side-foot{margin-top:6px}
+  .main{padding:26px 22px 72px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--ground:#fff;--surface:#fff;--surface-2:#F2F2F2;--surface-3:#FAFAFA;
+        --rule:#BBB;--rule-2:#DDD;--ink:#111;--ink-2:#333;--muted:#666}
+  body{background:#fff;font-size:11pt}
+  .shell{display:block;max-width:none;border:0}
+  .side{display:none}
+  .main{padding:0}
+  section.ch{padding-top:26px}
+  section.ch>h3,h4{page-break-after:avoid}
+  ol.steps>li,.note,.warn,.tip,.scroll,.flow,.cols>div{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>Ko&lsquo;chmas mulk CRM</b>
+    </div>
+    <h1>Rasmiylashtirish bo&lsquo;limi qo&lsquo;llanmasi</h1>
+    <div class="role">Rol: Rasmiylashtirish mutaxassisi</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Bo&lsquo;limlar bo&lsquo;yicha qidirish" aria-label="Qidirish">
+  </div>
+
+  <nav class="toc" aria-label="Mundarija">
+    <ol>
+      <li><a href="#c1"><span>01</span>Jarayondagi o&lsquo;rningiz</a></li>
+      <li><a href="#c2"><span>02</span>Kirish va ish ekrani</a></li>
+      <li><a href="#c3"><span>03</span>Bitimni qabul qilish</a></li>
+      <li><a href="#c4"><span>04</span>Mijoz ma&lsquo;lumotlarini tekshirish</a></li>
+      <li><a href="#c5"><span>05</span>Shartnoma raqami va sanasi</a></li>
+      <li><a href="#c6"><span>06</span>Shartnomani yaratish</a></li>
+      <li><a href="#c7"><span>07</span>Imzolash va skan</a></li>
+      <li><a href="#c8"><span>08</span>Bekor qilish va buzish</a></li>
+      <li><a href="#c9"><span>09</span>Rasmiylashtirish navbati</a></li>
+      <li><a href="#c10"><span>10</span>Loglar &mdash; dalil sifatida</a></li>
+      <li><a href="#c11"><span>11</span>Shablon teglari</a></li>
+      <li><a href="#c12"><span>12</span>Holatlar ma&lsquo;lumotnomasi</a></li>
+      <li><a href="#c13"><span>13</span>Ko&lsquo;p beriladigan savollar</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Chop etish
+    </button>
+    <div>Versiya 1.0 &middot; 2026-yil sentyabr</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Foydalanuvchi qo&lsquo;llanmasi</div>
+    <h2>CRM da shartnomani qanday rasmiylashtirish kerak</h2>
+    <p>Rasmiylashtirish bo&lsquo;limi xodimi uchun qo&lsquo;llanma: shartnomani chop etishdan oldin nimani tekshirish, hujjatni shablondan qanday yaratish, imzolarni qayd etish va bitimni to&lsquo;g&lsquo;ri yopish &mdash; yoki uni bekor qilishni rasmiylashtirish.</p>
+    <div class="meta">
+      <span>Kimga: <b>rasmiylashtirish mutaxassisi</b></span>
+      <span>Bo&lsquo;limlar: <b>13</b></span>
+      <span>Ish maydoni: <b>bitimning 4-bosqichi</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Hech narsa topilmadi. Qidiruvni tozalang yoki boshqa so&lsquo;z kiriting.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Jarayondagi o&lsquo;rningiz</h3>
+    <p class="lede">Siz bitimning oxirgi bosqichida, tijorat shartlari kelishilgandan keyin qo&lsquo;shilasiz.</p>
+
+    <div class="flow">
+      <div class="st"><b>1. Ma&lsquo;lumot</b><span>Menejer: bron</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>2. Shartlar</b><span>Menejer: narx va chegirma</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>3. To&lsquo;lov jadvali</b><span>Menejer yoki moliyachi</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>4. Hujjatlar</b><span>Siz</span></div>
+    </div>
+
+    <p>Bitim sizga kelganda quyidagilar allaqachon qayd etilgan: mijoz, ob&lsquo;ekt, shartnoma narxi, qo&lsquo;llanilgan chegirmalar va to&lsquo;lov jadvali. Sizning vazifangiz — buni imzolangan shartnomaga aylantirish va bitimni tizimda to&lsquo;g&lsquo;ri yopish.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Siz nima qilasiz</th><th>Siz nima qilmaysiz</th></tr></thead>
+        <tbody>
+          <tr><td>Mijoz ma&lsquo;lumotlarining to&lsquo;liqligini tekshirasiz</td><td>Narx va chegirmalarni o&lsquo;zgartirmaysiz — bu menejer va rahbar zonasi</td></tr>
+          <tr><td>Shartnoma raqami va sanasini qo&lsquo;yasiz</td><td>To&lsquo;lov jadvalini tahrirlamaysiz</td></tr>
+          <tr><td>Shablondan shartnoma yaratasiz</td><td>Shablon yaratmaysiz va yuklamaysiz — bu administrator ishi</td></tr>
+          <tr><td>Imzolangan hujjat skanini yuklaysiz</td><td>To&lsquo;lovlarni belgilamaysiz — bu moliyachi ishi</td></tr>
+          <tr><td>Imzo sanalarini qayd etasiz</td><td>Ob&lsquo;ektlarni bron qilmaysiz</td></tr>
+          <tr><td>Asos hujjati bilan shartnoma buzilishini rasmiylashtirasiz</td><td>&nbsp;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Sizga qanday huquqlar kerak</h4>
+    <p>Ba&lsquo;zi tugma yoki bo&lsquo;limlar ko&lsquo;rinmasa, bu ro&lsquo;yxatni administratorga ko&lsquo;rsating:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Bo&lsquo;lim</th><th>Amallar</th><th>Nima uchun</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Bitimlar</span></td><td>Ko&lsquo;rish, Tahrirlash</td><td>&laquo;Hujjatlar&raquo; bosqichi bilan ishlash</td></tr>
+          <tr><td><span class="ui">Mijozlar</span></td><td>Ko&lsquo;rish, Tahrirlash</td><td>Pasport ma&lsquo;lumotlarini to&lsquo;ldirish</td></tr>
+          <tr><td><span class="ui">Shablonlar</span></td><td>Ko&lsquo;rish</td><td>Shartnoma yaratish</td></tr>
+          <tr><td><span class="ui">To&lsquo;lovlar</span></td><td>Ko&lsquo;rish</td><td>Chop etishdan oldin jadvalni tekshirish</td></tr>
+          <tr><td><span class="ui">Ko&lsquo;chmas mulk ob&lsquo;ektlari</span></td><td>Ko&lsquo;rish</td><td>Ob&lsquo;ekt tavsiflarini solishtirish</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Ko&lsquo;rish doirasi odatda <span class="ui">Kompaniya</span> bo&lsquo;ladi — siz faqat o&lsquo;z bo&lsquo;limingiz emas, barcha sotuv bo&lsquo;limlari shartnomalarini rasmiylashtirasiz.</p>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Kirish va ish ekrani</h3>
+    <p class="lede">Interfeys haqida bilish kerak bo&lsquo;lgan minimum.</p>
+
+    <ol class="steps">
+      <li><p>CRM manzilini oching, <span class="ui">Foydalanuvchi nomi</span> va <span class="ui">Parol</span> ni kiriting, <span class="ui">Kirish</span> ni bosing. Loginni administrator beradi — bu emailingiz emas.</p></li>
+      <li><p><span class="path">Bitimlar</span> bo&lsquo;limiga o&lsquo;ting — bu sizning asosiy ekraningiz.</p></li>
+    </ol>
+
+    <p>Parol kirish ekranidagi <span class="ui">Parolni unutdingizmi?</span> havolasi orqali tiklanadi: profilingizdagi email kerak bo&lsquo;ladi. Til va ko&lsquo;rinish yuqori o&lsquo;ngda almashtiriladi, o&lsquo;sha yerda kompaniya nomi ko&lsquo;rsatilgan avatar va <span class="ui">Chiqish</span> tugmasi bor.</p>
+
+    <h4>Bitim kartochkasi</h4>
+    <p>Ro&lsquo;yxatdan istalgan bitimni oching. Ichkarida ikkita yorliq bor:</p>
+    <ul>
+      <li><span class="ui">Bitim bosqichlari</span> — to&lsquo;rt bosqichdan iborat vertikal ro&lsquo;yxat. O&lsquo;z bosqichingizga o&lsquo;tish uchun <span class="ui">Hujjatlar</span> sarlavhasini bosing.</li>
+      <li><span class="ui">Loglar</span> — bitim bo&lsquo;yicha o&lsquo;zgarishlarning to&lsquo;liq tarixi.</li>
+    </ul>
+
+    <div class="note">
+      <p><b>&laquo;Hujjatlar&raquo; bosqichi faqat to&lsquo;lov jadvali saqlangandan keyin ochiladi.</b> Agar bosqich sarlavhasi xato bilan belgilangan va ochilmasa — jadval hali kiritilmagan. Bu nosozlik emas: bitimni menejer yoki moliyachiga qaytaring.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>Bitimni qabul qilish</h3>
+    <p class="lede">Chop etishdan oldingi besh daqiqalik tekshiruv qayta ishlashga ketadigan bir kunni tejaydi.</p>
+
+    <p>Shartnoma raqamini qo&lsquo;yishdan oldin bitim bosqichlarini pastdan yuqoriga qarab tekshiring.</p>
+
+    <ol class="steps">
+      <li><p><b>&laquo;Bitim ma&lsquo;lumotlari&raquo; bosqichi.</b> Mijoz va ob&lsquo;ektni tekshiring: loyiha, bino, ob&lsquo;ekt raqami, qavat, maydon. Bu mijozning arizasida ko&lsquo;rsatilgan ob&lsquo;ekt ekaniga ishonch hosil qiling.</p></li>
+      <li><p><b>&laquo;Bitim shartlari&raquo; bosqichi.</b> <span class="ui">Shartnoma narxi</span> va chegirmalar ro&lsquo;yxati bo&lsquo;lgan <span class="ui">Qo&lsquo;llanilgan</span> qatoriga qarang. Agar summa imzoga tayyorlanayotgan hujjatlardagidan farq qilsa — bu savol chop etishdan <b>oldin</b> menejerga beriladi.</p></li>
+      <li><p><b>&laquo;To&lsquo;lov jadvali&raquo; bosqichi.</b> Barcha to&lsquo;lovlar summasi shartnoma narxiga tengligini va to&lsquo;lov sanalari kelishuvga mos kelishini tekshiring.</p></li>
+      <li><p><b>Mijoz kartochkasi.</b> Uni mijoz ismidagi havola orqali oching va keyingi bobdagi ro&lsquo;yxat bo&lsquo;yicha tekshiring.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Jadvaldagi xatoni shartnomani chop etishdan oldin tuzating.</b> Bitim bo&lsquo;yicha birinchi to&lsquo;lov o&lsquo;tgandan keyin to&lsquo;langan qismlar jadvalda bloklanadi: to&lsquo;lov bekor qilinmaguncha ularni na qayta yozish, na olib tashlash mumkin. Summa va muddatlarni imzolashdan keyin emas, hozir tekshiring.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Mijoz ma&lsquo;lumotlarini tekshirish</h3>
+    <p class="lede">Tayyor shartnomadagi bo&lsquo;sh joy — deyarli har doim mijoz kartochkasidagi to&lsquo;ldirilmagan maydon.</p>
+
+    <p>Mijoz kartochkasini oching, <span class="ui">Asosiy ma&lsquo;lumotlar</span> yorlig&lsquo;i. Ro&lsquo;yxat bo&lsquo;yicha tekshiring:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Blok</th><th>Maydon</th><th>Shartnoma uchun majburiy</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="3">Shaxsiy ma&lsquo;lumotlar</td><td><span class="ui">To&lsquo;liq ism</span></td><td>Ha</td></tr>
+          <tr><td><span class="ui">Tug&lsquo;ilgan sana</span></td><td>Odatda ha</td></tr>
+          <tr><td><span class="ui">Email</span></td><td>Yo&lsquo;q</td></tr>
+          <tr><td>Telefonlar</td><td>Asosiy raqam</td><td>Ha — shartnomaga aloqa sifatida tushadi</td></tr>
+          <tr><td rowspan="6">Pasport ma&lsquo;lumotlari va manzillar</td><td><span class="ui">Pasport seriyasi</span></td><td>Ha</td></tr>
+          <tr><td><span class="ui">Pasport raqami</span></td><td>Ha</td></tr>
+          <tr><td><span class="ui">Pasport kim tomonidan berilgan</span></td><td>Ha</td></tr>
+          <tr><td><span class="ui">PINFL</span></td><td>Ha</td></tr>
+          <tr><td><span class="ui">INN</span></td><td>Shartnoma talabiga ko&lsquo;ra</td></tr>
+          <tr><td><span class="ui">Ro&lsquo;yxatdan o&lsquo;tish manzili</span></td><td>Ha</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Yetishmayotganini o&lsquo;zingiz to&lsquo;ldiring (mijozlarni tahrirlash huquqingiz bo&lsquo;lsa) va <span class="ui">O&lsquo;zgarishlarni saqlash</span> ni bosing. Mijozning pasport va boshqa hujjat nusxalari <span class="ui">Fayllar</span> yorlig&lsquo;ida — familiya yozilishi va rekvizitlarni o&lsquo;sha yerdan solishtirish qulay.</p>
+
+    <div class="tip">
+      <p><b>Ismning yozilishini menejerning so&lsquo;ziga emas, skanga qarab tekshiring.</b> Familiyada yoki pasport raqamida bir harflik farq shartnomani haqiqiy emas holatga keltiradi, qayta rasmiylashtirish esa — yangi shartnoma raqami va yo&lsquo;qotilgan bir kun.</p>
+    </div>
+
+    <div class="note">
+      <p>Telefonlar tartibi muhim: shartnomaga ro&lsquo;yxatdagi <b>birinchi</b> raqam qo&lsquo;yiladi. Mijozning asosiy raqami ikkinchi bo&lsquo;lsa, kartochkada tartibni o&lsquo;zgartiring.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>Shartnoma raqami va sanasi</h3>
+    <p class="lede">Bu ikki maydonsiz hujjat yaratish mumkin emas.</p>
+
+    <ol class="steps">
+      <li><p>Bitim kartochkasida <span class="ui">Hujjatlar</span> bosqichini oching.</p></li>
+      <li><p>Kompaniyada qabul qilingan raqamlash tartibi bo&lsquo;yicha <span class="ui">Shartnoma raqami</span> ni to&lsquo;ldiring.</p></li>
+      <li><p><span class="ui">Shartnoma sanasi</span> ni ko&lsquo;rsating.</p></li>
+      <li><p><span class="ui">Ma&lsquo;lumotlarni saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Shartnoma raqami kompaniya doirasida noyob.</b> Saqlash o&lsquo;tmasa, bunday raqam kompaniyangizning boshqa bitimiga berilgan — ehtimol xato bilan yoki boshqa bo&lsquo;limda. Raqamlashni o&lsquo;zgartirishdan oldin bitimlar ro&lsquo;yxatidagi filtr orqali uni toping va aniqlang. Shu CRM dagi qo&lsquo;shni kompaniyada xuddi shu raqamli shartnoma bo&lsquo;lishi mumkin — bu normal, raqamlashlaringiz kesishmaydi.</p>
+    </div>
+
+    <p>Raqam va sana saqlanmaguncha, shablonlar ro&lsquo;yxati o&lsquo;rniga tizim &laquo;Hujjatlarni yaratish uchun shartnoma raqami va sanasini saqlang&raquo; degan eslatmani ko&lsquo;rsatadi.</p>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Shartnomani yaratish</h3>
+    <p class="lede">Hujjat .docx shablondan ma&lsquo;lumotlar avtomatik qo&lsquo;yilgan holda yig&lsquo;iladi.</p>
+
+    <ol class="steps">
+      <li><p><span class="ui">Generatsiya</span> blokida mavjud shablonlar ro&lsquo;yxatiga qarang. Tizim faqat shu loyiha, bino va ob&lsquo;ekt turiga mos keladiganlarini ko&lsquo;rsatadi.</p></li>
+      <li><p>Kerakli shablon qarshisidagi <span class="ui">Yaratish</span> tugmasini bosing.</p></li>
+      <li><p><code>.docx</code> fayl yuklanadi. Uni oching va tekshiring: F.I.Sh., pasport, manzil, ob&lsquo;ekt raqami, maydon, summa raqam va so&lsquo;z bilan, quruvchi rekvizitlari.</p></li>
+      <li><p>Chop eting va imzoga topshiring.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Shablonlar ro&lsquo;yxati bo&lsquo;sh.</b> Ikki sabab bo&lsquo;lishi mumkin: shartnoma raqami va sanasi saqlanmagan yoki shu loyiha, bino yoxud ob&lsquo;ekt turi uchun shablon bog&lsquo;lanmagan. Birinchisini siz hal qilasiz, ikkinchisini — administrator.</p>
+    </div>
+
+    <h4>Hujjatdagi xatolar bilan nima qilish kerak</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Nimani ko&lsquo;rasiz</th><th>Sababi</th><th>Nima qilish kerak</th></tr></thead>
+        <tbody>
+          <tr><td>Ma&lsquo;lumot o&lsquo;rnida bo&lsquo;sh joy</td><td>Mijoz, bitim yoki ob&lsquo;ekt kartochkasida maydon to&lsquo;ldirilmagan</td><td>Kartochkani to&lsquo;ldiring va hujjatni qaytadan yarating</td></tr>
+          <tr><td>Matnda <code>{{client.full_name}}</code> kabi tegning o&lsquo;zi ko&lsquo;rinadi</td><td>Word shablonni tuzishda tegni bo&lsquo;laklarga ajratgan</td><td>Administratorga topshiring — bu shablonda tuzatiladi, bitimda emas</td></tr>
+          <tr><td>Summa yoki chegirma noto&lsquo;g&lsquo;ri</td><td>&laquo;Bitim shartlari&raquo; bosqichidagi ma&lsquo;lumot</td><td>Menejerga qaytaring, Word da qo&lsquo;lda tuzatmang</td></tr>
+          <tr><td>Quruvchi rekvizitlari noto&lsquo;g&lsquo;ri</td><td>Loyihaning <span class="ui">Quruvchi rekvizitlari</span> maydoni</td><td>Administratorga topshiring</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Yaratilgan faylni qo&lsquo;lda tuzatmang.</b> Word dagi tuzatish CRM ga tushmaydi: tizimda eski ma&lsquo;lumot qoladi va bu bitim bo&lsquo;yicha keyingi har qanday hujjat yana xato bilan chiqadi. Manbani — mijoz kartochkasi, bitim yoki shablonni — tuzating va qaytadan yarating.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Imzolash va skan</h3>
+    <p class="lede">Yakuniy bosqich: imzolash faktini qayd etish. Bitim o&lsquo;zi yopiladi.</p>
+
+    <ol class="steps">
+      <li><p>Mijoz va kompaniyadan imzolangan nusxani oling.</p></li>
+      <li><p>Hujjatni skanerlang va <span class="ui">Skanerlangan nusxa yuklash</span> orqali faylni yuklang.</p></li>
+      <li><p><span class="ui">Mijoz imzolagan sana</span> ni to&lsquo;ldiring.</p></li>
+      <li><p><span class="ui">Kompaniya imzolagan sana</span> ni to&lsquo;ldiring.</p></li>
+      <li><p><span class="ui">Ma&lsquo;lumotlarni saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="tip">
+      <p><b>Bitim avtomatik yopiladi.</b> <b>Ikkala</b> imzo sanasi saqlanishi bilan bitim <span class="chip g">Muvaffaqiyatli yopilgan</span> holatiga, ob&lsquo;ekt <span class="chip r">Sotilgan</span> holatiga o&lsquo;tadi, loglarda esa tegishli yozuv paydo bo&lsquo;ladi. Alohida yopish tugmasi yo&lsquo;q va kerak emas. Shu bilan birga bitim o&lsquo;sib chiqqan ariza ham yopiladi: u <span class="chip g">Muvaffaqiyatli yopilgan</span> holatini oladi va uning loglarida bitimga havola paydo bo&lsquo;ladi — arizani qo&lsquo;lda yopish shart emas.</p>
+    </div>
+
+    <div class="warn">
+      <p><b>Imzo sanalarini oldindan to&lsquo;ldirmang.</b> Haqiqiy imzodan oldin qo&lsquo;yilgan kompaniya imzo sanasi bitimni yopadi va ob&lsquo;ektni &laquo;Sotilgan&raquo; holatiga o&lsquo;tkazadi. Buni faqat asos hujjati bilan shartnomani buzish orqali qaytarish mumkin bo&lsquo;ladi.</p>
+    </div>
+
+    <p>Yopilgandan keyin bitimning barcha maydonlari faqat o&lsquo;qish uchun ochiq bo&lsquo;ladi. Skan bitimga biriktirilgan holda qoladi — uni istalgan vaqtda <span class="ui">Imzolangan hujjatlar</span> blokidan yuklab olish mumkin.</p>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>Bekor qilish va shartnomani buzish</h3>
+    <p class="lede">Hujjatlarga talabi turlicha bo&lsquo;lgan ikki xil holat.</p>
+
+    <ol class="steps">
+      <li><p>Bitimni oching va <span class="ui">Bekor qilish / Shartnomani buzish</span> tugmasini bosing.</p></li>
+      <li><p>Oynadagi xabarni o&lsquo;qing — tizim qo&lsquo;llaniladigan variantni o&lsquo;zi aniqlaydi.</p></li>
+      <li><p>Talab qilingan maydonlarni to&lsquo;ldiring va tasdiqlang.</p></li>
+    </ol>
+
+    <div class="cols">
+      <div>
+        <h6>Oddiy bekor qilish</h6>
+        <p>Bitim bo&lsquo;yicha <b>to&lsquo;langan to&lsquo;lovlar</b> va mijoz imzo sanasi bo&lsquo;lmasa mumkin. Faqat <span class="ui">Bekor qilish sababi</span> talab qilinadi.</p>
+      </div>
+      <div>
+        <h6>Shartnomani buzish</h6>
+        <p><b>To&lsquo;langan to&lsquo;lovlar yoki mijoz imzosi</b> bo&lsquo;lsa qo&lsquo;llaniladi. <span class="ui">Asos hujjatining skanerlangan nusxasi</span> va <span class="ui">Shartnoma buzilgan sana</span> majburiy.</p>
+      </div>
+    </div>
+
+    <p>Tizim ogohlantirish ko&lsquo;rsatadi: &laquo;Bitimda amalga oshirilgan to&lsquo;lovlar yoki mijoz imzosi mavjud. Hujjat bilan bekor qilish talab qilinadi&raquo;. Faylsiz amal bajarilmaydi.</p>
+
+    <h4>Keyin nima bo&lsquo;ladi</h4>
+    <ul>
+      <li>Barcha to&lsquo;langan to&lsquo;lovlar <span class="chip y">Qaytarilishi kerak</span> holatiga o&lsquo;tadi — ular bilan keyin moliyachi ishlaydi.</li>
+      <li>Qaytariladigan narsa bo&lsquo;lmasa, ob&lsquo;ekt darhol <span class="chip g">Tanlov</span> holatiga o&lsquo;tadi va yana sotuvga chiqadi.</li>
+      <li>Qaytariladigan to&lsquo;lovlar bo&lsquo;lsa, ob&lsquo;ekt oxirgi qaytarishgacha band qoladi: avvalgi mijoz bilan hisob-kitob qilinmagan xonadonni sotib bo&lsquo;lmaydi. Ob&lsquo;ektni moliyachi ozod qiladi — oxirgi qaytarishni belgilashi bilan avtomatik.</li>
+      <li>Bitim faqat o&lsquo;qish uchun ochiq bo&lsquo;ladi, uni ishga qaytarib bo&lsquo;lmaydi.</li>
+      <li>Bitim o&lsquo;sib chiqqan ariza <span class="chip y">Jarayonda</span> holatiga qaytadi — sotuv bo&lsquo;lmadi va u endi voronkada muvaffaqiyatli hisoblanmaydi.</li>
+      <li>Bitim bo&lsquo;yicha hujjatlar endi shakllantirilmaydi: yaratish tugmasi rad javobini beradi.</li>
+      <li>Loglarda kim va qachon bekor qilgani qayd etiladi.</li>
+    </ul>
+
+    <div class="note">
+      <p>Allaqachon yopilgan bitimni ham bekor qilish mumkin — bunda tizim to&lsquo;lovlardan qat&lsquo;i nazar doim asos hujjatini talab qiladi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Rasmiylashtirish navbati</h3>
+    <p class="lede">Aynan sizni kutayotgan bitimlarni qanday topish mumkin.</p>
+
+    <p>Tizimda alohida &laquo;rasmiylashtirishga&raquo; degan yorliq yo&lsquo;q — navbat <span class="path">Bitimlar</span> bo&lsquo;limidagi filtrlar bilan yig&lsquo;iladi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Nimani qidirish</th><th>Qanday filtrlash</th><th>Bu nimani anglatadi</th></tr></thead>
+        <tbody>
+          <tr><td>Rasmiylashtirishga tayyor</td><td><span class="ui">Jarayonda</span> holati, <span class="ui">Shartnoma raqami</span> bo&lsquo;sh</td><td>To&lsquo;lov jadvali bor, shartnoma hali berilmagan — asosiy navbatingiz</td></tr>
+          <tr><td>Imzoni kutmoqda</td><td><span class="ui">Jarayonda</span> holati, shartnoma raqami to&lsquo;ldirilgan</td><td>Shartnoma shakllangan, imzolar qayd etilmagan</td></tr>
+          <tr><td>Mijoz imzolagan, kompaniya yo&lsquo;q</td><td>Faqat <span class="ui">Mijoz imzolagan sana</span> to&lsquo;ldirilgan</td><td>Kompaniya tomonidan imzolanishini kutmoqda</td></tr>
+          <tr><td>Rasmiylashtirilgan</td><td><span class="ui">Muvaffaqiyatli yopilgan</span> holati</td><td>Ish yakunlangan</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><span class="ui">Shartnoma sanasidan</span> va <span class="ui">Shartnoma sanasigacha</span> filtrlari davr uchun shartnomalar reestrini yig&lsquo;ishga yordam beradi. <span class="ui">Umumiy jadval</span> yorlig&lsquo;i <span class="ui">Holat bo&lsquo;yicha</span> guruhlash bilan har bir bosqichda nechta bitim turganini ko&lsquo;rsatadi, <span class="ui">Excel ga eksport</span> tugmasi esa reestr uchun fayl beradi.</p>
+
+    <div class="tip">
+      <p><b>Bron muddatlarini kuzating.</b> Bitimlar ro&lsquo;yxatida <span class="ui">Bron tugash sanasi</span> ustuni bor. <span class="ui">Bron</span> holatidagi, muddati tugayotgan bitim hali sizga kelmagan, ammo shu hafta nimaga tayyorlanish kerakligini ko&lsquo;rsatadi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Loglar &mdash; dalil sifatida</h3>
+    <p class="lede">Bitim kartochkasidagi &laquo;Loglar&raquo; yorlig&lsquo;i tahlil uchun muhim hamma narsani qayd etadi.</p>
+
+    <p>Yozuvlar avtomatik yaratiladi. Bitim bo&lsquo;yicha quyidagilar qayd etiladi:</p>
+    <ul>
+      <li><span class="ui">Shartnoma narxi</span> o&lsquo;zgarishi — eski va yangi qiymat bilan;</li>
+      <li>qo&lsquo;llanilgan chegirmalar tarkibining o&lsquo;zgarishi;</li>
+      <li><span class="ui">Shartnoma raqami</span> va <span class="ui">Shartnoma sanasi</span> berilishi va o&lsquo;zgarishi;</li>
+      <li>mijoz va kompaniya imzo sanalarining to&lsquo;ldirilishi;</li>
+      <li>imzolangan hujjat skanining yuklanishi;</li>
+      <li>to&lsquo;lov jadvalining yaratilishi va yangilanishi, summasi bilan;</li>
+      <li>bitim holatining o&lsquo;zgarishi, jumladan avtomatik yopilish.</li>
+    </ul>
+
+    <div class="tip">
+      <p><b>Odatiy vaziyat.</b> Mijoz boshqa summaga shartnoma imzolaganini aytmoqda. Bitimni oching &rarr; <span class="ui">Loglar</span>: u yerda shartnoma raqami berilgandan keyin narx o&lsquo;zgarganmi, kim va qachon o&lsquo;zgartirgani ko&lsquo;rinadi. O&lsquo;zgarish shartnoma sanasidan keyin bo&lsquo;lgan bo&lsquo;lsa — masala bir daqiqada hal bo&lsquo;ladi.</p>
+    </div>
+
+    <p>Loglarni tahrirlab bo&lsquo;lmaydi. Yozuvlarni faqat loglarni o&lsquo;chirish huquqiga ega xodim — odatda administrator — olib tashlashi mumkin.</p>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Shablon teglari</h3>
+    <p class="lede">Ma&lsquo;lumot uchun: shartnomaga aynan nima qo&lsquo;yiladi. Tekshirishda va administratorga vazifa qo&lsquo;yishda asqotadi.</p>
+
+    <p>Shablonlar sozlamalaridagi <span class="ui">Teglar bo&lsquo;yicha yordam</span> tugmasi asosiy ro&lsquo;yxatni ochadi. Shablonga mavjud ma&lsquo;lumotlar to&lsquo;plami esa kengroq:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Guruh</th><th>Asosiy teglar</th></tr></thead>
+        <tbody>
+          <tr><td>Mijoz</td><td><code>{{client.full_name}}</code>, <code>{{client.phone_number}}</code>, <code>{{client.email}}</code>, <code>{{client.passport_series}}</code>, <code>{{client.passport_number}}</code>, <code>{{client.passport_issued_by}}</code>, <code>{{client.pinfl}}</code>, <code>{{client.inn}}</code>, <code>{{client.registration_address}}</code></td></tr>
+          <tr><td>Bitim</td><td><code>{{deal.id}}</code>, <code>{{deal.contract_number}}</code>, <code>{{deal.contract_date}}</code>, <code>{{deal.contract_price}}</code>, <code>{{deal.booking_end_date}}</code></td></tr>
+          <tr><td>Ob&lsquo;ekt</td><td><code>{{property.unit_number}}</code>, <code>{{property.floor}}</code>, <code>{{property.area}}</code>, <code>{{property.price}}</code>, <code>{{property.entrance}}</code></td></tr>
+          <tr><td>Bino</td><td><code>{{building.name}}</code>, <code>{{building.address_detail}}</code>, <code>{{building.floors_count}}</code></td></tr>
+          <tr><td>Loyiha</td><td><code>{{project.name}}</code>, <code>{{project.address}}</code>, <code>{{project.developer_details}}</code></td></tr>
+          <tr><td>Menejer</td><td><code>{{manager.first_name}}</code>, <code>{{manager.last_name}}</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>Shablonlarni administrator yuklaydi va tahrirlaydi. Shartnomada biror rekvizit yetishmasa, vazifani aniq shakllantiring: &laquo;falon loyiha shartnomasi shabloniga pasport raqamidan keyin mijoz PINFL sini qo&lsquo;shish&raquo;. Shunda tuzatish bir necha daqiqa oladi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>Holatlar ma&lsquo;lumotnomasi</h3>
+
+    <h5>Bitim</h5>
+    <p><span class="chip y">Bron</span> <span class="chip b">Jarayonda</span> <span class="chip g">Muvaffaqiyatli yopilgan</span> <span class="chip n">Bekor qilingan</span> <span class="chip r">Shartnoma buzilgan</span></p>
+
+    <h5>Ko&lsquo;chmas mulk ob&lsquo;ekti</h5>
+    <p><span class="chip g">Tanlov</span> <span class="chip b">Rezerv</span> <span class="chip y">Bron</span> <span class="chip p">Bitim jarayonda</span> <span class="chip r">Sotilgan</span></p>
+
+    <h5>To&lsquo;lov</h5>
+    <p><span class="chip b">To&lsquo;lanishi kerak</span> <span class="chip g">To&lsquo;langan</span> <span class="chip r">Muddati o&lsquo;tgan</span> <span class="chip y">Qaytarilishi kerak</span> <span class="chip n">Qaytarilgan</span></p>
+
+    <h4>Sizning uchastkangizda holatlarni nima o&lsquo;zgartiradi</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Amal</th><th>Bitim holati</th><th>Ob&lsquo;ekt holati</th></tr></thead>
+        <tbody>
+          <tr><td>Shartnoma raqami va sanasi saqlandi</td><td>o&lsquo;zgarmaydi</td><td>o&lsquo;zgarmaydi</td></tr>
+          <tr><td>Bitta imzo sanasi to&lsquo;ldirildi</td><td>o&lsquo;zgarmaydi</td><td>o&lsquo;zgarmaydi</td></tr>
+          <tr><td><b>Ikkala</b> imzo sanasi to&lsquo;ldirildi</td><td><span class="chip g">Muvaffaqiyatli yopilgan</span></td><td><span class="chip r">Sotilgan</span></td></tr>
+          <tr><td>Oddiy bekor qilish</td><td><span class="chip n">Bekor qilingan</span></td><td><span class="chip g">Tanlov</span></td></tr>
+          <tr><td>Hujjat bilan shartnomani buzish</td><td><span class="chip r">Shartnoma buzilgan</span></td><td><span class="chip g">Tanlov</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Ko&lsquo;p beriladigan savollar</h3>
+
+    <dl class="qa">
+      <dt>&laquo;Hujjatlar&raquo; bosqichi ochilmayapti</dt>
+      <dd>Bitim bo&lsquo;yicha to&lsquo;lov jadvali saqlanmagan. Jadval kiritilmaguncha bosqich xato bilan belgilanadi. Bitimni menejer yoki moliyachiga qaytaring.</dd>
+
+      <dt>&laquo;Yaratish&raquo; tugmasi yo&lsquo;q</dt>
+      <dd>Shartnoma raqami va sanasi saqlanmagan. Ikkala maydonni to&lsquo;ldiring va <span class="ui">Ma&lsquo;lumotlarni saqlash</span> ni bosing.</dd>
+
+      <dt>Shartnoma raqami saqlanmayapti</dt>
+      <dd>Bunday raqam kompaniyangizning boshqa bitimiga berilgan — raqam kompaniya doirasida noyob. Filtrlar orqali takrorlangan bitimni toping va raqamlashni aniqlashtiring.</dd>
+
+      <dt>Shartnoma raqami bor, lekin shablonlar ro&lsquo;yxati bo&lsquo;sh</dt>
+      <dd>Shablon shu loyiha, bino yoki ob&lsquo;ekt turiga bog&lsquo;lanmagan. Loyiha va ob&lsquo;ekt turini aytib, administratorga murojaat qiling.</dd>
+
+      <dt>Shartnomada mijoz ma&lsquo;lumoti o&lsquo;rnida bo&lsquo;sh joy</dt>
+      <dd>Mijoz kartochkasidagi to&lsquo;ldirilmagan maydonlar, ko&lsquo;pincha pasport. To&lsquo;ldiring va qaytadan yarating — Word dagi tuzatish muammoni hal qilmaydi.</dd>
+
+      <dt>Shartnomada jingalak qavsli teglar ko&lsquo;rinyapti</dt>
+      <dd>Muammo shablonda: Word tegni bo&lsquo;laklarga ajratgan. Buni administrator tuzatadi, bitim kartochkasida tuzatib bo&lsquo;lmaydi.</dd>
+
+      <dt>Noto&lsquo;g&lsquo;ri telefon raqami qo&lsquo;yildi</dt>
+      <dd>Shartnomaga mijoz kartochkasidagi birinchi telefon tushadi. Raqamlar tartibini o&lsquo;zgartiring va hujjatni qaytadan yarating.</dd>
+
+      <dt>Imzo sanalarini xato to&lsquo;ldirdim — bitim yopildi</dt>
+      <dd>Yopilgan bitimni ishga qaytarib bo&lsquo;lmaydi. Imzolash aslida bo&lsquo;lmagan bo&lsquo;lsa, asos hujjati bilan shartnomani buzish rasmiylashtiriladi, so&lsquo;ng ob&lsquo;ekt qaytadan bron qilinadi.</dd>
+
+      <dt>Bitim maydonlarini tahrirlay olmayapman</dt>
+      <dd>Bitim yopilgan yoki bekor qilingan — barcha maydonlari o&lsquo;qish rejimiga o&lsquo;tkazilgan. Bu tarixni himoya qilish.</dd>
+
+      <dt>Shartnoma narxini o&lsquo;zgartirish kerak</dt>
+      <dd>Bu <span class="ui">Bitim shartlari</span> bosqichi va menejerning javobgarlik zonasi. Shartnoma raqami berilgandan keyingi summa o&lsquo;zgarishi loglarda ko&lsquo;rinadi, shuning uchun uni rahbar bilan kelishing.</dd>
+
+      <dt>Boshqa bo&lsquo;lim bitimlarini ko&lsquo;rmayapman</dt>
+      <dd>Ko&lsquo;rish doirangiz cheklangan. Butun kompaniya bo&lsquo;yicha shartnoma rasmiylashtirish uchun <span class="ui">Kompaniya</span> doirasi kerak — administratordan so&lsquo;rang.</dd>
+
+      <dt>Mijoz o&lsquo;z shartnoma nusxasini yo&lsquo;qotdi</dt>
+      <dd>Hujjatni shablondan qaytadan yarating — ma&lsquo;lumotlar o&lsquo;sha-o&lsquo;sha qo&lsquo;yiladi. Imzolangan nusxaning skani esa doim bitim kartochkasidagi <span class="ui">Imzolangan hujjatlar</span> blokida mavjud.</dd>
+    </dl>
+
+    <div class="end">
+      Rasmiylashtirish bo&lsquo;limi qo&lsquo;llanmasi &middot; Ko&lsquo;chmas mulk CRM &middot; versiya 1.0, 2026-yil sentyabr.<br>
+      Shartnoma shablonlari va quruvchi rekvizitlari &mdash; CRM administratori orqali. To&lsquo;lov va qaytarishlar &mdash; moliya bo&lsquo;limiga.
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+(function () {
+  var chapters = [].slice.call(document.querySelectorAll("section.ch"));
+  var links = [].slice.call(document.querySelectorAll("nav.toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+
+  /* --- highlight the chapter currently in view --- */
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove("on"); });
+    if (byId[id]) byId[id].classList.add("on");
+  }
+  if ("IntersectionObserver" in window) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+      for (var i = 0; i < chapters.length; i++) {
+        if (seen[chapters[i].id]) { mark(chapters[i].id); break; }
+      }
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    chapters.forEach(function (c) { io.observe(c); });
+  }
+  if (chapters.length) mark(chapters[0].id);
+
+  /* --- filter chapters by text --- */
+  var box = document.getElementById("finder");
+  var empty = document.getElementById("no-hit");
+  if (box) {
+    var haystack = chapters.map(function (c) {
+      return (c.textContent || "").toLowerCase().replace(/\s+/g, " ");
+    });
+    var run = function () {
+      var q = box.value.trim().toLowerCase();
+      var hits = 0;
+      chapters.forEach(function (c, i) {
+        var hit = !q || haystack[i].indexOf(q) > -1;
+        c.classList.toggle("hide", !hit);
+        var a = byId[c.id];
+        if (a && a.parentNode) a.parentNode.classList.toggle("hide", !hit);
+        if (hit) hits++;
+      });
+      if (empty) empty.classList.toggle("on", hits === 0);
+    };
+    box.addEventListener("input", run);
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { box.value = ""; run(); }
+    });
+  }
+
+  /* --- print --- */
+  var p = document.getElementById("print");
+  if (p) p.addEventListener("click", function () { window.print(); });
+})();
+</script>
+</body>
+</html>

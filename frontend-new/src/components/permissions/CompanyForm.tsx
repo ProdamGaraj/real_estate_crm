@@ -77,7 +77,7 @@ export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFor
         <Controller
           name="name"
           control={control}
-          rules={{ required: t('validation.required') }}
+          rules={{ required: t('common.required_field') }}
           render={({ field }) => (
             <TextField
               {...field}
@@ -93,7 +93,7 @@ export default function CompanyForm({ company, onSuccess, onCancel }: CompanyFor
         <Controller
           name="code"
           control={control}
-          rules={{ required: t('validation.required') }}
+          rules={{ required: t('common.required_field') }}
           render={({ field }) => (
             <TextField
               {...field}

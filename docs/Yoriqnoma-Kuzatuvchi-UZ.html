@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<title>Kuzatuvchi uchun qo'llanma</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F2F6F8; --surface:#FFFFFF; --surface-2:#E9F0F4; --surface-3:#F7FAFB;
+  --ink:#16232B; --ink-2:#41535E; --muted:#6B7F8B; --rule:#D6E1E8; --rule-2:#E7EEF2;
+  --accent:#1D5B79; --accent-ink:#12455E; --accent-soft:#E1EDF4;
+  --ok:#2E7D52; --ok-soft:#E4F2EA;
+  --info:#2A6FB0; --info-soft:#E4EDF8;
+  --warn:#9C6B12; --warn-soft:#F7EEDC;
+  --purple:#65499B; --purple-soft:#ECE6F6;
+  --danger:#A94036; --danger-soft:#F8E6E3;
+  --step-fg:#FFFFFF;
+  --sans:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --slab:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+    --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+    --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+    --ok:#6BC492; --ok-soft:#15291F;
+    --info:#7BB3E8; --info-soft:#152634;
+    --warn:#D6A85B; --warn-soft:#2C2415;
+    --purple:#A88FD8; --purple-soft:#241E33;
+    --danger:#E08579; --danger-soft:#2E1A17;
+    --step-fg:#0E161B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+  --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+  --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+  --ok:#6BC492; --ok-soft:#15291F;
+  --info:#7BB3E8; --info-soft:#152634;
+  --warn:#D6A85B; --warn-soft:#2C2415;
+  --purple:#A88FD8; --purple-soft:#241E33;
+  --danger:#E08579; --danger-soft:#2E1A17;
+  --step-fg:#0E161B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr);max-width:1360px;margin:0 auto;
+  background:var(--surface);min-height:100vh;border-inline:1px solid var(--rule-2)}
+.side{border-right:1px solid var(--rule);background:var(--surface-3);position:sticky;top:0;height:100vh;
+  overflow-y:auto;padding:26px 20px 32px;display:flex;flex-direction:column;gap:18px}
+.main{padding:34px 56px 96px;min-width:0}
+
+/* ---------- masthead ---------- */
+.brand{display:flex;flex-direction:column;gap:9px}
+.mark{display:flex;align-items:center;gap:9px}
+.mark svg{flex:none}
+.mark b{font:600 12.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.brand h1{font:700 20px/1.25 var(--slab);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.brand .role{font:500 11.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.finder{position:relative}
+.finder input{width:100%;font:400 14px/1 var(--sans);color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule);border-radius:7px;padding:9px 11px 9px 31px}
+.finder input::placeholder{color:var(--muted)}
+.finder svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.55}
+
+nav.toc{font-size:14px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav.toc a{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;
+  padding:6px 9px;border-radius:6px;color:var(--ink-2);text-decoration:none;line-height:1.35}
+nav.toc a span{font:500 11px/1.4 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+nav.toc a.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+nav.toc a.on span{color:var(--accent-ink)}
+nav.toc li.hide{display:none}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.btn{font:500 13px/1 var(--sans);color:var(--ink-2);background:var(--surface);border:1px solid var(--rule);
+  border-radius:7px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- doc head ---------- */
+.doc-head{border-bottom:2px solid var(--ink);padding-bottom:22px}
+.doc-head .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent-ink);margin-bottom:14px}
+.doc-head h2{font:700 clamp(28px,4vw,40px)/1.1 var(--slab);margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance}
+.doc-head p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:18px;font:500 12px/1.5 var(--mono);color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- chapters ---------- */
+section.ch{padding-top:52px;scroll-margin-top:20px}
+section.ch>h3{font:700 25px/1.25 var(--slab);margin:0 0 6px;letter-spacing:-.01em;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;text-wrap:balance}
+section.ch>h3 em{font:600 13px/1 var(--mono);font-style:normal;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+section.ch>.lede{margin:0 0 24px 41px;color:var(--muted);max-width:62ch}
+section.ch.hide{display:none}
+h4{font:600 16.5px/1.35 var(--sans);margin:34px 0 10px;letter-spacing:-.005em}
+h5{font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+p{margin:0 0 14px;max-width:68ch}
+.main ul,.main ol{max-width:68ch}
+.main li{margin:4px 0}
+
+/* ---------- ui chips ---------- */
+.ui{font:500 13.5px/1.35 var(--mono);background:var(--surface-2);border:1px solid var(--rule);
+  border-radius:5px;padding:1px 6px;white-space:nowrap;color:var(--ink)}
+.path{font:500 13.5px/1.35 var(--mono);color:var(--accent-ink);white-space:nowrap}
+.path i{font-style:normal;opacity:.5;padding:0 3px}
+code{font:500 13.5px/1.4 var(--mono);background:var(--surface-2);border-radius:4px;padding:1px 5px}
+
+/* ---------- steps ---------- */
+ol.steps{counter-reset:s;list-style:none;margin:18px 0 22px;padding:0 0 0 40px;
+  border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:15px}
+ol.steps>li{counter-increment:s;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:-51.5px;top:0;width:23px;height:23px;
+  display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:var(--step-fg);font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+ol.steps>li>p{margin:0 0 8px}
+ol.steps>li>p:last-child{margin-bottom:0}
+ol.steps ul{margin:8px 0 0;padding-left:19px}
+
+/* ---------- callouts ---------- */
+.note,.warn,.tip{border-left:3px solid;padding:13px 16px;margin:20px 0;border-radius:0 6px 6px 0;font-size:15px}
+.note{border-color:var(--info);background:var(--info-soft)}
+.warn{border-color:var(--danger);background:var(--danger-soft)}
+.tip{border-color:var(--ok);background:var(--ok-soft)}
+.note>:last-child,.warn>:last-child,.tip>:last-child{margin-bottom:0}
+.note b,.warn b,.tip b{font-weight:600}
+.warn b{color:var(--danger)}
+.tip b{color:var(--ok)}
+.note b{color:var(--info)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;margin:18px 0 24px;border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+thead th{font:600 11.5px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-3);border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+table .ui{font-size:12.5px}
+
+/* ---------- status chips ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1 var(--mono);
+  padding:5px 9px;border-radius:20px;white-space:nowrap}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chip.g{color:var(--ok);background:var(--ok-soft)}
+.chip.b{color:var(--info);background:var(--info-soft)}
+.chip.y{color:var(--warn);background:var(--warn-soft)}
+.chip.p{color:var(--purple);background:var(--purple-soft)}
+.chip.r{color:var(--danger);background:var(--danger-soft)}
+.chip.n{color:var(--muted);background:var(--surface-2)}
+
+/* ---------- pipeline ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:22px 0 26px;
+  padding:16px;background:var(--surface-3);border:1px solid var(--rule);border-radius:8px}
+.flow .st{flex:1 1 118px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+  padding:10px 12px;min-width:0}
+.flow .st b{display:block;font:600 14px/1.3 var(--sans)}
+.flow .st span{display:block;font:400 12.5px/1.4 var(--sans);color:var(--muted);margin-top:3px}
+.flow .ar{align-self:center;color:var(--muted);font-size:15px;flex:none}
+@media (max-width:640px){.flow .ar{display:none}.flow .st{flex:1 1 100%}}
+
+/* ---------- chessboard mini ---------- */
+.board{display:inline-grid;grid-template-columns:repeat(6,28px);gap:3px;margin:8px 0 4px}
+.board i{height:28px;border-radius:4px;display:grid;place-items:center;
+  font:500 10px/1 var(--mono);font-style:normal;color:var(--ink-2)}
+.board i.g{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.board i.b{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info)}
+.board i.y{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
+.board i.p{background:var(--purple-soft);box-shadow:inset 0 0 0 1px var(--purple)}
+.board i.r{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger)}
+
+/* ---------- misc ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin:18px 0 24px}
+.cols>div{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;background:var(--surface-3)}
+.cols h6{font:600 14px/1.3 var(--sans);margin:0 0 6px}
+.cols p{font-size:14px;color:var(--ink-2);margin:0}
+dl.qa{margin:18px 0}
+dl.qa dt{font-weight:600;margin-top:22px}
+dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
+.end{margin-top:64px;padding-top:20px;border-top:2px solid var(--ink);font-size:13.5px;color:var(--muted)}
+.no-hit{display:none;padding:40px 0;color:var(--muted)}
+.no-hit.on{display:block}
+
+/* ---------- responsive ---------- */
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:20px 22px}
+  .side-foot{margin-top:6px}
+  .main{padding:26px 22px 72px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--ground:#fff;--surface:#fff;--surface-2:#F2F2F2;--surface-3:#FAFAFA;
+        --rule:#BBB;--rule-2:#DDD;--ink:#111;--ink-2:#333;--muted:#666}
+  body{background:#fff;font-size:11pt}
+  .shell{display:block;max-width:none;border:0}
+  .side{display:none}
+  .main{padding:0}
+  section.ch{padding-top:26px}
+  section.ch>h3,h4{page-break-after:avoid}
+  ol.steps>li,.note,.warn,.tip,.scroll,.flow,.cols>div{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>Ko&lsquo;chmas mulk CRM</b>
+    </div>
+    <h1>Kuzatuvchi uchun qo&lsquo;llanma</h1>
+    <div class="role">Rol: Kuzatuvchi (kompaniya rahbariyati)</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Bo&lsquo;limlar bo&lsquo;yicha qidirish" aria-label="Qidirish">
+  </div>
+
+  <nav class="toc" aria-label="Mundarija">
+    <ol>
+      <li><a href="#c1"><span>01</span>Rolingiz va uning chegaralari</a></li>
+      <li><a href="#c2"><span>02</span>Kirish va interfeys</a></li>
+      <li><a href="#c3"><span>03</span>Kompaniya boshqaruv paneli</a></li>
+      <li><a href="#c4"><span>04</span>Voronka: arizalar va uchrashuvlar</a></li>
+      <li><a href="#c5"><span>05</span>Bitimlar va ob&lsquo;ektlar</a></li>
+      <li><a href="#c6"><span>06</span>Pul va debitorlik qarzi</a></li>
+      <li><a href="#c7"><span>07</span>Reja-fakt hisoboti</a></li>
+      <li><a href="#c8"><span>08</span>Umumiy jadvallar va Excel</a></li>
+      <li><a href="#c9"><span>09</span>Vazifalar</a></li>
+      <li><a href="#c10"><span>10</span>Loglar va audit</a></li>
+      <li><a href="#c11"><span>11</span>Nazorat ritmi</a></li>
+      <li><a href="#c12"><span>12</span>Holatlar ma&lsquo;lumotnomasi</a></li>
+      <li><a href="#c13"><span>13</span>Ko&lsquo;p beriladigan savollar</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Chop etish
+    </button>
+    <div>Versiya 1.0 &middot; 2026-yil oktyabr</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Foydalanuvchi qo&lsquo;llanmasi</div>
+    <h2>Rahbariyat CRM ma&lsquo;lumotlarini qanday o&lsquo;qiydi</h2>
+    <p>Direktor, mulkdor va kompaniya sotuvlarini ma&lsquo;lumotlarni o&lsquo;zgartirish huquqisiz to&lsquo;liq ko&lsquo;rishi kerak bo&lsquo;lgan boshqa rahbarlar uchun qo&lsquo;llanma: voronka, bitimlar, pul va reja bajarilishini qayerdan ko&lsquo;rish va bo&lsquo;lim boshliqlariga aniq savollar berish.</p>
+    <div class="meta">
+      <span>Kimga: <b>kompaniya rahbariyati</b></span>
+      <span>Bo&lsquo;limlar: <b>13</b></span>
+      <span>Kirish: <b>butun kompaniya ma&lsquo;lumotlarini ko&lsquo;rish</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Hech narsa topilmadi. Qidiruvni tozalang yoki boshqa so&lsquo;z kiriting.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Rolingiz va uning chegaralari</h3>
+    <p class="lede">Siz butun kompaniyani ko&lsquo;rasiz, lekin hech narsani o&lsquo;zgartirmaysiz. Rolning mazmuni shu.</p>
+
+    <p><span class="ui">Kuzatuvchi</span> roli <b>butun kompaniyangiz</b> — barcha bo&lsquo;limlar va barcha menejerlar ma&lsquo;lumotlarini ko&lsquo;rish imkonini beradi. Yozuvlarni yaratish, o&lsquo;zgartirish va o&lsquo;chirishga ruxsat bermaydi: siz ko&lsquo;rayotgan raqamlar sizning tahrirlaringizni emas, xodimlar ishini aks ettiradi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Menyu bo&lsquo;limi</th><th>Unda nima qilasiz</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Boshqaruv paneli</span></td><td>Kompaniya bo&lsquo;yicha kun va oy ko&lsquo;rsatkichlari</td></tr>
+          <tr><td><span class="ui">Mijozlar</span>, <span class="ui">Arizalar</span>, <span class="ui">Uchrashuvlar</span></td><td>Voronka holati, unutilgan arizalar, muddati o&lsquo;tgan uchrashuvlar</td></tr>
+          <tr><td><span class="ui">Bitimlar</span></td><td>Bronlar, jarayondagi, yopilgan, bekor qilingan va shartnomasi buzilgan bitimlar</td></tr>
+          <tr><td><span class="ui">Loyihalar</span></td><td>Uylarning shaxmatkalari: nima sotilgan, nima bronda, nima rezervda</td></tr>
+          <tr><td><span class="ui">Moliya</span></td><td>To&lsquo;lovlar, kechikish, qaytarishlar, tushumlar</td></tr>
+          <tr><td><span class="ui">Hisobotlar</span></td><td>Loyihalar va xodimlar bo&lsquo;yicha reja bajarilishi</td></tr>
+          <tr><td><span class="ui">Vazifalar</span></td><td>Kompaniya ichidagi topshiriqlar va ularning muddatlari</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Menyuingizda <span class="ui">Chegirmalar</span> va <span class="ui">Sozlamalar</span> bo&lsquo;limlari yo&lsquo;q: rolga chegirmalar, ma&lsquo;lumotnomalar va kirish huquqlarini ko&lsquo;rish kirmaydi.</p>
+
+    <div class="warn">
+      <p><b>Ba&lsquo;zi bo&lsquo;limlarda o&lsquo;zgartirish tugmalari ko&lsquo;rinadi, lekin siz uchun ishlamaydi.</b> Uchrashuvlar, vazifalar, bitimlar, to&lsquo;lovlar va hisobotlarda interfeys <span class="ui">Uchrashuv yaratish</span>, <span class="ui">Vazifa yaratish</span> yoki <span class="ui">To&lsquo;langan deb belgilash</span> kabi tugmalarni ko&lsquo;rsatadi. Bosilganda tizim bu amalga huquq yo&lsquo;qligini aytadi va hech narsani o&lsquo;zgartirmaydi. Bu nosozlik emas — faqat ko&lsquo;rish uchun mo&lsquo;ljallangan rol shunday ishlaydi.</p>
+    </div>
+
+    <div class="note">
+      <p><b>&laquo;Kuzatuvchi&raquo; — tizim roli.</b> Uning tarkibini administrator o&lsquo;zgartira olmaydi. Agar sizga ko&lsquo;proq kerak bo&lsquo;lsa — masalan, chegirmalarni ko&lsquo;rish, — administrator kerakli huquqlar to&lsquo;plami bilan alohida rol yaratadi va uni sizga shu rol o&lsquo;rniga yoki u bilan birga tayinlaydi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Kirish va interfeys</h3>
+    <p class="lede">O&lsquo;rganib olish uchun besh daqiqa.</p>
+
+    <ol class="steps">
+      <li><p>Administrator bergan CRM manzilini oching, <span class="ui">Foydalanuvchi nomi</span> va <span class="ui">Parol</span> ni kiriting va <span class="ui">Kirish</span> tugmasini bosing. Foydalanuvchi nomi — bu login, email emas.</p></li>
+      <li><p><span class="ui">Boshqaruv paneli</span> ochiladi. Chapda — bo&lsquo;limlar menyusi, yuqori o&lsquo;ngda — til (русский, English, o&lsquo;zbekcha) va mavzu almashtirgichlari.</p></li>
+      <li><p>Yuqori o&lsquo;ng burchakdagi avatarga bosing — tizim kompaniyangizni ko&lsquo;rsatadi. Bu siz ko&lsquo;radigan ma&lsquo;lumotlar chegarasi.</p></li>
+    </ol>
+
+    <p>Har qanday ro&lsquo;yxatda qatorga bosish yozuv kartochkasini ochadi; filtr belgisi <span class="ui">Filtrlar</span> panelini ochadi. Kartochkalarda <span class="ui">Loglar</span> yorlig&lsquo;i bor — o&lsquo;zgarishlar tarixi. Telefonda jadvallar kartochkalarga aylanadi — ma&lsquo;lumotlar o&lsquo;sha.</p>
+
+    <p>Parolni unutgan bo&lsquo;lsangiz, kirish ekranida <span class="ui">Parolni unutdingizmi?</span> ni bosing va profildagi emailni ko&lsquo;rsating. Xat kelmasa, parolni administrator o&lsquo;zgartiradi.</p>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>Kompaniya boshqaruv paneli</h3>
+    <p class="lede">&laquo;Hozir nima bo&lsquo;lyapti&raquo; degan savolga javob — butun kompaniya bo&lsquo;yicha birdaniga.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Blok</th><th>Nimani ko&lsquo;rsatadi</th><th>Qanday savol berish</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Bugungi yangi mijozlar</span></td><td>Kun davomida kiritilgan kartochkalar</td><td>Ish kunida nol — bugun murojaatlar qayerdan?</td></tr>
+          <tr><td><span class="ui">Bugungi yangi arizalar</span></td><td>Kelib tushgan arizalar</td><td>Keskin pasayish — reklama va sayt bilan nima bo&lsquo;ldi?</td></tr>
+          <tr><td><span class="ui">Oylik sotuvlar</span></td><td>Shu oyda <b>yopilgan</b> bitimlar — yopilish sanasi bo&lsquo;yicha</td><td>Rejaga ulguryapmizmi (solishtirish — reja-fakt hisobotida)?</td></tr>
+          <tr><td><span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span></td><td>O&lsquo;z vaqtida to&lsquo;lanmagan summa</td><td>Qarzdorlarga kim va qachon qo&lsquo;ng&lsquo;iroq qiladi?</td></tr>
+          <tr><td><span class="ui">Haftalik arizalar dinamikasi</span></td><td>Arizalarning kunlar bo&lsquo;yicha tushishi</td><td>Hafta kunlari bo&lsquo;yicha pasayishlar bormi?</td></tr>
+          <tr><td><span class="ui">Ariza manbalari</span></td><td>Kanallar bo&lsquo;yicha taqsimot</td><td>Qaysi kanal murojaat beradi, qaysi biri — yo&lsquo;q?</td></tr>
+          <tr><td><span class="ui">Oylik eng ko&lsquo;p sotuvlar</span></td><td>Xodimlar reytingi</td><td>Rejani kim tortyapti, kimga yordam kerak?</td></tr>
+          <tr><td><span class="ui">Kelgusi uchrashuvlar</span></td><td>Yaqin kunlardagi uchrashuvlar rejasi</td><td>Haftada ko&lsquo;rsatuvlar yetarlimi?</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Boshqaruv paneli &laquo;bugun&raquo; va &laquo;joriy oy&raquo;ni ko&lsquo;rsatadi. Ixtiyoriy davr uchun umumiy jadvallarni (08-bob) va reja-fakt hisobotini (07-bob) ko&lsquo;ring.</p>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Voronka: arizalar va uchrashuvlar</h3>
+    <p class="lede">Mijozlar qayerda yo&lsquo;qolayotgani ikki hisoblagichda ko&lsquo;rinadi.</p>
+
+    <div class="flow">
+      <div class="st"><b>Yangi</b><span>Kelib tushdi</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Jarayonda</b><span>Menejer olib boryapti</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Muvaffaqiyatli yopilgan</b><span>Bitimgacha yetdi</span></div>
+      <div class="ar">&nbsp;</div>
+      <div class="st"><b>Rad etilgan / Maqsadsiz</b><span>Sabab ko&lsquo;rsatilgan</span></div>
+    </div>
+
+    <h4>Unutilgan arizalar</h4>
+    <ol class="steps">
+      <li><p><span class="path">Arizalar</span> bo&lsquo;limini va <span class="ui">Umumiy jadval</span> yorlig&lsquo;ini oching.</p></li>
+      <li><p><span class="ui">&laquo;Unutilgan&raquo; arizalar</span> blokida <span class="ui">yangilanmagan &hellip; kundan ko&lsquo;p</span> chegarasini belgilang (standart — 7).</p></li>
+      <li><p>Raqamga bosing — aynan shu arizalar ro&lsquo;yxati ochiladi.</p></li>
+      <li><p>Umumiy jadvalni <span class="ui">Foydalanuvchi bo&lsquo;yicha</span> guruhlang — arizalar kimda harakatsiz turganini ko&lsquo;rasiz.</p></li>
+    </ol>
+
+    <h4>Muddati o&lsquo;tgan uchrashuvlar</h4>
+    <p><span class="path">Uchrashuvlar</span> &rarr; <span class="ui">Umumiy jadval</span> ni oching. <span class="ui">Muddati o&lsquo;tgan uchrashuvlar</span> hisoblagichi vaqti o&lsquo;tgan, lekin natijasi kiritilmagan uchrashuvlarni ko&lsquo;rsatadi; <span class="ui">Ijrochi bo&lsquo;yicha</span> guruhlash kimniki ekanini ko&lsquo;rsatadi. Bir haftadan ortiq muddati o&lsquo;tgan uchrashuvni tizim bo&lsquo;lib o&lsquo;tmagan deb yopadi — bu yo&lsquo;qotilgan aloqa.</p>
+
+    <div class="tip">
+      <p><b>Yig&lsquo;ilish uchun savol.</b> &laquo;Uch kundan ortiq yangilanmagan arizalar nechta va kimda?&raquo; Umumiy jadvaldagi raqam og&lsquo;zaki hisobotdan halolroq: hech kim tegmagan arizani tizim taxminan &laquo;jarayonda&raquo; deb hisoblamaydi.</p>
+    </div>
+
+    <p>Rad etish va maqsadsiz murojaatlar sabablari ariza kartochkalarida ko&lsquo;rinadi. Bitta sabab doim takrorlansa, bu mahsulot, narx yoki reklama sotilayotgan narsadan boshqasini va&lsquo;da qilayotgani haqida signal.</p>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>Bitimlar va ob&lsquo;ektlar</h3>
+    <p class="lede">Qancha sotilgan, qancha jarayonda va qancha sotuvdan olingan.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Bitim holati</th><th>Bu nimani anglatadi</th><th>Nimaga qarash kerak</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip y">Bron</span></td><td>Ob&lsquo;ekt bron tugash sanasigacha mijozga biriktirilgan</td><td>Tugayotgan bronlar: muddati o&lsquo;tganlarini tizim o&lsquo;zi olib tashlaydi, ob&lsquo;ekt sotuvga qaytadi</td></tr>
+          <tr><td><span class="chip b">Jarayonda</span></td><td>Narx kelishilgan, to&lsquo;lov jadvali bor</td><td>Haftalab shartnoma raqamisiz turgan bitimlar — rasmiylashtirishda tiqilib qolgan</td></tr>
+          <tr><td><span class="chip g">Muvaffaqiyatli yopilgan</span></td><td>Shartnomani ikkala tomon imzolagan</td><td>Bular sotuvlar; yopilish sanasi hisobotlarga tushadi</td></tr>
+          <tr><td><span class="chip n">Bekor qilingan</span></td><td>To&lsquo;lov va imzosiz bekor qilingan</td><td>Menejerlar bo&lsquo;yicha bekor qilishlar ulushi</td></tr>
+          <tr><td><span class="chip r">Shartnoma buzilgan</span></td><td>Hujjat bilan buzilgan; to&lsquo;lovlar qaytarilishi kerak</td><td>Qaytarilmagan pul (06-bob)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Uy shaxmatkasi</h4>
+    <p><span class="path">Loyihalar<i>&rsaquo;</i>loyiha<i>&rsaquo;</i>uy</span> ni va <span class="ui">Ob&lsquo;ektlar</span> yorlig&lsquo;ini oching: ustunlar — podyezdlar, qatorlar — qavatlar, katak rangi — ob&lsquo;ekt holati. Raqam, holat va maydonni ko&lsquo;rish uchun kursorni katak ustiga olib boring; bosish planirovka va narx bilan ob&lsquo;ekt kartochkasini ochadi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Rang</th><th>Ob&lsquo;ekt holati</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip g">Tanlov</span></td><td>Sotuvda</td></tr>
+          <tr><td><span class="chip b">Rezerv</span></td><td>Rahbariyat qarori bilan sotuvdan olingan</td></tr>
+          <tr><td><span class="chip y">Bron</span></td><td>Mijoz tomonidan bron qilingan</td></tr>
+          <tr><td><span class="chip p">Bitim jarayonda</span></td><td>To&lsquo;lov jadvali bilan bitim ketyapti</td></tr>
+          <tr><td><span class="chip r">Sotilgan</span></td><td>Sotilgan</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p><b>Rezerv — muzlatilgan tushum.</b> Rezervdagi ob&lsquo;ekt tizimga kiritilgan, lekin sotilmaydi. Oyda bir marta shaxmatkalardagi rezervlarni ko&lsquo;rib chiqing va har biri bo&lsquo;yicha qaror qiling: sotuvga qaytaramizmi yoki ushlab turamizmi. Rezerv asosini administrator ob&lsquo;ekt izohiga yozadi.</p>
+    </div>
+
+    <p>Uy kartochkasidagi <span class="ui">Planlar</span> yorlig&lsquo;i rolingiz uchun yuklash xatosini ko&lsquo;rsatadi: rolga planlar bo&lsquo;limini ko&lsquo;rish kirmaydi. Shu bilan birga, aniq ob&lsquo;ektning planirovka rasmi uning kartochkasida ko&lsquo;rinadi.</p>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Pul va debitorlik qarzi</h3>
+    <p class="lede">&laquo;Moliya&raquo; bo&lsquo;limi — kompaniyaning shartnoma bo&lsquo;yicha pullari real vaqtda.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Moliya</span> bo&lsquo;limini va <span class="ui">Umumiy jadval</span> yorlig&lsquo;ini oching.</p></li>
+      <li><p>Davrni belgilang: <span class="ui">Haqiqiy to&lsquo;lov sanasi</span> (dan / gacha) — haqiqatda nima kelgani, <span class="ui">To&lsquo;lov sanasi</span> (dan / gacha) — nima kutilayotgani.</p></li>
+      <li><p><span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> va <span class="ui">To&lsquo;langan to&lsquo;lovlar</span> vidjetlariga qarang. Kompaniyada turli valyutadagi bitimlar bo&lsquo;lsa, har bir valyuta uchun alohida juft raqam chiqadi: so&lsquo;m va dollardagi summalar qo&lsquo;shilmaydi.</p></li>
+      <li><p><span class="ui">Guruhlash</span> ni tanlang: holat bo&lsquo;yicha — pul tuzilmasi, loyiha bo&lsquo;yicha — turar-joy majmualari bo&lsquo;yicha yig&lsquo;ilish, menejer bo&lsquo;yicha — kimning debitorligi o&lsquo;syapti.</p></li>
+    </ol>
+
+    <p><span class="chip b">To&lsquo;lanishi kerak</span> <span class="chip g">To&lsquo;langan</span> <span class="chip r">Muddati o&lsquo;tgan</span> <span class="chip y">Qaytarilishi kerak</span> <span class="chip n">Qaytarilgan</span></p>
+
+    <div class="warn">
+      <p><b>&laquo;Qaytarilishi kerak&raquo; holati — kompaniyaning mijoz oldidagi qarzi.</b> U to&lsquo;langan to&lsquo;lovlari bo&lsquo;lgan bitim shartnomasi buzilgandan keyin paydo bo&lsquo;ladi va moliyachi haqiqiy qaytarishni belgilamaguncha saqlanadi. Qaytarish o&lsquo;tkazilmaguncha shartnomasi buzilgan bitim ob&lsquo;ekti sotuvga qaytmaydi. Bu holat haqida alohida so&lsquo;rang: u kechikishga ham, tushumga ham kirmaydi va osongina e&lsquo;tibordan chetda qoladi.</p>
+    </div>
+
+    <p><span class="ui">Muddati o&lsquo;tgan</span> holatini tizim serverdagi jadval bo&lsquo;yicha o&lsquo;zi qo&lsquo;yadi, shuning uchun kechikish raqami boshqaruv panelida, ro&lsquo;yxatda va umumiy jadvalda bir xil.</p>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Reja-fakt hisoboti</h3>
+    <p class="lede">Asosiy boshqaruv hisoboti: kompaniya rejaga ulguryaptimi.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Hisobotlar</span> ni oching va yorliqni tanlang: <span class="ui">Loyihalar hisoboti</span> yoki <span class="ui">Xodimlar hisoboti</span>.</p></li>
+      <li><p><span class="ui">Yil</span>, <span class="ui">Davr</span> (oy, chorak, yarim yil, yil) va <span class="ui">Qiymat</span> ni belgilang.</p></li>
+      <li><p><span class="ui">Shakllantirish</span> tugmasini bosing.</p></li>
+    </ol>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Blok</th><th>Nimani o&lsquo;lchaydi</th><th>Fakt qayerdan</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Soni, dona</span></td><td>Sotilgan ob&lsquo;ektlar soni</td><td>Shartnoma sanasi davrga tushgan muvaffaqiyatli yopilgan bitimlar</td></tr>
+          <tr><td><span class="ui">Shartnoma tuzish</span></td><td>Tuzilgan shartnomalar summasi</td><td>O&lsquo;sha bitimlarning shartnoma bo&lsquo;yicha narxi</td></tr>
+          <tr><td><span class="ui">Tushum</span></td><td>Haqiqatda olingan pul</td><td>To&lsquo;lov sanasi davrga tushgan to&lsquo;langan to&lsquo;lovlar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Har bir blokda to&lsquo;rtta ko&lsquo;rsatkich bor: <span class="ui">Reja</span> — yuklangan qiymat, <span class="ui">Fakt</span> — tizim hisoblagani, <span class="ui">% fakt</span> — bugungi bajarilish, <span class="ui">% prognoz</span> — joriy sur&lsquo;atda davr oxirigacha kutilayotgan bajarilish. Prognoz oddiy hisoblanadi: fakt davrning o&lsquo;tgan kunlariga bo&lsquo;linadi va uning barcha kunlariga ko&lsquo;paytiriladi.</p>
+
+    <div class="tip">
+      <p><b>Prognozni oy o&lsquo;rtasida o&lsquo;qing.</b> Shartnoma tuzish bo&lsquo;yicha % prognoz 100 dan past bo&lsquo;lsa, hozirgi sur&lsquo;atda reja bajarilmaydi — qarorni oxirgi kunda emas, hozir qabul qilish kerak. Shartnoma tuzish va tushum orasidagi farq — debitorlik qarzi: ko&lsquo;p imzolangan, kam kelgan.</p>
+    </div>
+
+    <p>Rejalarni bo&lsquo;lim boshlig&lsquo;i yoki administrator yuklaydi. Sahifada <span class="ui">Shablonni yuklab olish</span> va <span class="ui">Rejani yuklash</span> tugmalari ko&lsquo;rinadi, lekin rolingiz uchun ishlamaydi. <span class="ui">Reja</span> ustunining bo&lsquo;sh bo&lsquo;lishi shu davr uchun reja yuklanmaganini bildiradi.</p>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>Umumiy jadvallar va Excel</h3>
+    <p class="lede">To&lsquo;rt bo&lsquo;limda bitta mexanizm.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Bo&lsquo;lim</th><th>Guruhlashlar</th><th>Hisoblagichlar</th></tr></thead>
+        <tbody>
+          <tr><td><span class="path">Arizalar</span></td><td>Foydalanuvchi, manba</td><td>Jami arizalar, unutilgan arizalar</td></tr>
+          <tr><td><span class="path">Uchrashuvlar</span></td><td>Ijrochi, loyiha, holat</td><td>Jami, yangi, yakunlangan, bekor qilingan, muddati o&lsquo;tgan</td></tr>
+          <tr><td><span class="path">Bitimlar</span></td><td>Menejer, loyiha, holat</td><td>Bronlar, jarayonda, yakunlangan, shartnomasi buzilgan, bekor qilingan</td></tr>
+          <tr><td><span class="path">Moliya</span></td><td>Holat, loyiha, menejer</td><td>Valyutalar bo&lsquo;yicha muddati o&lsquo;tgan va to&lsquo;langan to&lsquo;lovlar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Davrni belgilang, guruhlashni tanlang va <span class="ui">Excel ga eksport</span> ni bosing — fayl ekrandagini takrorlaydi. Mijoz ro&lsquo;yxatdan o&lsquo;tganda tizim o&lsquo;zi yaratadigan uchrashuvlar hisoblagichlarga kirmaydi: ular menejerlar ishini aks ettirmaydi.</p>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Vazifalar</h3>
+    <p class="lede">Xodimlarga topshiriqlar va ularning bajarilishi.</p>
+
+    <p><span class="path">Vazifalar</span> bo&lsquo;limida butun kompaniya vazifalari ko&lsquo;rinadi. Yuqorida ko&lsquo;rinishlar almashtiriladi: <span class="ui">Ro&lsquo;yxat</span>, <span class="ui">Kanban</span> (vazifalar qayerda to&lsquo;planib qolgan) va <span class="ui">Kalendar</span> (muddatlar qanday taqsimlangan). Vazifa kartochkasida — ijrochi, muddat, ustuvorlik, kichik vazifalar, izohlar va o&lsquo;zgarishlar tarixi. Muddatdan keyin yakunlangan vazifa kechikkan deb belgilanadi.</p>
+
+    <p>Rolingiz vazifa yarata olmaydi. Tizim orqali topshiriq bermoqchi bo&lsquo;lsangiz, buni bo&lsquo;lim boshlig&lsquo;i yoki administratordan so&lsquo;rang — yoki vazifa yaratish huquqi bo&lsquo;lgan rolni so&lsquo;rang.</p>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Loglar va audit</h3>
+    <p class="lede">Kim, qachon va nimani o&lsquo;zgartirgani — so&lsquo;rab o&lsquo;tirmasdan.</p>
+
+    <p><span class="ui">Loglar</span> yorlig&lsquo;i ariza, mijoz, uchrashuv, bitim, uy, to&lsquo;lov va vazifa kartochkalarida bor. Yozuvlar avtomatik yuritiladi va tahrir qilinmaydi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Savol</th><th>Javob qayerda</th></tr></thead>
+        <tbody>
+          <tr><td>Shartnoma narxini kim va qachon o&lsquo;zgartirgan, qaysi chegirmalar qo&lsquo;llangan</td><td>Bitim loglari</td></tr>
+          <tr><td>Ariza nima uchun rad etish bilan yopilgan</td><td>Ariza loglari: holat va sabab o&lsquo;zgarishi</td></tr>
+          <tr><td>To&lsquo;lov qachon belgilangan va kim uni bekor qilgan</td><td>To&lsquo;lov loglari</td></tr>
+          <tr><td>Mijozning pasport ma&lsquo;lumotlarini kim tahrirlagan</td><td>Mijoz loglari</td></tr>
+          <tr><td>Vazifa muddati nima uchun surilgan</td><td>Vazifa tarixi</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Nazorat ritmi</h3>
+    <p class="lede">Tizimga biror narsa sodir bo&lsquo;lganda emas, muntazam qarash uchun.</p>
+
+    <div class="cols">
+      <div>
+        <h6>Har hafta</h6>
+        <p>Boshqaruv paneli va muddati o&lsquo;tgan to&lsquo;lovlar. Bo&lsquo;limlar bo&lsquo;yicha unutilgan arizalar. Muddati tugayotgan bronlar. <span class="ui">Qaytarilishi kerak</span> to&lsquo;lovlar.</p>
+      </div>
+      <div>
+        <h6>Oy o&lsquo;rtasi</h6>
+        <p>Reja-fakt hisobotida shartnoma tuzish va tushum bo&lsquo;yicha % prognoz: kompaniya rejaga ulguryaptimi.</p>
+      </div>
+      <div>
+        <h6>Har oy</h6>
+        <p>Loyihalar va xodimlar bo&lsquo;yicha reja-fakt hisoboti. Menejerlar bo&lsquo;yicha bekor qilish va shartnoma buzilishlar ulushi. Rezervdagi ob&lsquo;ektlar.</p>
+      </div>
+    </div>
+
+    <h5>Bo&lsquo;lim boshlig&lsquo;iga beshta savol</h5>
+    <ol>
+      <li>Uch kundan ortiq yangilanmagan arizalar nechta va kimda?</li>
+      <li>Natijasi kiritilmagan holda nechta uchrashuv o&lsquo;tdi?</li>
+      <li>Qancha summa kechiktirilgan va uning qanchasi bir oydan eski?</li>
+      <li>&laquo;Jarayonda&raquo; holatidagi qaysi bitimlar hali ham shartnoma raqamisiz?</li>
+      <li>Shartnoma tuzish bo&lsquo;yicha % prognoz qancha va u 100 dan past bo&lsquo;lsa nima qilamiz?</li>
+    </ol>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>Holatlar ma&lsquo;lumotnomasi</h3>
+    <p class="lede">Tizimning barcha holatlari bir joyda.</p>
+
+    <h5>Ariza</h5>
+    <p><span class="chip b">Yangi</span> <span class="chip y">Jarayonda</span> <span class="chip n">Maqsadsiz</span> <span class="chip r">Rad etilgan</span> <span class="chip g">Muvaffaqiyatli yopilgan</span></p>
+    <h5>Uchrashuv</h5>
+    <p><span class="chip b">Yangi</span> <span class="chip g">Bo&lsquo;lib o&lsquo;tdi</span> <span class="chip n">Bo&lsquo;lib o&lsquo;tmadi</span></p>
+    <h5>Ko&lsquo;chmas mulk ob&lsquo;ekti</h5>
+    <p><span class="chip g">Tanlov</span> <span class="chip b">Rezerv</span> <span class="chip y">Bron</span> <span class="chip p">Bitim jarayonda</span> <span class="chip r">Sotilgan</span></p>
+    <h5>Bitim</h5>
+    <p><span class="chip y">Bron</span> <span class="chip b">Jarayonda</span> <span class="chip g">Muvaffaqiyatli yopilgan</span> <span class="chip n">Bekor qilingan</span> <span class="chip r">Shartnoma buzilgan</span></p>
+    <h5>To&lsquo;lov</h5>
+    <p><span class="chip b">To&lsquo;lanishi kerak</span> <span class="chip g">To&lsquo;langan</span> <span class="chip r">Muddati o&lsquo;tgan</span> <span class="chip y">Qaytarilishi kerak</span> <span class="chip n">Qaytarilgan</span></p>
+    <h5>Vazifa</h5>
+    <p><span class="chip b">Yangi</span> <span class="chip y">Jarayonda</span> <span class="chip p">Tekshiruvda</span> <span class="chip g">Tugallangan</span> <span class="chip n">Bekor qilingan</span> <span class="chip r">Bloklangan</span></p>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Ko&lsquo;p beriladigan savollar</h3>
+    <p class="lede">Odatiy holatlarga qisqa javoblar.</p>
+
+    <dl class="qa">
+      <dt>Tugmani bosaman — tizim huquq yo&lsquo;qligini yozadi</dt>
+      <dd>Rolingiz faqat ko&lsquo;rish uchun. O&lsquo;zgartirish tugmalari ba&lsquo;zi bo&lsquo;limlarda ko&lsquo;rinadi, lekin amalni tegishli huquqqa ega xodim bajaradi. Agar sizga o&lsquo;zgartirish huquqi haqiqatan kerak bo&lsquo;lsa — administratorga murojaat qiling.</dd>
+
+      <dt>Menyuda &laquo;Chegirmalar&raquo; bo&lsquo;limi yo&lsquo;q</dt>
+      <dd>Chegirmalarni ko&lsquo;rish &laquo;Kuzatuvchi&raquo; roliga kirmaydi. Administrator siz uchun shu huquq bilan alohida rol yaratishi mumkin.</dd>
+
+      <dt>&laquo;Planlar&raquo; yorlig&lsquo;i xato ko&lsquo;rsatadi</dt>
+      <dd>Rolga planlar bo&lsquo;limini ko&lsquo;rish kirmaydi. Kerakli ob&lsquo;ektning planirovka rasmi <span class="ui">Ob&lsquo;ektlar</span> yorlig&lsquo;idagi uning kartochkasida ko&lsquo;rinadi.</dd>
+
+      <dt>Boshqaruv paneli va umumiy jadvaldagi raqamlar farq qiladi</dt>
+      <dd>Davrni tekshiring: boshqaruv paneli bugun va joriy oyni, umumiy jadval esa tanlangan sanalar oralig&lsquo;ini ko&lsquo;rsatadi.</dd>
+
+      <dt>Reja-fakt hisobotida &laquo;Reja&raquo; ustuni bo&lsquo;sh</dt>
+      <dd>Bu davr uchun reja yuklanmagan. Uni bo&lsquo;lim boshlig&lsquo;i yoki administrator yuklaydi.</dd>
+
+      <dt>Nima uchun summalar valyutalar bo&lsquo;yicha alohida ko&lsquo;rsatilgan</dt>
+      <dd>Turli valyutadagi summalar bitta raqamga qo&lsquo;shilmaydi, shuning uchun har bir valyuta uchun o&lsquo;z qatori yoki juft raqami chiqadi.</dd>
+
+      <dt>Guruhning boshqa kompaniyasi ma&lsquo;lumotlarini ko&lsquo;rmayapman</dt>
+      <dd>Kompaniyalar ma&lsquo;lumotlari ajratilgan: rol faqat sizning kompaniyangizni ko&lsquo;rsatadi. Bir nechta kompaniyani ko&lsquo;rish uchun har birida hisob yozuvi yoki tizim administratori sozlaydigan alohida rol kerak.</dd>
+
+      <dt>Bitim hech kimning buyrug&lsquo;isiz yopildi</dt>
+      <dd>Shunday mo&lsquo;ljallangan: ikkala imzolash sanasi — mijoz va kompaniya tomonidan — kiritilganda bitim avtomatik yopiladi. Ularni kim kiritgani bitim loglarida ko&lsquo;rinadi.</dd>
+
+      <dt>O&lsquo;z hisobotim uchun ma&lsquo;lumotlarni qanday yuklab olaman</dt>
+      <dd>Arizalar, Uchrashuvlar, Bitimlar va Moliya bo&lsquo;limlarida <span class="ui">Umumiy jadval</span> ni oching, davr va guruhlashni belgilang va <span class="ui">Excel ga eksport</span> ni bosing.</dd>
+    </dl>
+
+    <div class="end">
+      Kuzatuvchi uchun qo&lsquo;llanma &middot; Ko&lsquo;chmas mulk CRM &middot; versiya 1.0, 2026-yil oktyabr.<br>
+      Kirish va rollar &mdash; CRM administratoriga. Bo&lsquo;lim raqamlari bo&lsquo;yicha savollar &mdash; bo&lsquo;lim boshlig&lsquo;iga.
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+(function () {
+  var chapters = [].slice.call(document.querySelectorAll("section.ch"));
+  var links = [].slice.call(document.querySelectorAll("nav.toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+
+  /* --- highlight the chapter currently in view --- */
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove("on"); });
+    if (byId[id]) byId[id].classList.add("on");
+  }
+  if ("IntersectionObserver" in window) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+      for (var i = 0; i < chapters.length; i++) {
+        if (seen[chapters[i].id]) { mark(chapters[i].id); break; }
+      }
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    chapters.forEach(function (c) { io.observe(c); });
+  }
+  if (chapters.length) mark(chapters[0].id);
+
+  /* --- filter chapters by text --- */
+  var box = document.getElementById("finder");
+  var empty = document.getElementById("no-hit");
+  if (box) {
+    var haystack = chapters.map(function (c) {
+      return (c.textContent || "").toLowerCase().replace(/\s+/g, " ");
+    });
+    var run = function () {
+      var q = box.value.trim().toLowerCase();
+      var hits = 0;
+      chapters.forEach(function (c, i) {
+        var hit = !q || haystack[i].indexOf(q) > -1;
+        c.classList.toggle("hide", !hit);
+        var a = byId[c.id];
+        if (a && a.parentNode) a.parentNode.classList.toggle("hide", !hit);
+        if (hit) hits++;
+      });
+      if (empty) empty.classList.toggle("on", hits === 0);
+    };
+    box.addEventListener("input", run);
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { box.value = ""; run(); }
+    });
+  }
+
+  /* --- print --- */
+  var p = document.getElementById("print");
+  if (p) p.addEventListener("click", function () { window.print(); });
+})();
+</script>
+</body>
+</html>

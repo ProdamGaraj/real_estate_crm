@@ -460,7 +460,7 @@ const TaskDetailPage: React.FC = () => {
               {task.department_name && (
                 <Box>
                   <Typography variant="caption" color="text.secondary">
-                    {t('pages.users.department')}
+                    {t('common.department')}
                   </Typography>
                   <Typography variant="body2">{task.department_name}</Typography>
                 </Box>

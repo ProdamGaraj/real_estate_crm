@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<title>Moliyachi uchun qo'llanma</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F2F6F8; --surface:#FFFFFF; --surface-2:#E9F0F4; --surface-3:#F7FAFB;
+  --ink:#16232B; --ink-2:#41535E; --muted:#6B7F8B; --rule:#D6E1E8; --rule-2:#E7EEF2;
+  --accent:#1D5B79; --accent-ink:#12455E; --accent-soft:#E1EDF4;
+  --ok:#2E7D52; --ok-soft:#E4F2EA;
+  --info:#2A6FB0; --info-soft:#E4EDF8;
+  --warn:#9C6B12; --warn-soft:#F7EEDC;
+  --purple:#65499B; --purple-soft:#ECE6F6;
+  --danger:#A94036; --danger-soft:#F8E6E3;
+  --step-fg:#FFFFFF;
+  --sans:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --slab:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+    --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+    --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+    --ok:#6BC492; --ok-soft:#15291F;
+    --info:#7BB3E8; --info-soft:#152634;
+    --warn:#D6A85B; --warn-soft:#2C2415;
+    --purple:#A88FD8; --purple-soft:#241E33;
+    --danger:#E08579; --danger-soft:#2E1A17;
+    --step-fg:#0E161B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+  --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+  --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+  --ok:#6BC492; --ok-soft:#15291F;
+  --info:#7BB3E8; --info-soft:#152634;
+  --warn:#D6A85B; --warn-soft:#2C2415;
+  --purple:#A88FD8; --purple-soft:#241E33;
+  --danger:#E08579; --danger-soft:#2E1A17;
+  --step-fg:#0E161B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr);max-width:1360px;margin:0 auto;
+  background:var(--surface);min-height:100vh;border-inline:1px solid var(--rule-2)}
+.side{border-right:1px solid var(--rule);background:var(--surface-3);position:sticky;top:0;height:100vh;
+  overflow-y:auto;padding:26px 20px 32px;display:flex;flex-direction:column;gap:18px}
+.main{padding:34px 56px 96px;min-width:0}
+
+/* ---------- masthead ---------- */
+.brand{display:flex;flex-direction:column;gap:9px}
+.mark{display:flex;align-items:center;gap:9px}
+.mark svg{flex:none}
+.mark b{font:600 12.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.brand h1{font:700 20px/1.25 var(--slab);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.brand .role{font:500 11.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.finder{position:relative}
+.finder input{width:100%;font:400 14px/1 var(--sans);color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule);border-radius:7px;padding:9px 11px 9px 31px}
+.finder input::placeholder{color:var(--muted)}
+.finder svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.55}
+
+nav.toc{font-size:14px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav.toc a{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;
+  padding:6px 9px;border-radius:6px;color:var(--ink-2);text-decoration:none;line-height:1.35}
+nav.toc a span{font:500 11px/1.4 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+nav.toc a.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+nav.toc a.on span{color:var(--accent-ink)}
+nav.toc li.hide{display:none}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.btn{font:500 13px/1 var(--sans);color:var(--ink-2);background:var(--surface);border:1px solid var(--rule);
+  border-radius:7px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- doc head ---------- */
+.doc-head{border-bottom:2px solid var(--ink);padding-bottom:22px}
+.doc-head .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent-ink);margin-bottom:14px}
+.doc-head h2{font:700 clamp(28px,4vw,40px)/1.1 var(--slab);margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance}
+.doc-head p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:18px;font:500 12px/1.5 var(--mono);color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- chapters ---------- */
+section.ch{padding-top:52px;scroll-margin-top:20px}
+section.ch>h3{font:700 25px/1.25 var(--slab);margin:0 0 6px;letter-spacing:-.01em;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;text-wrap:balance}
+section.ch>h3 em{font:600 13px/1 var(--mono);font-style:normal;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+section.ch>.lede{margin:0 0 24px 41px;color:var(--muted);max-width:62ch}
+section.ch.hide{display:none}
+h4{font:600 16.5px/1.35 var(--sans);margin:34px 0 10px;letter-spacing:-.005em}
+h5{font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+p{margin:0 0 14px;max-width:68ch}
+.main ul,.main ol{max-width:68ch}
+.main li{margin:4px 0}
+
+/* ---------- ui chips ---------- */
+.ui{font:500 13.5px/1.35 var(--mono);background:var(--surface-2);border:1px solid var(--rule);
+  border-radius:5px;padding:1px 6px;white-space:nowrap;color:var(--ink)}
+.path{font:500 13.5px/1.35 var(--mono);color:var(--accent-ink);white-space:nowrap}
+.path i{font-style:normal;opacity:.5;padding:0 3px}
+code{font:500 13.5px/1.4 var(--mono);background:var(--surface-2);border-radius:4px;padding:1px 5px}
+
+/* ---------- steps ---------- */
+ol.steps{counter-reset:s;list-style:none;margin:18px 0 22px;padding:0 0 0 40px;
+  border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:15px}
+ol.steps>li{counter-increment:s;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:-51.5px;top:0;width:23px;height:23px;
+  display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:var(--step-fg);font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+ol.steps>li>p{margin:0 0 8px}
+ol.steps>li>p:last-child{margin-bottom:0}
+ol.steps ul{margin:8px 0 0;padding-left:19px}
+
+/* ---------- callouts ---------- */
+.note,.warn,.tip{border-left:3px solid;padding:13px 16px;margin:20px 0;border-radius:0 6px 6px 0;font-size:15px}
+.note{border-color:var(--info);background:var(--info-soft)}
+.warn{border-color:var(--danger);background:var(--danger-soft)}
+.tip{border-color:var(--ok);background:var(--ok-soft)}
+.note>:last-child,.warn>:last-child,.tip>:last-child{margin-bottom:0}
+.note b,.warn b,.tip b{font-weight:600}
+.warn b{color:var(--danger)}
+.tip b{color:var(--ok)}
+.note b{color:var(--info)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;margin:18px 0 24px;border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+thead th{font:600 11.5px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-3);border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+table .ui{font-size:12.5px}
+
+/* ---------- status chips ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1 var(--mono);
+  padding:5px 9px;border-radius:20px;white-space:nowrap}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chip.g{color:var(--ok);background:var(--ok-soft)}
+.chip.b{color:var(--info);background:var(--info-soft)}
+.chip.y{color:var(--warn);background:var(--warn-soft)}
+.chip.p{color:var(--purple);background:var(--purple-soft)}
+.chip.r{color:var(--danger);background:var(--danger-soft)}
+.chip.n{color:var(--muted);background:var(--surface-2)}
+
+/* ---------- pipeline ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:22px 0 26px;
+  padding:16px;background:var(--surface-3);border:1px solid var(--rule);border-radius:8px}
+.flow .st{flex:1 1 118px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+  padding:10px 12px;min-width:0}
+.flow .st b{display:block;font:600 14px/1.3 var(--sans)}
+.flow .st span{display:block;font:400 12.5px/1.4 var(--sans);color:var(--muted);margin-top:3px}
+.flow .ar{align-self:center;color:var(--muted);font-size:15px;flex:none}
+@media (max-width:640px){.flow .ar{display:none}.flow .st{flex:1 1 100%}}
+
+/* ---------- chessboard mini ---------- */
+.board{display:inline-grid;grid-template-columns:repeat(6,28px);gap:3px;margin:8px 0 4px}
+.board i{height:28px;border-radius:4px;display:grid;place-items:center;
+  font:500 10px/1 var(--mono);font-style:normal;color:var(--ink-2)}
+.board i.g{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.board i.b{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info)}
+.board i.y{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
+.board i.p{background:var(--purple-soft);box-shadow:inset 0 0 0 1px var(--purple)}
+.board i.r{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger)}
+
+/* ---------- misc ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin:18px 0 24px}
+.cols>div{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;background:var(--surface-3)}
+.cols h6{font:600 14px/1.3 var(--sans);margin:0 0 6px}
+.cols p{font-size:14px;color:var(--ink-2);margin:0}
+dl.qa{margin:18px 0}
+dl.qa dt{font-weight:600;margin-top:22px}
+dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
+.end{margin-top:64px;padding-top:20px;border-top:2px solid var(--ink);font-size:13.5px;color:var(--muted)}
+.no-hit{display:none;padding:40px 0;color:var(--muted)}
+.no-hit.on{display:block}
+
+/* ---------- responsive ---------- */
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:20px 22px}
+  .side-foot{margin-top:6px}
+  .main{padding:26px 22px 72px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--ground:#fff;--surface:#fff;--surface-2:#F2F2F2;--surface-3:#FAFAFA;
+        --rule:#BBB;--rule-2:#DDD;--ink:#111;--ink-2:#333;--muted:#666}
+  body{background:#fff;font-size:11pt}
+  .shell{display:block;max-width:none;border:0}
+  .side{display:none}
+  .main{padding:0}
+  section.ch{padding-top:26px}
+  section.ch>h3,h4{page-break-after:avoid}
+  ol.steps>li,.note,.warn,.tip,.scroll,.flow,.cols>div{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>Ko&lsquo;chmas mulk CRM</b>
+    </div>
+    <h1>Moliyachi uchun qo&lsquo;llanma</h1>
+    <div class="role">Rol: Moliya bo&lsquo;limi</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Bo&lsquo;limlar bo&lsquo;yicha qidirish" aria-label="Qidirish">
+  </div>
+
+  <nav class="toc" aria-label="Mundarija">
+    <ol>
+      <li><a href="#c1"><span>01</span>Zonangiz va uning chegarasi</a></li>
+      <li><a href="#c2"><span>02</span>Kirish va &laquo;Moliya&raquo; bo&lsquo;limi</a></li>
+      <li><a href="#c3"><span>03</span>To&lsquo;lov jadvali</a></li>
+      <li><a href="#c4"><span>04</span>Jadvalni tahrirlash</a></li>
+      <li><a href="#c5"><span>05</span>To&lsquo;lovlarni belgilash</a></li>
+      <li><a href="#c6"><span>06</span>Muddati o&lsquo;tgan to&lsquo;lovlar</a></li>
+      <li><a href="#c7"><span>07</span>Qaytarishlar</a></li>
+      <li><a href="#c8"><span>08</span>Umumiy jadval va Excel</a></li>
+      <li><a href="#c9"><span>09</span>Buxgalteriya bilan solishtirish</a></li>
+      <li><a href="#c10"><span>10</span>Ma&lsquo;lumotnoma va hisoblar</a></li>
+      <li><a href="#c11"><span>11</span>Hisobotlardagi tushum</a></li>
+      <li><a href="#c12"><span>12</span>To&lsquo;lov loglari</a></li>
+      <li><a href="#c13"><span>13</span>Ish ritmi</a></li>
+      <li><a href="#c14"><span>14</span>Ko&lsquo;p beriladigan savollar</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Chop etish
+    </button>
+    <div>Versiya 1.0 &middot; 2026-yil sentyabr</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Foydalanuvchi qo&lsquo;llanmasi</div>
+    <h2>CRM da to&lsquo;lovlarni qanday yuritish kerak</h2>
+    <p>Moliya bo&lsquo;limi uchun qo&lsquo;llanma: bitim bo&lsquo;yicha to&lsquo;lov jadvalini tuzish, kunlik tushumlarni belgilash, kechikishlarni nazorat qilish, shartnoma buzilganda qaytarishlarni o&lsquo;tkazish va ma&lsquo;lumotlarni buxgalteriya bilan solishtirish.</p>
+    <div class="meta">
+      <span>Kimga: <b>moliyachi, hisob-kitob mutaxassisi</b></span>
+      <span>Bo&lsquo;limlar: <b>14</b></span>
+      <span>Ish maydoni: <b>&laquo;Moliya&raquo; va bitimning 3-bosqichi</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Hech narsa topilmadi. Qidiruvni tozalang yoki boshqa so&lsquo;z kiriting.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Zonangiz va uning chegarasi</h3>
+    <p class="lede">Tizimning asosiy qoidasi: to&lsquo;lov faqat bitim ichida mavjud bo&lsquo;ladi.</p>
+
+    <div class="warn">
+      <p><b>Alohida to&lsquo;lov yaratib bo&lsquo;lmaydi.</b> Tizimda &laquo;to&lsquo;lov yaratish&raquo; tugmasi yo&lsquo;q — to&lsquo;lovlar faqat aniq bitim bo&lsquo;yicha to&lsquo;lov jadvali saqlanganda paydo bo&lsquo;ladi. <span class="path">Moliya</span> bo&lsquo;limi allaqachon yaratilgan to&lsquo;lovlarni ko&lsquo;rsatadi va ularning holatini o&lsquo;zgartirishga imkon beradi, lekin yangisini kiritmaydi.</p>
+    </div>
+
+    <p>Bundan ish tartibi kelib chiqadi: agar pul jadvali yo&lsquo;q bitim bo&lsquo;yicha kutilayotgan bo&lsquo;lsa — avval bitimning 3-bosqichida jadval tuziladi, faqat shundan keyin belgilash mumkin bo&lsquo;lgan to&lsquo;lovlar paydo bo&lsquo;ladi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Siz nima qilasiz</th><th>Tizim nimaga yo&lsquo;l qo&lsquo;ymaydi</th></tr></thead>
+        <tbody>
+          <tr><td>Bitim bo&lsquo;yicha to&lsquo;lov jadvalini tuzasiz va tahrirlaysiz</td><td>Bitimdan tashqarida to&lsquo;lov yaratish</td></tr>
+          <tr><td>To&lsquo;lovlarni belgilaysiz va xato belgilarni olib tashlaysiz</td><td>&laquo;Moliya&raquo; bo&lsquo;limida alohida to&lsquo;lov summasi yoki sanasini o&lsquo;zgartirish</td></tr>
+          <tr><td>Buzilgan shartnomalar bo&lsquo;yicha qaytarishlarni o&lsquo;tkazasiz</td><td>Buzilgan shartnoma bo&lsquo;yicha to&lsquo;lovni belgilash</td></tr>
+          <tr><td>To&lsquo;lov turlari va oluvchi hisobvaraqlarini yuritasiz (huquq berilgan bo&lsquo;lsa)</td><td>Shartnoma narxini o&lsquo;zgartirish — bu menejer ishi</td></tr>
+          <tr><td>Kechikishlarni nazorat qilasiz</td><td>O&lsquo;tkazilgan to&lsquo;lovni jadvaldan o&lsquo;chirish</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Sizga qanday huquqlar kerak</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Bo&lsquo;lim</th><th>Amallar</th><th>Nima uchun</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">To&lsquo;lovlar</span></td><td>Ko&lsquo;rish, Yaratish, Tahrirlash</td><td>Jadval, to&lsquo;lov belgilari, qaytarishlar</td></tr>
+          <tr><td><span class="ui">Bitimlar</span></td><td>Ko&lsquo;rish</td><td>&laquo;To&lsquo;lov jadvali&raquo; bosqichiga kirish</td></tr>
+          <tr><td><span class="ui">Mijozlar</span></td><td>Ko&lsquo;rish</td><td>To&lsquo;lovchini aniqlash</td></tr>
+          <tr><td><span class="ui">Hisobotlar</span></td><td>Ko&lsquo;rish</td><td>&laquo;Moliya&raquo; bo&lsquo;limidagi umumiy jadval va ko&lsquo;rsatkichlar</td></tr>
+          <tr><td><span class="ui">Oluvchi hisobvaraqlari</span></td><td>Ko&lsquo;rish</td><td>Jadvalda hisobni tanlash</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Ko&lsquo;rish doirasi odatda <span class="ui">Kompaniya</span>: moliyachi barcha sotuv bo&lsquo;limlari bo&lsquo;yicha hisob-kitob yuritadi. <span class="ui">Faqat o&lsquo;z ma&lsquo;lumotlari</span> doirasida siz faqat o&lsquo;zingiz yaratgan to&lsquo;lovlarni ko&lsquo;rasiz — ish uchun bu yetarli emas.</p>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Kirish va &laquo;Moliya&raquo; bo&lsquo;limi</h3>
+    <p class="lede">Asosiy ekraningiz va unda nima bor.</p>
+
+    <ol class="steps">
+      <li><p>Tizimga kiring: administrator bergan <span class="ui">Foydalanuvchi nomi</span> va <span class="ui">Parol</span>, so&lsquo;ng <span class="ui">Kirish</span>. Login — email emas.</p></li>
+      <li><p><span class="path">Moliya</span> bo&lsquo;limini oching.</p></li>
+    </ol>
+
+    <p>Bo&lsquo;limda ikkita yorliq bor:</p>
+    <ul>
+      <li><span class="ui">To&lsquo;lovlar ro&lsquo;yxati</span> — ko&lsquo;rish doirangizdagi barcha to&lsquo;lovlar va filtrlar.</li>
+      <li><span class="ui">Umumiy jadval</span> — guruhlar bo&lsquo;yicha yakunlar, ko&lsquo;rsatkichlar va Excelga eksport.</li>
+    </ul>
+
+    <h4>Ro&lsquo;yxat filtrlari</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Filtr</th><th>Qachon ishlatiladi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Mijoz</span></td><td>Aniq to&lsquo;lovchi bo&lsquo;yicha tahlil</td></tr>
+          <tr><td><span class="ui">Bitim ID</span></td><td>Bitta bitimning barcha to&lsquo;lovlari</td></tr>
+          <tr><td><span class="ui">To&lsquo;lov sanasidan / gacha</span></td><td>Davr uchun tushum rejasi</td></tr>
+          <tr><td><span class="ui">Haqiqiy to&lsquo;lov sanasidan / gacha</span></td><td>Davrda haqiqatda nima kelgani — solishtirishning asosi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p><b>Ikki sanani farqlang.</b> <span class="ui">To&lsquo;lov sanasi</span> — jadvaldagi rejadagi muddat. Haqiqiy to&lsquo;lov sanasi — pul kelgan kun. Tushum hisoboti uchun ikkinchisi, rejalashtirish uchun birinchisi bo&lsquo;yicha filtrlang.</p>
+    </div>
+
+    <p>Qatorga bosilsa to&lsquo;lov kartochkasi ochiladi: summa va valyuta, to&lsquo;lov turi, usuli (naqd yoki pul ko&lsquo;chirish), oluvchi hisobi, ikkala sana, mijoz va bitimga havolalar hamda amal tugmalari.</p>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>To&lsquo;lov jadvali</h3>
+    <p class="lede">Bitimning 3-bosqichi. Bu yerda shartnoma narxi qismlarga bo&lsquo;linadi.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Bitimlar</span> ni oching, keraklisini toping va <span class="ui">To&lsquo;lov jadvali</span> bosqichiga o&lsquo;ting.</p></li>
+      <li><p><span class="ui">To&lsquo;lov qo&lsquo;shish</span> ni bosing — har bir qism uchun bitta qator.</p></li>
+      <li><p>Qatorda <span class="ui">Summa</span>, <span class="ui">To&lsquo;lov sanasi</span>, <span class="ui">To&lsquo;lov turi</span> va oluvchi <span class="ui">Hisob</span> ini to&lsquo;ldiring.</p></li>
+      <li><p>Yuqoridagi ko&lsquo;rsatkichlarni kuzating: <span class="ui">Shartnoma summasi</span>, <span class="ui">Taqsimlangan</span>, <span class="ui">Qoldiq</span>.</p></li>
+      <li><p><span class="ui">Qoldiq</span> nolga teng bo&lsquo;lganda <span class="ui">Jadvalni saqlash</span> ni bosing. &laquo;To&lsquo;lov jadvali muvaffaqiyatli saqlandi!&raquo; tasdig&lsquo;i chiqadi.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>To&lsquo;lovlar summasi shartnoma narxiga aniq teng bo&lsquo;lishi shart.</b> Farq bo&lsquo;lganda tizim ikkala summani ko&lsquo;rsatgan holda xato qaytaradi va jadval saqlanmaydi. Tiyinlar ham hisobga olinadi: yaxlitlashda farqni oxirgi qismga o&lsquo;tkazing.</p>
+    </div>
+
+    <p>Jadval birinchi marta saqlangandan keyin bitim <span class="chip y">Bron</span> holatidan <span class="chip b">Jarayonda</span> holatiga, ob&lsquo;ekt esa <span class="chip y">Bron</span> dan <span class="chip p">Bitim jarayonda</span> holatiga avtomatik o&lsquo;tadi. Bitim loglarida jadval summasi bilan yozuv paydo bo&lsquo;ladi.</p>
+
+    <h5>To&lsquo;lov maydonlari</h5>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Maydon</th><th>Nimaga e&lsquo;tibor berish</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Summa</span></td><td>Probelsiz son; barcha qatorlar yig&lsquo;indisi = shartnoma narxi</td></tr>
+          <tr><td><span class="ui">To&lsquo;lov sanasi</span></td><td>Rejadagi muddat. Kechikish shu bo&lsquo;yicha hisoblanadi</td></tr>
+          <tr><td><span class="ui">To&lsquo;lov turi</span></td><td>Ma&lsquo;lumotnomadan: boshlang&lsquo;ich to&lsquo;lov, bo&lsquo;lib to&lsquo;lash va hokazo</td></tr>
+          <tr><td><span class="ui">Hisob</span></td><td>Tushum kutilayotgan oluvchi hisobvarag&lsquo;i</td></tr>
+          <tr><td>Valyuta</td><td>Butun jadval uchun bitta — shartnoma valyutasi bilan bir xil. Joriy versiyada qatorlar UZS da yaratiladi</td></tr>
+          <tr><td>To&lsquo;lov usuli</td><td>Naqd yoki pul ko&lsquo;chirish</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Hozircha bitimlarni so&lsquo;mda (UZS) rasmiylashtiring.</b> Joriy versiyada jadval qatorlari UZS da yaratiladi va formada boshqa valyutani tanlab bo&lsquo;lmaydi. &laquo;Shartlar&raquo; qadamida bitim uchun USD yoki EUR tanlangan bo&lsquo;lsa, jadval saqlanmaydi: tizim valyutalar mos kelmasligi sababli rad etadi. Cheklov ma&lsquo;lum va bartaraf etiladi; ungacha shartnoma valyutasini UZS qilib ko&lsquo;rsating.</p>
+    </div>
+
+    <div class="note">
+      <p><span class="ui">To&lsquo;lov turi</span> yoki <span class="ui">Hisob</span> ro&lsquo;yxatlari bo&lsquo;sh bo&lsquo;lsa, ma&lsquo;lumotnomalar hali to&lsquo;ldirilmagan — jadvalni saqlab bo&lsquo;lmaydi. Buni administrator sozlaydi, 10-bobga qarang. Ro&lsquo;yxatlarda faqat kompaniyangizning yozuvlari va tizim administratori kiritgan umumiy yozuvlar ko&lsquo;rinadi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Jadvalni tahrirlash</h3>
+    <p class="lede">Bitim shartlari o&lsquo;zgaradi — jadvalni o&lsquo;tkazilgan to&lsquo;lovlarni yo&lsquo;qotmasdan qayta yig&lsquo;ish mumkin.</p>
+
+    <div class="tip">
+      <p><b>O&lsquo;tkazilgan to&lsquo;lovlar himoyalangan.</b> O&lsquo;zgartirilgan jadval saqlanganda to&lsquo;lov belgisi bo&lsquo;lgan qatorlar o&lsquo;z holicha qoladi: <span class="ui">To&lsquo;langan</span> holati va haqiqiy to&lsquo;lov sanasi saqlanadi. Faqat o&lsquo;tkazilmagan qismlar qayta yig&lsquo;iladi.</p>
+    </div>
+
+    <h4>Jadvalni qanday tahrirlash kerak</h4>
+    <ol class="steps">
+      <li><p>Bitimni oching, <span class="ui">To&lsquo;lov jadvali</span> bosqichi, <span class="ui">Jadvalni tahrirlash</span> ni bosing.</p></li>
+      <li><p>Allaqachon o&lsquo;tkazilgan to&lsquo;lovlar qatorlari bloklangan — o&lsquo;chirish tugmasi o&lsquo;rniga ularda holat ko&lsquo;rsatiladi (<span class="chip g">To&lsquo;langan</span>, <span class="chip y">Qaytarilishi kerak</span>, <span class="chip n">Qaytarilgan</span>). Ularda summa va muddatni o&lsquo;zgartirib bo&lsquo;lmaydi.</p></li>
+      <li><p>O&lsquo;tkazilmagan qatorlarni tahrirlang: summa, muddat, to&lsquo;lov turi. Keraksizini o&lsquo;chiring, yetishmaganini <span class="ui">To&lsquo;lov qo&lsquo;shish</span> tugmasi bilan qo&lsquo;shing.</p></li>
+      <li><p><span class="ui">Qoldiq</span> yana nolga teng bo&lsquo;lishini kuzating.</p></li>
+      <li><p><span class="ui">Jadvalni saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>To&lsquo;langan to&lsquo;lovni jadvaldan olib tashlab bo&lsquo;lmaydi.</b> Usiz jadvalni saqlashga urinilsa, tizim rad etadi va bunday to&lsquo;lovlarni sanab o&lsquo;tadi. Qismni baribir olib tashlash kerak bo&lsquo;lsa — avval u bo&lsquo;yicha to&lsquo;lovni bekor qiling, va faqat pul haqiqatan kelmagan bo&lsquo;lsa.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Summa bilan nima bo&lsquo;ladi.</b> Tenglik qoidasi o&lsquo;z kuchida: barcha qatorlar, shu jumladan bloklanganlari, yig&lsquo;indisi shartnoma narxiga mos kelishi kerak. Narx qayta ko&lsquo;rib chiqilgan bo&lsquo;lsa, farqni o&lsquo;tkazilmagan qismlarga taqsimlang — allaqachon olingan pulni qayta yozib bo&lsquo;lmaydi va bu to&lsquo;g&lsquo;ri. Bitimda o&lsquo;tkazilgan to&lsquo;lov bo&lsquo;lmaguncha shartnoma narxini menejer o&lsquo;zgartira oladi; birinchi to&lsquo;lovdan keyin narx muzlatiladi.</p>
+    </div>
+
+    <p>Bitim bekor qilingan bo&lsquo;lsa tahrirlash mumkin emas — tizim xato qaytaradi.</p>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>To&lsquo;lovlarni belgilash</h3>
+    <p class="lede">Kundalik amal: pul kelganini tasdiqlash.</p>
+
+    <p>To&lsquo;lovni ikki joydan belgilash mumkin — natija bir xil:</p>
+
+    <div class="cols">
+      <div>
+        <h6>To&lsquo;lov kartochkasidan</h6>
+        <p><span class="path">Moliya</span> &rarr; qatorga bosish &rarr; <span class="ui">To&lsquo;langan deb belgilash</span> tugmasi. Bank ko&lsquo;chirmasi bilan ishlashda qulay.</p>
+      </div>
+      <div>
+        <h6>Bitim jadvalidan</h6>
+        <p>Bitim kartochkasi &rarr; <span class="ui">To&lsquo;lov jadvali</span> bosqichi &rarr; qatordagi <span class="ui">To&lsquo;langan</span> tugmasi. Mijoz bir necha qismni birdan to&lsquo;laganda qulay.</p>
+      </div>
+    </div>
+
+    <div class="note">
+      <p><b>To&lsquo;lov sanasi sifatida bugungi kun qo&lsquo;yiladi.</b> Tugma orqali o&lsquo;tgan sana bilan belgilash mumkin emas. Tushum ilgariroq bo&lsquo;lgan bo&lsquo;lsa, to&lsquo;lovni belgilang va buni bitimga izohda qayd eting yoki buxgalteriya bilan tartibni kelishing — sanadagi farq davr tushum hisobotida aks etadi.</p>
+    </div>
+
+    <h4>Xatoni tuzatish</h4>
+    <ol class="steps">
+      <li><p>Xato belgilangan to&lsquo;lovni oching.</p></li>
+      <li><p><span class="ui">To&lsquo;lovni bekor qilish</span> ni bosing (bitim jadvalida — <span class="ui">Bekor qilish</span> tugmasi).</p></li>
+      <li><p>To&lsquo;lov <span class="chip b">To&lsquo;lanishi kerak</span> holatiga qaytadi — yoki rejadagi sana o&lsquo;tib ketgan bo&lsquo;lsa, darhol <span class="chip r">Muddati o&lsquo;tgan</span> holatiga.</p></li>
+    </ol>
+
+    <p>Ikkala amal ham — belgilash va uni bekor qilish — sana va muallif ko&lsquo;rsatilgan holda to&lsquo;lov loglariga yoziladi.</p>
+
+    <div class="warn">
+      <p><b>Shartnomasi buzilgan bitim bo&lsquo;yicha to&lsquo;lovni belgilab bo&lsquo;lmaydi.</b> Bunday holatda <span class="ui">To&lsquo;langan deb belgilash</span> va <span class="ui">To&lsquo;lovni bekor qilish</span> tugmalari mavjud emas — faqat qaytarish qoladi, 07-bobga qarang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Muddati o&lsquo;tgan to&lsquo;lovlar</h3>
+    <p class="lede">&laquo;Muddati o&lsquo;tgan&raquo; holatini tizim o&lsquo;zi, serverdagi jadval bo&lsquo;yicha qo&lsquo;yadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <div class="note">
+      <p><b>Bu qanday ishlaydi.</b> <span class="ui">To&lsquo;lanishi kerak</span> holatidagi, <span class="ui">To&lsquo;lov sanasi</span> o&lsquo;tib ketgan to&lsquo;lovlar avtomatik ravishda <span class="ui">Muddati o&lsquo;tgan</span> holatiga o&lsquo;tkaziladi. Qayta hisoblashni serverdagi xizmat vazifasi bajaradi — o&lsquo;sha vazifa muddati o&lsquo;tgan bronlarni ham olib tashlaydi va unutilgan uchrashuvlarni yopadi. Qo&lsquo;shimcha ravishda holatlar to&lsquo;lovlar ro&lsquo;yxati, umumiy jadval va boshqaruv paneli ochilganda yangilanadi, lekin bir necha daqiqada bir martadan ko&lsquo;p emas. Shuning uchun kechikish raqami uchala joyda bir xil va kimning qachon kirganiga bog&lsquo;liq emas. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p>Muddati o&lsquo;tgan sana bilan yaratilgan yangi to&lsquo;lov jadval saqlanishi bilanoq <span class="ui">Muddati o&lsquo;tgan</span> holatini oladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+
+    <h4>Kechikish bilan kundalik ish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Moliya</span> &rarr; <span class="ui">To&lsquo;lovlar ro&lsquo;yxati</span> ni oching. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p><span class="ui">To&lsquo;lov sanasigacha</span> maydoniga kechagi sanani qo&lsquo;ying. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p><span class="ui">Umumiy jadval</span> ga o&lsquo;ting va <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> ko&lsquo;rsatkichiga qarang — u yerda umumiy summa. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Qo&lsquo;ng&lsquo;iroqlar uchun ro&lsquo;yxat topshirish maqsadida <span class="ui">Menejer bo&lsquo;yicha</span>, rahbarga hisobot uchun <span class="ui">Loyiha bo&lsquo;yicha</span> guruhlang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Excelga eksport qilib mas&lsquo;ullarga yuboring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+    </ol>
+
+    <p>Kechikish summasi <span class="path">Boshqaruv paneli</span> dagi <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> blokida ham ko&lsquo;rsatiladi — uni rahbar va direktor ko&lsquo;radi, shuning uchun raqam dolzarb bo&lsquo;lishi kerak. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Qaytarishlar</h3>
+    <p class="lede">Shartnoma buzilgandan keyin mijoz puli bilan nima qilish kerak. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <div class="flow">
+      <div class="st"><b>Shartnoma buzildi</b><span>Rasmiylashtirish bo&lsquo;limi</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Qaytarilishi kerak</b><span>Tizim o&lsquo;zi qo&lsquo;yadi</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Haqiqiy qaytarish</b><span>Pul mijozga o&lsquo;tadi</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Qaytarilgan</b><span>Siz yopasiz</span></div>
+    </div>
+
+    <p>Shartnoma buzilganda <span class="chip g">To&lsquo;langan</span> holatidagi barcha to&lsquo;lovlar avtomatik ravishda <span class="chip y">Qaytarilishi kerak</span> holatiga o&lsquo;tadi. Shu paytdan boshlab ular sizning javobgarlik zonangiz. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <ol class="steps">
+      <li><p>Bunday to&lsquo;lovlarni toping: <span class="path">Moliya</span> &rarr; <span class="ui">Umumiy jadval</span> &rarr; <span class="ui">Holat bo&lsquo;yicha</span> guruhlash, yoki ro&lsquo;yxatni kerakli bitim bo&lsquo;yicha filtrlang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Kompaniyada qabul qilingan tartibda mijozga pulni haqiqatda qaytaring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>To&lsquo;lovni oching va <span class="ui">Qaytarilgan deb belgilash</span> ni bosing (bitim jadvalida — <span class="ui">Qaytarish</span> tugmasi). Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Holat <span class="chip n">Qaytarilgan</span> ga o&lsquo;zgaradi, loglarda tegishli yozuv paydo bo&lsquo;ladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b><span class="ui">Qaytarilishi kerak</span> holati — bu mijoz oldidagi ochiq majburiyat.</b> To&lsquo;lov bo&lsquo;yicha qaytarish tugmasi bosilmaguncha kompaniya qarzdor hisoblanadi. Bu holatni har hafta alohida band sifatida tekshiring: bunday to&lsquo;lovlar na kechikishga, na tushumga tushadi va shuning uchun oson ko&lsquo;zdan qochadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+
+    <p>Qaytarish tugmasi faqat <span class="ui">Qaytarilishi kerak</span> holatidagi to&lsquo;lovlar uchun ishlaydi. Boshqa holatdagi to&lsquo;lov uchun tizim &laquo;To&lsquo;lovni qaytarilgan deb belgilab bo&lsquo;lmaydi&raquo; xatosini qaytaradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>Umumiy jadval va Excel</h3>
+    <p class="lede">Hisobot uchun va ma&lsquo;lumotni CRM dan tashqariga uzatish uchun vosita. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Moliya</span> &rarr; <span class="ui">Umumiy jadval</span> ni oching. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Davrni belgilang. Tushum hisoboti uchun haqiqiy to&lsquo;lov sanasi, reja uchun <span class="ui">To&lsquo;lov sanasidan / gacha</span> dan foydalaning. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p><span class="ui">Guruhlash</span> ni tanlang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p><span class="ui">Excel ga eksport</span> ni bosing. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+    </ol>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Guruhlash</th><th>Qaysi savolga javob beradi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Holat bo&lsquo;yicha</span></td><td>Qancha kutmoqdamiz, qancha oldik, qancha kechikdi va qancha qaytarishimiz kerak</td></tr>
+          <tr><td><span class="ui">Loyiha bo&lsquo;yicha</span></td><td>Qaysi majmua pul keltiryapti, qaysi biri yig&lsquo;ilishda orqada</td></tr>
+          <tr><td><span class="ui">Menejer bo&lsquo;yicha</span></td><td>Kimning debitorligi o&lsquo;syapti — sotuv bo&lsquo;limi rahbari uchun material. To&lsquo;lovlar uchun mas&lsquo;ul deb bitim menejeri hisoblanadi: u jadval yaratilganda avtomatik qo&lsquo;yiladi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Jadval ustidagi ko&lsquo;rsatkichlar tanlangan davr uchun <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> va <span class="ui">To&lsquo;langan to&lsquo;lovlar</span> ni ko&lsquo;rsatadi — har bir valyuta uchun alohida juftlik bilan. Turli valyutadagi summalar bitta songa qo&lsquo;shilmaydi, shuning uchun jadvalda <span class="ui">Valyuta</span> ustuni ham bor: har bir valyutaga guruhning bitta qatori to&lsquo;g&lsquo;ri keladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <div class="note">
+      <p><b>Eksport siz ekranda ko&lsquo;rgan narsani aynan o&lsquo;zini beradi.</b> U ko&lsquo;rish doirangiz va qo&lsquo;yilgan filtrlar bilan cheklangan. Faylda ma&lsquo;lumot yetishmasa, avval filtrlarni, so&lsquo;ng kirish doirangizni tekshiring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Buxgalteriya bilan solishtirish</h3>
+    <p class="lede">CRM — buxgalteriya dasturi emas. U shartnoma majburiyatlarini aks ettiradi, provodkalarni emas. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <p>Muntazam solishtirish sotuv bo&lsquo;limi ko&lsquo;rayotgan va hisobda turgan ma&lsquo;lumot orasidagi tafovutdan himoya qiladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <ol class="steps">
+      <li><p>Haqiqiy to&lsquo;lov sanasi filtri bilan davr uchun to&lsquo;lovlarni CRM dan eksport qiling. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Har bir oluvchi <span class="ui">Hisob</span> i bo&lsquo;yicha bank ko&lsquo;chirmasi bilan solishtiring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Tafovutlarni quyidagi jadvaldagi turlar bo&lsquo;yicha tahlil qiling. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>CRM ga tegishlisini CRM da tuzating, qolganini buxgalteriya uchun qayd eting. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+    </ol>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Tafovut</th><th>Ehtimoliy sabab</th><th>Nima qilish kerak</th></tr></thead>
+        <tbody>
+          <tr><td>Bankda pul bor, CRM da to&lsquo;lov &laquo;to&lsquo;lanishi kerak&raquo;</td><td>To&lsquo;lovni belgilash unutilgan</td><td>To&lsquo;langan deb belgilash</td></tr>
+          <tr><td>CRM da &laquo;to&lsquo;langan&raquo;, bankda tushum yo&lsquo;q</td><td>Xato belgilangan</td><td>To&lsquo;lovni bekor qilish</td></tr>
+          <tr><td>Summalar mos, sanalar mos emas</td><td>Belgilash haqiqiy tushumdan kechroq qilingan</td><td>Solishtirish dalolatnomasida qayd etish: CRM da sana belgilangan kun bilan qo&lsquo;yiladi</td></tr>
+          <tr><td>CRM da qism bor, ko&lsquo;chirmada umuman yo&lsquo;q</td><td>Jadval tahrirlangan: o&lsquo;tkazilmagan qismlar qayta yig&lsquo;ilgan</td><td>Bitimning joriy jadvali bilan solishtiring, 04-bobga qarang</td></tr>
+          <tr><td>Tushum bor, bitim yo&lsquo;q</td><td>CRM dan tashqaridagi bitim yoki brondan oldingi oldindan to&lsquo;lov</td><td>Bron va jadvalni o&lsquo;tkazish, so&lsquo;ng belgilash</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Oluvchi hisobvaraqlari bo&lsquo;yicha solishtiring.</b> <span class="ui">Hisob</span> bo&lsquo;yicha bo&lsquo;linish qator qaysi ko&lsquo;chirmaga tegishli ekanini darhol ko&lsquo;rsatadi. Kompaniyada bir necha hisob bo&lsquo;lib, CRM da bittasi kiritilgan bo&lsquo;lsa, administratordan qolganlarini kiritishni so&lsquo;rang — aks holda solishtirish har safar qo&lsquo;lda bo&lsquo;ladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Ma&lsquo;lumotnoma va hisoblar</h3>
+    <p class="lede">Ularsiz birorta jadval saqlanmaydigan ikki ma&lsquo;lumotnoma. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ma&lsquo;lumotnoma</th><th>Nima bor</th><th>Qayerda ishlatiladi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">To&lsquo;lov turlari</span></td><td>Boshlang&lsquo;ich to&lsquo;lov, bo&lsquo;lib to&lsquo;lash, qo&lsquo;shimcha to&lsquo;lov va kompaniyada qabul qilingan boshqa turlar</td><td>Jadvaldagi <span class="ui">To&lsquo;lov turi</span> maydoni</td></tr>
+          <tr><td><span class="ui">Oluvchi hisobvaraqlari</span></td><td>Hisob nomi va kompaniyaning bank rekvizitlari</td><td>Jadvaldagi <span class="ui">Hisob</span> maydoni</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Bu ma&lsquo;lumotnomalar <span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> bo&lsquo;limida joylashgan.</b> Kirishni administrator ikki huquq bilan beradi: <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> — u bo&lsquo;limning o&lsquo;zini ochadi, hamda <span class="ui">To&lsquo;lov turlari</span> va <span class="ui">Oluvchi hisobvaraqlari</span> huquqlari — ular yorliqni qo&lsquo;shadi. Yon menyuda <span class="ui">Sozlamalar</span> paydo bo&lsquo;ladi va unda faqat <span class="ui">Moliya</span> yorlig&lsquo;i ko&lsquo;rinadi — qolganlari (rollar, foydalanuvchilar, API-kalitlar) ko&lsquo;rsatilmaydi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+
+    <h4>To&lsquo;lov turi yoki hisob qo&lsquo;shish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> ni oching. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>To&lsquo;lov turi uchun <span class="ui">Yangi tur</span> ni bosing va <span class="ui">To&lsquo;lov turi nomi</span> ni kiriting — jadvalda qanday ko&lsquo;rinishi kerak bo&lsquo;lsa, xuddi shunday. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Hisob uchun <span class="ui">Yangi hisob</span> ni bosing, <span class="ui">Hisob nomi</span> va to&lsquo;liq rekvizitlarni kiriting — ular hujjatlarga tushadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Saqlang. Yangi qiymat menejerlarga to&lsquo;lov jadvalida darhol ochiladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Ishlatilgan ma&lsquo;lumotnoma o&lsquo;chirilmaydi.</b> To&lsquo;lovlari bor oluvchi hisobvarag&lsquo;ini tizim o&lsquo;chirishga qo&lsquo;ymaydi va unga nechta yozuv bog&lsquo;langanini aytadi. Yangi hisob oching, eskisini esa tarix uchun qoldiring — u eski to&lsquo;lovlarda saqlanib turishi kerak.</p>
+    </div>
+
+    <div class="note">
+      <p>Hisoblar kompaniyaga bog&lsquo;langan: kiritilgan hisob faqat o&lsquo;z kompaniyasida ko&lsquo;rinadi. Tizimda bir nechta yuridik shaxs bo&lsquo;lsa, hisob har birida alohida kiritiladi. Menyuda <span class="ui">Sozlamalar</span> bo&lsquo;lmasa — huquq berilmagan, administratordan <span class="ui">To&lsquo;lov turlari</span> va <span class="ui">Oluvchi hisobvaraqlari</span> resurslariga kirish so&lsquo;rang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+
+    <div class="tip">
+      <p><b>Yangi loyiha bo&lsquo;yicha sotuv boshlanishidan oldin ma&lsquo;lumotnomalarni tekshiring.</b> To&lsquo;lov turlari yoki hisoblar bo&lsquo;lmasa, menejer bitimning uchinchi bosqichida shunga duch keladi — va eng noqulay paytda sizga keladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Hisobotlardagi tushum</h3>
+    <p class="lede">Sizning belgilaringiz boshqaruv hisobotiga qanday aylanadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <p><span class="path">Hisobotlar</span> bo&lsquo;limida loyihalar va xodimlar bo&lsquo;yicha reja-fakt hisoboti shakllanadi. U uch blokdan iborat va ulardan biri to&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri sizning ma&lsquo;lumotingiz bilan oziqlanadi: Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Hisobot bloki</th><th>Raqamlar qayerdan olinadi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Soni, dona</span></td><td>Yopilgan bitimlar soni</td></tr>
+          <tr><td><span class="ui">Shartnoma tuzish</span></td><td>Imzolangan shartnomalar summasi</td></tr>
+          <tr><td><span class="ui">Tushum</span></td><td><b>To&lsquo;langan deb belgilangan to&lsquo;lovlar</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p><b>To&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri natija.</b> Belgilanmagan to&lsquo;lov — bu rahbar hisobotidagi kam ko&lsquo;rsatilgan tushum va tushum bo&lsquo;yicha pasaytirilgan <span class="ui">% fakt</span>. Bir necha kun kechikish bilan qo&lsquo;yilgan belgilar pulni keyingi hisobot davriga suradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+
+    <p><span class="ui">Shartnoma tuzish</span> va <span class="ui">Tushum</span> orasidagi farq — bu kompaniyaning debitorlik qarzi. Aynan shu farqni rahbar yig&lsquo;ilishda muhokama qiladi va ko&lsquo;pincha uni tushuntirish moliya bo&lsquo;limiga to&lsquo;g&lsquo;ri keladi. Kechikish va qaytarishlarni dolzarb holatda saqlang, shunda suhbat noaniq ma&lsquo;lumot haqida emas, haqiqiy pul haqida boradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>To&lsquo;lov loglari</h3>
+    <p class="lede">To&lsquo;lov bilan bog&lsquo;liq har bir amal avtomatik yoziladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Amal</th><th>Logga nima tushadi</th></tr></thead>
+        <tbody>
+          <tr><td>To&lsquo;lovni belgilash</td><td>To&lsquo;lov sanasi bilan yozuv, muallif va vaqti ko&lsquo;rsatilgan holda</td></tr>
+          <tr><td>Belgilashni bekor qilish</td><td>Oldingi sana ko&lsquo;rsatilgan yozuv</td></tr>
+          <tr><td>Qaytarish</td><td>&laquo;To&lsquo;lov qaytarilgan deb belgilandi&raquo;</td></tr>
+          <tr><td>Jadval yaratish</td><td>Bitim loglarida: jadval summasi va bitim holatining &laquo;Jarayonda&raquo; ga o&lsquo;zgarishi</td></tr>
+          <tr><td>Jadvalni yangilash</td><td>Bitim loglarida: yangi umumiy summa bilan yozuv</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Bu qanday yordam beradi.</b> Jadval tarkibi kutilganiga mos kelmasa, bitimning <span class="ui">Loglar</span> yorlig&lsquo;ini oching: jadvalni yangilash haqidagi yozuv kim va qachon o&lsquo;zgartirganini hamda nechta to&lsquo;lov qo&lsquo;shilgani, o&lsquo;zgartirilgani va o&lsquo;chirilganini ko&lsquo;rsatadi. Bu darhol tushuntirish ham, savol manzili ham beradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    </div>
+
+    <p>Loglar faqat o&lsquo;qish uchun ochiq. Yozuvlarni faqat loglarni o&lsquo;chirish huquqiga ega xodim olib tashlashi mumkin. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Ish ritmi</h3>
+    <p class="lede">Tayyor tartib. Chop etib, yoningizda saqlash mumkin. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+
+    <div class="cols">
+      <div>
+        <h6>Har kuni</h6>
+        <p>Ko&lsquo;chirma bo&lsquo;yicha kechagi tushumlarni belgilash. Yangi kechikkan to&lsquo;lovlarni ko&lsquo;rib chiqish va qo&lsquo;ng&lsquo;iroqlar uchun ro&lsquo;yxat topshirish. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      </div>
+      <div>
+        <h6>Har hafta</h6>
+        <p><span class="ui">Qaytarilishi kerak</span> holatidagi to&lsquo;lovlarni tekshirish va o&lsquo;tkazilgan qaytarishlarni yopish. Rahbar uchun menejer va loyihalar kesimida kechikish bo&lsquo;yicha ma&lsquo;lumot. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      </div>
+      <div>
+        <h6>Har oy</h6>
+        <p>Har bir oluvchi hisobi bo&lsquo;yicha buxgalteriya bilan solishtirish. Reja-fakt hisobotidagi <span class="ui">Tushum</span> blokini tekshirish. Yangi loyihalar boshlanishidan oldin ma&lsquo;lumotnomalarni ko&lsquo;rib chiqish. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      </div>
+    </div>
+
+    <h5>Oyni yopishdan oldingi tekshiruv ro&lsquo;yxati</h5>
+    <ol>
+      <li>Ko&lsquo;chirmadagi barcha tushumlar CRM da belgilangan.</li>
+      <li>Xato belgilar yo&lsquo;q: har bir hisob bo&lsquo;yicha CRM va bank summalari mos.</li>
+      <li>Buzilgan shartnomalar bo&lsquo;yicha qaytarishlar o&lsquo;tkazilgan va <span class="ui">Qaytarilgan</span> holati bilan yopilgan.</li>
+      <li>Boshqaruv panelidagi kechikish summasi haqiqatga mos.</li>
+      <li>Reja-fakt hisobotidagi <span class="ui">Tushum</span> bloki davr uchun eksportingiz bilan mos keladi.</li>
+    </ol>
+  </section>
+
+  <!-- ═══════════════ 14 ═══════════════ -->
+  <section class="ch" id="c14">
+    <h3><em>14</em>Ko&lsquo;p beriladigan savollar</h3>
+
+    <dl class="qa">
+      <dt>Bitimga bog&lsquo;lanmagan to&lsquo;lovni qanday yaratish mumkin</dt>
+      <dd>Hech qanday — tizimda bunday imkoniyat yo&lsquo;q. To&lsquo;lovlar faqat bitim bo&lsquo;yicha jadval saqlanganda yaratiladi. Tushum jadvali yo&lsquo;q bitimga tegishli bo&lsquo;lsa, avval jadvalni kiriting.</dd>
+
+      <dt>Jadval saqlanmayapti</dt>
+      <dd>Barcha to&lsquo;lovlar summasi <span class="ui">Shartnoma narxi</span> ga teng emas. Xato matnida tizim ikkala summani ko&lsquo;rsatadi. <span class="ui">Qoldiq</span> ni nolga tenglashtiring.</dd>
+
+      <dt>&laquo;To&lsquo;lov turi&raquo; yoki &laquo;Hisob&raquo; ro&lsquo;yxati bo&lsquo;sh</dt>
+      <dd>Ma&lsquo;lumotnomalar to&lsquo;ldirilmagan. Qiymatlarni <span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> da kiriting. Menyuda &laquo;Sozlamalar&raquo; bo&lsquo;lmasa — administratordan <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> huquqini to&lsquo;lov turlari va oluvchi hisobvaraqlari huquqlari bilan birga so&lsquo;rang: biri boshqasisiz yetarli emas.</dd>
+
+      <dt>Jadvalni tahrirlaganda to&lsquo;lov belgisi saqlanadimi</dt>
+      <dd>Ha. O&lsquo;tkazilgan to&lsquo;lovlar qayta yaratilmaydi: holat va haqiqiy to&lsquo;lov sanasi joyida qoladi. Tahrirlash formasida bunday qatorlar bloklangan va holati bilan belgilangan.</dd>
+
+      <dt>Qismni jadvaldan olib tashlashga ruxsat bermayapti</dt>
+      <dd>Bu to&lsquo;lov bo&lsquo;yicha pul allaqachon o&lsquo;tgan — tizim xato matnida bunday qatorlarni sanab beradi. Avval u bo&lsquo;yicha to&lsquo;lovni bekor qiling, va faqat tushum haqiqatan bo&lsquo;lmagan bo&lsquo;lsa.</dd>
+
+      <dt>To&lsquo;lovni kechagi sana bilan belgilash kerak</dt>
+      <dd>Tugma doim bugungi sanani qo&lsquo;yadi, boshqasini tanlab bo&lsquo;lmaydi. To&lsquo;lovni belgilang va haqiqiy sanani buxgalteriya bilan solishtirish dalolatnomasida qayd eting.</dd>
+
+      <dt>&laquo;To&lsquo;langan deb belgilash&raquo; tugmasi faol emas</dt>
+      <dd>Bitim shartnomasi buzilgan — bunday bitim bo&lsquo;yicha to&lsquo;lov belgilash taqiqlangan. Yoki to&lsquo;lov allaqachon <span class="ui">To&lsquo;langan</span> holatida va uning o&lsquo;rniga bekor qilish mavjud.</dd>
+
+      <dt>To&lsquo;lov &laquo;Qaytarilgan&raquo; holatiga o&lsquo;tmayapti</dt>
+      <dd>Qaytarish tugmasi faqat <span class="ui">Qaytarilishi kerak</span> holati uchun ishlaydi. Bu holat to&lsquo;langan to&lsquo;lovlari bo&lsquo;lgan bitim buzilgandan keyin avtomatik paydo bo&lsquo;ladi.</dd>
+
+      <dt>Muddat o&lsquo;tgan, lekin &laquo;Muddati o&lsquo;tgan&raquo; holati qo&lsquo;yilmagan</dt>
+      <dd>Qayta hisoblash serverdagi jadval bo&lsquo;yicha hamda &laquo;Moliya&raquo; va &laquo;Boshqaruv paneli&raquo; ochilganda bajariladi. Holat o&lsquo;zgarmasa — muddat haqiqatan o&lsquo;tganini va to&lsquo;lov to&lsquo;langan deb belgilanmaganini tekshiring. Ertasi kuni ham o&lsquo;zgarmasa, administratorga ayting: xizmat vazifasi (<code>scheduler</code> xizmati) to&lsquo;xtagan bo&lsquo;lishi mumkin.</dd>
+
+      <dt>Boshqa bo&lsquo;lim bitimlari bo&lsquo;yicha to&lsquo;lovlarni ko&lsquo;rmayapman</dt>
+      <dd>Ko&lsquo;rish doirangiz keraklidan tor. Moliyachi ishi uchun <span class="ui">Kompaniya</span> doirasi kerak — administratordan so&lsquo;rang.</dd>
+
+      <dt>Reja-fakt hisobotidagi summa mening eksportimdan kam</dt>
+      <dd>Davrlarni solishtiring: hisobot tanlangan yil va davr bo&lsquo;yicha, eksport esa sizning filtrlaringiz bo&lsquo;yicha quriladi. Shuningdek, to&lsquo;lov sanasi emas, haqiqiy to&lsquo;lov sanasi bo&lsquo;yicha filtrlaganingizni tekshiring.</dd>
+
+      <dt>Mijoz jadvalda ko&lsquo;rsatilganidan ko&lsquo;proq to&lsquo;ladi</dt>
+      <dd>Tizim jadval summasi va shartnoma narxining aniq tengligini talab qiladi, shuning uchun &laquo;ortiqcha&raquo; to&lsquo;lovni jadvalga qo&lsquo;shib bo&lsquo;lmaydi. Yechim rahbar bilan kelishiladi: yo &laquo;Bitim shartlari&raquo; bosqichida shartnoma narxi qayta ko&lsquo;rib chiqiladi, yoki ortiqcha to&lsquo;lov CRM dan tashqarida rasmiylashtiriladi.</dd>
+
+      <dt>Yana bitta oluvchi hisobi kerak</dt>
+      <dd>Uni <span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> da <span class="ui">Yangi hisob</span> tugmasi bilan o&lsquo;zingiz kiritasiz. Hisob sizning kompaniyangizda yaratiladi; boshqa yuridik shaxs uchun uni alohida kiritish kerak.</dd>
+    </dl>
+
+    <div class="end">
+      Moliyachi qo&lsquo;llanmasi &middot; Ko&lsquo;chmas mulk CRM &middot; versiya 1.0, 2026-yil sentyabr.<br>
+      To&lsquo;lov turlari va oluvchi hisobvaraqlari &mdash; CRM administratori orqali. Shartnomani buzish va hujjatlar &mdash; rasmiylashtirish bo&lsquo;limiga.
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+(function () {
+  var chapters = [].slice.call(document.querySelectorAll("section.ch"));
+  var links = [].slice.call(document.querySelectorAll("nav.toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+
+  /* --- highlight the chapter currently in view --- */
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove("on"); });
+    if (byId[id]) byId[id].classList.add("on");
+  }
+  if ("IntersectionObserver" in window) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+      for (var i = 0; i < chapters.length; i++) {
+        if (seen[chapters[i].id]) { mark(chapters[i].id); break; }
+      }
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    chapters.forEach(function (c) { io.observe(c); });
+  }
+  if (chapters.length) mark(chapters[0].id);
+
+  /* --- filter chapters by text --- */
+  var box = document.getElementById("finder");
+  var empty = document.getElementById("no-hit");
+  if (box) {
+    var haystack = chapters.map(function (c) {
+      return (c.textContent || "").toLowerCase().replace(/\s+/g, " ");
+    });
+    var run = function () {
+      var q = box.value.trim().toLowerCase();
+      var hits = 0;
+      chapters.forEach(function (c, i) {
+        var hit = !q || haystack[i].indexOf(q) > -1;
+        c.classList.toggle("hide", !hit);
+        var a = byId[c.id];
+        if (a && a.parentNode) a.parentNode.classList.toggle("hide", !hit);
+        if (hit) hits++;
+      });
+      if (empty) empty.classList.toggle("on", hits === 0);
+    };
+    box.addEventListener("input", run);
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { box.value = ""; run(); }
+    });
+  }
+
+  /* --- print --- */
+  var p = document.getElementById("print");
+  if (p) p.addEventListener("click", function () { window.print(); });
+})();
+</script>
+</body>
+</html>

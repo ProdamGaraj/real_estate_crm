@@ -8,79 +8,9 @@ import { useMemo } from 'react';
  */
 const getDataGridLocaleText = (lang: string) => {
   if (lang === 'ru') {
-    return {
-      // Pagination
-      MuiTablePagination: {
-        labelRowsPerPage: 'Строк на странице:',
-        labelDisplayedRows: ({ from, to, count }: { from: number; to: number; count: number }) =>
-          `${from}–${to} из ${count !== -1 ? count : `более ${to}`}`,
-      },
-      // Columns
-      columnMenuLabel: 'Меню',
-      columnMenuShowColumns: 'Показать столбцы',
-      columnMenuManageColumns: 'Управление столбцами',
-      columnMenuFilter: 'Фильтр',
-      columnMenuHideColumn: 'Скрыть',
-      columnMenuUnsort: 'Отменить сортировку',
-      columnMenuSortAsc: 'По возрастанию',
-      columnMenuSortDesc: 'По убыванию',
-      // Filter
-      filterPanelAddFilter: 'Добавить фильтр',
-      filterPanelRemoveAll: 'Удалить все',
-      filterPanelDeleteIconLabel: 'Удалить',
-      filterPanelLogicOperator: 'Логический оператор',
-      filterPanelOperator: 'Оператор',
-      filterPanelOperatorAnd: 'И',
-      filterPanelOperatorOr: 'Или',
-      filterPanelColumns: 'Столбцы',
-      filterPanelInputLabel: 'Значение',
-      filterPanelInputPlaceholder: 'Значение фильтра',
-      // Operators
-      filterOperatorContains: 'содержит',
-      filterOperatorEquals: 'равно',
-      filterOperatorStartsWith: 'начинается с',
-      filterOperatorEndsWith: 'заканчивается на',
-      filterOperatorIs: 'равно',
-      filterOperatorNot: 'не равно',
-      filterOperatorAfter: 'после',
-      filterOperatorOnOrAfter: 'после или равно',
-      filterOperatorBefore: 'до',
-      filterOperatorOnOrBefore: 'до или равно',
-      filterOperatorIsEmpty: 'пусто',
-      filterOperatorIsNotEmpty: 'не пусто',
-      filterOperatorIsAnyOf: 'любое из',
-      // Columns panel
-      columnsPanelTextFieldLabel: 'Найти столбец',
-      columnsPanelTextFieldPlaceholder: 'Название столбца',
-      columnsPanelShowAllButton: 'Показать все',
-      columnsPanelHideAllButton: 'Скрыть все',
-      // Footer
-      footerRowSelected: (count: number) =>
-        count !== 1 ? `${count.toLocaleString()} строк выбрано` : `${count.toLocaleString()} строка выбрана`,
-      footerTotalRows: 'Всего строк:',
-      footerTotalVisibleRows: (visibleCount: number, totalCount: number) =>
-        `${visibleCount.toLocaleString()} из ${totalCount.toLocaleString()}`,
-      // Other
-      noRowsLabel: 'Нет данных',
-      noResultsOverlayLabel: 'Данные не найдены',
-      toolbarDensity: 'Высота строки',
-      toolbarDensityLabel: 'Высота строки',
-      toolbarDensityCompact: 'Компактная',
-      toolbarDensityStandard: 'Стандартная',
-      toolbarDensityComfortable: 'Комфортная',
-      toolbarColumns: 'Столбцы',
-      toolbarColumnsLabel: 'Выберите столбцы',
-      toolbarFilters: 'Фильтры',
-      toolbarFiltersLabel: 'Показать фильтры',
-      toolbarFiltersTooltipHide: 'Скрыть фильтры',
-      toolbarFiltersTooltipShow: 'Показать фильтры',
-      toolbarFiltersTooltipActive: (count: number) =>
-        count !== 1 ? `${count} активных фильтра` : `${count} активный фильтр`,
-      toolbarExport: 'Экспорт',
-      toolbarExportLabel: 'Экспорт',
-      toolbarExportCSV: 'Скачать как CSV',
-      toolbarExportPrint: 'Печать',
-    };
+    // Официальная локаль MUI: покрывает все ключи грида, включая те, что
+    // появились в 8-й версии, — свой список неизбежно от неё отставал
+    return ruRU.components.MuiDataGrid.defaultProps.localeText;
   }
   
   if (lang === 'uz') {
@@ -130,10 +60,8 @@ const getDataGridLocaleText = (lang: string) => {
       filterOperatorIsNotEmpty: 'bo\'sh emas',
       filterOperatorIsAnyOf: 'quyidagilardan biri',
       // Columns panel
-      columnsPanelTextFieldLabel: 'Ustun topish',
-      columnsPanelTextFieldPlaceholder: 'Ustun nomi',
-      columnsPanelShowAllButton: 'Barchasini ko\'rsatish',
-      columnsPanelHideAllButton: 'Barchasini yashirish',
+      columnsManagementSearchTitle: 'Ustun topish',
+      columnsManagementShowHideAllText: 'Barchasini ko\'rsatish/yashirish',
       // Footer
       footerRowSelected: (count: number) => `${count.toLocaleString()} qator tanlandi`,
       footerTotalRows: 'Jami qatorlar:',

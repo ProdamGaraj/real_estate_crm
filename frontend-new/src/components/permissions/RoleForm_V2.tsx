@@ -20,6 +20,7 @@ import {
   type Role,
 } from '../../api/permissions';
 import ResourcePermissionSelector from './ResourcePermissionSelector';
+import { translateResource } from '../../utils/translations';
 import {
   emptyResourcePermissions,
   hierarchyToPermissionIds,
@@ -60,10 +61,9 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
     is_active: role?.is_active ?? true,
   });
 
-  // Функция для получения локализованного названия ресурса
-  const getResourceLabel = (resource: string): string => {
-    return t(`permissions.resources.${resource}`, resource);
-  };
+  // Названия ресурсов — из общего справочника resources.*; отдельной ветки
+  // permissions.resources в локалях нет, и на её месте выводился сам ключ
+  const getResourceLabel = (resource: string): string => translateResource(resource);
 
   // Иерархическая структура разрешений V2
   const [permissionsHierarchy, setPermissionsHierarchy] = useState<PermissionsHierarchyV2>({});
@@ -228,7 +228,7 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
         {/* Основная информация */}
         <TextField
-          label={t('permissions.form.role_name')}
+          label={t('pages.settings.permissions.form.role_name')}
           value={formData.name}
           onChange={handleNameChange}
           required
@@ -236,12 +236,12 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
         />
 
         <TextField
-          label={t('permissions.form.role_code')}
+          label={t('pages.settings.permissions.form.role_code')}
           value={formData.code}
           onChange={handleCodeChange}
           required
           fullWidth
-          helperText={t('permissions.form.role_code_hint')}
+          helperText={t('pages.settings.permissions.form.role_code_hint')}
         />
 
         <TextField
@@ -255,17 +255,17 @@ export default function RoleForm({ role, onSuccess, onCancel }: RoleFormProps) {
 
         <FormControlLabel
           control={<Checkbox checked={formData.is_active} onChange={handleIsActiveChange} />}
-          label={t('permissions.form.is_active')}
+          label={t('pages.settings.permissions.form.is_active')}
         />
 
         {/* Разрешения */}
         <Box>
           <Typography variant="h6" gutterBottom>
-            {t('permissions.permissions_title')} {selectedPermissionsCount > 0 && `(${selectedPermissionsCount} ${t('permissions.selected')})`}
+            {t('pages.settings.permissions.permissions_title')} {selectedPermissionsCount > 0 && `(${selectedPermissionsCount} ${t('pages.settings.permissions.selected')})`}
           </Typography>
 
           {isLoading ? (
-            <Alert severity="info">{t('permissions.loading')}</Alert>
+            <Alert severity="info">{t('pages.settings.permissions.loading')}</Alert>
           ) : (
             <Stack spacing={2}>
               {resources.map((resource) => (

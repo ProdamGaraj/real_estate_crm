@@ -264,7 +264,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
             />
 
             <TextField
-              label={t('common.email')}
+              label={t('forms.email')}
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}

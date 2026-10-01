@@ -73,7 +73,7 @@ const getMeetingColumns = (t: (key: string) => string): GridColDef<Meeting>[] =>
 
 // Mobile fields for applications
 const getApplicationMobileFields = (): MobileCardField<{ id: number; status: string; source: string; created_at: string }>[] => [
-    { key: 'id', label: 'ID', primary: true },
+    { key: 'id', label: 'table.id', primary: true },
     { key: 'status', label: 'table.status', chip: true },
     { key: 'source', label: 'table.source', secondary: true },
     { key: 'created_at', label: 'table.created_at', render: (v: string) => new Date(v).toLocaleDateString() },

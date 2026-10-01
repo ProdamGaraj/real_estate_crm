@@ -147,7 +147,7 @@ export default function RolesPage() {
       <Paper sx={{ p: 2 }}>
         {isError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {t('common.loading_error')}: {error instanceof Error ? error.message : t('common.unknown_error')}
+            {t('errors.load_error')}: {error instanceof Error ? error.message : t('errors.unknown_error')}
           </Alert>
         )}
 

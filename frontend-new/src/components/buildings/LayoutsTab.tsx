@@ -97,8 +97,8 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
             disabled={bulkUploadMutation.isPending}
           >
             {bulkUploadMutation.isPending 
-              ? t('common.uploading', 'Загрузка...') 
-              : t('pages.buildings.layouts.bulk_upload', 'Массовая загрузка')}
+              ? t('common.uploading') 
+              : t('pages.buildings.layouts.bulk_upload')}
           </Button>
           <input
             type="file"
@@ -115,7 +115,7 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
         <Box sx={{ mb: 2 }}>
           <LinearProgress />
           <Typography variant="caption" color="text.secondary">
-            {t('pages.buildings.layouts.uploading_files', 'Загрузка файлов...')}
+            {t('pages.buildings.layouts.uploading_files')}
           </Typography>
         </Box>
       )}
@@ -131,12 +131,12 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
             {t('pages.buildings.layouts.upload_hint')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t('pages.buildings.layouts.bulk_upload_hint', 'Для массовой загрузки используйте формат имени файла: название_тип.расширение')}
+            {t('pages.buildings.layouts.bulk_upload_hint')}
           </Typography>
           <Typography variant="caption" color="text.secondary" component="div">
-            {t('pages.buildings.layouts.bulk_upload_types', 'Типы: main (планировка), extra (доп. планировка), floor (на этаже), usp (УТП)')}
+            {t('pages.buildings.layouts.bulk_upload_types')}
             <br />
-            {t('pages.buildings.layouts.bulk_upload_example', 'Пример: Студия_main.jpg, 1-комн 35м_floor.png')}
+            {t('pages.buildings.layouts.bulk_upload_example')}
           </Typography>
           <Button 
             variant="outlined" 
@@ -156,7 +156,7 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
         fullWidth
       >
         <DialogTitle>
-          {t('pages.buildings.layouts.upload_result', 'Результат загрузки')}
+          {t('pages.buildings.layouts.upload_result')}
         </DialogTitle>
         <DialogContent>
           {uploadResult && (
@@ -164,14 +164,14 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
               <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                 <Chip 
                   icon={<CheckCircleIcon />} 
-                  label={`${t('common.success', 'Успешно')}: ${uploadResult.uploaded}`}
+                  label={`${t('common.success')}: ${uploadResult.uploaded}`}
                   color="success"
                   variant="outlined"
                 />
                 {uploadResult.errors_count > 0 && (
                   <Chip 
                     icon={<ErrorIcon />} 
-                    label={`${t('common.errors', 'Ошибки')}: ${uploadResult.errors_count}`}
+                    label={`${t('common.errors')}: ${uploadResult.errors_count}`}
                     color="error"
                     variant="outlined"
                   />
@@ -180,14 +180,14 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
 
               {uploadResult.created_layouts.length > 0 && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  {t('pages.buildings.layouts.created_layouts', 'Созданы новые планировки')}: {uploadResult.created_layouts.join(', ')}
+                  {t('pages.buildings.layouts.created_layouts')}: {uploadResult.created_layouts.join(', ')}
                 </Alert>
               )}
 
               {uploadResult.details.success.length > 0 && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" gutterBottom>
-                    {t('pages.buildings.layouts.uploaded_files', 'Загруженные файлы')}:
+                    {t('pages.buildings.layouts.uploaded_files')}:
                   </Typography>
                   <List dense>
                     {uploadResult.details.success.map((item, index) => (
@@ -208,7 +208,7 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
               {uploadResult.details.errors.length > 0 && (
                 <Box>
                   <Typography variant="subtitle2" gutterBottom color="error">
-                    {t('pages.buildings.layouts.failed_files', 'Файлы с ошибками')}:
+                    {t('pages.buildings.layouts.failed_files')}:
                   </Typography>
                   <List dense>
                     {uploadResult.details.errors.map((item, index) => (
@@ -230,7 +230,7 @@ export default function LayoutsTab({ projectId, buildingId }: LayoutsTabProps) {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setResultDialogOpen(false)}>
-            {t('common.close', 'Закрыть')}
+            {t('common.close')}
           </Button>
         </DialogActions>
       </Dialog>

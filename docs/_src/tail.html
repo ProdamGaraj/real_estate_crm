@@ -1,0 +1,57 @@
+<script>
+(function () {
+  var chapters = [].slice.call(document.querySelectorAll("section.ch"));
+  var links = [].slice.call(document.querySelectorAll("nav.toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+
+  /* --- highlight the chapter currently in view --- */
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove("on"); });
+    if (byId[id]) byId[id].classList.add("on");
+  }
+  if ("IntersectionObserver" in window) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+      for (var i = 0; i < chapters.length; i++) {
+        if (seen[chapters[i].id]) { mark(chapters[i].id); break; }
+      }
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    chapters.forEach(function (c) { io.observe(c); });
+  }
+  if (chapters.length) mark(chapters[0].id);
+
+  /* --- filter chapters by text --- */
+  var box = document.getElementById("finder");
+  var empty = document.getElementById("no-hit");
+  if (box) {
+    var haystack = chapters.map(function (c) {
+      return (c.textContent || "").toLowerCase().replace(/\s+/g, " ");
+    });
+    var run = function () {
+      var q = box.value.trim().toLowerCase();
+      var hits = 0;
+      chapters.forEach(function (c, i) {
+        var hit = !q || haystack[i].indexOf(q) > -1;
+        c.classList.toggle("hide", !hit);
+        var a = byId[c.id];
+        if (a && a.parentNode) a.parentNode.classList.toggle("hide", !hit);
+        if (hit) hits++;
+      });
+      if (empty) empty.classList.toggle("on", hits === 0);
+    };
+    box.addEventListener("input", run);
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { box.value = ""; run(); }
+    });
+  }
+
+  /* --- print --- */
+  var p = document.getElementById("print");
+  if (p) p.addEventListener("click", function () { window.print(); });
+})();
+</script>

@@ -76,7 +76,13 @@
     "uploading": "Uploading...",
     "phone": "Phone",
     "no_data": "No data to display",
-    "restore": "Restore"
+    "restore": "Restore",
+    "action_irreversible": "This action cannot be undone.",
+    "department": "Department",
+    "errors": "Errors",
+    "no_client": "No client specified",
+    "success": "Success",
+    "updated_at": "Updated"
   },
   "nav": {
     "app_title": "Real Estate CRM",
@@ -135,7 +141,8 @@
       "enter_email_error": "Enter email",
       "invalid_email": "Enter a valid email",
       "request_error": "Error sending request"
-    }
+    },
+    "login_error": "Login failed"
   },
   "pages": {
     "dashboard": {
@@ -559,7 +566,16 @@
       "layouts": {
         "load_error": "Failed to load layouts.",
         "not_loaded": "Layouts for this building have not been uploaded via Excel yet.",
-        "upload_hint": "Download the Excel template, fill in the property data with layouts and upload the file on the 'Properties' tab."
+        "upload_hint": "Download the Excel template, fill in the property data with layouts and upload the file on the 'Properties' tab.",
+        "bulk_upload": "Bulk upload",
+        "bulk_upload_example": "Example: Studio_main.jpg, 1-room 35m_floor.png",
+        "bulk_upload_hint": "For bulk upload use the file name format: name_type.extension",
+        "bulk_upload_types": "Types: main (layout), extra (additional layout), floor (floor plan), usp (USP)",
+        "created_layouts": "New layouts created",
+        "failed_files": "Files with errors",
+        "upload_result": "Upload result",
+        "uploaded_files": "Uploaded files",
+        "uploading_files": "Uploading files..."
       }
     },
     "properties": {
@@ -1050,7 +1066,8 @@
       "in_progress": "In Progress",
       "junk": "Junk",
       "rejected": "Rejected",
-      "closed_won": "Closed Won"
+      "closed_won": "Closed Won",
+      "CLOSED_LOST": "Closed Lost"
     },
     "application_source": {
       "INTERNET": "Internet",
@@ -1140,7 +1157,15 @@
       "VIEW": "View",
       "ADD": "Create",
       "EDIT": "Edit",
-      "DELETE": "Delete"
+      "DELETE": "Delete",
+      "APPROVE": "Approve",
+      "ASSIGN": "Assign",
+      "DELETE_LOG": "Delete logs",
+      "EDIT_IN_PROGRESS": "Edit in progress",
+      "EXPORT": "Export",
+      "FORCE_EDIT": "Force edit",
+      "IMPORT": "Import",
+      "REOPEN": "Reopen"
     },
     "permission_scope": {
       "OWN": "Own",
@@ -1184,7 +1209,9 @@
     "SETTINGS": "Settings",
     "TEMPLATE": "Templates",
     "TASK": "Tasks",
-    "OTHER": "Other"
+    "OTHER": "Other",
+    "PARTNER_API_KEY": "Partner API Keys",
+    "TASK_LOG": "Task Logs"
   },
   "forms": {
     "full_name": "Full Name",
@@ -1262,7 +1289,8 @@
     "no_view_permission": "You do not have permission to view this page",
     "load_application_error": "Could not load application data.",
     "load_discount_error": "Could not load discount data.",
-    "load_payment_error": "Could not load payment data."
+    "load_payment_error": "Could not load payment data.",
+    "load_error": "Failed to load"
   },
   "table": {
     "id": "ID",

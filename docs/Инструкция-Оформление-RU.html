@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<title>Руководство отдела оформления</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F2F6F8; --surface:#FFFFFF; --surface-2:#E9F0F4; --surface-3:#F7FAFB;
+  --ink:#16232B; --ink-2:#41535E; --muted:#6B7F8B; --rule:#D6E1E8; --rule-2:#E7EEF2;
+  --accent:#1D5B79; --accent-ink:#12455E; --accent-soft:#E1EDF4;
+  --ok:#2E7D52; --ok-soft:#E4F2EA;
+  --info:#2A6FB0; --info-soft:#E4EDF8;
+  --warn:#9C6B12; --warn-soft:#F7EEDC;
+  --purple:#65499B; --purple-soft:#ECE6F6;
+  --danger:#A94036; --danger-soft:#F8E6E3;
+  --step-fg:#FFFFFF;
+  --sans:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --slab:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+    --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+    --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+    --ok:#6BC492; --ok-soft:#15291F;
+    --info:#7BB3E8; --info-soft:#152634;
+    --warn:#D6A85B; --warn-soft:#2C2415;
+    --purple:#A88FD8; --purple-soft:#241E33;
+    --danger:#E08579; --danger-soft:#2E1A17;
+    --step-fg:#0E161B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+  --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+  --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+  --ok:#6BC492; --ok-soft:#15291F;
+  --info:#7BB3E8; --info-soft:#152634;
+  --warn:#D6A85B; --warn-soft:#2C2415;
+  --purple:#A88FD8; --purple-soft:#241E33;
+  --danger:#E08579; --danger-soft:#2E1A17;
+  --step-fg:#0E161B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr);max-width:1360px;margin:0 auto;
+  background:var(--surface);min-height:100vh;border-inline:1px solid var(--rule-2)}
+.side{border-right:1px solid var(--rule);background:var(--surface-3);position:sticky;top:0;height:100vh;
+  overflow-y:auto;padding:26px 20px 32px;display:flex;flex-direction:column;gap:18px}
+.main{padding:34px 56px 96px;min-width:0}
+
+/* ---------- masthead ---------- */
+.brand{display:flex;flex-direction:column;gap:9px}
+.mark{display:flex;align-items:center;gap:9px}
+.mark svg{flex:none}
+.mark b{font:600 12.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.brand h1{font:700 20px/1.25 var(--slab);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.brand .role{font:500 11.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.finder{position:relative}
+.finder input{width:100%;font:400 14px/1 var(--sans);color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule);border-radius:7px;padding:9px 11px 9px 31px}
+.finder input::placeholder{color:var(--muted)}
+.finder svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.55}
+
+nav.toc{font-size:14px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav.toc a{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;
+  padding:6px 9px;border-radius:6px;color:var(--ink-2);text-decoration:none;line-height:1.35}
+nav.toc a span{font:500 11px/1.4 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+nav.toc a.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+nav.toc a.on span{color:var(--accent-ink)}
+nav.toc li.hide{display:none}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.btn{font:500 13px/1 var(--sans);color:var(--ink-2);background:var(--surface);border:1px solid var(--rule);
+  border-radius:7px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- doc head ---------- */
+.doc-head{border-bottom:2px solid var(--ink);padding-bottom:22px}
+.doc-head .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent-ink);margin-bottom:14px}
+.doc-head h2{font:700 clamp(28px,4vw,40px)/1.1 var(--slab);margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance}
+.doc-head p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:18px;font:500 12px/1.5 var(--mono);color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- chapters ---------- */
+section.ch{padding-top:52px;scroll-margin-top:20px}
+section.ch>h3{font:700 25px/1.25 var(--slab);margin:0 0 6px;letter-spacing:-.01em;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;text-wrap:balance}
+section.ch>h3 em{font:600 13px/1 var(--mono);font-style:normal;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+section.ch>.lede{margin:0 0 24px 41px;color:var(--muted);max-width:62ch}
+section.ch.hide{display:none}
+h4{font:600 16.5px/1.35 var(--sans);margin:34px 0 10px;letter-spacing:-.005em}
+h5{font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+p{margin:0 0 14px;max-width:68ch}
+.main ul,.main ol{max-width:68ch}
+.main li{margin:4px 0}
+
+/* ---------- ui chips ---------- */
+.ui{font:500 13.5px/1.35 var(--mono);background:var(--surface-2);border:1px solid var(--rule);
+  border-radius:5px;padding:1px 6px;white-space:nowrap;color:var(--ink)}
+.path{font:500 13.5px/1.35 var(--mono);color:var(--accent-ink);white-space:nowrap}
+.path i{font-style:normal;opacity:.5;padding:0 3px}
+code{font:500 13.5px/1.4 var(--mono);background:var(--surface-2);border-radius:4px;padding:1px 5px}
+
+/* ---------- steps ---------- */
+ol.steps{counter-reset:s;list-style:none;margin:18px 0 22px;padding:0 0 0 40px;
+  border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:15px}
+ol.steps>li{counter-increment:s;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:-51.5px;top:0;width:23px;height:23px;
+  display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:var(--step-fg);font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+ol.steps>li>p{margin:0 0 8px}
+ol.steps>li>p:last-child{margin-bottom:0}
+ol.steps ul{margin:8px 0 0;padding-left:19px}
+
+/* ---------- callouts ---------- */
+.note,.warn,.tip{border-left:3px solid;padding:13px 16px;margin:20px 0;border-radius:0 6px 6px 0;font-size:15px}
+.note{border-color:var(--info);background:var(--info-soft)}
+.warn{border-color:var(--danger);background:var(--danger-soft)}
+.tip{border-color:var(--ok);background:var(--ok-soft)}
+.note>:last-child,.warn>:last-child,.tip>:last-child{margin-bottom:0}
+.note b,.warn b,.tip b{font-weight:600}
+.warn b{color:var(--danger)}
+.tip b{color:var(--ok)}
+.note b{color:var(--info)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;margin:18px 0 24px;border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+thead th{font:600 11.5px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-3);border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+table .ui{font-size:12.5px}
+
+/* ---------- status chips ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1 var(--mono);
+  padding:5px 9px;border-radius:20px;white-space:nowrap}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chip.g{color:var(--ok);background:var(--ok-soft)}
+.chip.b{color:var(--info);background:var(--info-soft)}
+.chip.y{color:var(--warn);background:var(--warn-soft)}
+.chip.p{color:var(--purple);background:var(--purple-soft)}
+.chip.r{color:var(--danger);background:var(--danger-soft)}
+.chip.n{color:var(--muted);background:var(--surface-2)}
+
+/* ---------- pipeline ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:22px 0 26px;
+  padding:16px;background:var(--surface-3);border:1px solid var(--rule);border-radius:8px}
+.flow .st{flex:1 1 118px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+  padding:10px 12px;min-width:0}
+.flow .st b{display:block;font:600 14px/1.3 var(--sans)}
+.flow .st span{display:block;font:400 12.5px/1.4 var(--sans);color:var(--muted);margin-top:3px}
+.flow .ar{align-self:center;color:var(--muted);font-size:15px;flex:none}
+@media (max-width:640px){.flow .ar{display:none}.flow .st{flex:1 1 100%}}
+
+/* ---------- chessboard mini ---------- */
+.board{display:inline-grid;grid-template-columns:repeat(6,28px);gap:3px;margin:8px 0 4px}
+.board i{height:28px;border-radius:4px;display:grid;place-items:center;
+  font:500 10px/1 var(--mono);font-style:normal;color:var(--ink-2)}
+.board i.g{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.board i.b{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info)}
+.board i.y{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
+.board i.p{background:var(--purple-soft);box-shadow:inset 0 0 0 1px var(--purple)}
+.board i.r{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger)}
+
+/* ---------- misc ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin:18px 0 24px}
+.cols>div{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;background:var(--surface-3)}
+.cols h6{font:600 14px/1.3 var(--sans);margin:0 0 6px}
+.cols p{font-size:14px;color:var(--ink-2);margin:0}
+dl.qa{margin:18px 0}
+dl.qa dt{font-weight:600;margin-top:22px}
+dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
+.end{margin-top:64px;padding-top:20px;border-top:2px solid var(--ink);font-size:13.5px;color:var(--muted)}
+.no-hit{display:none;padding:40px 0;color:var(--muted)}
+.no-hit.on{display:block}
+
+/* ---------- responsive ---------- */
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:20px 22px}
+  .side-foot{margin-top:6px}
+  .main{padding:26px 22px 72px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--ground:#fff;--surface:#fff;--surface-2:#F2F2F2;--surface-3:#FAFAFA;
+        --rule:#BBB;--rule-2:#DDD;--ink:#111;--ink-2:#333;--muted:#666}
+  body{background:#fff;font-size:11pt}
+  .shell{display:block;max-width:none;border:0}
+  .side{display:none}
+  .main{padding:0}
+  section.ch{padding-top:26px}
+  section.ch>h3,h4{page-break-after:avoid}
+  ol.steps>li,.note,.warn,.tip,.scroll,.flow,.cols>div{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>CRM Недвижимость</b>
+    </div>
+    <h1>Руководство отдела оформления</h1>
+    <div class="role">Роль: Специалист по оформлению</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Поиск по разделам" aria-label="Поиск по разделам">
+  </div>
+
+  <nav class="toc" aria-label="Содержание">
+    <ol>
+      <li><a href="#c1"><span>01</span>Ваше место в процессе</a></li>
+      <li><a href="#c2"><span>02</span>Вход и рабочий экран</a></li>
+      <li><a href="#c3"><span>03</span>Приёмка сделки</a></li>
+      <li><a href="#c4"><span>04</span>Проверка данных клиента</a></li>
+      <li><a href="#c5"><span>05</span>Номер и дата договора</a></li>
+      <li><a href="#c6"><span>06</span>Генерация договора</a></li>
+      <li><a href="#c7"><span>07</span>Подписание и скан</a></li>
+      <li><a href="#c8"><span>08</span>Расторжение и отмена</a></li>
+      <li><a href="#c9"><span>09</span>Очередь на оформление</a></li>
+      <li><a href="#c10"><span>10</span>Логи как доказательство</a></li>
+      <li><a href="#c11"><span>11</span>Метки шаблонов</a></li>
+      <li><a href="#c12"><span>12</span>Справочник статусов</a></li>
+      <li><a href="#c13"><span>13</span>Частые вопросы</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Распечатать
+    </button>
+    <div>Версия 1.0 &middot; сентябрь 2026</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Инструкция пользователя</div>
+    <h2>Как оформить договор в CRM</h2>
+    <p>Руководство для сотрудника отдела оформления: что проверить перед печатью договора, как сформировать документ из шаблона, зафиксировать подписи и корректно закрыть сделку — или оформить её расторжение.</p>
+    <div class="meta">
+      <span>Для кого: <b>специалист по оформлению</b></span>
+      <span>Разделов: <b>13</b></span>
+      <span>Рабочая зона: <b>шаг 4 сделки</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Ничего не найдено. Очистите поиск или введите другое слово.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Ваше место в процессе</h3>
+    <p class="lede">Вы включаетесь на последнем шаге сделки, когда коммерческие условия уже согласованы.</p>
+
+    <div class="flow">
+      <div class="st"><b>1. Информация</b><span>Менеджер: бронь</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>2. Условия</b><span>Менеджер: цена и скидки</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>3. График платежей</b><span>Менеджер или финансист</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>4. Документы</b><span>Вы</span></div>
+    </div>
+
+    <p>К моменту, когда сделка попадает к вам, уже зафиксированы: клиент, объект, стоимость по договору, применённые скидки и график платежей. Ваша задача — превратить это в подписанный договор и корректно закрыть сделку в системе.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Что делаете вы</th><th>Чего вы не делаете</th></tr></thead>
+        <tbody>
+          <tr><td>Проверяете полноту данных клиента</td><td>Не меняете стоимость и скидки — это зона менеджера и руководителя</td></tr>
+          <tr><td>Присваиваете номер и дату договора</td><td>Не редактируете график платежей</td></tr>
+          <tr><td>Формируете договор из шаблона</td><td>Не создаёте и не загружаете шаблоны — это администратор</td></tr>
+          <tr><td>Загружаете скан подписанного документа</td><td>Не отмечаете оплаты — это финансист</td></tr>
+          <tr><td>Фиксируете даты подписания</td><td>Не бронируете объекты</td></tr>
+          <tr><td>Оформляете расторжение с документом-основанием</td><td>&nbsp;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Какие права вам нужны</h4>
+    <p>Если каких-то кнопок или разделов не видно, покажите этот список администратору:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Раздел</th><th>Действия</th><th>Зачем</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Сделки</span></td><td>Просмотр, Редактирование</td><td>Работа с шагом «Документы»</td></tr>
+          <tr><td><span class="ui">Клиенты</span></td><td>Просмотр, Редактирование</td><td>Дозаполнение паспортных данных</td></tr>
+          <tr><td><span class="ui">Шаблоны документов</span></td><td>Просмотр</td><td>Генерация договоров</td></tr>
+          <tr><td><span class="ui">Платежи</span></td><td>Просмотр</td><td>Проверка графика перед печатью</td></tr>
+          <tr><td><span class="ui">Объекты недвижимости</span></td><td>Просмотр</td><td>Сверка характеристик объекта</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Область видимости обычно <span class="ui">Компания</span> — вы оформляете договоры по всем отделам продаж, а не только по своему.</p>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Вход и рабочий экран</h3>
+    <p class="lede">Минимум, который нужно знать об интерфейсе.</p>
+
+    <ol class="steps">
+      <li><p>Откройте адрес CRM, введите <span class="ui">Имя пользователя</span> и <span class="ui">Пароль</span>, нажмите <span class="ui">Войти</span>. Логин выдаёт администратор — это не ваш email.</p></li>
+      <li><p>Перейдите в раздел <span class="path">Сделки</span> — это ваш основной экран.</p></li>
+    </ol>
+
+    <p>Пароль восстанавливается по ссылке <span class="ui">Забыли пароль?</span> на экране входа: понадобится email из вашего профиля. Язык и оформление переключаются вверху справа, там же — аватар с названием вашей компании и кнопкой <span class="ui">Выйти</span>.</p>
+
+    <h4>Карточка сделки</h4>
+    <p>Откройте любую сделку из списка. Внутри две вкладки:</p>
+    <ul>
+      <li><span class="ui">Шаги сделки</span> — вертикальный список из четырёх шагов. Нажмите на заголовок <span class="ui">Документы</span>, чтобы сразу перейти к своему шагу.</li>
+      <li><span class="ui">Логи</span> — полная история изменений по сделке.</li>
+    </ul>
+
+    <div class="note">
+      <p><b>Шаг «Документы» открывается только после сохранённого графика платежей.</b> Если заголовок шага помечен ошибкой и не раскрывается — значит, график ещё не заведён. Это не сбой: верните сделку менеджеру или финансисту.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>Приёмка сделки</h3>
+    <p class="lede">Пять минут проверки до печати экономят день на переделке.</p>
+
+    <p>Прежде чем присваивать номер договора, пройдите по шагам сделки снизу вверх и сверьте данные.</p>
+
+    <ol class="steps">
+      <li><p><b>Шаг «Информация о сделке».</b> Проверьте клиента и объект: проект, дом, номер объекта, этаж, площадь. Убедитесь, что это тот объект, о котором идёт речь в заявке клиента.</p></li>
+      <li><p><b>Шаг «Условия сделки».</b> Посмотрите <span class="ui">Стоимость по договору</span> и строку <span class="ui">Применено</span> со списком скидок и процентов. Если сумма расходится с тем, что заявлено в документах на подпись, — вопрос к менеджеру до, а не после печати.</p></li>
+      <li><p><b>Шаг «График платежей».</b> Сверьте, что сумма всех платежей равна стоимости по договору и что даты платежей соответствуют договорённостям.</p></li>
+      <li><p><b>Карточка клиента.</b> Откройте её по ссылке с именем клиента и пройдите чек-лист из следующей главы.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Ошибку в графике исправляйте до печати договора.</b> После того как по сделке прошёл первый платёж, оплаченные транши в графике блокируются: их нельзя ни переписать, ни убрать, пока не отменена оплата. Проверьте суммы и сроки сейчас, а не после подписания.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Проверка данных клиента</h3>
+    <p class="lede">Пустое место в готовом договоре — почти всегда незаполненное поле в карточке клиента.</p>
+
+    <p>Откройте карточку клиента, вкладка <span class="ui">Основная информация</span>. Проверьте по списку:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Блок</th><th>Поле</th><th>Обязательно для договора</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="3">Личные данные</td><td><span class="ui">Полное имя</span></td><td>Да</td></tr>
+          <tr><td><span class="ui">Дата рождения</span></td><td>Как правило, да</td></tr>
+          <tr><td><span class="ui">Email</span></td><td>Нет</td></tr>
+          <tr><td>Телефоны</td><td>Основной номер</td><td>Да — попадает в договор как контакт</td></tr>
+          <tr><td rowspan="6">Паспортные данные и адреса</td><td><span class="ui">Серия паспорта</span></td><td>Да</td></tr>
+          <tr><td><span class="ui">Номер паспорта</span></td><td>Да</td></tr>
+          <tr><td><span class="ui">Кем выдан паспорт</span></td><td>Да</td></tr>
+          <tr><td><span class="ui">ПИНФЛ</span></td><td>Да</td></tr>
+          <tr><td><span class="ui">ИНН</span></td><td>По требованию договора</td></tr>
+          <tr><td><span class="ui">Адрес прописки</span></td><td>Да</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Недостающее дозаполните сами (если у вас есть право на редактирование клиентов) и нажмите <span class="ui">Сохранить изменения</span>. Сканы паспорта и других документов клиента лежат на вкладке <span class="ui">Файлы</span> — оттуда удобно сверять написание фамилии и реквизиты.</p>
+
+    <div class="tip">
+      <p><b>Сверяйте написание имени со сканом, а не со слов менеджера.</b> Расхождение в одну букву в ФИО или в номере паспорта делает договор недействительным, а переоформление — это новый номер договора и потерянный день.</p>
+    </div>
+
+    <div class="note">
+      <p>Порядок телефонов имеет значение: в договор подставляется <b>первый</b> номер в списке. Если основной номер клиента стоит вторым, поменяйте порядок в карточке.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>Номер и дата договора</h3>
+    <p class="lede">Без этих двух полей генерация документов недоступна.</p>
+
+    <ol class="steps">
+      <li><p>В карточке сделки раскройте шаг <span class="ui">Документы</span>.</p></li>
+      <li><p>Заполните <span class="ui">Номер договора</span> по принятой в компании нумерации.</p></li>
+      <li><p>Укажите <span class="ui">Дата договора</span>.</p></li>
+      <li><p>Нажмите <span class="ui">Сохранить данные</span>.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Номер договора уникален в пределах компании.</b> Если сохранение не проходит, такой номер уже присвоен другой сделке вашей компании — возможно, ошибочно или в другом отделе. Найдите её через фильтр в списке сделок и разберитесь, прежде чем менять нумерацию. У соседней компании в этой же CRM может быть договор с тем же номером — это нормально, ваши нумерации не пересекаются.</p>
+    </div>
+
+    <p>Пока номер и дата не сохранены, вместо списка шаблонов система показывает подсказку «Сохраните номер и дату договора, чтобы сгенерировать документы».</p>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Генерация договора</h3>
+    <p class="lede">Документ собирается из .docx-шаблона с автоматической подстановкой данных.</p>
+
+    <ol class="steps">
+      <li><p>В блоке <span class="ui">Генерация</span> посмотрите список доступных шаблонов. Система показывает только те, что подходят этому проекту, дому и типу объекта.</p></li>
+      <li><p>Нажмите <span class="ui">Сгенерировать</span> напротив нужного шаблона.</p></li>
+      <li><p>Скачается файл <code>.docx</code>. Откройте его и вычитайте: ФИО, паспорт, адрес, номер объекта, площадь, сумма прописью и цифрами, реквизиты застройщика.</p></li>
+      <li><p>Распечатайте и передайте на подпись.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Список шаблонов пуст.</b> Возможны две причины: не сохранены номер и дата договора либо для этого проекта, дома или типа объекта шаблон не привязан. Первое решаете вы, второе — администратор.</p>
+    </div>
+
+    <h4>Что делать с ошибками в документе</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Что видите</th><th>Причина</th><th>Что делать</th></tr></thead>
+        <tbody>
+          <tr><td>Пустое место вместо данных</td><td>Поле не заполнено в карточке клиента, сделки или объекта</td><td>Дозаполните карточку и сгенерируйте документ заново</td></tr>
+          <tr><td>В тексте видна сама метка вида <code>{{client.full_name}}</code></td><td>Word разорвал метку на фрагменты при вёрстке шаблона</td><td>Передайте администратору — правится в шаблоне, а не в сделке</td></tr>
+          <tr><td>Неверная сумма или скидка</td><td>Данные шага «Условия сделки»</td><td>Вернуть менеджеру, не править вручную в Word</td></tr>
+          <tr><td>Неверные реквизиты застройщика</td><td>Поле проекта <span class="ui">Реквизиты застройщика</span></td><td>Передайте администратору</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Не правьте сгенерированный файл вручную.</b> Правка в Word не попадает в CRM: в системе останутся старые данные, и любой следующий документ по этой сделке снова выйдет с ошибкой. Исправляйте источник — карточку клиента, сделку или шаблон — и генерируйте заново.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Подписание и скан</h3>
+    <p class="lede">Финальный шаг: зафиксировать факт подписания. Сделка закроется сама.</p>
+
+    <ol class="steps">
+      <li><p>Получите подписанный экземпляр от клиента и от компании.</p></li>
+      <li><p>Отсканируйте документ и загрузите файл через <span class="ui">Загрузить скан</span>.</p></li>
+      <li><p>Заполните <span class="ui">Дата подписания клиентом</span>.</p></li>
+      <li><p>Заполните <span class="ui">Дата подписания компанией</span>.</p></li>
+      <li><p>Нажмите <span class="ui">Сохранить данные</span>.</p></li>
+    </ol>
+
+    <div class="tip">
+      <p><b>Сделка закрывается автоматически.</b> Как только сохранены <b>обе</b> даты подписания, сделка переходит в статус <span class="chip g">Успешно закрыта</span>, объект — в <span class="chip r">Сделка проведена</span>, а в логах появляется запись «Статус сделки изменен на &lsquo;Успешно закрыта&rsquo;». Отдельной кнопки закрытия нет и не нужно. Заодно закрывается заявка, из которой выросла сделка: она получает статус <span class="chip g">Успешно закрыта</span>, и в её логах появляется ссылка на сделку — закрывать заявку вручную не нужно.</p>
+    </div>
+
+    <div class="warn">
+      <p><b>Не заполняйте даты подписания авансом.</b> Дата подписания компанией, проставленная до реальной подписи, закроет сделку и переведёт объект в «Сделка проведена». Отменить это можно будет только через расторжение — с документом-основанием.</p>
+    </div>
+
+    <p>После закрытия все поля сделки становятся доступны только для чтения. Скан остаётся прикреплённым к сделке — его можно скачать в любой момент из того же блока <span class="ui">Подписанные документы</span>.</p>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>Расторжение и отмена</h3>
+    <p class="lede">Два разных сценария с разными требованиями к документам.</p>
+
+    <ol class="steps">
+      <li><p>Откройте сделку и нажмите <span class="ui">Отменить / Расторгнуть</span>.</p></li>
+      <li><p>Прочитайте сообщение в окне — система сама определяет применимый сценарий.</p></li>
+      <li><p>Заполните требуемые поля и подтвердите.</p></li>
+    </ol>
+
+    <div class="cols">
+      <div>
+        <h6>Простая отмена</h6>
+        <p>Доступна, если по сделке <b>нет проведённых платежей</b> и нет даты подписания клиентом. Требуется только <span class="ui">Причина отмены</span>. Статус — <span class="chip n">Отменена</span>.</p>
+      </div>
+      <div>
+        <h6>Расторжение</h6>
+        <p>Применяется, если есть <b>оплаченные платежи или подпись клиента</b>. Обязателен <span class="ui">Скан документа-основания</span> и <span class="ui">Дата расторжения</span>. Статус — <span class="chip r">Расторгнута</span>.</p>
+      </div>
+    </div>
+
+    <p>Система покажет предупреждение: «В сделке есть проведенные платежи или подпись клиента. Необходимо расторжение с прикреплением документа». Без файла операция не пройдёт.</p>
+
+    <h4>Что происходит дальше</h4>
+    <ul>
+      <li>Все оплаченные платежи переводятся в статус <span class="chip y">К возврату</span> — дальше по ним работает финансист.</li>
+      <li>Если возвращать нечего, объект сразу переходит в <span class="chip g">Подбор</span> и снова доступен к продаже.</li>
+      <li>Если платежи к возврату есть, объект остаётся занятым до последнего возврата: продавать квартиру, за которую прежнему клиенту ещё не рассчитались, нельзя. Освободит объект финансист — автоматически, отметкой последнего возврата.</li>
+      <li>Сделка становится доступна только для чтения, вернуть её в работу нельзя.</li>
+      <li>Заявка, из которой выросла сделка, возвращается в статус <span class="chip y">В работе</span> — продажа не состоялась, и в воронке она больше не числится успешной.</li>
+      <li>Документы по сделке больше не формируются: кнопка генерации выдаст отказ.</li>
+      <li>В логах фиксируется, кто и когда провёл расторжение.</li>
+    </ul>
+
+    <div class="note">
+      <p>Расторжение возможно и для уже закрытой сделки — в этом случае система всегда требует документ-основание, независимо от платежей.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Очередь на оформление</h3>
+    <p class="lede">Как найти сделки, которые ждут именно вас.</p>
+
+    <p>Отдельной вкладки «на оформление» в системе нет — очередь собирается фильтрами в разделе <span class="path">Сделки</span>.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Что искать</th><th>Как отфильтровать</th><th>Что это значит</th></tr></thead>
+        <tbody>
+          <tr><td>Готовы к оформлению</td><td>Статус <span class="ui">В работе</span>, поле <span class="ui">Номер договора</span> пустое</td><td>График платежей есть, договор ещё не присвоен — ваша основная очередь</td></tr>
+          <tr><td>Ждут подписи</td><td>Статус <span class="ui">В работе</span>, номер договора заполнен</td><td>Договор сформирован, подписи не зафиксированы</td></tr>
+          <tr><td>Подписан клиентом, но не компанией</td><td>Заполнена только <span class="ui">Дата подписания клиентом</span></td><td>Ждёт подписи со стороны компании</td></tr>
+          <tr><td>Оформлены</td><td>Статус <span class="ui">Успешно закрыта</span></td><td>Работа завершена</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Фильтры <span class="ui">Дата договора (от)</span> и <span class="ui">Дата договора (до)</span> помогают собрать реестр договоров за период. Вкладка <span class="ui">Сводная таблица</span> с группировкой <span class="ui">По статусу</span> покажет, сколько сделок висит на каждом этапе, а кнопка <span class="ui">Выгрузить в Excel</span> даст файл для реестра.</p>
+
+    <div class="tip">
+      <p><b>Следите за сроками брони.</b> В списке сделок есть колонка <span class="ui">Дата окончания брони</span>. Сделка в статусе <span class="ui">Бронь</span> с истекающим сроком до вас ещё не дошла, но подскажет, к чему готовиться на этой неделе.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Логи как доказательство</h3>
+    <p class="lede">Вкладка «Логи» в карточке сделки фиксирует всё, что важно при разборе.</p>
+
+    <p>Записи создаются автоматически. По сделке фиксируются:</p>
+    <ul>
+      <li>изменение <span class="ui">Стоимость по договору</span> — со старым и новым значением;</li>
+      <li>изменение состава применённых скидок;</li>
+      <li>присвоение и изменение <span class="ui">Номер договора</span> и <span class="ui">Дата договора</span>;</li>
+      <li>заполнение дат подписания клиентом и компанией;</li>
+      <li>загрузка скана подписанного документа;</li>
+      <li>создание и обновление графика платежей с указанием суммы;</li>
+      <li>смена статуса сделки, в том числе автоматическое закрытие.</li>
+    </ul>
+
+    <div class="tip">
+      <p><b>Типовая ситуация.</b> Клиент заявляет, что подписывал договор на другую сумму. Откройте сделку &rarr; <span class="ui">Логи</span>: там видно, менялась ли стоимость по договору после присвоения номера, кто и когда это сделал. Если изменение было после даты договора — вопрос закрыт в вашу пользу за минуту.</p>
+    </div>
+
+    <p>Логи нельзя редактировать. Удалять записи может только сотрудник с отдельным правом на удаление логов — обычно это администратор.</p>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Метки шаблонов</h3>
+    <p class="lede">Справочно: что именно подставляется в договор. Пригодится при вычитке и при постановке задачи администратору.</p>
+
+    <p>Кнопка <span class="ui">Справка по тегам</span> в настройках шаблонов открывает основной список. Полный набор данных, доступных шаблону, шире:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Группа</th><th>Основные метки</th></tr></thead>
+        <tbody>
+          <tr><td>Клиент</td><td><code>{{client.full_name}}</code>, <code>{{client.phone_number}}</code>, <code>{{client.email}}</code>, <code>{{client.passport_series}}</code>, <code>{{client.passport_number}}</code>, <code>{{client.passport_issued_by}}</code>, <code>{{client.pinfl}}</code>, <code>{{client.inn}}</code>, <code>{{client.registration_address}}</code></td></tr>
+          <tr><td>Сделка</td><td><code>{{deal.id}}</code>, <code>{{deal.contract_number}}</code>, <code>{{deal.contract_date}}</code>, <code>{{deal.contract_price}}</code>, <code>{{deal.booking_end_date}}</code></td></tr>
+          <tr><td>Объект</td><td><code>{{property.unit_number}}</code>, <code>{{property.floor}}</code>, <code>{{property.area}}</code>, <code>{{property.price}}</code>, <code>{{property.entrance}}</code></td></tr>
+          <tr><td>Дом</td><td><code>{{building.name}}</code>, <code>{{building.address_detail}}</code>, <code>{{building.floors_count}}</code></td></tr>
+          <tr><td>Проект</td><td><code>{{project.name}}</code>, <code>{{project.address}}</code>, <code>{{project.developer_details}}</code></td></tr>
+          <tr><td>Менеджер</td><td><code>{{manager.first_name}}</code>, <code>{{manager.last_name}}</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>Шаблоны загружает и правит администратор. Если в договоре не хватает какого-то реквизита, сформулируйте задачу конкретно: «в шаблоне договора для проекта &laquo;Название&raquo; добавить ПИНФЛ клиента после номера паспорта». Так правка займёт минуты.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>Справочник статусов</h3>
+
+    <h5>Сделка</h5>
+    <p><span class="chip y">Бронь</span> <span class="chip b">В работе</span> <span class="chip g">Успешно закрыта</span> <span class="chip n">Отменена</span> <span class="chip r">Расторгнута</span></p>
+
+    <h5>Объект недвижимости</h5>
+    <p><span class="chip g">Подбор</span> <span class="chip b">Резерв</span> <span class="chip y">Бронь</span> <span class="chip p">Сделка в работе</span> <span class="chip r">Сделка проведена</span></p>
+
+    <h5>Платёж</h5>
+    <p><span class="chip b">К оплате</span> <span class="chip g">Оплачен</span> <span class="chip r">Просрочен</span> <span class="chip y">К возврату</span> <span class="chip n">Возвращен</span></p>
+
+    <h4>Что меняет статусы на вашем участке</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Действие</th><th>Статус сделки</th><th>Статус объекта</th></tr></thead>
+        <tbody>
+          <tr><td>Сохранён номер и дата договора</td><td>не меняется</td><td>не меняется</td></tr>
+          <tr><td>Заполнена одна дата подписания</td><td>не меняется</td><td>не меняется</td></tr>
+          <tr><td>Заполнены <b>обе</b> даты подписания</td><td><span class="chip g">Успешно закрыта</span></td><td><span class="chip r">Сделка проведена</span></td></tr>
+          <tr><td>Простая отмена</td><td><span class="chip n">Отменена</span></td><td><span class="chip g">Подбор</span></td></tr>
+          <tr><td>Расторжение с документом</td><td><span class="chip r">Расторгнута</span></td><td><span class="chip g">Подбор</span>, а если есть платежи <span class="chip y">К возврату</span> — объект остаётся занятым до последнего возврата</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Частые вопросы</h3>
+
+    <dl class="qa">
+      <dt>Шаг «Документы» не раскрывается</dt>
+      <dd>По сделке не сохранён график платежей. Шаг помечен ошибкой до тех пор, пока график не заведён. Верните сделку менеджеру или финансисту.</dd>
+
+      <dt>Нет кнопки «Сгенерировать»</dt>
+      <dd>Не сохранены номер и дата договора. Заполните оба поля и нажмите <span class="ui">Сохранить данные</span>.</dd>
+
+      <dt>Номер договора не сохраняется</dt>
+      <dd>Такой номер уже присвоен другой сделке вашей компании — номер уникален в пределах компании. Найдите сделку-дубликат через фильтры и уточните нумерацию.</dd>
+
+      <dt>Список шаблонов пуст, хотя номер договора заполнен</dt>
+      <dd>Шаблон не привязан к этому проекту, дому или типу объекта. Обратитесь к администратору, назвав проект и тип объекта.</dd>
+
+      <dt>В договоре пустые места вместо данных клиента</dt>
+      <dd>Незаполненные поля в карточке клиента, чаще всего паспортные. Дозаполните и сгенерируйте заново — правка в Word проблему не решает.</dd>
+
+      <dt>В договоре видны сами метки в фигурных скобках</dt>
+      <dd>Проблема в шаблоне: Word разорвал метку на части. Это чинит администратор, в карточке сделки исправить нельзя.</dd>
+
+      <dt>Подставился не тот номер телефона</dt>
+      <dd>В договор идёт первый телефон из списка в карточке клиента. Поменяйте порядок номеров и сгенерируйте документ заново.</dd>
+
+      <dt>Заполнил даты подписания по ошибке — сделка закрылась</dt>
+      <dd>Вернуть закрытую сделку в работу нельзя. Если подписания фактически не было, оформляется расторжение с документом-основанием, после чего объект бронируется заново.</dd>
+
+      <dt>Не могу отредактировать поля сделки</dt>
+      <dd>Сделка закрыта, отменена или расторгнута — все её поля переведены в режим чтения. Это защита истории.</dd>
+
+      <dt>Нужно изменить стоимость по договору</dt>
+      <dd>Это шаг <span class="ui">Условия сделки</span> и зона ответственности менеджера. Изменение суммы после присвоения номера договора видно в логах, поэтому согласуйте его с руководителем.</dd>
+
+      <dt>Не вижу сделок другого отдела</dt>
+      <dd>Ваша область видимости ограничена. Для оформления договоров по всей компании нужна область <span class="ui">Компания</span> — запросите у администратора.</dd>
+
+      <dt>Клиент потерял свой экземпляр договора</dt>
+      <dd>Сгенерируйте документ из шаблона заново — данные подставятся те же. Скан подписанного экземпляра всегда доступен в блоке <span class="ui">Подписанные документы</span> карточки сделки.</dd>
+    </dl>
+
+    <div class="end">
+      Руководство отдела оформления &middot; CRM Недвижимость &middot; версия 1.0, сентябрь 2026.<br>
+      Шаблоны договоров и реквизиты застройщика &mdash; через администратора CRM. Платежи и возвраты &mdash; к финансовому отделу.
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+(function () {
+  var chapters = [].slice.call(document.querySelectorAll("section.ch"));
+  var links = [].slice.call(document.querySelectorAll("nav.toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+
+  /* --- highlight the chapter currently in view --- */
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove("on"); });
+    if (byId[id]) byId[id].classList.add("on");
+  }
+  if ("IntersectionObserver" in window) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+      for (var i = 0; i < chapters.length; i++) {
+        if (seen[chapters[i].id]) { mark(chapters[i].id); break; }
+      }
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    chapters.forEach(function (c) { io.observe(c); });
+  }
+  if (chapters.length) mark(chapters[0].id);
+
+  /* --- filter chapters by text --- */
+  var box = document.getElementById("finder");
+  var empty = document.getElementById("no-hit");
+  if (box) {
+    var haystack = chapters.map(function (c) {
+      return (c.textContent || "").toLowerCase().replace(/\s+/g, " ");
+    });
+    var run = function () {
+      var q = box.value.trim().toLowerCase();
+      var hits = 0;
+      chapters.forEach(function (c, i) {
+        var hit = !q || haystack[i].indexOf(q) > -1;
+        c.classList.toggle("hide", !hit);
+        var a = byId[c.id];
+        if (a && a.parentNode) a.parentNode.classList.toggle("hide", !hit);
+        if (hit) hits++;
+      });
+      if (empty) empty.classList.toggle("on", hits === 0);
+    };
+    box.addEventListener("input", run);
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { box.value = ""; run(); }
+    });
+  }
+
+  /* --- print --- */
+  var p = document.getElementById("print");
+  if (p) p.addEventListener("click", function () { window.print(); });
+})();
+</script>
+</body>
+</html>

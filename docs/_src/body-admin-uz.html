@@ -1,0 +1,671 @@
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>Ko&lsquo;chmas mulk CRM</b>
+    </div>
+    <h1>CRM administratori uchun qo&lsquo;llanma</h1>
+    <div class="role">Rol: Administrator</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Bo&lsquo;limlar bo&lsquo;yicha qidirish" aria-label="Qidirish">
+  </div>
+
+  <nav class="toc" aria-label="Mundarija">
+    <ol>
+      <li><a href="#c1"><span>01</span>Javobgarlik doirasi</a></li>
+      <li><a href="#c2"><span>02</span>Kompaniya va bo&lsquo;limlar</a></li>
+      <li><a href="#c3"><span>03</span>Foydalanuvchilar</a></li>
+      <li><a href="#c4"><span>04</span>Rollar va ruxsatlar</a></li>
+      <li><a href="#c5"><span>05</span>Loyiha va binolar</a></li>
+      <li><a href="#c6"><span>06</span>Ob&lsquo;ektlarni yuklash</a></li>
+      <li><a href="#c7"><span>07</span>Planlar va galereya</a></li>
+      <li><a href="#c8"><span>08</span>Chegirmalar</a></li>
+      <li><a href="#c9"><span>09</span>Ma&lsquo;lumotnomalar</a></li>
+      <li><a href="#c10"><span>10</span>Hujjat shablonlari</a></li>
+      <li><a href="#c11"><span>11</span>Hamkor API-kalitlari</a></li>
+      <li><a href="#c12"><span>12</span>Sotuv rejalari</a></li>
+      <li><a href="#c13"><span>13</span>Yangi kompaniyani ishga tushirish</a></li>
+      <li><a href="#c14"><span>14</span>Ko&lsquo;p beriladigan savollar</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Chop etish
+    </button>
+    <div>Versiya 1.0 &middot; 2026-yil sentyabr</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Foydalanuvchi qo&lsquo;llanmasi</div>
+    <h2>Administrator CRM tizimini qanday sozlaydi</h2>
+    <p>Tizimni sozlash bo&lsquo;yicha qo&lsquo;llanma: tashkiliy tuzilma, hisoblar va huquqlar, ko&lsquo;chmas mulk katalogi, ma&lsquo;lumotnomalar, shartnoma shablonlari va hamkor integratsiyalari. Menejerlar mijozlar bilan ishlaydi — siz ularga ish quroli tayyorlaysiz.</p>
+    <div class="meta">
+      <span>Kimga: <b>CRM administratori</b></span>
+      <span>Bo&lsquo;limlar: <b>14</b></span>
+      <span>Asosiy vosita: <b>&laquo;Sozlamalar&raquo; bo&lsquo;limi</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Hech narsa topilmadi. Qidiruvni tozalang yoki boshqa so&lsquo;z kiriting.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Javobgarlik doirasi</h3>
+    <p class="lede">Nimani siz sozlaysiz va nimani sotuv bo&lsquo;limi xodimlari qiladi.</p>
+
+    <div class="cols">
+      <div>
+        <h6>Administrator javobgar</h6>
+        <p>Kompaniya va bo&lsquo;limlar, foydalanuvchilar, rollar va ruxsatlar, loyihalar, binolar, ob&lsquo;ektlar, planlar, chegirmalar, ma&lsquo;lumotnomalar, hujjat shablonlari, API-kalitlar, sotuv rejalari.</p>
+      </div>
+      <div>
+        <h6>Menejer va rahbarlar javobgar</h6>
+        <p>Mijozlar, arizalar, uchrashuvlar, bronlar, bitimlar, to&lsquo;lovlar, vazifalar. Administrator zarurat bo&lsquo;lmasa bu ma&lsquo;lumotlarga aralashmaydi.</p>
+      </div>
+    </div>
+
+    <p>Ishingizning deyarli barchasi <span class="path">Sozlamalar</span> bo&lsquo;limida jamlangan. U to&lsquo;qqiz yorliqqa bo&lsquo;lingan:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Yorliq</th><th>Nima sozlanadi</th><th>Bob</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Kompaniyalar</span></td><td>Tizimdagi yuridik shaxslar</td><td class="num">02</td></tr>
+          <tr><td><span class="ui">Bo&lsquo;limlar</span></td><td>Bo&lsquo;linmalar tuzilmasi va ierarxiya</td><td class="num">02</td></tr>
+          <tr><td><span class="ui">Rollar</span></td><td>Kirish huquqlari to&lsquo;plami</td><td class="num">04</td></tr>
+          <tr><td><span class="ui">Foydalanuvchilar</span></td><td>Xodimlarning hisoblari</td><td class="num">03</td></tr>
+          <tr><td><span class="ui">Arizalar</span></td><td>Ariza holatlari, rad etish sabablari</td><td class="num">09</td></tr>
+          <tr><td><span class="ui">Ko&lsquo;chmas mulk</span></td><td>Bino turlari</td><td class="num">09</td></tr>
+          <tr><td><span class="ui">Moliya</span></td><td>To&lsquo;lov turlari, oluvchi hisobvaraqlari</td><td class="num">09</td></tr>
+          <tr><td><span class="ui">Shablonlar</span></td><td>Shartnoma yaratish uchun .docx fayllar</td><td class="num">10</td></tr>
+          <tr><td><span class="ui">API-kalitlar</span></td><td>Hamkor va saytning ma&lsquo;lumotga kirishi</td><td class="num">11</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Sozlash tartibi muhim.</b> Kompaniya &rarr; bo&lsquo;limlar &rarr; rollar &rarr; foydalanuvchilar &rarr; ma&lsquo;lumotnomalar &rarr; loyihalar &rarr; binolar &rarr; ob&lsquo;ektlar &rarr; shablonlar. Foydalanuvchini bo&lsquo;limdan oldin yaratsangiz, profilni keyin to&lsquo;ldirish uchun qaytishga to&lsquo;g&lsquo;ri keladi.</p>
+    </div>
+
+    <div class="tip">
+      <p><b>Sozlamalar yorliqlarini topshirish mumkin.</b> Kirish ikki bosqichda beriladi. Avval rolda <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> huquqini belgilang — bu bo&lsquo;limning kaliti. So&lsquo;ng aniq ma&lsquo;lumotnomalarga huquq qo&lsquo;shing: qaysi yorliqlar ko&lsquo;rinishini aynan ular belgilaydi.</p>
+      <p>Masalan, moliyachiga bo&lsquo;limga huquq va <span class="ui">To&lsquo;lov turlari</span> bilan <span class="ui">Oluvchi hisobvaraqlari</span> yetarli — u <span class="ui">Moliya</span> yorlig&lsquo;ini oladi va har bir yangi hisob uchun sizga kelmaydi, ammo rollar, foydalanuvchilar va API-kalitlarni ko&lsquo;rmaydi. Ariza ma&lsquo;lumotnomalari va bino turlari ham xuddi shunday topshiriladi.</p>
+    </div>
+
+    <div class="warn">
+      <p><b>Nega bo&lsquo;lim kaliti alohida.</b> Ma&lsquo;lumotnomalarga huquqni sozlamalar bilan ishlamaydiganlarga ham berishga to&lsquo;g&lsquo;ri keladi: kompaniyalar ro&lsquo;yxati menejerga ariza shaklida, foydalanuvchilar ro&lsquo;yxati — uchrashuv ijrochisini tanlashda, to&lsquo;lov turlari va hisobvaraqlar — to&lsquo;lov jadvalida kerak. Agar bo&lsquo;lim shular bo&lsquo;yicha ochilsa, menejer &laquo;Sozlamalar&raquo;ga kirib, o&lsquo;ziga tegishli bo&lsquo;lmagan yorliqlarni ko&lsquo;rardi.</p>
+      <p>Shuning uchun <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> huquqisiz bo&lsquo;lim butunlay yopiq — ma&lsquo;lumotnomalarga qanday huquq berilgan bo&lsquo;lmasin. Bo&lsquo;lim ichida esa yorliq xodim ma&lsquo;lumotnomani <b>yuritsa</b> (qo&lsquo;shish, tahrirlash yoki o&lsquo;chirish huquqi) yoki uni kompaniya darajasida va undan yuqorida ko&lsquo;rsa paydo bo&lsquo;ladi. <span class="ui">Faqat o&lsquo;ziniki</span> doirasidagi ko&lsquo;rish yorliqni ochmaydi: bu aynan shakl uchun berilgan huquq.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Kimga bo&lsquo;lim ochilganini ko&lsquo;rish mumkin.</b> <code>python manage.py show_access &lt;login&gt;</code> buyrug&lsquo;i hisob bayroqlarini, xodim rollarini va har bir ma&lsquo;lumotnoma bo&lsquo;yicha qanday huquq berilgani hamda u qaysi roldan kelganini chiqaradi. &laquo;Ortiqchasini ko&lsquo;ryapman&raquo; yoki &laquo;keraklisini ko&lsquo;rmayapman&raquo; shikoyatini shundan boshlash kerak.</p>
+      <p>E&lsquo;tibor bering: profildagi <span class="ui">Tizim administratori</span> bayrog&lsquo;i huquq tekshiruvini butunlay chetlab o&lsquo;tadi. U qo&lsquo;yilgan bo&lsquo;lsa, xodim rollardan qat&lsquo;i nazar barcha yorliqlarni ko&lsquo;radi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Kompaniya va bo&lsquo;limlar</h3>
+    <p class="lede">Tashkiliy tuzilma barcha xodimlar uchun ma&lsquo;lumot ko&lsquo;rish chegarasini belgilaydi.</p>
+
+    <p>Tizimdagi ierarxiya: <span class="path">Tizim<i>&rsaquo;</i>Kompaniya<i>&rsaquo;</i>Bo&lsquo;lim<i>&rsaquo;</i>Xodim</span>. Kompaniyaga ham ish ma&lsquo;lumotlari (mijozlar, arizalar, uchrashuvlar, bitimlar, to&lsquo;lovlar, loyihalar, chegirmalar, shablonlar), ham ma&lsquo;lumotnomalar bog&lsquo;lanadi — shuning uchun turli kompaniya xodimlari bir-birining ma&lsquo;lumotini ko&lsquo;rmaydi va begona sozlamalarga ta&lsquo;sir qilmaydi.</p>
+
+    <div class="note">
+      <p><b>Bitta odam — turli kompaniyalarda turli kartochka.</b> Mijoz ikki kompaniyaga murojaat qilsa, har birida o&lsquo;z kartochkasi ochiladi: ular bog&lsquo;lanmagan va xodim faqat o&lsquo;zinikini ko&lsquo;radi. Shu sababli email va shartnoma raqami butun tizimda emas, <i>kompaniya doirasida</i> yagona bo&lsquo;ladi — qo&lsquo;shni kompaniya xuddi shu manzilli mijozni va xuddi shu raqamli shartnomani bemalol yaratadi.</p>
+    </div>
+
+    <h4>Kompaniya yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>Kompaniyalar</span> ni oching va <span class="ui">Kompaniya yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Kompaniya nomi</span> va <span class="ui">Kompaniya kodi</span> ni to&lsquo;ldiring — kod noyob, lotin harflarida, masalan <code>ALFA</code>.</p></li>
+      <li><p>Kerak bo&lsquo;lsa <span class="ui">Tavsif</span> qo&lsquo;shing va <span class="ui">Faol</span> bayrog&lsquo;i yoqilganiga ishonch hosil qiling.</p></li>
+      <li><p><span class="ui">Saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Kompaniya kodini o&lsquo;zgartirmaslik kerak.</b> U doimiy identifikator sifatida ishlatiladi. Nomni esa istalgan vaqtda o&lsquo;zgartirish mumkin.</p>
+    </div>
+
+    <h4>Bo&lsquo;lim yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="ui">Bo&lsquo;limlar</span> yorlig&lsquo;iga o&lsquo;ting va <span class="ui">Kompaniya</span> filtrida kompaniyani tanlang — kompaniya tanlanmasa bo&lsquo;limlar ro&lsquo;yxati ko&lsquo;rinmaydi.</p></li>
+      <li><p><span class="ui">Bo&lsquo;lim yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Bo&lsquo;lim nomi</span> ni kiriting.</p></li>
+      <li><p><span class="ui">Yuqori bo&lsquo;lim</span> ni tanlang — yoki yuqori daraja uchun <span class="ui">Yo&lsquo;q (asosiy bo&lsquo;lim)</span> qoldiring.</p></li>
+      <li><p><span class="ui">Saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="tip">
+      <p><b>Bo&lsquo;limlarni hisobot ostida loyihalang.</b> <span class="ui">Bo&lsquo;lim</span> doirasiga ega rahbar o&lsquo;z bo&lsquo;linmasi ma&lsquo;lumotlarini ko&lsquo;radi. Ikki rahbar turli kesimlarni ko&lsquo;rishi kerak bo&lsquo;lsa — ularga alohida bo&lsquo;limlar kerak. Ishga tushirilgandan keyin ham qayta tuzish mumkin, lekin bu odamlarning ko&lsquo;rish doirasini o&lsquo;zgartiradi.</p>
+    </div>
+
+    <p>Kompaniya kartochkasida statistika ko&lsquo;rsatiladi: bo&lsquo;limlar va foydalanuvchilar soni. Ma&lsquo;lumotga ega kompaniyani o&lsquo;chirib bo&lsquo;lmaydi — <span class="ui">Faol</span> bayrog&lsquo;i orqali faolsizlantiring.</p>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>Foydalanuvchilar</h3>
+    <p class="lede">Hisob — bu tizimga kirish va odamning tuzilmadagi o&lsquo;rni.</p>
+
+    <h4>Foydalanuvchi yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>Foydalanuvchilar</span> ni oching va <span class="ui">Foydalanuvchi yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Foydalanuvchi ma&lsquo;lumotlari</span> blokida <span class="ui">Foydalanuvchi nomi</span> ni to&lsquo;ldiring — bu kirish uchun login, majburiy va noyob bo&lsquo;lishi kerak.</p></li>
+      <li><p><span class="ui">Parol</span> ni belgilang — kamida 8 belgi.</p></li>
+      <li><p><span class="ui">Email</span>, <span class="ui">Ism</span> va <span class="ui">Familiya</span> ni kiriting. Email parolni mustaqil tiklash uchun kerak — usiz xodim har safar siznikiga keladi. Xat serverda pochta jo&lsquo;natish sozlangan bo&lsquo;lsagina yuboriladi (<code>EMAIL_HOST</code> parametri); u belgilanmagunicha xatlar server jurnaliga yoziladi va manzilga yetib bormaydi.</p></li>
+      <li><p><span class="ui">Profil ma&lsquo;lumotlari</span> blokida <span class="ui">Kompaniya</span>, so&lsquo;ng <span class="ui">Bo&lsquo;lim</span> ni tanlang — bo&lsquo;limlar ro&lsquo;yxati kompaniya tanlangandan keyin yuklanadi.</p></li>
+      <li><p><span class="ui">Rollar</span> maydonida bir yoki bir nechta rolni tanlang.</p></li>
+      <li><p><span class="ui">Lavozim</span> va telefonni to&lsquo;ldiring, <span class="ui">Faol foydalanuvchi</span> bayrog&lsquo;ini tekshiring va <span class="ui">Saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b><span class="ui">Tizim administratori</span> bayrog&lsquo;i butun tizimga to&lsquo;liq kirish beradi</b> — barcha kompaniya va bo&lsquo;limlarga, rollarni chetlab o&lsquo;tib. Uni faqat haqiqatan tizimni boshqaradiganlarga qo&lsquo;ying. Bitta kompaniya administratori uchun <span class="ui">Kompaniya</span> doirasidagi roldan foydalaning.</p>
+    </div>
+
+    <h4>Xodimga parolni o&lsquo;zgartirish</h4>
+    <ol class="steps">
+      <li><p>Foydalanuvchi kartochkasini oching va <span class="ui">Parolni o&lsquo;zgartirish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Yangi parol</span> va <span class="ui">Parolni tasdiqlang</span> ni kiriting — kamida 8 belgi.</p></li>
+      <li><p><span class="ui">Parolni saqlash</span> ni bosing. &laquo;Parol muvaffaqiyatli o&lsquo;zgartirildi&raquo; tasdig&lsquo;i chiqadi.</p></li>
+      <li><p>Parolni xodimga bering va uni mustaqil o&lsquo;zgartirishni so&lsquo;rang.</p></li>
+    </ol>
+
+    <h4>Xodim ishdan bo&lsquo;shaganda</h4>
+    <div class="warn">
+      <p><b>Foydalanuvchini o&lsquo;chirmang.</b> Hisobga mijozlar, arizalar, bitimlar mualliligi va loglardagi yozuvlar bog&lsquo;langan — o&lsquo;chirish tarix va hisobotni buzadi. To&lsquo;g&lsquo;ri tartib:</p>
+    </div>
+    <ol class="steps">
+      <li><p><span class="ui">Faol foydalanuvchi</span> bayrog&lsquo;ini olib tashlang — tizimga kirish darhol bloklanadi.</p></li>
+      <li><p>Parolni yangi tasodifiy parolga o&lsquo;zgartiring.</p></li>
+      <li><p>Faol arizalar, uchrashuvlar va bitimlarni boshqa menejerga o&lsquo;tkazing.</p></li>
+      <li><p>Hisob uzoq muddat tizimda qoladigan bo&lsquo;lsa, rollarni olib tashlang.</p></li>
+    </ol>
+
+    <p>Foydalanuvchilar yorlig&lsquo;idagi filtrlar: kompaniya, bo&lsquo;lim va holat bo&lsquo;yicha (<span class="ui">Faollar</span> / <span class="ui">Faol emaslar</span>).</p>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Rollar va kirish huquqlari</h3>
+    <p class="lede">Sozlashning eng nozik qismi. Formulani bir marta tushunsangiz, keyin oson bo&lsquo;ladi.</p>
+
+    <h4>Ruxsat formulasi</h4>
+    <p>Tizimdagi har bir huquq uch narsaning birikmasi:</p>
+
+    <div class="flow">
+      <div class="st"><b>Amal</b><span>Nima qilish mumkin</span></div>
+      <div class="ar">+</div>
+      <div class="st"><b>Resurs</b><span>Qaysi bo&lsquo;lim bilan</span></div>
+      <div class="ar">+</div>
+      <div class="st"><b>Doira</b><span>Qanday chegarada</span></div>
+    </div>
+
+    <p>Masalan, <code>VIEW_CLIENT_OWN</code> — &laquo;mijozlarni ko&lsquo;rish, faqat o&lsquo;ziniki&raquo;. <code>EDIT_DEAL_DEPARTMENT</code> esa — &laquo;o&lsquo;z bo&lsquo;limi bitimlarini tahrirlash&raquo;.</p>
+
+    <h5>Amallar</h5>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Amal</th><th>Nimaga ruxsat beradi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Ko&lsquo;rish</span></td><td>Bo&lsquo;lim va undagi yozuvlarni ko&lsquo;rish</td></tr>
+          <tr><td><span class="ui">Yaratish</span></td><td>Yangi yozuvlar yaratish</td></tr>
+          <tr><td><span class="ui">Tahrirlash</span></td><td>Mavjudlarini o&lsquo;zgartirish</td></tr>
+          <tr><td><span class="ui">O&lsquo;chirish</span></td><td>Yozuvlarni o&lsquo;chirish</td></tr>
+          <tr><td>Eksport</td><td>Ma&lsquo;lumotni Excelga chiqarish</td></tr>
+          <tr><td>Import</td><td>Fayldan ma&lsquo;lumot yuklash</td></tr>
+          <tr><td>Tasdiqlash</td><td>Yozuvlarni kelishish</td></tr>
+          <tr><td>Tayinlash</td><td>Mas&lsquo;ullarni tayinlash</td></tr>
+          <tr><td>Jarayondagi vazifani tahrirlash</td><td>Ijrochi boshlagan vazifani o&lsquo;zgartirish</td></tr>
+          <tr><td>Bekor qilingan vazifani qaytarish</td><td>Vazifani qaytadan ishga qo&lsquo;yish</td></tr>
+          <tr><td>Majburiy tahrirlash</td><td>Tugallangan va bekor qilingan vazifalarni tahrirlash</td></tr>
+          <tr><td>Loglarni o&lsquo;chirish</td><td>O&lsquo;zgarishlar tarixidan yozuv olib tashlash</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h5>Ko&lsquo;rish doiralari</h5>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Doira</th><th>Ma&lsquo;lumot chegarasi</th><th>Odatda kimga</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Faqat o&lsquo;z ma&lsquo;lumotlari</span></td><td>Foydalanuvchi yaratgan yoki unga tayinlangan</td><td>Menejer</td></tr>
+          <tr><td><span class="ui">Bo&lsquo;lim</span></td><td>Bo&lsquo;limning barcha yozuvlari</td><td>Bo&lsquo;lim boshlig&lsquo;i</td></tr>
+          <tr><td><span class="ui">Kompaniya</span></td><td>Kompaniyaning barcha yozuvlari</td><td>Kompaniya administratori</td></tr>
+          <tr><td><span class="ui">Butun tizim</span></td><td>Barcha kompaniyalar</td><td>Tizim administratori</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Resurslar barcha bo&lsquo;limlarni qamrab oladi: mijozlar, arizalar, ariza holatlari, uchrashuvlar, loyihalar, binolar, bino turlari, ko&lsquo;chmas mulk ob&lsquo;ektlari, planlar, chegirmalar, bitimlar, to&lsquo;lovlar, to&lsquo;lov turlari, oluvchi hisobvaraqlari, hujjat shablonlari, hisobotlar, sotuv rejalari, vazifalar, vazifa loglari, foydalanuvchilar, rollar, ruxsatlar, kompaniyalar, bo&lsquo;limlar, hamkor API-kalitlari, boshqaruv paneli va sozlamalar.</p>
+
+    <h4>Rol yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>Rollar</span> ni oching va <span class="ui">Rol yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Rol nomi</span> va <span class="ui">Rol kodi</span> ni to&lsquo;ldiring — kod noyob, lotin harflarida, masalan <code>SALES_MANAGER</code>.</p></li>
+      <li><p><span class="ui">Kategoriya</span> ni tanlang — u faqat interfeysdagi guruhlashga ta&lsquo;sir qiladi: Ma&lsquo;muriy, Boshqaruv, Operatsion, Faqat ko&lsquo;rish, Maxsus.</p></li>
+      <li><p><span class="ui">Ta&lsquo;sir doirasi</span> ni tanlang: Butun tizim, Kompaniya, Bo&lsquo;lim yoki Faqat o&lsquo;z ma&lsquo;lumotlari. Bu kirish hajmining asosiy tugmasi.</p></li>
+      <li><p><span class="ui">Ruxsatlar matritsasi</span> blokida kerakli &laquo;amal &times; resurs&raquo; birikmalarini belgilang. <span class="ui">Ruxsatlar</span> hisoblagichi nechtasi belgilanganini ko&lsquo;rsatadi.</p></li>
+      <li><p><span class="ui">Kompaniyalar</span> maydonida kompaniyalarni ko&lsquo;rsating. Kompaniyasiz rol butun tizimda amal qiladi, shuning uchun uni faqat tizim administratori yarata oladi — qolganlar uchun maydon majburiy.</p></li>
+      <li><p><span class="ui">Faol rol</span> bayrog&lsquo;ini tekshiring va saqlang.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Rolni o&lsquo;chirish tasdiqlashni talab qiladi.</b> Rol xodimlarga biriktirilgan bo&lsquo;lsa, tizim avval nechta va qaysi xodimga tegishli ekanini ko&lsquo;rsatadi: o&lsquo;chirilgandan keyin ular shu rol huquqlarini yo&lsquo;qotadi. O&lsquo;chirish faqat takroriy tasdiq bilan bajariladi — shunda rol huquqlar bilan birga sezdirmay yo&lsquo;qolmaydi.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Tizim rollarini o&lsquo;zgartirib bo&lsquo;lmaydi.</b> Bunday rol kartochkasida &laquo;Bu tizim roli. Uni o&lsquo;zgartirish yoki o&lsquo;chirish mumkin emas&raquo; ogohlantirishi chiqadi. O&lsquo;xshash rol kerak bo&lsquo;lsa, yangi rol yarating va matritsani noldan sozlang.</p>
+    </div>
+
+    <h4>Tizimning asosiy rollari</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Kod</th><th>Rol</th><th>Doira</th></tr></thead>
+        <tbody>
+          <tr><td><code>SYSTEM_ADMIN</code></td><td>Tizim administratori</td><td>Butun tizim</td></tr>
+          <tr><td><code>COMPANY_ADMIN</code></td><td>Kompaniya administratori</td><td>Kompaniya</td></tr>
+          <tr><td><code>DEPARTMENT_MANAGER</code></td><td>Bo&lsquo;lim boshlig&lsquo;i</td><td>Bo&lsquo;lim</td></tr>
+          <tr><td><code>MANAGER</code></td><td>Menejer</td><td>Faqat o&lsquo;z ma&lsquo;lumotlari</td></tr>
+          <tr><td><code>VIEWER</code></td><td>Kuzatuvchi — kompaniya ma&lsquo;lumotlarini o&lsquo;zgartirish huquqisiz ko&lsquo;rish (rahbariyat)</td><td>Kompaniya</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Minimal huquqlar qoidasi.</b> Kamdan boshlang va so&lsquo;rov bo&lsquo;yicha qo&lsquo;shing. Odatiy xato — menejerga &laquo;xalaqit bermasin&raquo; deb <span class="ui">Kompaniya</span> doirasini berish: shundan keyin u barcha hamkasblarning mijozlarini ko&lsquo;radi, rahbar esa voronka nazoratini yo&lsquo;qotadi. Natijani tekshirish oson: shu rol bilan sinov hisobiga kiring.</p>
+    </div>
+
+    <div class="warn">
+      <p><b>Resursga <span class="ui">Ko&lsquo;rish</span> huquqi bo&lsquo;lmagan rol bo&lsquo;limni ko&lsquo;rinmas qiladi.</b> Xodim menyudan bo&lsquo;lim yo&lsquo;qolganidan shikoyat qilsa — tekshiruvni aynan shundan boshlang: ko&lsquo;rishsiz yaratish yoki tahrirlash huquqi ishlamaydi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>Loyiha va binolar</h3>
+    <p class="lede">Ko&lsquo;chmas mulk katalogi: turar-joy majmuasi, uning korpuslari va mijozga ko&lsquo;rsatiladigan hamma narsa.</p>
+
+    <h4>Loyiha yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Loyihalar</span> ni oching va <span class="ui">Loyiha yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Loyiha nomi</span> va <span class="ui">Manzil</span> ni to&lsquo;ldiring.</p></li>
+      <li><p><span class="ui">Tavsif</span> va <span class="ui">Rejalashtirilgan kadastr sanasi</span> ni qo&lsquo;shing.</p></li>
+      <li><p><span class="ui">Noyob savdo takliflari (USP)</span> blokini to&lsquo;ldiring — <span class="ui">USP 1</span>, <span class="ui">USP 2</span>, <span class="ui">USP 3</span>. Menejerlar bu iboralarni mijoz bilan suhbatda ishlatadi.</p></li>
+      <li><p><span class="ui">Yuridik ma&lsquo;lumotlar</span> va <span class="ui">Quruvchi rekvizitlari</span> ni kiriting — ular shartnomalarga qo&lsquo;yiladi.</p></li>
+      <li><p>Saqlang, so&lsquo;ng <span class="ui">Galereya</span> yorlig&lsquo;ida <span class="ui">Rasm yuklash</span> orqali suratlarni yuklang.</p></li>
+    </ol>
+
+    <h4>Bino qo&lsquo;shish</h4>
+    <ol class="steps">
+      <li><p>Loyiha kartochkasida <span class="ui">Binolar</span> yorlig&lsquo;ini oching va <span class="ui">Bino qo&lsquo;shish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Nomi/Raqami</span>, <span class="ui">Qavatlar soni</span>, <span class="ui">Ship balandligi (m)</span>, <span class="ui">Material</span> ni to&lsquo;ldiring.</p></li>
+      <li><p>Ma&lsquo;lumotnomadan <span class="ui">Bino turi</span> ni tanlang (09-bobga qarang) va <span class="ui">Sotuv boshlanish sanasi</span> ni ko&lsquo;rsating.</p></li>
+      <li><p>Saqlang. Bino kartochkasida yorliqlar paydo bo&lsquo;ladi: <span class="ui">Bino tafsilotlari</span>, <span class="ui">Ob&lsquo;ektlar</span>, <span class="ui">Planlar</span>, <span class="ui">Galereya</span>, <span class="ui">Loglar</span>.</p></li>
+    </ol>
+
+    <div class="note">
+      <p>Ob&lsquo;ektlari bog&lsquo;langan loyiha va binoni o&lsquo;chirib bo&lsquo;lmaydi — bu to&lsquo;g&lsquo;ri, chunki o&lsquo;chirish bitimlar tarixini buzardi. Korpusni sotuvdan ob&lsquo;ekt holatlari orqali chiqaring.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Ob&lsquo;ektlarni yuklash</h3>
+    <p class="lede">Kvartiralar Exceldan to&lsquo;plam holida yuklanadi — qo&lsquo;lda kiritilmaydi.</p>
+
+    <ol class="steps">
+      <li><p>Bino kartochkasini oching, <span class="ui">Ob&lsquo;ektlar</span> yorlig&lsquo;i.</p></li>
+      <li><p><span class="ui">Shablonni yuklab olish</span> ni bosing. Faylda ikkita varaq bor: ma&lsquo;lumot kiritiladigan varaq va <b>&laquo;Подсказки&raquo;</b> — ruxsat etilgan tur va holat kodlari.</p></li>
+      <li><p>Birinchi varaqni to&lsquo;ldiring. Ustun nomlarini o&lsquo;zgartirib bo&lsquo;lmaydi.</p></li>
+      <li><p><span class="ui">Ob&lsquo;ektlarni yuklash</span> ni bosing va faylni tanlang.</p></li>
+      <li><p>Natijani tekshiring: tizim nechta yozuv yaratilgani, nechtasi yangilangani va qaysi qatorlar o&lsquo;tkazib yuborilganini xabar qiladi.</p></li>
+    </ol>
+
+    <h5>Shablon ustunlari</h5>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ustun</th><th>Nima kiritiladi</th></tr></thead>
+        <tbody>
+          <tr><td>Номер объекта</td><td>Kvartira yoki xona raqami. Majburiy</td></tr>
+          <tr><td>Этаж</td><td>Butun son</td></tr>
+          <tr><td>Подъезд</td><td>Bo&lsquo;sh qoldirish mumkin</td></tr>
+          <tr><td>Стояк</td><td>Ixtiyoriy</td></tr>
+          <tr><td>Площадь (кв.м)</td><td>Son, kasr qismi mumkin</td></tr>
+          <tr><td>Стоимость</td><td>Probel va valyuta belgisisiz son</td></tr>
+          <tr><td>Тип объекта</td><td>Kod: <code>APARTMENT</code>, <code>COMMERCIAL</code>, <code>PARKING</code>, <code>STORAGE</code>, <code>COTTAGE</code></td></tr>
+          <tr><td>Статус</td><td>Faqat <code>SELECTION</code> yoki <code>RESERVE</code></td></tr>
+          <tr><td>Название планировки</td><td>Bunday nomli plan bo&lsquo;lmasa, u avtomatik yaratiladi</td></tr>
+          <tr><td>Наличие отделки (TRUE/FALSE)</td><td><code>TRUE</code> yoki <code>FALSE</code></td></tr>
+          <tr><td>Описание</td><td>Erkin matn</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Excel orqali faqat <code>SELECTION</code> (Tanlov) va <code>RESERVE</code> (Rezerv) holatlarini qo&lsquo;yish mumkin.</b> <code>BOOKING</code>, <code>IN_DEAL</code> va <code>SOLD</code> holatlarini tizim bitim davomida o&lsquo;zi qo&lsquo;yadi — yuklash orqali ularni o&lsquo;zgartirib bo&lsquo;lmaydi, aks holda sotilgan kvartirani tasodifan &laquo;bo&lsquo;shatib&raquo; yuborish mumkin edi.</p>
+      <p><code>SELECTION</code> &mdash; ob&lsquo;ekt sotuvda. <code>RESERVE</code> &mdash; kiritilgan, lekin <b>sotuvdan chiqarilgan</b>: menejerlar uni shaxmat taxtasida ko&lsquo;radi va mijozlarga taklif qilmaydi. Hozircha sotilmaydigan ob&lsquo;ektlarga <code>RESERVE</code> qo&lsquo;ying.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Qayta yuklash yangilaydi, takrorlamaydi.</b> Ob&lsquo;ekt <b>bino + ob&lsquo;ekt raqami</b> birikmasi bo&lsquo;yicha aniqlanadi. Raqam bino ichida yagona, shuning uchun kirish va qavat aniqlashda qatnashmaydi — ularni yuklash orqali tuzatish mumkin. Raqam mos kelsa — narx, maydon, qavat, kirish va tavsif yangilanadi; mos kelmasa — yangi ob&lsquo;ekt yaratiladi.</p>
+      <p><b>Bitimga band ob&lsquo;ektlarga yuklash tegmaydi.</b> Ob&lsquo;ekt bo&lsquo;yicha bron, bitim bo&lsquo;lsa yoki u sotilgan bo&lsquo;lsa, qator butunlay o&lsquo;tkazib yuboriladi va yuklash hisobotida &laquo;ob&lsquo;ekt band&raquo; deb qayd etiladi. Shu tariqa narxnoma shartnoma sharti qayd etilgan xonadon narxini qayta yozmaydi. Fayl ichidagi takrorlarni tizim aniqlab, o&lsquo;tkazib yuboradi.</p>
+      <p>Shundan amaliy qoida: <b>narxlarni yangilash o&lsquo;sha faylning o&lsquo;zi bilan bajariladi</b> — shablonni yuklab oling (u mavjud ob&lsquo;ektlar bilan chiqadi), narx ustunini o&lsquo;zgartiring va qaytadan yuklang.</p>
+    </div>
+
+    <div class="tip">
+      <p><b>Birinchi yuklashdan oldin besh qatorda sinab ko&lsquo;ring.</b> Qisqa fayl yuklang, <span class="ui">Ob&lsquo;ektlar</span> yorlig&lsquo;idagi shaxmat taxtasiga qarang — shundan keyingina butun korpusni yuklang.</p>
+    </div>
+
+    <h4>Ob&lsquo;ektni sotuvdan chiqarish va qaytarish</h4>
+    <p>Rezerv &mdash; boshqaruv qarori: ob&lsquo;ekt tizimda qoladi, lekin uni sotib bo&lsquo;lmaydi. Rahbar tashabbus ko&lsquo;rsatadi, siz bajarasiz.</p>
+    <ol class="steps">
+      <li><p>Bino kartochkasini oching, <span class="ui">Ob&lsquo;ektlar</span> yorlig&lsquo;i, shaxmat taxtasidagi kerakli katakchani bosing.</p></li>
+      <li><p><span class="ui">Rezerv qilish</span> ni bosing &mdash; ob&lsquo;ekt <span class="chip g">Tanlov</span> dan <span class="chip b">Rezerv</span> ga o&lsquo;tadi va sotuvdan chiqadi.</p></li>
+      <li><p>Ob&lsquo;ektni sotuvga qaytarish uchun <span class="ui">Rezervni bekor qilish</span> ni bosing &mdash; holat <span class="chip g">Tanlov</span> ga qaytadi.</p></li>
+      <li><p>Ob&lsquo;ekt izohi maydonida asosni va kimning topshirig&lsquo;i bilan bajarilganini yozing, so&lsquo;ng <span class="ui">Izohni saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Faqat rahbarning topshirig&lsquo;i bilan bajaring.</b> Menejerlar rezervdagi ob&lsquo;ektlarni shaxmat taxtasida ko&lsquo;radi, lekin ularni taklif qilmasligi kerak. Ob&lsquo;ektda &laquo;Loglar&raquo; yorlig&lsquo;i yo&lsquo;q: tizim faqat yozuvni oxirgi kim o&lsquo;zgartirganini eslab qoladi, nima o&lsquo;zgarganini emas. Shuning uchun asos yozilgan izoh &mdash; qarorning yagona aniq izi, uni o&lsquo;tkazib yubormang.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Planlar va galereya</h3>
+    <p class="lede">Plan rasmlari to&lsquo;plam holida yuklanadi — fayl nomi rasm qayerga tushishini belgilaydi.</p>
+
+    <p>Har bir planda to&lsquo;rtta rasm bo&lsquo;ladi. Turi fayl nomidagi qo&lsquo;shimcha bilan beriladi:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Qo&lsquo;shimcha</th><th>Qayerga tushadi</th><th>Fayl nomi namunasi</th></tr></thead>
+        <tbody>
+          <tr><td><code>_main</code></td><td>Asosiy plan</td><td><code>А-0,01_main.jpg</code></td></tr>
+          <tr><td><code>_extra</code></td><td>Qo&lsquo;shimcha plan</td><td><code>Studiya_extra.jpg</code></td></tr>
+          <tr><td><code>_floor</code></td><td>Qavatdagi joylashuv</td><td><code>1-xonali 35m_floor.png</code></td></tr>
+          <tr><td><code>_usp</code></td><td>USP rasmi</td><td><code>Б-2,04_usp.jpg</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ol class="steps">
+      <li><p>Fayllarni <code>{plan nomi}_{turi}.{kengaytma}</code> sxemasi bo&lsquo;yicha nomlang.</p></li>
+      <li><p>Bino kartochkasini oching, <span class="ui">Planlar</span> yorlig&lsquo;i.</p></li>
+      <li><p>Ommaviy yuklash tugmasini bosing va barcha fayllarni birdan tanlang.</p></li>
+      <li><p>Natija oynasini o&lsquo;rganing: nechtasi muvaffaqiyatli, nechtasi xato bilan, qaysi planlar yangidan yaratilgan va qaysi fayllar qabul qilinmagan.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Plan mavjud bo&lsquo;lmasa avtomatik yaratiladi.</b> Tizim avval nomning aniq mosligini qidiradi, so&lsquo;ng lotin va kirill yozuvidagi muqobil variantni sinaydi (<code>A-0,01</code> va <code>А-0,01</code> bitta plan deb hisoblanadi), keyin katta-kichik harfga e&lsquo;tibor bermay qidiradi. Hech nima topilmasagina yangisini yaratadi.</p>
+      <p>Shu sababli bu yerdagi yagona xato manbasi — fayl nomi bilan Excel shablonidagi &laquo;Название планировки&raquo; ustuni orasidagi farq. Ularni bir xil saqlang.</p>
+    </div>
+
+    <p>Loyiha va bino galereyalari <span class="ui">Galereya</span> yorlig&lsquo;ida <span class="ui">Rasm yuklash</span> tugmasi bilan to&lsquo;ldiriladi; ortiqcha surat shu galereyadan o&lsquo;chiriladi.</p>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>Chegirmalar</h3>
+    <p class="lede">Chegirma — bu qoida, menejerning qo&lsquo;lda beradigan yon berishi emas.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Chegirmalar</span> ni oching va <span class="ui">Chegirma yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Chegirma nomi</span> va <span class="ui">Foiz (%)</span> ni ko&lsquo;rsating.</p></li>
+      <li><p><span class="ui">Boshlanish sanasi</span> va <span class="ui">Tugash sanasi (bo&lsquo;sh=muddatsiz)</span> ni belgilang.</p></li>
+      <li><p>Doirasini cheklang: <span class="ui">Ko&lsquo;chmas mulk turi (ixtiyoriy)</span> va <span class="ui">Binolarga qo&lsquo;llash (ixtiyoriy)</span>. Cheklovlar qo&lsquo;shiladi: 2-bino va &laquo;Xonadon&raquo; turi uchun chegirma faqat 2-binodagi xonadonlarga amal qiladi. Bo&lsquo;sh maydon shu belgi bo&lsquo;yicha cheklov yo&lsquo;q degani, ikkalasi bo&lsquo;sh bo&lsquo;lsa — chegirma kompaniyangizning barcha ob&lsquo;ektlariga amal qiladi.</p></li>
+      <li><p><span class="ui">Qisqa tavsif</span> ni to&lsquo;ldiring va saqlang.</p></li>
+    </ol>
+
+    <div class="note">
+      <p>Bitimda menejer faqat aniq ob&lsquo;ekt uchun joriy sanada amal qiladigan chegirmalarni ko&lsquo;radi. Chegirmani o&lsquo;zi o&lsquo;ylab topa olmaydi — demak butun narx siyosati shu yerdan boshqariladi.</p>
+    </div>
+
+    <div class="warn">
+      <p><b>Tugash sanasi ko&lsquo;ringanidan muhimroq.</b> Tugash sanasi yo&lsquo;q chegirma muddatsiz amal qiladi. &laquo;Bir oylik&raquo; aksiya yaratayotganda tugash sanasini albatta qo&lsquo;ying, aks holda u tizimda abadiy qolib, tushumni kamaytirishda davom etadi.</p>
+    </div>
+
+    <p>Tizim tugash sanasi boshlanish sanasidan oldin bo&lsquo;lgan chegirmani saqlashga ruxsat bermaydi. Foiz va muddatlardagi barcha o&lsquo;zgarishlar chegirma loglarida qayd etiladi.</p>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Ma&lsquo;lumotnomalar</h3>
+    <p class="lede">Menejerlar qiymat tanlaydigan ro&lsquo;yxatlar. Bir marta sozlanadi, yillar davomida ishlaydi.</p>
+
+    <div class="note">
+      <p><b>Ma&lsquo;lumotnomalar kompaniyaga tegishli.</b> Kompaniyangizda yaratilgan yozuvlar faqat unda ko&lsquo;rinadi va tahrirlanadi. Alohida umumtizim yozuvlari ham bor — ularni tizim administratori barcha kompaniyalar uchun kiritadi: hamma ko&lsquo;radi, lekin o&lsquo;zgartirish va o&lsquo;chirishni faqat u qila oladi. Shu tariqa bir kompaniyaning ariza holatlari va to&lsquo;lov turlari boshqasining voronkasi va hisob-kitobiga ta&lsquo;sir qilmaydi.</p>
+    </div>
+
+    <h4>&laquo;Arizalar&raquo; yorlig&lsquo;i</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ma&lsquo;lumotnoma</th><th>Nima uchun</th></tr></thead>
+        <tbody>
+          <tr><td>Ariza holatlari</td><td>Nomi va rangi bilan voronka bosqichlari; kanban doskasida ko&lsquo;rinadi</td></tr>
+          <tr><td><span class="ui">&laquo;Maqsadsiz&raquo; holati uchun sabablar</span></td><td>Murojaat nega maqsadli emas</td></tr>
+          <tr><td><span class="ui">&laquo;Rad etish&raquo; holati uchun sabablar</span></td><td>Mijoz nega rad etdi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Sabab qo&lsquo;shish: <span class="ui">Yangi sabab</span> ni bosing, <span class="ui">Sabab nomi</span> ni kiriting, saqlang.</p>
+
+    <div class="tip">
+      <p><b>Sabablar ro&lsquo;yxatini qisqa saqlang.</b> Besh-yetti tushunarli ibora mazmunli tahlil beradi. O&lsquo;ttizta sabab esa har biriga bittadan ariza to&lsquo;g&lsquo;ri keladigan statistikaga aylanadi va hisobot foydasiz bo&lsquo;lib qoladi.</p>
+    </div>
+
+    <h4>&laquo;Ko&lsquo;chmas mulk&raquo; yorlig&lsquo;i</h4>
+    <p><span class="ui">Bino turlari</span> — masalan &laquo;Monolit-g&lsquo;isht&raquo;, &laquo;Panel&raquo;. <span class="ui">Yangi bino turi</span> tugmasi, <span class="ui">Tur nomi</span> maydoni. Tur bino kartochkasida tanlanadi.</p>
+
+    <h4>&laquo;Moliya&raquo; yorlig&lsquo;i</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ma&lsquo;lumotnoma</th><th>Nima uchun</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">To&lsquo;lov turlari</span></td><td>Boshlang&lsquo;ich to&lsquo;lov, bo&lsquo;lib to&lsquo;lash va hokazo. To&lsquo;lov jadvalida tanlanadi</td></tr>
+          <tr><td><span class="ui">Oluvchi hisobvaraqlari</span></td><td>Pul qabul qilinadigan kompaniya bank rekvizitlari</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Kamida bitta to&lsquo;lov turi va bitta oluvchi hisobvarag&lsquo;i bo&lsquo;lmasa, menejer to&lsquo;lov jadvalini saqlay olmaydi</b> — bitim uchinchi bosqichda to&lsquo;xtab qoladi. Bu ikki ma&lsquo;lumotnomani sotuv boshlanishidan oldin to&lsquo;ldiring.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Hujjat shablonlari</h3>
+    <p class="lede">Shartnoma sizning .docx faylingizdan bitim ma&lsquo;lumotlari qo&lsquo;yilgan holda shakllanadi.</p>
+
+    <ol class="steps">
+      <li><p>Shartnomani Word da tayyorlang va matnga qo&lsquo;sh jingalak qavs ichidagi teglarni joylashtiring — masalan <code>{{client.full_name}}</code>.</p></li>
+      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>Shablonlar</span> ni oching va <span class="ui">Shablon yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Shablon nomi</span> ni kiriting va <span class="ui">Shablon fayli (.docx)</span> ni biriktiring. Tizim boshqa formatni qabul qilmaydi.</p></li>
+      <li><p>Qo&lsquo;llanish doirasini belgilang: loyihalar, binolar va ko&lsquo;chmas mulk turlari. Menejer shablonni faqat mos bitimlarda ko&lsquo;radi.</p></li>
+      <li><p>Saqlang. <span class="ui">Teglar bo&lsquo;yicha yordam</span> tugmasi teglarning to&lsquo;liq ro&lsquo;yxatini ochadi.</p></li>
+    </ol>
+
+    <h5>Shablon teglari</h5>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Teg</th><th>Nima qo&lsquo;yiladi</th></tr></thead>
+        <tbody>
+          <tr><td><code>{{client.full_name}}</code></td><td>Mijozning to&lsquo;liq ismi</td></tr>
+          <tr><td><code>{{client.phone_number}}</code></td><td>Asosiy telefon raqami</td></tr>
+          <tr><td><code>{{client.email}}</code></td><td>Mijoz emaili</td></tr>
+          <tr><td><code>{{client.passport_series}}</code></td><td>Pasport seriyasi</td></tr>
+          <tr><td><code>{{client.passport_number}}</code></td><td>Pasport raqami</td></tr>
+          <tr><td><code>{{deal.id}}</code></td><td>Bitim ID raqami</td></tr>
+          <tr><td><code>{{deal.contract_number}}</code></td><td>Shartnoma raqami</td></tr>
+          <tr><td><code>{{deal.contract_date}}</code></td><td>Shartnoma sanasi</td></tr>
+          <tr><td><code>{{deal.contract_price}}</code></td><td>Shartnoma narxi</td></tr>
+          <tr><td><code>{{deal.booking_end_date}}</code></td><td>Bron tugash sanasi</td></tr>
+          <tr><td><code>{{property.unit_number}}</code></td><td>Ob&lsquo;ekt raqami</td></tr>
+          <tr><td><code>{{property.floor}}</code></td><td>Qavat</td></tr>
+          <tr><td><code>{{property.area}}</code></td><td>Maydon</td></tr>
+          <tr><td><code>{{property.price}}</code></td><td>Ob&lsquo;ektning boshlang&lsquo;ich narxi</td></tr>
+          <tr><td><code>{{building.name}}</code></td><td>Bino yoki korpus nomi</td></tr>
+          <tr><td><code>{{project.name}}</code></td><td>Turar-joy majmuasi nomi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn">
+      <p><b>Teg yaxlit bo&lsquo;lishi kerak.</b> Word ba&lsquo;zan tahrirlash paytida matnni bo&lsquo;laklarga ajratadi va shunda fayl ichida <code>{{client.full_name}}</code> parchalanib qoladi — almashtirish ishlamaydi, hujjatda tegning o&lsquo;zi qolib ketadi. Ishonchli usul: tegni &laquo;Bloknot&raquo; da bir harakatda yozing va Word ga formatlashsiz qo&lsquo;ying.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Ma&lsquo;lumot o&lsquo;rnida bo&lsquo;sh joy</b> mijoz yoki bitim kartochkasida maydon to&lsquo;ldirilmaganini bildiradi — ko&lsquo;pincha bu pasport ma&lsquo;lumotlari. Bu shablon xatosi emas: menejerdan kartochkani to&lsquo;ldirib, hujjatni qaytadan yaratishni so&lsquo;rang.</p>
+    </div>
+
+    <p>Shartnomani yangilash uchun mavjud shablonni oching va <span class="ui">Yangi fayl yuklash</span> ni bosing — qo&lsquo;llanish doirasi va nomi saqlanib qoladi.</p>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Hamkor API-kalitlari</h3>
+    <p class="lede">Sayt, Telegram-bot va hamkorlar uchun kirish — ularga hisob ochmasdan.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>API-kalitlar</span> ni oching va <span class="ui">API-kalit yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Hamkor nomi</span> ni to&lsquo;ldiring — masalan &laquo;Kompaniya sayti&raquo; yoki &laquo;Telegram Bot&raquo;.</p></li>
+      <li><p><span class="ui">Ruxsat etilgan amallar</span> blokida faqat zarurini belgilang: <span class="ui">Loyihalarni ko&lsquo;rish</span>, <span class="ui">Binolarni ko&lsquo;rish</span>, <span class="ui">Planlarni ko&lsquo;rish</span>, <span class="ui">Ariza yaratish</span>.</p></li>
+      <li><p><span class="ui">Kompaniyalarga kirish</span> maydonida kompaniyalarni tanlang. <b>Bo&lsquo;sh maydon hech kimning ma&lsquo;lumotiga kirish bermaydi</b> — hamkor bo&lsquo;sh javob oladi, shuning uchun kompaniyani aniq ko&lsquo;rsatish kerak.</p></li>
+      <li><p><span class="ui">Ruxsat etilgan IP-manzillar</span> ni vergul bilan ko&lsquo;rsating. Bo&lsquo;sh — istalgan manzildan.</p></li>
+      <li><p><span class="ui">Daqiqadagi so&lsquo;rovlar</span> va <span class="ui">Kundagi so&lsquo;rovlar</span> chegaralarini belgilang — hamkorni aynan shular cheklaydi, tizimning umumiy chegarasi ochiq API ga taalluqli emas.</p></li>
+      <li><p><span class="ui">Amal qilish muddati (ixtiyoriy)</span> ni qo&lsquo;ying. Bo&lsquo;sh — muddatsiz.</p></li>
+      <li><p>Saqlang va <b>kalitni darhol nusxalang</b>.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Kalit faqat bir marta ko&lsquo;rsatiladi.</b> Saqlangandan so&lsquo;ng darhol kalit va &laquo;Kalitni hozir nusxalang. Oyna yopilgach uni qayta ko&lsquo;ra olmaysiz&raquo; ogohlantirishi bo&lsquo;lgan oyna ochiladi. Kalit yo&lsquo;qolsa, faqat <span class="ui">Kalitni qayta yaratish</span> qoladi — u holda eskisi ishlamay qoladi va integratsiyani qayta sozlashga to&lsquo;g&lsquo;ri keladi.</p>
+    </div>
+
+    <div class="tip">
+      <p><b>Kalitlar gigiyenasi.</b> Har bir integratsiyaga alohida kalit — shunda birini qolganlarini buzmasdan bekor qilish mumkin. Manzil ma&lsquo;lum bo&lsquo;lgan joyda IP bo&lsquo;yicha cheklang. Vaqtinchalik pudratchilar uchun amal qilish muddatini qo&lsquo;ying. <span class="ui">Oxirgi foydalanish</span> ustuni uzoq vaqtdan beri ishlatilmagan kalitlarni ko&lsquo;rsatadi — ularni o&lsquo;chiring.</p>
+    </div>
+
+    <p>Ochiq API orqali hamkor loyiha, bino va planlar ma&lsquo;lumotini oladi hamda ariza yaratishi mumkin — bunday arizalar mos manba bilan <span class="path">Arizalar</span> bo&lsquo;limining umumiy ro&lsquo;yxatiga tushadi.</p>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>Sotuv rejalari</h3>
+    <p class="lede">&laquo;Hisobotlar&raquo; bo&lsquo;limi orqali yuklanadi, lekin bu odatda administrator vazifasi.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Hisobotlar</span> ni oching va yorliqni tanlang: <span class="ui">Loyihalar hisoboti</span> yoki <span class="ui">Xodimlar hisoboti</span> — bu ikki xil reja.</p></li>
+      <li><p><span class="ui">Shablonni yuklab olish</span> ni bosing.</p></li>
+      <li><p>Faylni to&lsquo;ldiring, ustun nomlari va tartibini o&lsquo;zgartirmang.</p></li>
+      <li><p><span class="ui">Rejani yuklash</span> ni, so&lsquo;ng natijani tekshirish uchun <span class="ui">Shakllantirish</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="note">
+      <p>Qayta yuklash o&lsquo;sha davr rejasini qayta yozadi. Faylni to&lsquo;liq yuklang, alohida tuzatilgan qatorlarni emas. Xodimlar rejasi va loyihalar rejasi bog&lsquo;liq emas: ikkala kesim kerak bo&lsquo;lsa, ikkala faylni ham yuklang.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Yangi kompaniyani ishga tushirish</h3>
+    <p class="lede">Noldan boshlash tartibi. Bandlar ketma-ket bajariladi — har biri oldingisiga tayanadi.</p>
+
+    <ol class="steps">
+      <li><p><b>Kompaniya.</b> <span class="path">Sozlamalar<i>&rsaquo;</i>Kompaniyalar</span> &rarr; <span class="ui">Kompaniya yaratish</span>: nomi va kodi.</p></li>
+      <li><p><b>Bo&lsquo;limlar.</b> Kerak bo&lsquo;lsa ierarxiya bilan bo&lsquo;linmalar tuzilmasini yarating.</p></li>
+      <li><p><b>Rollar.</b> Asosiy rollarni tekshiring va yetishmasa o&lsquo;zingiznikini yarating. Har birining ta&lsquo;sir doirasini belgilang.</p></li>
+      <li><p><b>Moliya ma&lsquo;lumotnomalari.</b> Kamida bitta <span class="ui">To&lsquo;lov turi</span> va bitta <span class="ui">Hisob</span> yarating — usiz bitimlar to&lsquo;xtaydi.</p></li>
+      <li><p><b>Ariza ma&lsquo;lumotnomalari.</b> Ariza holatlari, rad etish va maqsadsiz sabablari.</p></li>
+      <li><p><b>Bino turlari.</b> Ishlatiladigan konstruksiya turlarini kiriting.</p></li>
+      <li><p><b>Foydalanuvchilar.</b> Hisoblar yarating, kompaniya va bo&lsquo;limga biriktiring, rollarni tayinlang.</p></li>
+      <li><p><b>Loyihalar.</b> Tavsif, USP va quruvchi rekvizitlari bilan majmua yarating, galereyani yuklang.</p></li>
+      <li><p><b>Binolar.</b> Qavatlar soni va turi bilan korpuslarni qo&lsquo;shing.</p></li>
+      <li><p><b>Ob&lsquo;ektlar.</b> Shablonni yuklab oling, to&lsquo;ldiring va kvartiralarni yuklang. Avval besh qatorda sinang.</p></li>
+      <li><p><b>Planlar.</b> Rasmlarni <code>{nomi}_{turi}.jpg</code> sxemasi bo&lsquo;yicha ommaviy yuklang.</p></li>
+      <li><p><b>Chegirmalar.</b> Boshlanish va tugash sanalari bilan amaldagi aksiyalarni kiriting.</p></li>
+      <li><p><b>Shartnoma shablonlari.</b> Teglari bo&lsquo;lgan .docx ni yuklang va loyiha hamda ob&lsquo;ekt turlariga bog&lsquo;lang.</p></li>
+      <li><p><b>Sotuv rejalari.</b> Joriy davr uchun rejani yuklang.</p></li>
+      <li><p><b>Tekshirish.</b> Sinov menejer hisobiga kiring va yo&lsquo;lni to&lsquo;liq bosib o&lsquo;ting: mijoz &rarr; ariza &rarr; uchrashuv &rarr; bron &rarr; to&lsquo;lov jadvali &rarr; shartnoma yaratish. Sozlash to&lsquo;liqligini tekshirishning yagona ishonchli usuli shu.</p></li>
+    </ol>
+
+    <div class="tip">
+      <p><b>Doimiy bitta sinov menejer hisobini saqlang.</b> Rollarni har o&lsquo;zgartirganingizdan keyin u bilan kiring va nima ko&lsquo;rinishini hamda nima ochiq ekanini tekshiring. Bu bir daqiqa vaqt oladi va &laquo;bo&lsquo;limim yo&lsquo;qoldi&raquo; murojaatlarining aksariyatini oldini oladi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 14 ═══════════════ -->
+  <section class="ch" id="c14">
+    <h3><em>14</em>Ko&lsquo;p beriladigan savollar</h3>
+
+    <dl class="qa">
+      <dt>Xodim menyuda bo&lsquo;limni ko&lsquo;rmayapti</dt>
+      <dd>Uning rolida tegishli resursga <span class="ui">Ko&lsquo;rish</span> huquqi yo&lsquo;q. Ko&lsquo;rishsiz yaratish yoki tahrirlash huquqi ishlamaydi — bo&lsquo;lim yashirin qoladi.</dd>
+
+      <dt>Xodim juda ko&lsquo;p begona ma&lsquo;lumot ko&lsquo;ryapti</dt>
+      <dd>Rolning ta&lsquo;sir doirasi kerakligidan keng. Uni <span class="ui">Bo&lsquo;lim</span> yoki <span class="ui">Faqat o&lsquo;z ma&lsquo;lumotlari</span> ga o&lsquo;zgartiring va unda <span class="ui">Tizim administratori</span> bayrog&lsquo;i turmaganini tekshiring.</dd>
+
+      <dt>Rolni o&lsquo;zgartira olmayapman</dt>
+      <dd>Bu tizim roli — u o&lsquo;zgartirishdan himoyalangan. Yangi rol yarating va ruxsatlar matritsasini qaytadan sozlang.</dd>
+
+      <dt>Foydalanuvchi yaratishda bo&lsquo;lim tanlanmayapti</dt>
+      <dd>Avval kompaniyani tanlang: bo&lsquo;limlar ro&lsquo;yxati shundan keyingina yuklanadi. Bo&lsquo;limlar yo&lsquo;q bo&lsquo;lsa — <span class="ui">Bo&lsquo;limlar</span> yorlig&lsquo;ida yarating.</dd>
+
+      <dt>Menejer to&lsquo;lov jadvalini saqlay olmayapti</dt>
+      <dd>Ikki asosiy sabab: to&lsquo;lovlar summasi shartnoma narxiga mos kelmayapti yoki tizimda to&lsquo;lov turlari va oluvchi hisobvaraqlari yo&lsquo;q. Sozlamalardagi <span class="ui">Moliya</span> yorlig&lsquo;ini tekshiring.</dd>
+
+      <dt>Excel yuklangandan keyin ob&lsquo;ektlar ikkilanib ketdi</dt>
+      <dd>Endi bunday bo&lsquo;lmaydi: ob&lsquo;ekt bino + ob&lsquo;ekt raqami bo&lsquo;yicha aniqlanadi, fayldagi qavat yoki kirish tuzatilsa — mavjud yozuv yangilanadi. Avvalgi yuklashlardan qolgan takrorlarni <code>python manage.py find_duplicate_units</code> buyrug&lsquo;i ko&lsquo;rsatadi; ortiqchasini o&lsquo;chiring — raqam bino ichida yagona bo&lsquo;lishi kerak.</dd>
+
+      <dt>Ob&lsquo;ektlarni yuklash holatni &laquo;Sotilgan&raquo; ga o&lsquo;zgartirmadi</dt>
+      <dd>Shunday mo&lsquo;ljallangan: Excel orqali faqat <code>SELECTION</code> va <code>RESERVE</code> mumkin. Qolgan holatlarni tizim bitim davomida o&lsquo;zi qo&lsquo;yadi.</dd>
+
+      <dt>Planlar yuklandi, lekin rasmlar yo&lsquo;q</dt>
+      <dd>Fayl nomi plan nomiga mos kelmagan yoki tur qo&lsquo;shimchasi tushib qolgan. <code>{nomi}_{main|extra|floor|usp}.{kengaytma}</code> sxemasini va natija oynasini tekshiring — u yerda xatolik bilan qaytgan fayllar sanab o&lsquo;tilgan.</dd>
+
+      <dt>Yaratilgan shartnomada teglarning o&lsquo;zi ko&lsquo;rinyapti</dt>
+      <dd>Word tegni bo&lsquo;laklarga ajratgan. Uni bir bo&lsquo;lak qilib qaytadan yozing va formatlashsiz qo&lsquo;ying, so&lsquo;ng shablonni qayta yuklang.</dd>
+
+      <dt>Menejerda bitimda shablonlar ro&lsquo;yxati bo&lsquo;sh</dt>
+      <dd>Shablon bu loyiha, bino yoki ob&lsquo;ekt turiga bog&lsquo;lanmagan. Shablonni oching va qo&lsquo;llanish doirasini kengaytiring.</dd>
+
+      <dt>Hamkorning API-kaliti yo&lsquo;qoldi</dt>
+      <dd>Tiklab bo&lsquo;lmaydi. <span class="ui">Kalitni qayta yaratish</span> ni bosing va yangisini hamkorga bering — eskisi darhol ishlamay qoladi.</dd>
+
+      <dt>Xodimni tizimdan o&lsquo;chirish kerak</dt>
+      <dd>O&lsquo;chirmang: hisob bilan yozuvlar mualliligi va loglar bog&lsquo;liq. <span class="ui">Faol foydalanuvchi</span> bayrog&lsquo;ini olib tashlang — kirish yopiladi, tarix saqlanadi.</dd>
+
+      <dt>Ma&lsquo;lumotga ega kompaniya yoki loyihani o&lsquo;chirish kerak</dt>
+      <dd>Tizim bunday yozuvlarni o&lsquo;chirishdan himoya qiladi. Faolsizlantirishdan foydalaning: kompaniyada <span class="ui">Faol</span> bayrog&lsquo;ini olib tashlang, ob&lsquo;ektlarni tegishli holatlarga o&lsquo;tkazing.</dd>
+    </dl>
+
+    <div class="end">
+      CRM administratori qo&lsquo;llanmasi &middot; Ko&lsquo;chmas mulk CRM &middot; versiya 1.0, 2026-yil sentyabr.<br>
+      Tizim ishidagi xatolik va uzilishlar &mdash; texnik yordamga, huquq sozlashga emas.
+    </div>
+  </section>
+
+</main>
+</div>

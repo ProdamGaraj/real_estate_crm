@@ -94,7 +94,7 @@ export default function ProjectForm({ onSuccess }: ProjectFormProps) {
         />
 
         {mutation.isError && (
-          <Alert severity="error">{t('projects.create_error')}</Alert>
+          <Alert severity="error">{t('pages.projects.create_error')}</Alert>
         )}
 
         <Button type="submit" variant="contained" disabled={mutation.isPending}>

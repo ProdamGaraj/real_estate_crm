@@ -1,0 +1,474 @@
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>Ko&lsquo;chmas mulk CRM</b>
+    </div>
+    <h1>Bo&lsquo;lim boshlig&lsquo;i uchun qo&lsquo;llanma</h1>
+    <div class="role">Rol: Bo&lsquo;lim boshlig&lsquo;i</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Bo&lsquo;limlar bo&lsquo;yicha qidirish" aria-label="Qidirish">
+  </div>
+
+  <nav class="toc" aria-label="Mundarija">
+    <ol>
+      <li><a href="#c1"><span>01</span>Siz nimani ko&lsquo;rasiz</a></li>
+      <li><a href="#c2"><span>02</span>Bo&lsquo;lim boshqaruv paneli</a></li>
+      <li><a href="#c3"><span>03</span>Voronka nazorati</a></li>
+      <li><a href="#c4"><span>04</span>Umumiy jadvallar va Excel</a></li>
+      <li><a href="#c5"><span>05</span>Sotuv rejalari</a></li>
+      <li><a href="#c6"><span>06</span>Reja-fakt hisoboti</a></li>
+      <li><a href="#c7"><span>07</span>Bitimlar nazorati</a></li>
+      <li><a href="#c8"><span>08</span>To&lsquo;lovlar nazorati</a></li>
+      <li><a href="#c9"><span>09</span>Vazifa va topshiriqlar</a></li>
+      <li><a href="#c10"><span>10</span>Chegirmalar</a></li>
+      <li><a href="#c11"><span>11</span>Loglar va audit</a></li>
+      <li><a href="#c12"><span>12</span>Boshqaruv ritmi</a></li>
+      <li><a href="#c13"><span>13</span>Ko&lsquo;p beriladigan savollar</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Chop etish
+    </button>
+    <div>Versiya 1.0 &middot; 2026-yil sentyabr</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Foydalanuvchi qo&lsquo;llanmasi</div>
+    <h2>Rahbar bo&lsquo;limni CRM orqali qanday boshqaradi</h2>
+    <p>Nazorat bo&lsquo;yicha qo&lsquo;llanma: voronka va kechikishlarni qayerdan ko&lsquo;rish, sotuv rejalarini qanday yuklash, reja-fakt hisobotini qanday o&lsquo;qish, vazifa qo&lsquo;yish va tizimda kim nima o&lsquo;zgartirganini tekshirish.</p>
+    <div class="meta">
+      <span>Kimga: <b>bo&lsquo;lim boshlig&lsquo;i</b></span>
+      <span>Bo&lsquo;limlar: <b>13</b></span>
+      <span>Shart: <b>menejer ishini bilasiz</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Hech narsa topilmadi. Qidiruvni tozalang yoki boshqa so&lsquo;z kiriting.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Siz nimani ko&lsquo;rasiz va nima uchun</h3>
+    <p class="lede">Tizimdan raqam talab qilishdan oldin o&lsquo;z ko&lsquo;rish chegarangizni tushuning.</p>
+
+    <p>CRM dagi kirish uch narsadan iborat: <b>amal</b> (ko&lsquo;rish, yaratish, tahrirlash, o&lsquo;chirish, eksport), <b>bo&lsquo;lim</b> (mijozlar, bitimlar, to&lsquo;lovlar va hokazo) va <b>ta&lsquo;sir doirasi</b> — ro&lsquo;yxatlaringizga qancha ma&lsquo;lumot tushishi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Doira</th><th>Ro&lsquo;yxatga nima tushadi</th><th>Odatda kimda</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Faqat o&lsquo;z ma&lsquo;lumotlari</span></td><td>Foydalanuvchi yaratgan yoki unga tayinlangan yozuvlar</td><td>Menejer</td></tr>
+          <tr><td><span class="ui">Bo&lsquo;lim</span></td><td>Bo&lsquo;limingizdagi barcha xodimlar ma&lsquo;lumotlari</td><td><b>Bo&lsquo;lim boshlig&lsquo;i</b></td></tr>
+          <tr><td><span class="ui">Kompaniya</span></td><td>Kompaniyaning barcha ma&lsquo;lumotlari</td><td>Kompaniya administratori</td></tr>
+          <tr><td><span class="ui">Butun tizim</span></td><td>Barcha kompaniyalar</td><td>Tizim administratori</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p><b>Hisobot va boshqaruv panelidagi barcha raqamlar sizning doirangiz ichida hisoblanadi.</b> Agar hisobotda kutgan xodim yoki loyiha bo&lsquo;lmasa — ehtimol u sizning bo&lsquo;limingizdan tashqarida. Doirani faqat administrator kengaytira oladi.</p>
+    </div>
+
+    <p>Yuqori o&lsquo;ng burchakdagi avatarga bosing: tizim kompaniya va bo&lsquo;limingizni ko&lsquo;rsatadi. Bu sizning ma&lsquo;lumot chegarangiz.</p>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Bo&lsquo;lim boshqaruv paneli</h3>
+    <p class="lede">Kunning birinchi ekrani: to&lsquo;rt raqam va to&lsquo;rt grafik.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Blok</th><th>Nimani ko&lsquo;rsatadi</th><th>Nimaga e&lsquo;tibor berish</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Bugungi yangi mijozlar</span></td><td>Kun davomida kiritilgan kartochkalar</td><td>Ish kunida nol bo&lsquo;lsa — bo&lsquo;lim yuklamasini tekshiring</td></tr>
+          <tr><td><span class="ui">Bugungi yangi arizalar</span></td><td>Kelib tushgan arizalar</td><td>Keskin pasayish — reklama manbalarini tekshiring</td></tr>
+          <tr><td><span class="ui">Oylik sotuvlar</span></td><td>Shu oyda <b>yopilgan</b> bitimlar — oxirgi tahrir sanasi bo&lsquo;yicha emas, yopilish sanasi bo&lsquo;yicha hisoblanadi</td><td>Reja-fakt hisoboti bilan solishtiring</td></tr>
+          <tr><td><span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span></td><td>Kechikish summasi</td><td>Debitorlik qarzini har kuni nazorat qiling</td></tr>
+          <tr><td><span class="ui">Haftalik arizalar dinamikasi</span></td><td>Kunlar bo&lsquo;yicha grafik</td><td>Hafta kunlari bo&lsquo;yicha pasayishlar</td></tr>
+          <tr><td><span class="ui">Ariza manbalari</span></td><td>Kanallar bo&lsquo;yicha taqsimot</td><td>Qayerga sarmoya kiritish mantiqli</td></tr>
+          <tr><td><span class="ui">Oylik eng ko&lsquo;p sotuvlar</span></td><td>Xodimlar reytingi</td><td>Yig&lsquo;ilish uchun material</td></tr>
+          <tr><td><span class="ui">Kelgusi uchrashuvlar</span></td><td>Bo&lsquo;limning yaqin kunlardagi rejasi</td><td>Haftalik yuklama</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Boshqaruv paneli &laquo;hozir nima bo&lsquo;lyapti&raquo; degan savolga javob beradi. Sabablarni tahlil qilish uchun umumiy jadvallarga (04-bob) va reja-fakt hisobotiga (06-bob) o&lsquo;ting.</p>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>Voronka nazorati</h3>
+    <p class="lede">Voronka qayerda to&lsquo;xtaganini ko&lsquo;rsatadigan ikki ko&lsquo;rsatkich.</p>
+
+    <h4>Unutilgan arizalar</h4>
+    <ol class="steps">
+      <li><p><span class="path">Arizalar</span> bo&lsquo;limini oching va <span class="ui">Umumiy jadval</span> yorlig&lsquo;iga o&lsquo;ting.</p></li>
+      <li><p><span class="ui">&laquo;Unutilgan&raquo; arizalar</span> blokini toping — bu uzoq vaqtdan beri hech kim tegmagan arizalar.</p></li>
+      <li><p>Chegara qiymatini <span class="ui">yangilanmagan &hellip; kundan ko&lsquo;p</span> maydonida belgilang. Standart qiymat 7 — bitim sikli qisqa bo&lsquo;lsa, 3 ga tushiring.</p></li>
+      <li><p>Raqamga bosing — tizim aynan shu arizalar ro&lsquo;yxatini filtr bilan ochadi.</p></li>
+      <li><p>Jadvalni <span class="ui">Foydalanuvchi bo&lsquo;yicha</span> guruhlang — kimda ko&lsquo;p ekani ko&lsquo;rinadi.</p></li>
+    </ol>
+
+    <div class="tip">
+      <p><b>Nima me&lsquo;yor hisoblanadi.</b> <span class="ui">Yangi</span> holatida bir kundan ortiq turgan ariza — yo&lsquo;qotilgan aloqa. Bir hafta harakatsiz turgan <span class="ui">Jarayonda</span> arizasi uchun yo keyingi qadam, yo sabab bilan <span class="ui">Rad etish</span> kerak. Yopilmagan arizalar butun bo&lsquo;lim konversiyasini buzadi.</p>
+    </div>
+
+    <h4>Muddati o&lsquo;tgan uchrashuvlar</h4>
+    <ol class="steps">
+      <li><p><span class="path">Uchrashuvlar</span> bo&lsquo;limini oching va <span class="ui">Umumiy jadval</span> ga o&lsquo;ting.</p></li>
+      <li><p><span class="ui">Muddati o&lsquo;tgan uchrashuvlar</span> hisoblagichiga qarang — rejadagi vaqt o&lsquo;tgan, natija to&lsquo;ldirilmagan.</p></li>
+      <li><p><span class="ui">Ijrochi bo&lsquo;yicha</span> guruhlang — kim uchrashuvlarni yopmayotgani darhol ko&lsquo;rinadi.</p></li>
+    </ol>
+
+    <p>Uchrashuv natijasi to&lsquo;ldirilmagani mijoz bilan nima bo&lsquo;lganini bilmasligingizni anglatadi. Uchrashuv o&lsquo;tkazilgan kuni yopilishini talab qiling.</p>
+
+    <div class="note">
+      <p><b>Unutilgan uchrashuvlar o&lsquo;zi yopiladi.</b> Bir haftadan ortiq muddati o&lsquo;tgan holda turgan uchrashuv jurnalda izoh bilan avtomatik <span class="chip r">Bo&lsquo;lib o&lsquo;tmadi</span> holatiga o&lsquo;tadi. Bu ro&lsquo;yxatlarni tozalaydi, lekin ishning o&lsquo;rnini bosmaydi: shunday yopilgan uchrashuv mijoz bilan aloqa yo&lsquo;qolganini bildiradi.</p>
+      <p>Mijoz ro&lsquo;yxatga olinganda tizim o&lsquo;zi yaratadigan uchrashuvlar hisobotga tushmaydi — hisoblagichlar faqat menejerlarning haqiqiy ishini ko&lsquo;rsatadi.</p>
+    </div>
+
+    <h4>Rad etish sabablarini tahlil qilish</h4>
+    <p>Arizalar umumiy jadvalida ma&lsquo;lumotlarni <span class="ui">Manba bo&lsquo;yicha</span> guruhlang va ro&lsquo;yxatdagi rad etish sabablari bilan solishtiring. Muntazam takrorlanadigan sabab — bu yo mahsulot muammosi, yo reklamada noto&lsquo;g&lsquo;ri shakllantirilgan kutilma.</p>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Umumiy jadvallar va Excel</h3>
+    <p class="lede">To&lsquo;rt bo&lsquo;limda bir xil mexanizm — bir marta o&lsquo;rganing.</p>
+
+    <p><span class="path">Arizalar</span>, <span class="path">Uchrashuvlar</span>, <span class="path">Bitimlar</span> va <span class="path">Moliya</span> bo&lsquo;limlarida ro&lsquo;yxat yonida <span class="ui">Umumiy jadval</span> yorlig&lsquo;i bor. U bir xil tuzilgan: yuqorida davr filtrlari, <span class="ui">Guruhlash</span> tanlovi, hisoblagichlar va <span class="ui">Excel ga eksport</span> tugmasi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Bo&lsquo;lim</th><th>Guruhlash</th><th>Nimaga qarash</th></tr></thead>
+        <tbody>
+          <tr><td>Arizalar</td><td>Foydalanuvchi, Manba</td><td>Jami arizalar, unutilgan arizalar</td></tr>
+          <tr><td>Uchrashuvlar</td><td>Ijrochi, Loyiha, Holat</td><td>Jami, yangi, bajarilgan, bekor qilingan, muddati o&lsquo;tgan</td></tr>
+          <tr><td>Bitimlar</td><td>Menejer, Loyiha, Holat</td><td>Jami bitimlar; bron, jarayonda, yakunlangan, bekor qilingan</td></tr>
+          <tr><td>Moliya</td><td>Holat, Loyiha, Menejer</td><td>Umumiy summa, muddati o&lsquo;tgan va to&lsquo;langan to&lsquo;lovlar</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ol class="steps">
+      <li><p>Davrni belgilang: <span class="ui">Yaratilgan sanadan</span> va <span class="ui">gacha</span> (moliyada — to&lsquo;lov sanasi yoki haqiqiy to&lsquo;lov bo&lsquo;yicha).</p></li>
+      <li><p><span class="ui">Guruhlash</span> ni tanlang — odamlarni baholash uchun menejer bo&lsquo;yicha, mahsulotni baholash uchun loyiha bo&lsquo;yicha, bosqichlarni baholash uchun holat bo&lsquo;yicha.</p></li>
+      <li><p>Tashqi hisobot bilan solishtirish kerak bo&lsquo;lsa <span class="ui">Excel ga eksport</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Umumiy jadval ro&lsquo;yxat bilan bir xil huquqlar bo&lsquo;yicha hisoblaydi.</b> Excelga eksport siz ekranda ko&lsquo;rgan narsani aynan o&lsquo;zini beradi — undan ortiq emas.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>Sotuv rejalari</h3>
+    <p class="lede">Reja yuklanmagan bo&lsquo;lsa, reja-fakt hisoboti faqat faktni ko&lsquo;rsatadi.</p>
+
+    <p>Rejalar ikki xil bo&lsquo;ladi va alohida yuklanadi: <b>loyihalar bo&lsquo;yicha</b> va <b>xodimlar bo&lsquo;yicha</b>. Har biri <span class="path">Hisobotlar</span> bo&lsquo;limining o&lsquo;z yorlig&lsquo;ida.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Hisobotlar</span> ni oching va yorliqni tanlang: <span class="ui">Loyihalar hisoboti</span> yoki <span class="ui">Xodimlar hisoboti</span>.</p></li>
+      <li><p><span class="ui">Shablonni yuklab olish</span> ni bosing — kerakli ustunlar tuzilishiga ega Excel fayl olasiz.</p></li>
+      <li><p>Shablonni to&lsquo;ldiring. <b>Ustun nomlarini o&lsquo;zgartirmang va o&lsquo;rnini almashtirmang</b> — fayl ular bo&lsquo;yicha o&lsquo;qiladi.</p></li>
+      <li><p><span class="ui">Rejani yuklash</span> ni bosing va to&lsquo;ldirilgan faylni tanlang.</p></li>
+      <li><p><span class="ui">Shakllantirish</span> ni bosing — jadval endi reja bilan qayta hisoblanadi.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Qayta yuklash o&lsquo;sha davr rejasini qayta yozadi.</b> Tuzatilgan faylni to&lsquo;liq yuklang, bitta o&lsquo;zgargan qatorni emas.</p>
+    </div>
+
+    <div class="note">
+      <p><span class="ui">Shablonni yuklab olish</span> va <span class="ui">Rejani yuklash</span> tugmalari hammaga ko&lsquo;rinadi, lekin faqat <span class="ui">Rejalar</span> resursiga huquq bo&lsquo;lganda ishlaydi: usiz tizim rad javobini beradi. Shunday bo&lsquo;lsa, administratordan shu resursga kirish so&lsquo;rang.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Reja-fakt hisoboti</h3>
+    <p class="lede">Asosiy boshqaruv hisoboti: rejani fakt bilan uch o&lsquo;lchovda taqqoslash.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Hisobotlar</span> ni oching va yorliqni tanlang — loyihalar yoki xodimlar bo&lsquo;yicha.</p></li>
+      <li><p><span class="ui">Yil</span> ni belgilang.</p></li>
+      <li><p><span class="ui">Davr</span> ni tanlang: <span class="ui">Oy</span>, <span class="ui">Chorak</span>, <span class="ui">Yarim yil</span> yoki <span class="ui">Yil</span>.</p></li>
+      <li><p><span class="ui">Qiymat</span> ni ko&lsquo;rsating — aniq oy, chorak yoki yarim yil.</p></li>
+      <li><p><span class="ui">Shakllantirish</span> ni bosing.</p></li>
+    </ol>
+
+    <h4>Jadvalni qanday o&lsquo;qish kerak</h4>
+    <p>Qatorlar — loyihalar yoki xodimlar. Ustunlar uch blokka guruhlangan va har bir blokda bir xil to&lsquo;rt ko&lsquo;rsatkich bor:</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Blok</th><th>Nimani o&lsquo;lchaydi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Soni, dona</span></td><td>Sotilgan ob&lsquo;ektlar soni</td></tr>
+          <tr><td><span class="ui">Shartnoma tuzish</span></td><td>Tuzilgan shartnomalar summasi</td></tr>
+          <tr><td><span class="ui">Tushum</span></td><td>Haqiqatda olingan pul</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ko&lsquo;rsatkich</th><th>Ma&lsquo;nosi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Reja</span></td><td>Shablondan yuklangan qiymat</td></tr>
+          <tr><td><span class="ui">Fakt</span></td><td>Tizim haqiqiy bitim va to&lsquo;lovlar bo&lsquo;yicha hisoblagan qiymat</td></tr>
+          <tr><td><span class="ui">% fakt</span></td><td>Hozirgi paytdagi reja bajarilishi</td></tr>
+          <tr><td><span class="ui">% prognoz</span></td><td>Joriy sur&lsquo;atda davr oxiriga kutilayotgan bajarilish</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Shartnoma tuzish va tushum orasidagi farq — bu sizning debitorlik qarzingiz.</b> Shartnoma ko&lsquo;p, pul kam bo&lsquo;lsa — Moliya bo&lsquo;limidagi muddati o&lsquo;tgan to&lsquo;lovlarga qarang. <span class="ui">% prognoz</span> ni oy o&lsquo;rtasida o&lsquo;qing — bo&lsquo;lim ulgurayaptimi yoki yo&lsquo;qmi, shundan ko&lsquo;rinadi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Bitimlar nazorati</h3>
+    <p class="lede">Bitimlar qayerda to&lsquo;xtab qoladi va birinchi navbatda nimaga qarash kerak.</p>
+
+    <p>Bitim to&lsquo;rt bosqichdan o&lsquo;tadi: <b>Ma&lsquo;lumot &rarr; Shartlar &rarr; To&lsquo;lov jadvali &rarr; Hujjatlar</b>. Holat menejerning amallariga qarab avtomatik o&lsquo;zgaradi.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Bitim holati</th><th>Nima bajarilgan</th><th>To&lsquo;xtab qolish xavfi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip y">Bron</span></td><td>Ob&lsquo;ekt mijoz uchun ushlangan, tugash sanasi bor</td><td>Bron muddati tugayapti, ob&lsquo;ekt na sotilgan, na bo&lsquo;shatilgan</td></tr>
+          <tr><td><span class="chip b">Jarayonda</span></td><td>Narx kelishilgan, to&lsquo;lov jadvali saqlangan</td><td>Shartnoma haftalab imzolanmayapti</td></tr>
+          <tr><td><span class="chip g">Muvaffaqiyatli yopilgan</span></td><td>Ikki tomon shartnomani imzolagan</td><td>&mdash;</td></tr>
+          <tr><td><span class="chip n">Bekor qilingan</span></td><td>To&lsquo;lovsiz bekor qilingan</td><td>Bitta menejerda bekor qilishlar ko&lsquo;p</td></tr>
+          <tr><td><span class="chip r">Shartnoma buzilgan</span></td><td>Hujjat bilan bekor qilingan, qaytarishlar bor</td><td>Qaytarilishi kerak pullar osilib qolgan</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Har hafta nimani nazorat qilish</h4>
+    <ul>
+      <li><b>Muddati tugayotgan bronlar.</b> Bitimlar ro&lsquo;yxatida <span class="ui">Bron</span> holatini filtrlang va <span class="ui">Bron tugash sanasi</span> bo&lsquo;yicha saralang. Muddati o&lsquo;tgan bronlarni tizim o&lsquo;zi olib tashlaydi: bitim muddat haqidagi izoh bilan <span class="chip n">Bekor qilingan</span> holatiga o&lsquo;tadi, ob&lsquo;ekt sotuvga qaytadi. Sizning nazoratingiz — shu paytgacha bronni uzaytirishga ulgurish.</li>
+      <li><b>Shartnomasiz &laquo;Jarayonda&raquo; bitimlar.</b> Jadval bor, shartnoma raqami bo&lsquo;sh — demak 4-bosqichda qotib qolgan.</li>
+      <li><b>Chegirmalar.</b> Bitim kartochkasining <span class="ui">Bitim shartlari</span> bosqichida <span class="ui">Qo&lsquo;llanilgan</span> maydonida chegirmalar va foizlar ko&lsquo;rinadi.</li>
+      <li><b>Bekor qilishlar.</b> Bitimlar umumiy jadvalida <span class="ui">Menejer bo&lsquo;yicha</span> guruhlang va ulushlarni solishtiring. Bekor qilingan bitimning arizasi avtomatik ravishda ishga qaytadi, shuning uchun voronka konversiyasi amalga oshmagan sotuvlar hisobiga oshib ketmaydi.</li>
+      <li><b>Rezervdagi ob&lsquo;ektlar.</b> Bino shaxmat taxtasida bular ko&lsquo;k katakchalar. Har biri &mdash; sotuvdan chiqarilgan kvartira; u qancha uzoq tursa, muzlatilgan tushum shuncha ko&lsquo;p.</li>
+    </ul>
+
+    <h4>Rezerv &mdash; sizning qaroringiz</h4>
+    <p><span class="chip b">Rezerv</span> holati ob&lsquo;ekt tizimga kiritilgan, ammo <b>sotilmasligini</b> bildiradi: rasman bor, aslida mavjud emas. Menejerlar uni ko&lsquo;radi va mijozlarga taklif qilmaydi.</p>
+    <p>Ob&lsquo;ektni sotuvdan chiqarish va qaytarishni faqat rahbar hal qiladi &mdash; administratorga topshiriq berish orqali; administrator ob&lsquo;ekt kartochkasida holatni o&lsquo;zgartiradi va asosni izohda qayd etadi. Menejer buni bajarmaydi.</p>
+
+    <div class="tip">
+      <p><b>Oyiga bir marta rezervni qayta ko&lsquo;rib chiqing.</b> Ob&lsquo;ektda o&lsquo;zgarishlar tarixi yo&lsquo;q, shuning uchun qarorning yagona izi &mdash; administrator qoldirgan izoh. Shaxmat taxtalaridagi ko&lsquo;k katakchalarni ko&lsquo;rib chiqing va har biri bo&lsquo;yicha qaror qabul qiling: sotuvga qaytaramizmi yoki qoldiramizmi. Hamma unutgan ob&lsquo;ektlar &mdash; eng sokin yo&lsquo;qotish moddasi.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Shartnomani buzish doim asos hujjatini talab qiladi.</b> Agar bitimda to&lsquo;langan to&lsquo;lovlar bo&lsquo;lsa yoki mijoz imzo sanasi turgan bo&lsquo;lsa, oddiy bekor qilish mumkin emas — menejer skanerlangan nusxani biriktirishi shart. Bu nizoli holatlarda sizning himoyangiz.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>To&lsquo;lovlar nazorati</h3>
+    <p class="lede">&laquo;Moliya&raquo; bo&lsquo;limi — bu real vaqtdagi bo&lsquo;lim debitorligi.</p>
+
+    <ol class="steps">
+      <li><p><span class="path">Moliya</span> ni oching. <span class="ui">To&lsquo;lovlar ro&lsquo;yxati</span> yorlig&lsquo;ida <span class="ui">To&lsquo;lov sanasidan / gacha</span> davrini belgilang.</p></li>
+      <li><p><span class="ui">Umumiy jadval</span> ga o&lsquo;ting va <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> hamda <span class="ui">To&lsquo;langan to&lsquo;lovlar</span> ko&lsquo;rsatkichlariga qarang. Kompaniyada turli valyutadagi bitimlar bo&lsquo;lsa, har bir valyuta uchun alohida juft raqam ko&lsquo;rsatiladi — summalar bitta songa qo&lsquo;shilmaydi.</p></li>
+      <li><p><span class="ui">Menejer bo&lsquo;yicha</span> guruhlang — kimning debitorligi o&lsquo;syapti, <span class="ui">Loyiha bo&lsquo;yicha</span> — qayerda yig&lsquo;ilish yomonroq.</p></li>
+      <li><p>Buxgalteriya bilan solishtirish uchun Excelga eksport qiling.</p></li>
+    </ol>
+
+    <h5>To&lsquo;lov holatlari</h5>
+    <p><span class="chip b">To&lsquo;lanishi kerak</span> <span class="chip g">To&lsquo;langan</span> <span class="chip r">Muddati o&lsquo;tgan</span> <span class="chip y">Qaytarilishi kerak</span> <span class="chip n">Qaytarilgan</span></p>
+
+    <div class="warn">
+      <p><b><span class="ui">Qaytarilishi kerak</span> holati harakat talab qiladi.</b> U to&lsquo;langan to&lsquo;lovlari bo&lsquo;lgan bitim buzilganidan keyin paydo bo&lsquo;ladi. Bunday to&lsquo;lov bo&lsquo;yicha <span class="ui">Qaytarish</span> bosilmaguncha mijoz oldidagi majburiyat ochiq qoladi. Bu holatni har hafta alohida tekshiring.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Vazifa va topshiriqlar</h3>
+    <p class="lede">Vazifa qanday qo&lsquo;yiladi, ish qanday qabul qilinadi va qayta ishlashga qaytariladi.</p>
+
+    <div class="flow">
+      <div class="st"><b>Yangi</b><span>Siz qo&lsquo;ydingiz</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Jarayonda</b><span>Ijrochi boshladi</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Tekshiruvda</b><span>Sizning navbatingiz</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Tugallangan</b><span>Qabul qildingiz</span></div>
+    </div>
+
+    <h4>Vazifa qo&lsquo;yish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Vazifalar</span> bo&lsquo;limida <span class="ui">Vazifa yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Nomi</span> va <span class="ui">Tavsif</span> ni to&lsquo;ldiring — jarayonni emas, natijani yozing.</p></li>
+      <li><p><span class="ui">Ijrochi</span> va <span class="ui">Muddat</span> ni tanlang.</p></li>
+      <li><p><span class="ui">Muhimlik</span> ni belgilang: <span class="chip n">Past</span> <span class="chip b">O&lsquo;rta</span> <span class="chip y">Yuqori</span> <span class="chip r">Shoshilinch</span></p></li>
+      <li><p>Vazifa bir necha kishiga tegishli bo&lsquo;lsa <span class="ui">Kuzatuvchilar</span> qo&lsquo;shing va <span class="ui">Taxminiy vaqt</span> ni ko&lsquo;rsating.</p></li>
+      <li><p>Katta topshiriqni <span class="ui">Kichik vazifalar</span> ga bo&lsquo;ling.</p></li>
+    </ol>
+
+    <h4>Rahbarning vazifalar bo&lsquo;yicha huquqlari</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Imkoniyat</th><th>Nima beradi</th></tr></thead>
+        <tbody>
+          <tr><td>Jarayondagi vazifani tahrirlash</td><td>Ijrochi boshlagan vazifa shartlarini o&lsquo;zgartirish</td></tr>
+          <tr><td><span class="ui">Ishga qaytarish</span></td><td>Bekor qilingan vazifani qaytadan ochish. Tizim yangi muddatni (kerak bo&lsquo;lsa, boshlanish vaqtini ham) so&lsquo;raydi va vazifani <span class="chip b">Yangi</span> holatiga qaytaradi — ijrochi uni <span class="ui">Boshlash</span> tugmasi bilan qaytadan boshlaydi</td></tr>
+          <tr><td>Majburiy tahrirlash</td><td>Tugallangan va bekor qilingan vazifalarni tahrirlash</td></tr>
+          <tr><td colspan="2">Kamida bitta kichik vazifa ochiq turganda asosiy vazifani tugatib bo&lsquo;lmaydi — bu qoida rahbarga ham tegishli</td></tr>
+          <tr><td>Loglarni o&lsquo;chirish</td><td>Vazifa tarixidan xato yozuvlarni olib tashlash</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>Bu huquqlarni administrator beradi va ular har bir rahbarda mavjud emas. Kerakli tugma bo&lsquo;lmasa — jadvaldagi amal nomini aytib, kirish so&lsquo;rang.</p>
+    </div>
+
+    <p><span class="ui">Kanban</span> va <span class="ui">Kalendar</span> ko&lsquo;rinishlari yig&lsquo;ilish uchun qulay: kanban vazifalar qayerda to&lsquo;planganini, kalendar muddatlar kunlar bo&lsquo;yicha qanday taqsimlanganini ko&lsquo;rsatadi.</p>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Chegirmalar</h3>
+    <p class="lede">Narxni boshqarish vositasi. Hozir nima amal qilayotganini kuzating.</p>
+
+    <p><span class="path">Chegirmalar</span> bo&lsquo;limida kompaniyangizning aksiyalari saqlanadi — begona chegirmalar bu yerga tushmaydi va sizning bitimlaringizga ta&lsquo;sir qilmaydi. Har bir chegirmada <span class="ui">Foiz (%)</span>, <span class="ui">Boshlanish sanasi</span>, <span class="ui">Tugash sanasi</span> (bo&lsquo;sh — muddatsiz), <span class="ui">Ko&lsquo;chmas mulk turi</span> va binolar ro&lsquo;yxati bor. Cheklovlar qo&lsquo;shiladi: 2-bino va &laquo;Xonadon&raquo; turi uchun chegirma faqat 2-binodagi xonadonlarga amal qiladi, bo&lsquo;sh maydon esa shu belgi bo&lsquo;yicha cheklovni olib tashlaydi.</p>
+
+    <p>Menejer bitimda faqat aniq ob&lsquo;ekt uchun joriy sanada amal qiladigan chegirmalarni ko&lsquo;radi — chegirmani o&lsquo;zi &laquo;o&lsquo;ylab topa&raquo; olmaydi. Shu sababli chegirma siyosatini nazorat qilish shu ma&lsquo;lumotnomani nazorat qilishga teng.</p>
+
+    <div class="tip">
+      <p><b>Tugash sanalarini tekshiring.</b> Tugash sanasi yo&lsquo;q chegirma muddatsiz amal qiladi va oylar davomida sezilmasdan foydani kamaytiradi. Oyiga bir marta ro&lsquo;yxatni ko&lsquo;rib chiqing va ishlab bo&lsquo;lgan aksiyalarni yoping — yoki tahrirlash huquqingiz bo&lsquo;lmasa, administratordan so&lsquo;rang.</p>
+    </div>
+
+    <p>Chegirma kartochkasida o&lsquo;zgarishlar tarixi bor: kim foiz va sanalarni o&lsquo;zgartirgan.</p>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Loglar va audit</h3>
+    <p class="lede">Tizim har bir muhim o&lsquo;zgarishni eslab qoladi. Bu nizolarni tahlil qilish vositangiz.</p>
+
+    <p><span class="ui">Loglar</span> yorlig&lsquo;i ariza, mijoz, uchrashuv, bitim, bino, chegirma, to&lsquo;lov va vazifa kartochkalarida mavjud. Yozuvlar avtomatik yuritiladi: kim, qachon, nimani o&lsquo;zgartirgan — eski va yangi qiymat bilan.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Qayerga qarash</th><th>Nimani ko&lsquo;rsatadi</th></tr></thead>
+        <tbody>
+          <tr><td>Bitim loglari</td><td>Shartnoma narxi, chegirmalar, shartnoma raqami va sanasi, imzo sanalari, skan yuklanishi, to&lsquo;lov jadvali yaratilishi va yangilanishi</td></tr>
+          <tr><td>Ariza loglari</td><td>Holatlar va rad etish sabablari o&lsquo;zgarishi</td></tr>
+          <tr><td>Mijoz loglari</td><td>Aloqa va pasport ma&lsquo;lumotlaridagi tuzatishlar</td></tr>
+          <tr><td>Chegirma loglari</td><td>Foiz va amal qilish muddatlari o&lsquo;zgarishi</td></tr>
+          <tr><td>Vazifa tarixi</td><td>Holat, ijrochi, muddat o&lsquo;zgarishi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Odatiy tahlil.</b> Mijoz unga boshqa narx aytilganini da&lsquo;vo qilmoqda. Bitimni oching &rarr; <span class="ui">Loglar</span> yorlig&lsquo;i: u yerda kim va qachon <span class="ui">Shartnoma narxi</span> ni o&lsquo;zgartirgani va qanday chegirmalar qo&lsquo;llangani ko&lsquo;rinadi. Suhbat bir daqiqada aniqlashadi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>Boshqaruv ritmi</h3>
+    <p class="lede">Tayyor nazorat tartibi. Chop etib, monitor yoniga osib qo&lsquo;yish mumkin.</p>
+
+    <div class="cols">
+      <div>
+        <h6>Har kuni</h6>
+        <p>Boshqaruv paneli: yangi arizalar va muddati o&lsquo;tgan to&lsquo;lovlar. Bir kundan ortiq <span class="ui">Yangi</span> holatidagi arizalar. Kechagi natijasiz uchrashuvlar.</p>
+      </div>
+      <div>
+        <h6>Har hafta</h6>
+        <p>Xodimlar bo&lsquo;yicha unutilgan arizalar. Muddati tugayotgan bronlar. Shartnoma raqamisiz <span class="ui">Jarayonda</span> bitimlar. <span class="ui">Qaytarilishi kerak</span> to&lsquo;lovlar.</p>
+      </div>
+      <div>
+        <h6>Har oy</h6>
+        <p>Yangi davr uchun rejalarni yuklash. Loyiha va xodimlar bo&lsquo;yicha reja-fakt hisoboti. Amaldagi chegirmalarni qayta ko&lsquo;rib chiqish. Menejerlar bo&lsquo;yicha bekor qilishlar ulushi.</p>
+      </div>
+    </div>
+
+    <h5>Yig&lsquo;ilish uchun besh raqam</h5>
+    <ol>
+      <li>Hafta davomidagi yangi arizalar va manbalar bo&lsquo;yicha taqsimoti.</li>
+      <li>Unutilgan arizalar — nechta va kimda.</li>
+      <li>Ijrochilar bo&lsquo;yicha muddati o&lsquo;tgan uchrashuvlar.</li>
+      <li>Muddati o&lsquo;tgan to&lsquo;lovlar — summa va dinamika.</li>
+      <li>Reja-fakt hisobotidan shartnoma tuzish bo&lsquo;yicha % fakt va % prognoz.</li>
+    </ol>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Ko&lsquo;p beriladigan savollar</h3>
+
+    <dl class="qa">
+      <dt>Hisobotda xodimlarimdan biri yo&lsquo;q</dt>
+      <dd>U sizning bo&lsquo;limingizga biriktirilmagan yoki boshqa kompaniyada. Administratordan foydalanuvchining bo&lsquo;limga bog&lsquo;lanishini tekshirishni so&lsquo;rang.</dd>
+
+      <dt>Reja-fakt hisobotida &laquo;Reja&raquo; ustuni bo&lsquo;sh</dt>
+      <dd>Bu davr uchun reja yuklanmagan. Shablonni yuklab oling, to&lsquo;ldiring va o&lsquo;sha yorliqda yuklang.</dd>
+
+      <dt>Rejani yukladim, lekin raqamlar o&lsquo;zgarmadi</dt>
+      <dd>Yuklagandan keyin <span class="ui">Shakllantirish</span> ni bosing — jadval o&lsquo;zi qayta hisoblanmaydi. Shuningdek filtrlarda fayldagi bilan bir xil yil va davr tanlanganini tekshiring.</dd>
+
+      <dt>&laquo;Rejani yuklash&raquo; rad javobini beradi</dt>
+      <dd><span class="ui">Rejalar</span> resursiga huquq yo&lsquo;q: tugma hammaga ko&lsquo;rinadi, lekin faqat shu huquq bilan ishlaydi. Administratordan so&lsquo;rang.</dd>
+
+      <dt>Boshqaruv paneli va umumiy jadvaldagi raqamlar farq qilyapti</dt>
+      <dd>Davrni tekshiring. Boshqaruv paneli bugungi kun va joriy oyni, umumiy jadval esa siz tanlagan sanalar oralig&lsquo;ini ko&lsquo;rsatadi.</dd>
+
+      <dt>Menejer bitimni yopa olmayapti</dt>
+      <dd>Bitim <b>ikkala</b> imzo sanasi — mijoz va kompaniya — to&lsquo;ldirilganda avtomatik yopiladi. Alohida tugma yo&lsquo;q.</dd>
+
+      <dt>Begona bitim yoki arizani o&lsquo;zgartirish kerak</dt>
+      <dd><span class="ui">Bo&lsquo;lim</span> doirasi va shu bo&lsquo;limni tahrirlash huquqi kerak. Tugmalar faol bo&lsquo;lmasa — administratordan kirish so&lsquo;rang.</dd>
+
+      <dt>Tugallangan vazifani ishga qaytarish kerak</dt>
+      <dd>Tugallanganini qaytarish uchun majburiy tahrirlash huquqi kerak. Bekor qilinganini <span class="ui">Bekor qilingan vazifani qaytarish</span> huquqi qaytaradi: tugma yangi muddatni so&lsquo;raydi va vazifani <span class="chip b">Yangi</span> holatiga qaytaradi. Ikkala huquqni ham administrator beradi.</dd>
+
+      <dt>Xodim ishdan bo&lsquo;shadi — ma&lsquo;lumotlari bilan nima qilish kerak</dt>
+      <dd>Foydalanuvchini o&lsquo;chirmang: u bilan birga yozuvlar mualliligi yo&lsquo;qoladi. Administratordan hisobni faolsizlantirishni so&lsquo;rang — ma&lsquo;lumot va tarix saqlanadi.</dd>
+    </dl>
+
+    <div class="end">
+      Bo&lsquo;lim boshlig&lsquo;i qo&lsquo;llanmasi &middot; Ko&lsquo;chmas mulk CRM &middot; versiya 1.0, 2026-yil sentyabr.<br>
+      Huquqlarni kengaytirish, sotuv rejalari va shablonlar &mdash; CRM administratori orqali.
+    </div>
+  </section>
+
+</main>
+</div>

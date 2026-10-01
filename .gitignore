@@ -21,7 +21,10 @@ backend/apps/realty/migrations/__pycache__/
 frontend-new/node_modules/
 backend/apps/tasks/__pycache__/
 backend/apps/tasks/migrations/__pycache__/
-docs/*
+# Документация хранится в репозитории (исходники и собранные файлы).
+# Исключаются только временные файлы Word и Python.
+docs/**/~$*
+docs/**/__pycache__/
 
 # Docker
 .env

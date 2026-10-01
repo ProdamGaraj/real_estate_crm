@@ -111,7 +111,7 @@ export default function CompaniesPage() {
       <Paper sx={{ p: 2 }}>
         {isError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {t('common.load_error')}: {error instanceof Error ? error.message : t('common.unknown_error')}
+            {t('errors.load_error')}: {error instanceof Error ? error.message : t('errors.unknown_error')}
           </Alert>
         )}
 

@@ -118,7 +118,7 @@ export default function DepartmentForm({
         <Controller
           name="company"
           control={control}
-          rules={{ required: t('validation.required') }}
+          rules={{ required: t('common.required_field') }}
           render={({ field }) => (
             <FormControl fullWidth error={!!errors.company}>
               <InputLabel>{t('common.company')}</InputLabel>
@@ -136,7 +136,7 @@ export default function DepartmentForm({
         <Controller
           name="name"
           control={control}
-          rules={{ required: t('validation.required') }}
+          rules={{ required: t('common.required_field') }}
           render={({ field }) => (
             <TextField
               {...field}

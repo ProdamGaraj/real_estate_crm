@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { login as apiLogin, logout as apiLogout, fetchCurrentUser, refreshAccessToken } from '../api/auth';
 import { clearAccessToken, setAccessToken } from '../api/tokenStore';
+import i18n from '../i18n';
 import type { Role } from '../utils/permissions';
 
 interface User {
@@ -72,7 +73,8 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
         } catch (error: any) {
-          const errorMessage = error.response?.data?.error || 'Ошибка входа';
+          // Store живёт вне дерева React, поэтому обращаемся к i18n напрямую
+          const errorMessage = error.response?.data?.error || i18n.t('auth.login_error');
           set({
             isLoading: false,
             error: errorMessage,

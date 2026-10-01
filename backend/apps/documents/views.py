@@ -126,9 +126,18 @@ class GenerateDocumentView(APIView):
             )
 
         doc = DocxTemplate(template.file.path)
+        client = deal.client
+        # Телефоны клиента хранятся отдельной таблицей, а метка
+        # {{client.phone_number}} осталась от прежней модели, где номер был
+        # полем клиента. Без явной подстановки она давала пустоту, и договор
+        # выходил без телефона. Берём основной номер, а если он не отмечен —
+        # первый добавленный: так же номер показывается в списках клиентов.
+        phone = (client.phone_numbers.filter(is_primary=True).order_by('id').first()
+                 or client.phone_numbers.order_by('id').first())
+        client.phone_number = phone.phone_number if phone else ''
         context = {
             'deal': deal,
-            'client': deal.client,
+            'client': client,
             'property': deal.property,
             'building': deal.property.building,
             'project': deal.property.building.project,

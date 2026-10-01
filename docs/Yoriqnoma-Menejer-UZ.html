@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<title>Sotuv menejeri uchun qo'llanma</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F2F6F8; --surface:#FFFFFF; --surface-2:#E9F0F4; --surface-3:#F7FAFB;
+  --ink:#16232B; --ink-2:#41535E; --muted:#6B7F8B; --rule:#D6E1E8; --rule-2:#E7EEF2;
+  --accent:#1D5B79; --accent-ink:#12455E; --accent-soft:#E1EDF4;
+  --ok:#2E7D52; --ok-soft:#E4F2EA;
+  --info:#2A6FB0; --info-soft:#E4EDF8;
+  --warn:#9C6B12; --warn-soft:#F7EEDC;
+  --purple:#65499B; --purple-soft:#ECE6F6;
+  --danger:#A94036; --danger-soft:#F8E6E3;
+  --step-fg:#FFFFFF;
+  --sans:"IBM Plex Sans","Segoe UI",Roboto,Arial,sans-serif;
+  --slab:"Bitter",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+    --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+    --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+    --ok:#6BC492; --ok-soft:#15291F;
+    --info:#7BB3E8; --info-soft:#152634;
+    --warn:#D6A85B; --warn-soft:#2C2415;
+    --purple:#A88FD8; --purple-soft:#241E33;
+    --danger:#E08579; --danger-soft:#2E1A17;
+    --step-fg:#0E161B;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E161B; --surface:#16212A; --surface-2:#1E2C36; --surface-3:#1A2731;
+  --ink:#E6EEF3; --ink-2:#BCCBD5; --muted:#8AA0AD; --rule:#2B3C48; --rule-2:#243440;
+  --accent:#7CBFDE; --accent-ink:#A9D7ED; --accent-soft:#173341;
+  --ok:#6BC492; --ok-soft:#15291F;
+  --info:#7BB3E8; --info-soft:#152634;
+  --warn:#D6A85B; --warn-soft:#2C2415;
+  --purple:#A88FD8; --purple-soft:#241E33;
+  --danger:#E08579; --danger-soft:#2E1A17;
+  --step-fg:#0E161B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 16px/1.65 var(--sans);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{max-width:100%}
+a{color:var(--accent-ink);text-decoration-thickness:1px;text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:288px minmax(0,1fr);max-width:1360px;margin:0 auto;
+  background:var(--surface);min-height:100vh;border-inline:1px solid var(--rule-2)}
+.side{border-right:1px solid var(--rule);background:var(--surface-3);position:sticky;top:0;height:100vh;
+  overflow-y:auto;padding:26px 20px 32px;display:flex;flex-direction:column;gap:18px}
+.main{padding:34px 56px 96px;min-width:0}
+
+/* ---------- masthead ---------- */
+.brand{display:flex;flex-direction:column;gap:9px}
+.mark{display:flex;align-items:center;gap:9px}
+.mark svg{flex:none}
+.mark b{font:600 12.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)}
+.brand h1{font:700 20px/1.25 var(--slab);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.brand .role{font:500 11.5px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.finder{position:relative}
+.finder input{width:100%;font:400 14px/1 var(--sans);color:var(--ink);background:var(--surface);
+  border:1px solid var(--rule);border-radius:7px;padding:9px 11px 9px 31px}
+.finder input::placeholder{color:var(--muted)}
+.finder svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.55}
+
+nav.toc{font-size:14px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+nav.toc a{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:baseline;
+  padding:6px 9px;border-radius:6px;color:var(--ink-2);text-decoration:none;line-height:1.35}
+nav.toc a span{font:500 11px/1.4 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+nav.toc a.on{background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+nav.toc a.on span{color:var(--accent-ink)}
+nav.toc li.hide{display:none}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.btn{font:500 13px/1 var(--sans);color:var(--ink-2);background:var(--surface);border:1px solid var(--rule);
+  border-radius:7px;padding:8px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ---------- doc head ---------- */
+.doc-head{border-bottom:2px solid var(--ink);padding-bottom:22px}
+.doc-head .eyebrow{font:500 11.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent-ink);margin-bottom:14px}
+.doc-head h2{font:700 clamp(28px,4vw,40px)/1.1 var(--slab);margin:0 0 12px;letter-spacing:-.02em;text-wrap:balance}
+.doc-head p{margin:0;max-width:64ch;color:var(--ink-2);font-size:16.5px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:18px;font:500 12px/1.5 var(--mono);color:var(--muted)}
+.meta b{color:var(--ink-2);font-weight:500}
+
+/* ---------- chapters ---------- */
+section.ch{padding-top:52px;scroll-margin-top:20px}
+section.ch>h3{font:700 25px/1.25 var(--slab);margin:0 0 6px;letter-spacing:-.01em;
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;text-wrap:balance}
+section.ch>h3 em{font:600 13px/1 var(--mono);font-style:normal;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+section.ch>.lede{margin:0 0 24px 41px;color:var(--muted);max-width:62ch}
+section.ch.hide{display:none}
+h4{font:600 16.5px/1.35 var(--sans);margin:34px 0 10px;letter-spacing:-.005em}
+h5{font:600 12px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+p{margin:0 0 14px;max-width:68ch}
+.main ul,.main ol{max-width:68ch}
+.main li{margin:4px 0}
+
+/* ---------- ui chips ---------- */
+.ui{font:500 13.5px/1.35 var(--mono);background:var(--surface-2);border:1px solid var(--rule);
+  border-radius:5px;padding:1px 6px;white-space:nowrap;color:var(--ink)}
+.path{font:500 13.5px/1.35 var(--mono);color:var(--accent-ink);white-space:nowrap}
+.path i{font-style:normal;opacity:.5;padding:0 3px}
+code{font:500 13.5px/1.4 var(--mono);background:var(--surface-2);border-radius:4px;padding:1px 5px}
+
+/* ---------- steps ---------- */
+ol.steps{counter-reset:s;list-style:none;margin:18px 0 22px;padding:0 0 0 40px;
+  border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:15px}
+ol.steps>li{counter-increment:s;position:relative}
+ol.steps>li::before{content:counter(s);position:absolute;left:-51.5px;top:0;width:23px;height:23px;
+  display:grid;place-items:center;border-radius:50%;
+  background:var(--accent);color:var(--step-fg);font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+ol.steps>li>p{margin:0 0 8px}
+ol.steps>li>p:last-child{margin-bottom:0}
+ol.steps ul{margin:8px 0 0;padding-left:19px}
+
+/* ---------- callouts ---------- */
+.note,.warn,.tip{border-left:3px solid;padding:13px 16px;margin:20px 0;border-radius:0 6px 6px 0;font-size:15px}
+.note{border-color:var(--info);background:var(--info-soft)}
+.warn{border-color:var(--danger);background:var(--danger-soft)}
+.tip{border-color:var(--ok);background:var(--ok-soft)}
+.note>:last-child,.warn>:last-child,.tip>:last-child{margin-bottom:0}
+.note b,.warn b,.tip b{font-weight:600}
+.warn b{color:var(--danger)}
+.tip b{color:var(--ok)}
+.note b{color:var(--info)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto;margin:18px 0 24px;border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface)}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+thead th{font:600 11.5px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  background:var(--surface-3);border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+table .ui{font-size:12.5px}
+
+/* ---------- status chips ---------- */
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12.5px/1 var(--mono);
+  padding:5px 9px;border-radius:20px;white-space:nowrap}
+.chip::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chip.g{color:var(--ok);background:var(--ok-soft)}
+.chip.b{color:var(--info);background:var(--info-soft)}
+.chip.y{color:var(--warn);background:var(--warn-soft)}
+.chip.p{color:var(--purple);background:var(--purple-soft)}
+.chip.r{color:var(--danger);background:var(--danger-soft)}
+.chip.n{color:var(--muted);background:var(--surface-2)}
+
+/* ---------- pipeline ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:22px 0 26px;
+  padding:16px;background:var(--surface-3);border:1px solid var(--rule);border-radius:8px}
+.flow .st{flex:1 1 118px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+  padding:10px 12px;min-width:0}
+.flow .st b{display:block;font:600 14px/1.3 var(--sans)}
+.flow .st span{display:block;font:400 12.5px/1.4 var(--sans);color:var(--muted);margin-top:3px}
+.flow .ar{align-self:center;color:var(--muted);font-size:15px;flex:none}
+@media (max-width:640px){.flow .ar{display:none}.flow .st{flex:1 1 100%}}
+
+/* ---------- chessboard mini ---------- */
+.board{display:inline-grid;grid-template-columns:repeat(6,28px);gap:3px;margin:8px 0 4px}
+.board i{height:28px;border-radius:4px;display:grid;place-items:center;
+  font:500 10px/1 var(--mono);font-style:normal;color:var(--ink-2)}
+.board i.g{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.board i.b{background:var(--info-soft);box-shadow:inset 0 0 0 1px var(--info)}
+.board i.y{background:var(--warn-soft);box-shadow:inset 0 0 0 1px var(--warn)}
+.board i.p{background:var(--purple-soft);box-shadow:inset 0 0 0 1px var(--purple)}
+.board i.r{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger)}
+
+/* ---------- misc ---------- */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px;margin:18px 0 24px}
+.cols>div{border:1px solid var(--rule);border-radius:8px;padding:14px 16px;background:var(--surface-3)}
+.cols h6{font:600 14px/1.3 var(--sans);margin:0 0 6px}
+.cols p{font-size:14px;color:var(--ink-2);margin:0}
+dl.qa{margin:18px 0}
+dl.qa dt{font-weight:600;margin-top:22px}
+dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
+.end{margin-top:64px;padding-top:20px;border-top:2px solid var(--ink);font-size:13.5px;color:var(--muted)}
+.no-hit{display:none;padding:40px 0;color:var(--muted)}
+.no-hit.on{display:block}
+
+/* ---------- responsive ---------- */
+@media (max-width:960px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:20px 22px}
+  .side-foot{margin-top:6px}
+  .main{padding:26px 22px 72px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* ---------- print ---------- */
+@media print{
+  :root{--ground:#fff;--surface:#fff;--surface-2:#F2F2F2;--surface-3:#FAFAFA;
+        --rule:#BBB;--rule-2:#DDD;--ink:#111;--ink-2:#333;--muted:#666}
+  body{background:#fff;font-size:11pt}
+  .shell{display:block;max-width:none;border:0}
+  .side{display:none}
+  .main{padding:0}
+  section.ch{padding-top:26px}
+  section.ch>h3,h4{page-break-after:avoid}
+  ol.steps>li,.note,.warn,.tip,.scroll,.flow,.cols>div{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="side">
+  <div class="brand">
+    <div class="mark">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+        <rect x="1" y="1" width="24" height="24" rx="3" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <rect x="4.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+        <rect x="12.5" y="4.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="4.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".3"/>
+        <rect x="12.5" y="12.5" width="6" height="6" rx="1" fill="currentColor" fill-opacity=".85"/>
+      </svg>
+      <b>Ko&lsquo;chmas mulk CRM</b>
+    </div>
+    <h1>Sotuv menejeri uchun qo&lsquo;llanma</h1>
+    <div class="role">Rol: Menejer</div>
+  </div>
+
+  <div class="finder">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <input id="finder" type="search" placeholder="Bo&lsquo;limlar bo&lsquo;yicha qidirish" aria-label="Qidirish">
+  </div>
+
+  <nav class="toc" aria-label="Mundarija">
+    <ol>
+      <li><a href="#c1"><span>01</span>Kirish va interfeys</a></li>
+      <li><a href="#c2"><span>02</span>Mijozlar</a></li>
+      <li><a href="#c3"><span>03</span>Arizalar</a></li>
+      <li><a href="#c4"><span>04</span>Uchrashuvlar</a></li>
+      <li><a href="#c5"><span>05</span>Vazifalar</a></li>
+      <li><a href="#c6"><span>06</span>Ob&lsquo;ekt tanlash</a></li>
+      <li><a href="#c7"><span>07</span>Bron va bitim</a></li>
+      <li><a href="#c8"><span>08</span>To&lsquo;lov jadvali</a></li>
+      <li><a href="#c9"><span>09</span>Shartnoma va hujjatlar</a></li>
+      <li><a href="#c10"><span>10</span>Bitimni bekor qilish</a></li>
+      <li><a href="#c11"><span>11</span>Boshqaruv paneli</a></li>
+      <li><a href="#c12"><span>12</span>Holatlar ma&lsquo;lumotnomasi</a></li>
+      <li><a href="#c13"><span>13</span>Ko&lsquo;p beriladigan savollar</a></li>
+    </ol>
+  </nav>
+
+  <div class="side-foot">
+    <button class="btn" id="print" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M4.5 6V2.5h7V6M4.5 12H3V7h10v5h-1.5M4.5 10h7v3.5h-7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+      </svg>
+      Chop etish
+    </button>
+    <div>Versiya 1.0 &middot; 2026-yil sentyabr</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <header class="doc-head">
+    <div class="eyebrow">Foydalanuvchi qo&lsquo;llanmasi</div>
+    <h2>Menejer CRM tizimida qanday ishlaydi</h2>
+    <p>Kundalik ish uchun bosqichma-bosqich qo&lsquo;llanma: mijozning birinchi qo&lsquo;ng&lsquo;irog&lsquo;idan imzolangan shartnoma va yopilgan to&lsquo;lov jadvaligacha. Barcha tugma va maydon nomlari ekranda ko&lsquo;rinadigan nomlar bilan bir xil.</p>
+    <div class="meta">
+      <span>Kimga: <b>sotuv menejeri</b></span>
+      <span>Bo&lsquo;limlar: <b>13</b></span>
+      <span>Interfeys tili: <b>o&lsquo;zbekcha / русский / English</b></span>
+    </div>
+  </header>
+
+  <div class="no-hit" id="no-hit">Hech narsa topilmadi. Qidiruvni tozalang yoki boshqa so&lsquo;z kiriting.</div>
+
+  <!-- ═══════════════ 01 ═══════════════ -->
+  <section class="ch" id="c1">
+    <h3><em>01</em>Kirish va interfeys</h3>
+    <p class="lede">Ish kuni nimadan boshlanadi va ekran qanday tuzilgan.</p>
+
+    <h4>Tizimga kirish</h4>
+    <ol class="steps">
+      <li><p>Administrator bergan CRM manzilini oching. <span class="ui">Tizimga kirish</span> ekrani chiqadi.</p></li>
+      <li><p><span class="ui">Foydalanuvchi nomi</span> va <span class="ui">Parol</span> ni kiriting. Loginni administrator beradi — bu sizning emailingiz <b>emas</b>.</p></li>
+      <li><p><span class="ui">Kirish</span> tugmasini bosing. Tizim sizga ochiq bo&lsquo;lgan birinchi sahifani ochadi — odatda <span class="ui">Boshqaruv paneli</span>.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Parolni unutdingizmi.</b> Kirish ekranida <span class="ui">Parolni unutdingizmi?</span> ni bosing, profilingizdagi emailni kiriting va <span class="ui">Ko&lsquo;rsatmalarni yuborish</span> tugmasini bosing. Havola pochtangizga keladi va cheklangan muddat davomida ishlaydi. Xat jo&lsquo;natish administrator tomonidan sozlanadi: tizimda pochta ulanmagan bo&lsquo;lsa, xat kelmaydi — u holda parolni administrator qo&lsquo;lda o&lsquo;zgartiradi. Parol almashtirilgach, avvalgi barcha seanslaringiz yopiladi va qaytadan kirish kerak bo&lsquo;ladi.</p>
+    </div>
+
+    <h4>Ekranda nima qayerda</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Element</th><th>Qayerda</th><th>Nima uchun</th></tr></thead>
+        <tbody>
+          <tr><td>Yon menyu</td><td>Chapda</td><td>Bo&lsquo;limlar: Boshqaruv paneli, Mijozlar, Arizalar, Uchrashuvlar, Vazifalar, Bitimlar, Loyihalar, Moliya, Hisobotlar, Chegirmalar</td></tr>
+          <tr><td>Mavzu almashtirgich</td><td>Yuqori o&lsquo;ngda</td><td>Yorug&lsquo; yoki qorong&lsquo;i ko&lsquo;rinish</td></tr>
+          <tr><td>Til almashtirgich</td><td>Yuqori o&lsquo;ngda</td><td>O&lsquo;zbekcha, Русский, English — bir zumda o&lsquo;zgaradi, ma&lsquo;lumotlar o&lsquo;zgarmaydi</td></tr>
+          <tr><td>Bosh harflaringiz bilan avatar</td><td>Yuqori o&lsquo;ng burchak</td><td>Kompaniya va bo&lsquo;limingizni ko&lsquo;rsatadi; shu yerda <span class="ui">Chiqish</span> tugmasi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p><b>Nega hamkasbimda menyu uzunroq.</b> Bo&lsquo;limlar sizning kirish huquqlaringizga qarab ko&lsquo;rsatiladi. Bo&lsquo;lim ko&lsquo;rinmasa — u sizning rolingiz uchun yopiq. Huquqlarni administrator sozlaydi.</p>
+    </div>
+
+    <h4>Har qanday ro&lsquo;yxat qanday ishlaydi</h4>
+    <p>Mijozlar, Arizalar, Uchrashuvlar, Bitimlar va To&lsquo;lovlar ro&lsquo;yxatlari bir xil ishlaydi:</p>
+    <ul>
+      <li>Filtr belgisi <span class="ui">Filtrlar</span> panelini ochadi va yopadi. Kerakli maydonlarni to&lsquo;ldiring — ro&lsquo;yxat qayta hisoblanadi.</li>
+      <li>Arizalar, Uchrashuvlar, Bitimlar va To&lsquo;lovlar ro&lsquo;yxati yonida <span class="ui">Umumiy jadval</span> yorlig&lsquo;i bor — guruhlar bo&lsquo;yicha yakunlar va <span class="ui">Excel ga yuklash</span> tugmasi. Mijozlar ro&lsquo;yxatida bunday yorliq yo&lsquo;q.</li>
+      <li>Qatorga bosilsa, yozuv kartochkasi ochiladi.</li>
+      <li>Telefonda jadval kartochkalar ro&lsquo;yxatiga aylanadi — ma&lsquo;lumotlar o&lsquo;sha-o&lsquo;sha.</li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════ 02 ═══════════════ -->
+  <section class="ch" id="c2">
+    <h3><em>02</em>Mijozlar</h3>
+    <p class="lede">Mijoz kartochkasi — hamma narsaning asosi. Arizalar, uchrashuvlar, bitimlar va to&lsquo;lovlar unga bog&lsquo;lanadi.</p>
+
+    <h4>Mijoz yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Mijozlar</span> bo&lsquo;limini oching va <span class="ui">Mijoz yaratish</span> tugmasini bosing.</p></li>
+      <li><p><span class="ui">Shaxsiy ma&lsquo;lumotlar</span> blokini to&lsquo;ldiring: <span class="ui">To&lsquo;liq ism</span> majburiy. Keyin imkoniyatga qarab: <span class="ui">Tug&lsquo;ilgan sana</span>, jinsi, oilaviy holati, <span class="ui">Email</span>, <span class="ui">Izoh</span>.</p></li>
+      <li><p><span class="ui">Telefonlar</span> blokida <span class="ui">Telefon qo&lsquo;shish</span> tugmasini bosing. Telefon bir nechta bo&lsquo;lishi mumkin; birinchisi asosiy hisoblanadi va ro&lsquo;yxatlarda ko&lsquo;rinadi. Raqam qanday terilganidan qat&lsquo;i nazar yagona ko&lsquo;rinishda saqlanadi (<code>+998901234567</code>), shuning uchun qidiruv mijozni &laquo;90 123 45 67&raquo; bo&lsquo;yicha ham topadi.</p></li>
+      <li><p><span class="ui">Pasport ma&lsquo;lumotlari va manzillar</span> bloki keyinroq, shartnoma paytida to&lsquo;ldiriladi: pasport seriyasi va raqami, kim tomonidan va qachon berilgan, <span class="ui">INN</span>, <span class="ui">PINFL</span>, <span class="ui">Ro&lsquo;yxatdan o&lsquo;tish manzili</span>, <span class="ui">Hisob-kitob manzili</span>.</p></li>
+      <li><p><span class="ui">Saqlash</span> tugmasini bosing.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Email kompaniyangiz doirasida takrorlanmasligi kerak.</b> Agar tizim mijozni saqlashga ruxsat bermasa, bunday email <i>sizning</i> kompaniyangizdagi boshqa mijozda bor. Uni <span class="ui">Email bo&lsquo;yicha qidirish</span> orqali toping — ehtimol mijoz allaqachon kiritilgan. Email maydonini bo&lsquo;sh qoldirish ham mumkin.</p>
+      <p>Xuddi shu odam shu CRM dagi boshqa kompaniyaning mijozi bo&lsquo;lishi mumkin — bu alohida kartochka, siz uni ko&lsquo;rmaysiz va u sizga xalaqit qilmaydi.</p>
+    </div>
+
+    <h4>Mijozni topish</h4>
+    <p>Filtrlar panelida <span class="ui">Ism bo&lsquo;yicha qidirish</span>, <span class="ui">Telefon bo&lsquo;yicha qidirish</span>, <span class="ui">Email bo&lsquo;yicha qidirish</span> va yaratilgan sana bo&lsquo;yicha davr mavjud. Yangi mijoz yaratishdan oldin <b>doim telefon bo&lsquo;yicha tekshiring</b> — bu takroriy yozuvlarning asosiy sababi.</p>
+
+    <h4>Mijoz kartochkasi</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Yorliq</th><th>Nima bor</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Asosiy ma&lsquo;lumotlar</span></td><td>Mijozning barcha maydonlari. Tahrirlagach <span class="ui">O&lsquo;zgarishlarni saqlash</span> tugmasini bosing</td></tr>
+          <tr><td><span class="ui">Arizalar</span></td><td>Shu mijozning barcha arizalari va murojaatlar tarixi</td></tr>
+          <tr><td><span class="ui">Bitimlar</span></td><td>Mijozning bronlari va bitimlari</td></tr>
+          <tr><td><span class="ui">Fayllar</span></td><td>Pasport nusxalari, rozilik xatlari va boshqa hujjatlar</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Kartochkadagi <span class="ui">Uchrashuv belgilash</span> tugmasi shu mijoz bilan darhol uchrashuv yaratadi.</p>
+
+    <h5>Mijoz holatlari</h5>
+    <p><span class="chip g">Faol</span> <span class="chip n">Faol emas</span> <span class="chip n">Arxivda</span></p>
+    <p>Ish to&lsquo;xtaganda mijozni <span class="ui">Faol emas</span> yoki <span class="ui">Arxivda</span> holatiga o&lsquo;tkazing — baza toza qoladi, tarix esa saqlanadi.</p>
+
+    <div class="note">
+      <p><b>Mijoz butunlay o&lsquo;chirilmaydi.</b> O&lsquo;chirish tugmasi kartochkani <span class="ui">Arxivda</span> holatiga o&lsquo;tkazadi: u ro&lsquo;yxatlardan yo&lsquo;qoladi, lekin arizalar, uchrashuvlar, bitimlar, fayllar va butun tarix joyida qoladi. Kartochka yana kerak bo&lsquo;lsa, administrator unga faol holatni qaytaradi.</p>
+      <p>Mijoz bo&lsquo;yicha <span class="ui">Bron</span> yoki <span class="ui">Jarayonda</span> holatidagi bitim turganda u arxivga o&lsquo;tmaydi: tizim avval yakunlash yoki bekor qilish kerak bo&lsquo;lgan bitim raqamlarini aytadi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 03 ═══════════════ -->
+  <section class="ch" id="c3">
+    <h3><em>03</em>Arizalar</h3>
+    <p class="lede">Ariza — bu mijozning aniq qiziqishi: u nima izlayapti va qaysi bosqichda.</p>
+
+    <div class="flow">
+      <div class="st"><b>Yangi</b><span>Kelib tushdi</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Jarayonda</b><span>Siz olib boryapsiz</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Muvaffaqiyatli yopilgan</b><span>Bitimga yetdi</span></div>
+      <div class="ar">&nbsp;</div>
+      <div class="st"><b>Rad etilgan / Maqsadsiz</b><span>Sababi ko&lsquo;rsatilgan holda</span></div>
+    </div>
+
+    <h4>Ariza yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Arizalar</span> bo&lsquo;limini oching va <span class="ui">Ariza yaratish</span> tugmasini bosing.</p></li>
+      <li><p><span class="ui">Mijoz</span> ni tanlang — maydon majburiy. Mijoz hali yo&lsquo;q bo&lsquo;lsa, avval uni Mijozlar bo&lsquo;limida yarating.</p></li>
+      <li><p><span class="ui">Manba</span> ni ko&lsquo;rsating: Internet, Ijtimoiy tarmoqlar, Ofis yoki Qo&lsquo;ng&lsquo;iroq. Boshqaruv panelida kanallar samaradorligi shu bo&lsquo;yicha hisoblanadi, shuning uchun birinchi uchraganini emas, haqiqiy manbani tanlang.</p></li>
+      <li><p><span class="ui">Suhbat bo&lsquo;yicha eslatmalar</span> ni qo&lsquo;shing va <span class="ui">Ariza yaratish</span> ni bosing.</p></li>
+      <li><p>Mijoz qiziqishlari — <span class="ui">Ko&lsquo;chmas mulk turi</span> (Kvartira, Tijorat, Avtoturargoh, Omborxona, Kottej), <span class="ui">Maydon (m&sup2;) dan / gacha</span>, <span class="ui">Qavatdan / gacha</span> — ariza yaratilgandan keyin uning kartochkasida, <span class="ui">Ariza tafsilotlari</span> yorlig&lsquo;ida to&lsquo;ldiriladi. Qanchalik aniq bo&lsquo;lsa, tanlov shunchalik tez bo&lsquo;ladi.</p></li>
+    </ol>
+
+    <h4>Ariza bilan ishlash</h4>
+    <p>Arizani ro&lsquo;yxatdan oching. Yuqorida raqam va rangli holat yorlig&lsquo;i; yorliqqa bosilsa holatni o&lsquo;zgartirish menyusi ochiladi. Ichkarida uchta yorliq: <span class="ui">Ariza tafsilotlari</span>, <span class="ui">Uchrashuvlar</span>, <span class="ui">Loglar</span>.</p>
+
+    <ul>
+      <li><b>Ishga olish</b> — arizani <span class="ui">Jarayonda</span> holatiga o&lsquo;tkazadi. Muloqotni boshlashingiz bilan shuni bajaring.</li>
+      <li><b>Uchrashuv belgilash</b> — shu ariza va mijozga bog&lsquo;langan uchrashuv yaratadi.</li>
+      <li><b>Rad etish</b> yoki <b>Maqsadsiz</b> — tizim <span class="ui">Sababni ko&lsquo;rsating</span> deb so&lsquo;raydi. Sababsiz holat saqlanmaydi.</li>
+      <li><b>Loglar</b> — barcha o&lsquo;zgarishlar tarixi: kim, qachon va nimani o&lsquo;zgartirgan.</li>
+    </ul>
+
+    <div class="note">
+      <p><b>Ariza maydonlarini faqat</b> <span class="ui">Yangi</span> <b>va</b> <span class="ui">Jarayonda</span> <b>holatlarida tahrirlash mumkin.</b> Ariza yopilgach maydonlar faqat o&lsquo;qish uchun ochiq bo&lsquo;ladi — bu tarixni himoya qiladi.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Arizani o&lsquo;chirishni qaytarish mumkin.</b> O&lsquo;chirilgan ariza ro&lsquo;yxatlardan, kanbandan va hisobotlardan yo&lsquo;qoladi, lekin yozuvning o&lsquo;zi va loglari saqlanadi — kim va qachon olib tashlagani ko&lsquo;rinadi.</p>
+      <p>O&lsquo;chirilgan arizani topish uchun arizalar ro&lsquo;yxatida <span class="ui">Filtrlar</span> ni oching va <span class="ui">O&lsquo;chirilganlarni ko&lsquo;rsatish</span> ni yoqing. Bunday arizaning kartochkasida o&lsquo;chirish tugmasi o&lsquo;rniga <span class="ui">Tiklash</span> bo&lsquo;ladi — u arizani butun tarixi bilan ishga qaytaradi.</p>
+    </div>
+
+    <h4>Ro&lsquo;yxat va kanban</h4>
+    <p>Jadval ustidagi o&lsquo;ngdagi almashtirgich ko&lsquo;rinishni o&lsquo;zgartiradi: jadval yoki <b>kanban</b> — holatlar bo&lsquo;yicha ustunlar. Kanban ertalabki yig&lsquo;ilish uchun qulay: har bir holatda nechta ariza turganini darhol ko&lsquo;rsatadi.</p>
+    <p>Kanbandagi holat almashtirish kartochkadagidek ishlaydi: <span class="ui">Rad etish</span> yoki <span class="ui">Maqsadsiz</span> ga o&lsquo;tkazganda sabab tanlash oynasi ochiladi — usiz holat saqlanmaydi.</p>
+
+    <div class="tip">
+      <p><b>Toza voronka qoidasi.</b> Ariza haftalab <span class="ui">Yangi</span> holatida turmasligi kerak. Rahbar alohida &laquo;unutilgan&raquo; arizalar hisobotini ko&lsquo;radi. Holatni bajarilgan ish bo&lsquo;yicha o&lsquo;zgartiring.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 04 ═══════════════ -->
+  <section class="ch" id="c4">
+    <h3><em>04</em>Uchrashuvlar</h3>
+    <p class="lede">Uchrashuv — mijoz bilan rejalashtirilgan aloqa. Uni albatta natija bilan yopish kerak.</p>
+
+    <h4>Uchrashuv belgilash</h4>
+    <ol class="steps">
+      <li><p><span class="path">Uchrashuvlar</span> bo&lsquo;limida <span class="ui">Uchrashuv yaratish</span> ni bosing — yoki mijoz/ariza kartochkasidan <span class="ui">Uchrashuv belgilash</span> (u holda mijoz va ariza o&lsquo;zi qo&lsquo;yiladi).</p></li>
+      <li><p><span class="ui">Mijoz</span> va <span class="ui">Ijrochi</span> ni tanlang — uchrashuvga kim boradi. Odatda bu siz.</p></li>
+      <li><p><span class="ui">Rejalashtirilgan sana va vaqt</span> ni ko&lsquo;rsating — u kelajakda bo&lsquo;lishi kerak. Uchrashuv allaqachon o&lsquo;tgan bo&lsquo;lsa, uni yaratib, darhol natija bilan yoping.</p></li>
+      <li><p>Kerak bo&lsquo;lsa <span class="ui">Qiziqtirgan bino</span> ni tanlang va izoh yozing.</p></li>
+      <li><p><span class="ui">Saqlash</span> ni bosing. Uchrashuv <span class="chip b">Yangi</span> holatida paydo bo&lsquo;ladi.</p></li>
+    </ol>
+
+    <h4>Uchrashuvni natija bilan yopish</h4>
+    <ol class="steps">
+      <li><p>Uchrashuvni ro&lsquo;yxatdan oching.</p></li>
+      <li><p><span class="ui">Bo&lsquo;lib o&lsquo;tdi</span> yoki <span class="ui">Bo&lsquo;lib o&lsquo;tmadi</span> ni tanlang.</p></li>
+      <li><p><span class="ui">Natija bo&lsquo;yicha izoh</span> ni to&lsquo;ldiring: nima ko&lsquo;rsatildi, mijozning munosabati, keyingi qadam.</p></li>
+      <li><p><span class="ui">Natijani saqlash</span> tugmasini bosing.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>Muddati o&lsquo;tgan uchrashuvlar hammaga ko&lsquo;rinadi.</b> Rejadagi vaqt o&lsquo;tib, natija to&lsquo;ldirilmasa, uchrashuv <span class="ui">Muddati o&lsquo;tgan</span> deb belgilanadi va rahbarning <span class="ui">Muddati o&lsquo;tgan uchrashuvlar</span> hisobotiga tushadi. Uchrashuvni o&lsquo;sha kuni yoping.</p>
+      <p>Bir haftadan ortiq muddati o&lsquo;tgan holda turgan uchrashuv jurnaldagi izoh bilan avtomatik &laquo;bo&lsquo;lib o&lsquo;tmadi&raquo; deb yopiladi. Hisobot uchun bu eng yomon variant: mijoz bilan aloqa yo&lsquo;qolgan deb hisoblanadi.</p>
+    </div>
+
+    <p><span class="ui">Umumiy jadval</span> yorlig&lsquo;i ijrochi, loyiha yoki holat bo&lsquo;yicha yakunlarni ko&lsquo;rsatadi va Excelga eksport qiladi.</p>
+  </section>
+
+  <!-- ═══════════════ 05 ═══════════════ -->
+  <section class="ch" id="c5">
+    <h3><em>05</em>Vazifalar</h3>
+    <p class="lede">Ichki vazifalar tizimi: rahbardan topshiriqlar va o&lsquo;z eslatmalaringiz.</p>
+
+    <div class="flow">
+      <div class="st"><b>Yangi</b><span>Qo&lsquo;yilgan</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Jarayonda</b><span>&laquo;Boshlash&raquo; bosilgan</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Tekshiruvda</b><span>Topshiruvchini kutmoqda</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>Tugallangan</b><span>Qabul qilingan</span></div>
+    </div>
+
+    <h4>Vazifa yaratish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Vazifalar</span> bo&lsquo;limida <span class="ui">Vazifa yaratish</span> ni bosing.</p></li>
+      <li><p><span class="ui">Nomi</span> va <span class="ui">Tavsif</span> ni to&lsquo;ldiring.</p></li>
+      <li><p><span class="ui">Ijrochi</span> va <span class="ui">Muddat</span> ni ko&lsquo;rsating — ikkalasi ham majburiy.</p></li>
+      <li><p><span class="ui">Muhimlik</span> ni belgilang: <span class="chip n">Past</span> <span class="chip b">O&lsquo;rta</span> <span class="chip y">Yuqori</span> <span class="chip r">Shoshilinch</span></p></li>
+      <li><p>Xohishga ko&lsquo;ra <span class="ui">Kuzatuvchilar</span>, vergul bilan ajratilgan <span class="ui">Teglar</span> va <span class="ui">Taxminiy vaqt</span> ni qo&lsquo;shing.</p></li>
+      <li><p><span class="ui">Saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><b>Muddat vazifa boshlanish vaqtidan oldin bo&lsquo;lishi mumkin emas</b> — tizim bunday vazifani saqlamaydi va ogohlantirish ko&lsquo;rsatadi.</p>
+    </div>
+
+    <h4>Vazifani olib borish</h4>
+    <ul>
+      <li><span class="ui">Boshlash</span> — holat <span class="ui">Jarayonda</span> ga o&lsquo;zgaradi, boshlanish vaqti qayd etiladi.</li>
+      <li><span class="ui">Tugatish</span> — vazifa yopiladi. Muddat o&lsquo;tgan bo&lsquo;lsa, kechikish bilan tugallangan deb belgilanadi.</li>
+      <li><span class="ui">Izohlar</span> — vazifa ichidagi yozishmalar.</li>
+      <li><span class="ui">Kichik vazifalar</span> — katta vazifani bosqichlarga bo&lsquo;lish. Kamida bitta kichik vazifa ochiq turganda asosiy vazifani tugatib bo&lsquo;lmaydi — tizim yopilmaganlarini sanab ko&lsquo;rsatadi.</li>
+      <li><span class="ui">O&lsquo;zgarishlar tarixi</span> — kim va qachon nimani o&lsquo;zgartirgan.</li>
+    </ul>
+
+    <p>Yuqorida uchta ko&lsquo;rinish almashtiriladi: <span class="ui">Ro&lsquo;yxat</span>, <span class="ui">Kanban</span>, <span class="ui">Kalendar</span>. <span class="ui">Mening vazifalarim</span> filtri faqat siz ijrochi bo&lsquo;lgan vazifalarni qoldiradi.</p>
+
+    <div class="note">
+      <p><b>Tugallangan yoki bekor qilingan vazifani oddiy menejer o&lsquo;zgartira olmaydi.</b> Bekor qilingan vazifani ishga qaytarish kerak bo&lsquo;lsa — rahbardan so&lsquo;rang: unda <span class="ui">Ishga qaytarish</span> huquqi bor. U yangi muddatni ko&lsquo;rsatadi, vazifa <span class="chip b">Yangi</span> holatiga qaytadi va siz uni <span class="ui">Boshlash</span> tugmasi bilan qaytadan boshlaysiz.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 06 ═══════════════ -->
+  <section class="ch" id="c6">
+    <h3><em>06</em>Ob&lsquo;ekt tanlash va shaxmat taxtasi</h3>
+    <p class="lede">Sotuvdagi kvartirani qanday topish va katakcha rangiga qarab u bilan nima qilish mumkinligini qanday tushunish.</p>
+
+    <p>Katalog tuzilishi: <span class="path">Loyihalar<i>&rsaquo;</i>Binolar<i>&rsaquo;</i>Ob&lsquo;ektlar</span>. Loyiha — turar-joy majmuasi, bino — korpus, ob&lsquo;ekt — aniq kvartira, tijorat joyi, avtoturargoh, omborxona yoki kottej.</p>
+
+    <h4>Ob&lsquo;ektni topish</h4>
+    <ol class="steps">
+      <li><p><span class="path">Loyihalar</span> ni oching, kerakli majmuani toping (<span class="ui">Nom yoki manzil bo&lsquo;yicha qidirish</span> mavjud) va uni oching.</p></li>
+      <li><p><span class="ui">Binolar</span> yorlig&lsquo;ida korpusni tanlang.</p></li>
+      <li><p><span class="ui">Ob&lsquo;ektlar</span> yorlig&lsquo;iga o&lsquo;ting — <b>shaxmat taxtasi</b> ochiladi: ustunlar kirishlar bo&lsquo;yicha, qatorlar qavatlar bo&lsquo;yicha. Katakcha rangi holatni bildiradi.</p></li>
+      <li><p>Katakchaga kursorni olib boring — raqam, holat va maydon ko&lsquo;rinadi. Kartochkani ochish uchun bosing.</p></li>
+    </ol>
+
+    <h5>Shaxmat taxtasi ranglari</h5>
+    <div class="board" aria-hidden="true">
+      <i class="g">01</i><i class="g">02</i><i class="b">03</i><i class="y">04</i><i class="p">05</i><i class="r">06</i>
+      <i class="g">07</i><i class="r">08</i><i class="g">09</i><i class="g">10</i><i class="b">11</i><i class="g">12</i>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Rang</th><th>Ob&lsquo;ekt holati</th><th>Siz uchun nimani anglatadi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="chip g">Tanlov</span></td><td>Bo&lsquo;sh</td><td>Sotuvda: mijozga taklif qilish va bron qilish mumkin</td></tr>
+          <tr><td><span class="chip b">Rezerv</span></td><td>Sotuvdan chiqarilgan</td><td>Ob&lsquo;ekt tizimda bor, lekin <b>sotilmaydi</b>. Mijozga taklif qilmang</td></tr>
+          <tr><td><span class="chip y">Bron</span></td><td>Bitim ochilgan</td><td>Ob&lsquo;ekt band</td></tr>
+          <tr><td><span class="chip p">Bitim jarayonda</span></td><td>To&lsquo;lov jadvali bor</td><td>Bitim ketyapti, ob&lsquo;ekt mavjud emas</td></tr>
+          <tr><td><span class="chip r">Sotilgan</span></td><td>Sotilgan</td><td>Shartnoma ikki tomondan imzolangan</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>Ob&lsquo;ekt kartochkasi</h4>
+    <p>Kartochkada plan (strelkalar bilan varaqlanadi), holat, maydon, narx, qavat, kirish, quvur va pardozlash ko&lsquo;rinadi. Mavjud amallar holatga bog&lsquo;liq:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Tugma</th><th>Qachon mavjud</th><th>Nima qiladi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Bron qilish</span></td><td><span class="ui">Tanlov</span> va <span class="ui">Rezerv</span> holatlari</td><td>Bitim yaratish formasini ochadi</td></tr>
+          <tr><td><span class="ui">Rezerv qilish</span> / <span class="ui">Rezervni bekor qilish</span></td><td><span class="ui">Tanlov</span> va <span class="ui">Rezerv</span> holatlari</td><td>Ob&lsquo;ektni sotuvdan chiqaradi va qaytaradi. <b>Menejer amali emas</b> &mdash; qarorni rahbar qabul qiladi, administrator bajaradi</td></tr>
+          <tr><td><span class="ui">Bitimga o&lsquo;tish</span></td><td>Ob&lsquo;ekt bo&lsquo;yicha bitim mavjud</td><td>Bitim kartochkasini ochadi</td></tr>
+          <tr><td><span class="ui">Izohni saqlash</span></td><td>Doim</td><td>Ob&lsquo;ektga eslatma yozadi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tip">
+      <p><b>Rezerv &mdash; bu bron emas.</b> Rezervdagi ob&lsquo;ekt <b>sotilmaydi</b>: u tizimga kiritilgan, ammo sotuvdan chiqarilgan &mdash; masalan, quruvchi yoki rahbariyat tomonidan ushlab turilgan. Bu &laquo;mijoz band qilgan&raquo; emas, balki &laquo;rasman bor, aslida yo&lsquo;q&raquo; degani.</p>
+      <p>Mijozga rezervdagi ob&lsquo;ekt yoqib qolsa &mdash; <b>hech narsa va&lsquo;da qilmang</b>. Ob&lsquo;ektni sotuvga chiqarishni faqat rahbar hal qiladi va bu administratorga so&lsquo;rov orqali bajariladi. Avval kelishuv, keyin mijoz bilan suhbat.</p>
+      <p><span class="ui">Bron</span> mutlaqo boshqa narsa: bu allaqachon muddati va majburiyatlari bo&lsquo;lgan bitim. &laquo;Har ehtimolga qarshi&raquo; bron qilmang: ob&lsquo;ekt sotuvdan chiqib ketadi.</p>
+    </div>
+
+    <p>Bino kartochkasidagi <span class="ui">Planlar</span> yorlig&lsquo;i korpusning barcha tipik planlarini rasmlari bilan ko&lsquo;rsatadi — mijozga ko&lsquo;rsatish uchun qulay.</p>
+  </section>
+
+  <!-- ═══════════════ 07 ═══════════════ -->
+  <section class="ch" id="c7">
+    <h3><em>07</em>Bron va bitim</h3>
+    <p class="lede">Bitim to&lsquo;rt bosqichda olib boriladi. Oldingisi yopilmaguncha keyingisi ochilmaydi.</p>
+
+    <div class="flow">
+      <div class="st"><b>1. Ma&lsquo;lumot</b><span>Mijoz, ob&lsquo;ekt, muddat</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>2. Shartlar</b><span>Narx va chegirmalar</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>3. To&lsquo;lov jadvali</b><span>Summani taqsimlash</span></div>
+      <div class="ar">&rarr;</div>
+      <div class="st"><b>4. Hujjatlar</b><span>Shartnoma va imzolar</span></div>
+    </div>
+
+    <h4>Bron yaratish</h4>
+    <ol class="steps">
+      <li><p>Ob&lsquo;ekt kartochkasida <span class="ui">Bron qilish</span> ni bosing.</p></li>
+      <li><p>Ro&lsquo;yxatdan <span class="ui">Mijoz</span> ni tanlang — ism yonida asosiy telefon ko&lsquo;rsatiladi.</p></li>
+      <li><p>Mijoz ariza bo&lsquo;yicha kelgan bo&lsquo;lsa, uni <span class="ui">Ariza (ixtiyoriy)</span> maydonida tanlang — ro&lsquo;yxatda shu mijozning ochiq arizalari bo&lsquo;ladi. Bu bog&lsquo;lanish voronkani yopadi: bitim muvaffaqiyatli yopilganda ariza ham u bilan birga yopiladi.</p></li>
+      <li><p><span class="ui">Bron tugash sanasi</span> ni ko&lsquo;rsating — ob&lsquo;ekt mijoz uchun qaysi sanagacha ushlab turiladi.</p></li>
+      <li><p><span class="ui">Bitim yaratish</span> tugmasini bosing.</p></li>
+    </ol>
+
+    <p>Shundan so&lsquo;ng: bitim <span class="chip y">Bron</span> holatini oladi, ob&lsquo;ekt ham <span class="chip y">Bron</span> holatiga o&lsquo;tadi, narx va 1 m&sup2; narxi joriy holatda qayd etiladi. Keyinchalik narxlar o&lsquo;zgarsa, bu sizning bitimingizga ta&lsquo;sir qilmaydi.</p>
+
+    <div class="warn">
+      <p><b>Bitta ob&lsquo;ekt — bitta bitim.</b> Ob&lsquo;ekt bo&lsquo;yicha <span class="ui">Bron</span>, <span class="ui">Jarayonda</span> yoki <span class="ui">Muvaffaqiyatli yopilgan</span> holatidagi bitim bo&lsquo;lsa, tizim yangisini yaratishga ruxsat bermaydi. Sotilgan ob&lsquo;ektni qayta bron qilib bo&lsquo;lmaydi — avval eskisini bekor qilish yoki shartnomasini buzish kerak.</p>
+      <p>Ikki menejer <span class="ui">Bron qilish</span> ni bir vaqtda bossa, bronni faqat bittasi oladi — ikkinchisiga tizim rad javobini ko&lsquo;rsatadi.</p>
+    </div>
+
+    <h4>1-bosqich. Bitim ma&lsquo;lumotlari</h4>
+    <p>Ma&lsquo;lumot ekrani: mijoz, ob&lsquo;ekt, <span class="ui">Bron boshi</span>, <span class="ui">Bron oxiri</span>, boshlang&lsquo;ich narx va 1 m&sup2; narxi. Tekshiring va <span class="ui">Keyingi</span> ni bosing.</p>
+
+    <h4>2-bosqich. Bitim shartlari</h4>
+    <ol class="steps">
+      <li><p><span class="ui">Chegirmalarni qo&lsquo;llash</span> ni bosing. Oynada faqat shu ob&lsquo;ekt uchun joriy sanada amal qiladigan chegirmalar ko&lsquo;rinadi. Kerakligini belgilang — summa qayta hisoblanadi; kerak bo&lsquo;lsa <span class="ui">Natijani butun songa yaxlitlash</span> ni yoqing.</p></li>
+      <li><p><span class="ui">Shartnoma narxi</span> va <span class="ui">Valyuta</span> ni tekshiring va kerak bo&lsquo;lsa tuzating. Aynan shu summa shartnomaga va to&lsquo;lov jadvaliga tushadi, valyuta esa bitimdagi barcha to&lsquo;lovlarning valyutasi bo&lsquo;ladi.</p></li>
+      <li><p><span class="ui">Bitim bo&lsquo;yicha eslatma</span> ni to&lsquo;ldiring.</p></li>
+      <li><p><span class="ui">Saqlash va jadvalga o&lsquo;tish</span> tugmasini bosing.</p></li>
+    </ol>
+
+    <div class="note">
+      <p><span class="ui">Shartnoma narxi</span> saqlanmaguncha &laquo;To&lsquo;lov jadvali&raquo; bosqichi xato bilan belgilanadi va ochilmaydi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 08 ═══════════════ -->
+  <section class="ch" id="c8">
+    <h3><em>08</em>To&lsquo;lov jadvali</h3>
+    <p class="lede">Bitimning 3-bosqichi. Bu yerda shartnoma summasi aniq to&lsquo;lovlarga bo&lsquo;linadi.</p>
+
+    <ol class="steps">
+      <li><p>Har bir to&lsquo;lov uchun <span class="ui">To&lsquo;lov qo&lsquo;shish</span> ni bosing.</p></li>
+      <li><p>Qatorda <span class="ui">Summa</span>, <span class="ui">To&lsquo;lov sanasi</span>, <span class="ui">To&lsquo;lov turi</span> va <span class="ui">Hisob</span> ni ko&lsquo;rsating.</p></li>
+      <li><p>Yuqoridagi ko&lsquo;rsatkichlarni kuzating: <span class="ui">Shartnoma summasi</span>, <span class="ui">Taqsimlangan</span>, <span class="ui">Qoldiq</span>. Qoldiq nolga teng bo&lsquo;lishi kerak.</p></li>
+      <li><p><span class="ui">Jadvalni saqlash</span> tugmasini bosing.</p></li>
+    </ol>
+
+    <div class="warn">
+      <p><b>To&lsquo;lovlar summasi shartnoma narxiga aniq mos kelishi shart.</b> Aks holda tizim &laquo;To&lsquo;lovlar summasi shartnoma narxiga mos kelmaydi&raquo; xatosini qaytaradi va jadval saqlanmaydi. <span class="ui">Qoldiq</span> maydonini tekshiring — u nol bo&lsquo;lishi kerak.</p>
+      <p><b>Butun jadval bitta valyutada — shartnoma valyutasida.</b> Bitta bitimda so&lsquo;m va dollarni aralashtirib bo&lsquo;lmaydi: tizim rad etadi va qaysi valyutalar uchraganini ko&lsquo;rsatadi. Turli valyutani bitta summaga qo&lsquo;shishning ma&lsquo;nosi yo&lsquo;q, shuning uchun bunday jadval saqlanmaydi.</p>
+    </div>
+
+    <div class="warn">
+      <p><b>Hozircha bitimlarni so&lsquo;mda (UZS) rasmiylashtiring.</b> Joriy versiyada jadval qatorlari UZS da yaratiladi va formada boshqa valyutani tanlab bo&lsquo;lmaydi. &laquo;Shartlar&raquo; qadamida bitim uchun USD yoki EUR tanlangan bo&lsquo;lsa, jadval saqlanmaydi: tizim valyutalar mos kelmasligi sababli rad etadi. Cheklov ma&lsquo;lum va bartaraf etiladi; ungacha shartnoma valyutasini UZS qilib ko&lsquo;rsating.</p>
+    </div>
+
+    <p>Jadval saqlangach bitim avtomatik ravishda <span class="chip b">Jarayonda</span> holatiga, ob&lsquo;ekt esa <span class="chip p">Bitim jarayonda</span> holatiga o&lsquo;tadi. Bu hodisa bitim loglariga yoziladi.</p>
+
+    <h4>To&lsquo;lovlarni belgilash</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Tugma</th><th>Amal</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">To&lsquo;langan</span></td><td>To&lsquo;lovni bugungi sana bilan to&lsquo;langan deb belgilaydi</td></tr>
+          <tr><td><span class="ui">Bekor qilish</span></td><td>Xato qilgan bo&lsquo;lsangiz, to&lsquo;lov belgisini olib tashlaydi</td></tr>
+          <tr><td><span class="ui">Jadvalni tahrirlash</span></td><td>Jadvalni o&lsquo;zgartirish. To&lsquo;langan qatorlar bloklangan va o&lsquo;z holicha qoladi; summa tengligi qoidasi bu yerda ham amal qiladi</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h5>To&lsquo;lov holatlari</h5>
+    <p><span class="chip b">To&lsquo;lanishi kerak</span> <span class="chip g">To&lsquo;langan</span> <span class="chip r">Muddati o&lsquo;tgan</span> <span class="chip y">Qaytarilishi kerak</span> <span class="chip n">Qaytarilgan</span></p>
+
+    <h4>&laquo;Moliya&raquo; bo&lsquo;limi</h4>
+    <p><span class="path">Moliya</span> bo&lsquo;limida sizning bitimlaringiz bo&lsquo;yicha barcha to&lsquo;lovlar to&lsquo;plangan. Filtrlar: mijoz, bitim ID, to&lsquo;lov sanasi va haqiqiy to&lsquo;lov sanasi bo&lsquo;yicha davr. <span class="ui">Umumiy jadval</span> yorlig&lsquo;i summalarni holat, loyiha yoki menejer bo&lsquo;yicha guruhlaydi. Alohida <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> ko&lsquo;rsatiladi — bu sizning kundalik qo&lsquo;ng&lsquo;iroqlar ro&lsquo;yxatingiz.</p>
+  </section>
+
+  <!-- ═══════════════ 09 ═══════════════ -->
+  <section class="ch" id="c9">
+    <h3><em>09</em>Shartnoma va hujjatlar</h3>
+    <p class="lede">Bitimning 4-bosqichi: shartnomani shakllantirish, imzolash va nusxasini yuklash.</p>
+
+    <ol class="steps">
+      <li><p><span class="ui">Shartnoma raqami</span> va <span class="ui">Shartnoma sanasi</span> ni to&lsquo;ldiring, <span class="ui">Ma&lsquo;lumotlarni saqlash</span> ni bosing.</p></li>
+      <li><p><span class="ui">Generatsiya</span> blokida shu loyiha, bino va ob&lsquo;ekt turiga mos shablonlar ro&lsquo;yxati chiqadi. <span class="ui">Yaratish</span> ni bosing — mijoz, ob&lsquo;ekt va bitim ma&lsquo;lumotlari qo&lsquo;yilgan <code>.docx</code> fayl yuklanadi.</p></li>
+      <li><p>Chop eting, mijoz va kompaniya tomonidan imzolating.</p></li>
+      <li><p><span class="ui">Skanerlangan nusxa yuklash</span> orqali nusxani yuklang.</p></li>
+      <li><p><span class="ui">Mijoz imzolagan sana</span> va <span class="ui">Kompaniya imzolagan sana</span> ni to&lsquo;ldiring, so&lsquo;ng <span class="ui">Ma&lsquo;lumotlarni saqlash</span> ni bosing.</p></li>
+    </ol>
+
+    <div class="tip">
+      <p><b>Bitim avtomatik yopiladi.</b> <b>Ikkala</b> imzo sanasi to&lsquo;ldirilishi bilan bitim <span class="chip g">Muvaffaqiyatli yopilgan</span> holatiga, ob&lsquo;ekt esa <span class="chip r">Sotilgan</span> holatiga o&lsquo;tadi. Alohida &laquo;bitimni yopish&raquo; tugmasi yo&lsquo;q.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Yaratish tugmasi yo&lsquo;qmi?</b> Shartnoma raqami va sanasi saqlanmaguncha tizim &laquo;Hujjatlarni yaratish uchun shartnoma raqami va sanasini saqlang&raquo; deb ko&lsquo;rsatadi. Saqlagandan keyin ham ro&lsquo;yxat bo&lsquo;sh bo&lsquo;lsa — bu loyiha yoki ob&lsquo;ekt turi uchun shablon yuklanmagan; administratorga murojaat qiling.</p>
+    </div>
+
+    <p>Tayyor hujjatda ma&lsquo;lumot o&lsquo;rniga bo&lsquo;sh joy qolsa — demak, mijoz yoki bitim kartochkasida tegishli maydon to&lsquo;ldirilmagan (ko&lsquo;pincha pasport ma&lsquo;lumotlari). To&lsquo;ldiring va hujjatni qaytadan yarating.</p>
+  </section>
+
+  <!-- ═══════════════ 10 ═══════════════ -->
+  <section class="ch" id="c10">
+    <h3><em>10</em>Bitimni bekor qilish</h3>
+    <p class="lede">Bitimdan chiqishning ikki xil yo&lsquo;li. Tizim kerakli variantni o&lsquo;zi tanlaydi.</p>
+
+    <ol class="steps">
+      <li><p>Bitimni oching va <span class="ui">Bekor qilish / Shartnomani buzish</span> tugmasini bosing.</p></li>
+      <li><p>Ochilgan oynadagi xabarni o&lsquo;qing — u qaysi variant qo&lsquo;llanayotganini aytadi.</p></li>
+      <li><p>Talab qilingan maydonlarni to&lsquo;ldiring va tasdiqlang.</p></li>
+    </ol>
+
+    <div class="cols">
+      <div>
+        <h6>Oddiy bekor qilish</h6>
+        <p>Bitim bo&lsquo;yicha <b>to&lsquo;langan to&lsquo;lovlar yo&lsquo;q</b> va mijoz imzosi yo&lsquo;q bo&lsquo;lsa. <span class="ui">Bekor qilish sababi</span> ni ko&lsquo;rsatish kifoya.</p>
+      </div>
+      <div>
+        <h6>Shartnomani buzish</h6>
+        <p><b>To&lsquo;langan to&lsquo;lovlar yoki mijoz imzosi</b> bo&lsquo;lsa. <span class="ui">Asos hujjatining skanerlangan nusxasi</span> ni albatta biriktirish kerak.</p>
+      </div>
+    </div>
+
+    <p>Bekor qilinganda ob&lsquo;ekt darhol <span class="chip g">Tanlov</span> holatiga qaytadi va yana sotuvga chiqadi. Shartnoma buzilganda barcha to&lsquo;langan to&lsquo;lovlar <span class="chip y">Qaytarilishi kerak</span> holatiga o&lsquo;tadi — pul haqiqatda qaytarilgach ular bo&lsquo;yicha moliyachi <span class="ui">Qaytarish</span> ni bosadi.</p>
+
+    <div class="warn">
+      <p><b>Ob&lsquo;ekt mijoz bilan hisob-kitobdan keyin bo&lsquo;shaydi.</b> Shartnomasi buzilgan bitimda <span class="ui">Qaytarilishi kerak</span> holatidagi to&lsquo;lovlar qolsa, ob&lsquo;ekt band bo&lsquo;lib turadi: avvalgi mijozga puli qaytarilmagan xonadonni sotib bo&lsquo;lmaydi. Moliyachi oxirgi qaytarishni yopishi bilan ob&lsquo;ekt avtomatik <span class="chip g">Tanlov</span> holatiga o&lsquo;tadi va bitim loglarida shu haqda yozuv paydo bo&lsquo;ladi.</p>
+    </div>
+
+    <div class="warn">
+      <p><b>Amalni qaytarib bo&lsquo;lmaydi.</b> Bekor qilingan bitimni ishga qaytarish mumkin emas — uning barcha maydonlari faqat o&lsquo;qish uchun ochiq qoladi. Mijoz fikridan qaytsa, ob&lsquo;ekt yangi bitim bilan qaytadan bron qilinadi.</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 11 ═══════════════ -->
+  <section class="ch" id="c11">
+    <h3><em>11</em>Boshqaruv paneli</h3>
+    <p class="lede">Kunni boshlash uchun qulay bo&lsquo;lgan boshlang&lsquo;ich ekran.</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Blok</th><th>Nimani ko&lsquo;rsatadi</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Bugungi yangi mijozlar</span></td><td>Kun davomida kiritilgan mijoz kartochkalari</td></tr>
+          <tr><td><span class="ui">Bugungi yangi arizalar</span></td><td>Bugun kelib tushgan arizalar</td></tr>
+          <tr><td><span class="ui">Oylik sotuvlar</span></td><td>Shu oyda yopilgan bitimlar — oxirgi tahrir sanasi bo&lsquo;yicha emas, yopilish sanasi bo&lsquo;yicha</td></tr>
+          <tr><td><span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span></td><td>Muddati o&lsquo;tgan, ammo to&lsquo;lanmagan to&lsquo;lovlar</td></tr>
+          <tr><td><span class="ui">Haftalik arizalar dinamikasi</span></td><td>Kunlar bo&lsquo;yicha arizalar grafigi</td></tr>
+          <tr><td><span class="ui">Ariza manbalari</span></td><td>Mijozlar qayerdan kelmoqda</td></tr>
+          <tr><td><span class="ui">Kelgusi uchrashuvlar</span></td><td>Yaqin kunlardagi rejangiz</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Raqamlar sizning ko&lsquo;rish doirangiz doirasida ko&lsquo;rsatiladi: odatda bu sizning shaxsiy ma&lsquo;lumotlaringiz, rahbarda esa — bo&lsquo;lim yoki kompaniya ma&lsquo;lumotlari.</p>
+
+    <h5>Har kungi tekshiruv ro&lsquo;yxati</h5>
+    <ul>
+      <li><span class="ui">Yangi</span> holatidagi arizalar — ishga oling yoki sabab bilan yoping.</li>
+      <li>Kechagi uchrashuvlar — natijani to&lsquo;ldiring.</li>
+      <li><span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> — mijozlarga qo&lsquo;ng&lsquo;iroq qiling.</li>
+      <li>Muddati tugayotgan bronlar — sanani uzaytiring yoki bitimni yoping. Muddati o&lsquo;tgan bronlarni tizim o&lsquo;zi olib tashlaydi.</li>
+      <li>Bugungi vazifalar — boshlang yoki tugating.</li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════ 12 ═══════════════ -->
+  <section class="ch" id="c12">
+    <h3><em>12</em>Holatlar ma&lsquo;lumotnomasi</h3>
+    <p class="lede">Tizimdagi barcha holatlar bir joyda — chop etib, yoningizda saqlash mumkin.</p>
+
+    <h5>Ariza</h5>
+    <p><span class="chip b">Yangi</span> <span class="chip y">Jarayonda</span> <span class="chip n">Maqsadsiz</span> <span class="chip r">Rad etilgan</span> <span class="chip g">Muvaffaqiyatli yopilgan</span></p>
+
+    <h5>Uchrashuv</h5>
+    <p><span class="chip b">Yangi</span> <span class="chip g">Bo&lsquo;lib o&lsquo;tdi</span> <span class="chip r">Bo&lsquo;lib o&lsquo;tmadi</span></p>
+
+    <h5>Vazifa</h5>
+    <p><span class="chip b">Yangi</span> <span class="chip y">Jarayonda</span> <span class="chip p">Tekshiruvda</span> <span class="chip g">Tugallangan</span> <span class="chip n">Bekor qilingan</span> <span class="chip r">Bloklangan</span></p>
+
+    <h5>Ko&lsquo;chmas mulk ob&lsquo;ekti</h5>
+    <p><span class="chip g">Tanlov</span> <span class="chip b">Rezerv</span> <span class="chip y">Bron</span> <span class="chip p">Bitim jarayonda</span> <span class="chip r">Sotilgan</span></p>
+
+    <h5>Bitim</h5>
+    <p><span class="chip y">Bron</span> <span class="chip b">Jarayonda</span> <span class="chip g">Muvaffaqiyatli yopilgan</span> <span class="chip n">Bekor qilingan</span> <span class="chip r">Shartnoma buzilgan</span></p>
+
+    <h5>To&lsquo;lov</h5>
+    <p><span class="chip b">To&lsquo;lanishi kerak</span> <span class="chip g">To&lsquo;langan</span> <span class="chip r">Muddati o&lsquo;tgan</span> <span class="chip y">Qaytarilishi kerak</span> <span class="chip n">Qaytarilgan</span></p>
+
+    <h4>Holatlar bir-biri bilan qanday bog&lsquo;langan</h4>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Sizning amalingiz</th><th>Bitim holati</th><th>Ob&lsquo;ekt holati</th></tr></thead>
+        <tbody>
+          <tr><td>Ob&lsquo;ekt sotuvdan chiqarildi (rahbar va administrator)</td><td class="num">&mdash;</td><td><span class="chip b">Rezerv</span></td></tr>
+          <tr><td>Bitim (bron) yaratildi</td><td><span class="chip y">Bron</span></td><td><span class="chip y">Bron</span></td></tr>
+          <tr><td>To&lsquo;lov jadvali saqlandi</td><td><span class="chip b">Jarayonda</span></td><td><span class="chip p">Bitim jarayonda</span></td></tr>
+          <tr><td>Ikkala imzo sanasi to&lsquo;ldirildi</td><td><span class="chip g">Muvaffaqiyatli yopilgan</span></td><td><span class="chip r">Sotilgan</span></td></tr>
+          <tr><td>Bitim bekor qilindi</td><td><span class="chip n">Bekor qilingan</span></td><td><span class="chip g">Tanlov</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 13 ═══════════════ -->
+  <section class="ch" id="c13">
+    <h3><em>13</em>Ko&lsquo;p beriladigan savollar</h3>
+    <p class="lede">Biror narsa ishlamasa nima qilish kerak.</p>
+
+    <dl class="qa">
+      <dt>Menyuda kerakli bo&lsquo;limni ko&lsquo;rmayapman</dt>
+      <dd>Rolingizda bu bo&lsquo;limga huquq yo&lsquo;q. Administratorga murojaat qiling va qaysi bo&lsquo;lim hamda qanday amallar kerakligini ayting.</dd>
+
+      <dt>Hamkasbimning mijozi yoki bitimini ko&lsquo;rmayapman</dt>
+      <dd>Bu normal holat: ko&lsquo;rish doirangiz o&lsquo;z ma&lsquo;lumotlaringiz bilan cheklangan. Rahbar bo&lsquo;limni, administrator butun kompaniyani ko&lsquo;radi.</dd>
+
+      <dt>Mijoz yaratilmayapti — saqlashda xatolik</dt>
+      <dd>Ko&lsquo;rsatilgan email boshqa mijozda band bo&lsquo;lishi mumkin. Bazani <span class="ui">Email bo&lsquo;yicha qidirish</span> orqali tekshiring yoki maydonni bo&lsquo;sh qoldiring.</dd>
+
+      <dt>Ob&lsquo;ektni bron qila olmayapman</dt>
+      <dd>Ob&lsquo;ekt bo&lsquo;yicha bitim bor — <span class="ui">Bron</span>, <span class="ui">Jarayonda</span> yoki <span class="ui">Muvaffaqiyatli yopilgan</span>. Uni <span class="ui">Bitimga o&lsquo;tish</span> orqali oching. Ob&lsquo;ekt sotilgan bo&lsquo;lsa, uni bron qilib bo&lsquo;lmaydi. Yana bir sabab — shartnomasi buzilgan bitim ob&lsquo;ekti bo&lsquo;lib, mijozga puli hali qaytarilmagan.</dd>
+
+      <dt>To&lsquo;lov jadvali saqlanmayapti</dt>
+      <dd>Barcha to&lsquo;lovlar summasi <span class="ui">Shartnoma narxi</span> ga mos kelmayapti. <span class="ui">Qoldiq</span> maydonini nolga tenglashtiring.</dd>
+
+      <dt>&laquo;To&lsquo;lov jadvali&raquo; bosqichi xato bilan belgilangan</dt>
+      <dd>Oldingi bosqichda <span class="ui">Shartnoma narxi</span> saqlanmagan. <span class="ui">Bitim shartlari</span> bosqichiga qayting va <span class="ui">Saqlash va jadvalga o&lsquo;tish</span> ni bosing.</dd>
+
+      <dt>Hujjatlarda &laquo;Yaratish&raquo; tugmasi yo&lsquo;q</dt>
+      <dd>Avval shartnoma raqami va sanasini saqlang. Shundan keyin ham shablonlar ro&lsquo;yxati bo&lsquo;sh bo&lsquo;lsa — shablon yuklanmagan, administrator kerak.</dd>
+
+      <dt>Shartnomada ma&lsquo;lumot o&lsquo;rniga bo&lsquo;sh joy</dt>
+      <dd>Mijoz kartochkasida (odatda pasport, INN, manzil) yoki bitimda maydonlar to&lsquo;ldirilmagan. To&lsquo;ldiring va hujjatni qaytadan yarating.</dd>
+
+      <dt>Ariza yoki bitim maydonlari tahrirlanmayapti</dt>
+      <dd>Yozuv yopilgan: ariza <span class="ui">Yangi</span> va <span class="ui">Jarayonda</span> holatlaridan chiqqan yoki bitim bekor qilingan hamda yopilgan. Bu xato emas, tarixni himoya qilish.</dd>
+
+      <dt>Tugallangan vazifani ishga qaytarish kerak</dt>
+      <dd>Menejerda bunday huquq yo&lsquo;q. Rahbardan so&lsquo;rang — unda <span class="ui">Ishga qaytarish</span> tugmasi bor.</dd>
+
+      <dt>Parolni tiklash xati kelmayapti</dt>
+      <dd>&laquo;Spam&raquo; papkasini tekshiring va profilingizdagi email to&lsquo;g&lsquo;riligiga ishonch hosil qiling. Xat bo&lsquo;lmasa — administrator parolni qo&lsquo;lda o&lsquo;zgartiradi.</dd>
+
+      <dt>Yozuvni ochganda &laquo;Kirish yo&lsquo;q&raquo; xatosi</dt>
+      <dd>Yozuv boshqa bo&lsquo;lim yoki kompaniyaga tegishli. To&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri havola huquqni kengaytirmaydi — yozuvni sizga qayta biriktirishni so&lsquo;rang.</dd>
+    </dl>
+
+    <div class="end">
+      Sotuv menejeri qo&lsquo;llanmasi &middot; Ko&lsquo;chmas mulk CRM &middot; versiya 1.0, 2026-yil sentyabr.<br>
+      Kirish huquqlari, ma&lsquo;lumotnomalar va hujjat shablonlari bo&lsquo;yicha savollar &mdash; CRM administratoriga.
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+(function () {
+  var chapters = [].slice.call(document.querySelectorAll("section.ch"));
+  var links = [].slice.call(document.querySelectorAll("nav.toc a"));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute("href").slice(1)] = a; });
+
+  /* --- highlight the chapter currently in view --- */
+  var current = null;
+  function mark(id) {
+    if (id === current) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove("on"); });
+    if (byId[id]) byId[id].classList.add("on");
+  }
+  if ("IntersectionObserver" in window) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+      for (var i = 0; i < chapters.length; i++) {
+        if (seen[chapters[i].id]) { mark(chapters[i].id); break; }
+      }
+    }, { rootMargin: "-10% 0px -70% 0px" });
+    chapters.forEach(function (c) { io.observe(c); });
+  }
+  if (chapters.length) mark(chapters[0].id);
+
+  /* --- filter chapters by text --- */
+  var box = document.getElementById("finder");
+  var empty = document.getElementById("no-hit");
+  if (box) {
+    var haystack = chapters.map(function (c) {
+      return (c.textContent || "").toLowerCase().replace(/\s+/g, " ");
+    });
+    var run = function () {
+      var q = box.value.trim().toLowerCase();
+      var hits = 0;
+      chapters.forEach(function (c, i) {
+        var hit = !q || haystack[i].indexOf(q) > -1;
+        c.classList.toggle("hide", !hit);
+        var a = byId[c.id];
+        if (a && a.parentNode) a.parentNode.classList.toggle("hide", !hit);
+        if (hit) hits++;
+      });
+      if (empty) empty.classList.toggle("on", hits === 0);
+    };
+    box.addEventListener("input", run);
+    box.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { box.value = ""; run(); }
+    });
+  }
+
+  /* --- print --- */
+  var p = document.getElementById("print");
+  if (p) p.addEventListener("click", function () { window.print(); });
+})();
+</script>
+</body>
+</html>

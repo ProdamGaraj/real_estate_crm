@@ -1,6 +1,7 @@
 import { Box, Paper, Tooltip, Typography, useTheme, alpha } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { Property } from '../../api/buildings'; // Убедитесь, что этот тип экспортируется из api/buildings.ts
+import { translatePropertyStatus } from '../../utils/translations';
 
 interface ChessboardProps {
   properties: Property[];
@@ -76,7 +77,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
                       {floorProperties
                         .sort((a, b) => a.unit_number.localeCompare(b.unit_number, undefined, { numeric: true }))
                         .map((prop) => (
-                          <Tooltip key={prop.id} title={`№ ${prop.unit_number} | ${prop.status} | ${prop.area} м²`}>
+                          <Tooltip key={prop.id} title={`№ ${prop.unit_number} | ${translatePropertyStatus(prop.status)} | ${prop.area} ${t('common.sqm')}`}>
                             <Box
                               onClick={() => onCellClick(prop)}
                               sx={{
@@ -98,7 +99,7 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
                               }}
                             >
                               <Typography variant="body2" fontWeight="bold">{prop.unit_number}</Typography>
-                              <Typography variant="caption">{prop.area} м²</Typography>
+                              <Typography variant="caption">{prop.area} {t('common.sqm')}</Typography>
                             </Box>
                           </Tooltip>
                         ))}

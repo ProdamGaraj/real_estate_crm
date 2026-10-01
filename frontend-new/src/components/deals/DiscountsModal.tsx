@@ -70,10 +70,10 @@ export default function DiscountsModal({ open, dealId, basePrice, appliedDiscoun
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{t('pages.discounts.apply_discounts')}</DialogTitle>
+      <DialogTitle>{t('pages.discounts.applying_discounts')}</DialogTitle>
       <DialogContent>
         {isLoading && <CircularProgress />}
-        {isError && <Alert severity="error">{t('pages.discounts.load_error')}</Alert>}
+        {isError && <Alert severity="error">{t('errors.load_discounts_error')}</Alert>}
         {availableDiscounts && (
           <>
             <List>

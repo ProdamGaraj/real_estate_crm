@@ -52,6 +52,12 @@ services:
       dockerfile: Dockerfile
     container_name: crm_backend
     restart: unless-stopped
+    # Все параметры из .env (почта, часовой пояс, лимиты, cookie, HTTPS) передаются
+    # в контейнер целиком: .env исключён из образа (.dockerignore), и без env_file
+    # Django видел бы только переменные из списка environment ниже.
+    # Значения из environment имеют приоритет над env_file.
+    env_file:
+      - .env
     volumes:
       # Медиа файлы (изображения, документы) - прямые пути на диск
       - ./backend/media/buildings:/app/media/buildings
@@ -111,6 +117,12 @@ services:
       dockerfile: Dockerfile
     container_name: crm_scheduler
     restart: unless-stopped
+    # Все параметры из .env (почта, часовой пояс, лимиты, cookie, HTTPS) передаются
+    # в контейнер целиком: .env исключён из образа (.dockerignore), и без env_file
+    # Django видел бы только переменные из списка environment ниже.
+    # Значения из environment имеют приоритет над env_file.
+    env_file:
+      - .env
     command: >
       sh -c "while true; do
       python manage.py refresh_overdue_payments || true;
@@ -194,12 +206,18 @@ services:
       - certbot_www:/var/www/certbot:ro
       # Логи
       - nginx_logs:/var/log/nginx
-      # Media volumes - прямые пути на диск для прямой отдачи файлов
+      # Media volumes - прямые пути на диск для прямой отдачи файлов.
+      # Нужны ВСЕ каталоги media: защищённые файлы backend проверяет и передаёт
+      # на отдачу nginx (X-Accel-Redirect). Без client_files и tasks сканы
+      # клиентов и вложения задач отдавали бы 404, без avatars — аватары.
       - ./backend/media/buildings:/app/media/buildings:ro
+      - ./backend/media/client_files:/app/media/client_files:ro
       - ./backend/media/deals:/app/media/deals:ro
       - ./backend/media/layouts:/app/media/layouts:ro
       - ./backend/media/projects:/app/media/projects:ro
+      - ./backend/media/tasks:/app/media/tasks:ro
       - ./backend/media/templates:/app/media/templates:ro
+      - ./backend/media/avatars:/app/media/avatars:ro
     depends_on:
       - frontend
       - backend

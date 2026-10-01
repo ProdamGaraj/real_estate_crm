@@ -1,0 +1,1087 @@
+[
+ {
+  "path": "/api/health/",
+  "methods": [
+   "GET"
+  ],
+  "view": "real_estate_project.urls",
+  "doc": "Публичный эндпоинт для проверки состояния сервиса (Docker healthcheck)."
+ },
+ {
+  "path": "/api/public/projects/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.realty.views.PublicProjectListView",
+  "doc": "Публичный список проектов. Требует валидный API-ключ партнёра."
+ },
+ {
+  "path": "/api/public/projects/<int:pk>/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.realty.views.PublicProjectDetailView",
+  "doc": "Публичная детальная страница проекта. Требует валидный API-ключ партнёра."
+ },
+ {
+  "path": "/api/public/buildings/<int:pk>/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.realty.views.PublicBuildingDetailView",
+  "doc": "Публичная детальная страница дома. Требует валидный API-ключ партнёра."
+ },
+ {
+  "path": "/api/public/buildings/<int:building_pk>/layouts/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.realty.views.PublicLayoutListView",
+  "doc": "Публичный список планировок здания. Требует валидный API-ключ партнёра."
+ },
+ {
+  "path": "/api/public/applications/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.crm.views.PublicApplicationCreateView",
+  "doc": "Публичный эндпоинт для создания заявок с сайтов партнёров."
+ },
+ {
+  "path": "/api/dashboard/analytics/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.crm.views.DashboardAnalyticsView",
+  "doc": ""
+ },
+ {
+  "path": "/api/clients/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.crm.views.ClientListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/clients/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.crm.views.ClientDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/clients/<int:pk>/files/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.crm.views.ClientFileView",
+  "doc": ""
+ },
+ {
+  "path": "/api/applications/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.crm.views.ApplicationListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/applications/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.crm.views.ApplicationDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/applications/<int:pk>/restore/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.crm.views.ApplicationRestoreView",
+  "doc": "Возвращает удалённую заявку в работу."
+ },
+ {
+  "path": "/api/applications/summary/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.crm.views.ApplicationSummaryView",
+  "doc": ""
+ },
+ {
+  "path": "/api/users/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.crm.views.UserListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/application-statuses/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.crm.views.ApplicationStatusListCreateView",
+  "doc": "GET: Список всех статусов заявок (доступно всем авторизованным пользователям)"
+ },
+ {
+  "path": "/api/application-statuses/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.crm.views.ApplicationStatusDetailView",
+  "doc": "GET: Детали статуса заявки (доступно всем авторизованным пользователям)"
+ },
+ {
+  "path": "/api/meetings/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.crm.views.MeetingListCreateView",
+  "doc": ""
+ },
+ {
+  "path": "/api/meetings/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.crm.views.MeetingDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/meetings/<int:pk>/restore/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.crm.views.MeetingRestoreView",
+  "doc": "Возвращает удалённую встречу в работу."
+ },
+ {
+  "path": "/api/meetings/summary/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.crm.views.MeetingSummaryView",
+  "doc": ""
+ },
+ {
+  "path": "/api/rejection-reasons/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.crm.views.RejectionReasonListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.realty.views.ProjectListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.realty.views.ProjectDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/buildings-all/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.realty.views.BuildingListViewAll",
+  "doc": "Возвращает плоский список всех домов для использования в выпадающих списках."
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.realty.views.BuildingListCreateView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.realty.views.BuildingDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:building_pk>/layouts/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.realty.views.LayoutListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:building_pk>/layouts/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.realty.views.LayoutDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:building_pk>/layouts/bulk-upload/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.realty.views.LayoutBulkUploadView",
+  "doc": "Массовая загрузка изображений планировок."
+ },
+ {
+  "path": "/api/building-types/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.realty.views.BuildingTypeListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/building-types/<int:pk>/",
+  "methods": [
+   "DELETE"
+  ],
+  "view": "apps.realty.views.BuildingTypeDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int>/buildings/<int:building_pk>/properties/<int:pk>/",
+  "methods": [
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.realty.views.PropertyDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:building_pk>/download-template/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.realty.views.PropertyTemplateDownloadView",
+  "doc": ""
+ },
+ {
+  "path": "/api/discounts/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.realty.views.DiscountListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/discounts/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.realty.views.DiscountDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:building_pk>/gallery/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.realty.views.BuildingImageCreateView",
+  "doc": "View для загрузки нового изображения в галерею дома"
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:building_pk>/gallery/<int:pk>/",
+  "methods": [
+   "DELETE"
+  ],
+  "view": "apps.realty.views.BuildingImageDetailView",
+  "doc": "View для удаления изображения из галереи дома"
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/buildings/<int:building_pk>/upload-properties/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.realty.views.PropertyUploadView",
+  "doc": ""
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/gallery/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.realty.views.ProjectImageCreateView",
+  "doc": "View для загрузки нового изображения в галерею проекта"
+ },
+ {
+  "path": "/api/projects/<int:project_pk>/gallery/<int:pk>/",
+  "methods": [
+   "DELETE"
+  ],
+  "view": "apps.realty.views.ProjectImageDetailView",
+  "doc": "View для удаления изображения из галереи"
+ },
+ {
+  "path": "/api/deals/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.deals.views.DealListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/deals/<int:pk>/",
+  "methods": [
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.deals.views.DealDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/deals/<int:deal_pk>/cancel/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.deals.views.DealCancelOrTerminateView",
+  "doc": "View для отмены или расторжения сделки."
+ },
+ {
+  "path": "/api/deals/summary/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.deals.views.DealSummaryView",
+  "doc": ""
+ },
+ {
+  "path": "/api/deals/<int:deal_pk>/available-discounts/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.deals.views.AvailableDiscountsView",
+  "doc": "Возвращает список скидок, доступных для объекта в сделке."
+ },
+ {
+  "path": "/api/finances/payments/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.finances.views.PaymentListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/finances/payment-types/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.finances.views.PaymentTypeListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/finances/payment-types/<int:pk>/",
+  "methods": [
+   "DELETE"
+  ],
+  "view": "apps.finances.views.PaymentTypeDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/finances/beneficiary-accounts/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.finances.views.BeneficiaryAccountListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/finances/beneficiary-accounts/<int:pk>/",
+  "methods": [
+   "DELETE"
+  ],
+  "view": "apps.finances.views.BeneficiaryAccountDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/finances/payments/<int:pk>/",
+  "methods": [
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.finances.views.PaymentDetailView",
+  "doc": "View для обновления данных по конкретному платежу."
+ },
+ {
+  "path": "/api/finances/payments/<int:pk>/mark-as-returned/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.finances.views.PaymentMarkAsReturnedView",
+  "doc": ""
+ },
+ {
+  "path": "/api/deals/<int:deal_pk>/payment-schedule/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.finances.views.DealPaymentScheduleCreateView",
+  "doc": "Создаёт или обновляет график платежей сделки."
+ },
+ {
+  "path": "/api/finances/summary/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.finances.views.FinanceSummaryView",
+  "doc": ""
+ },
+ {
+  "path": "/api/templates/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.documents.views.TemplateListCreateView",
+  "doc": ""
+ },
+ {
+  "path": "/api/templates/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.documents.views.TemplateDetailView",
+  "doc": ""
+ },
+ {
+  "path": "/api/deals/<int:deal_pk>/available-templates/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.documents.views.DealTemplatesListView",
+  "doc": ""
+ },
+ {
+  "path": "/api/deals/<int:deal_pk>/generate-document/<int:template_pk>/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.documents.views.GenerateDocumentView",
+  "doc": ""
+ },
+ {
+  "path": "/api/reports/plan-fact/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.reports.views.PlanFactReportView",
+  "doc": ""
+ },
+ {
+  "path": "/api/reports/plan-template/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.reports.views.plan_template_download",
+  "doc": ""
+ },
+ {
+  "path": "/api/reports/plan-upload/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.reports.views.PlanUploadView",
+  "doc": ""
+ },
+ {
+  "path": "/api/reports/employee-plan-fact/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.reports.views.EmployeePlanFactReportView",
+  "doc": ""
+ },
+ {
+  "path": "/api/reports/employee-plan-template/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.reports.views.employee_plan_template_download",
+  "doc": ""
+ },
+ {
+  "path": "/api/reports/employee-plan-upload/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.reports.views.EmployeePlanUploadView",
+  "doc": ""
+ },
+ {
+  "path": "/api/tasks/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/calendar/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/created_by_me/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/kanban/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/my_tasks/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/overdue/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/stats/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/add_comment/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/cancel/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/comments/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/complete/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/logs/<log_id>/",
+  "methods": [
+   "DELETE"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/logs/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/reopen/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/start/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/tasks/<id>/subtasks/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.tasks.views.TaskViewSet",
+  "doc": "ViewSet для управления задачами"
+ },
+ {
+  "path": "/api/task-comments/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.tasks.views.TaskCommentViewSet",
+  "doc": "ViewSet для управления комментариями к задачам"
+ },
+ {
+  "path": "/api/task-comments/<id>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.tasks.views.TaskCommentViewSet",
+  "doc": "ViewSet для управления комментариями к задачам"
+ },
+ {
+  "path": "/api/",
+  "methods": [
+   "GET"
+  ],
+  "view": "rest_framework.routers.APIRootView",
+  "doc": "The default basic root view for DefaultRouter"
+ },
+ {
+  "path": "/api/permissions/companies/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "permissions.views.CompanyViewSet",
+  "doc": "ViewSet для управления компаниями"
+ },
+ {
+  "path": "/api/permissions/companies/accessible/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.CompanyViewSet",
+  "doc": "ViewSet для управления компаниями"
+ },
+ {
+  "path": "/api/permissions/companies/<id>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "permissions.views.CompanyViewSet",
+  "doc": "ViewSet для управления компаниями"
+ },
+ {
+  "path": "/api/permissions/departments/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "permissions.views.DepartmentViewSet",
+  "doc": "ViewSet для управления отделами"
+ },
+ {
+  "path": "/api/permissions/departments/accessible/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.DepartmentViewSet",
+  "doc": "ViewSet для управления отделами"
+ },
+ {
+  "path": "/api/permissions/departments/<id>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "permissions.views.DepartmentViewSet",
+  "doc": "ViewSet для управления отделами"
+ },
+ {
+  "path": "/api/permissions/permissions/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.PermissionViewSet",
+  "doc": "ViewSet для просмотра разрешений (только чтение)"
+ },
+ {
+  "path": "/api/permissions/permissions/grouped_by_resource/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.PermissionViewSet",
+  "doc": "ViewSet для просмотра разрешений (только чтение)"
+ },
+ {
+  "path": "/api/permissions/permissions/<id>/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.PermissionViewSet",
+  "doc": "ViewSet для просмотра разрешений (только чтение)"
+ },
+ {
+  "path": "/api/permissions/roles/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "permissions.views.RoleViewSet",
+  "doc": "ViewSet для управления ролями"
+ },
+ {
+  "path": "/api/permissions/roles/<id>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "permissions.views.RoleViewSet",
+  "doc": "ViewSet для управления ролями"
+ },
+ {
+  "path": "/api/permissions/roles/<id>/assign_permissions/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.RoleViewSet",
+  "doc": "ViewSet для управления ролями"
+ },
+ {
+  "path": "/api/permissions/roles/<id>/users/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.RoleViewSet",
+  "doc": "ViewSet для управления ролями"
+ },
+ {
+  "path": "/api/permissions/user-profiles/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/create_user/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/<id>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/<id>/ban/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/<id>/change_password/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/<id>/check_permission/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/<id>/permissions/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/<id>/soft_delete/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/user-profiles/<id>/unban/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.UserProfileViewSet",
+  "doc": "ViewSet для управления профилями пользователей"
+ },
+ {
+  "path": "/api/permissions/logs/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.PermissionLogViewSet",
+  "doc": "ViewSet для просмотра логов изменений разрешений (только чтение)"
+ },
+ {
+  "path": "/api/permissions/logs/<id>/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.PermissionLogViewSet",
+  "doc": "ViewSet для просмотра логов изменений разрешений (только чтение)"
+ },
+ {
+  "path": "/api/permissions/partner-api-keys/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "permissions.views.PartnerAPIKeyViewSet",
+  "doc": "ViewSet для управления API-ключами партнёров."
+ },
+ {
+  "path": "/api/permissions/partner-api-keys/<id>/",
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "permissions.views.PartnerAPIKeyViewSet",
+  "doc": "ViewSet для управления API-ключами партнёров."
+ },
+ {
+  "path": "/api/permissions/partner-api-keys/<id>/regenerate/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.PartnerAPIKeyViewSet",
+  "doc": "ViewSet для управления API-ключами партнёров."
+ },
+ {
+  "path": "/api/permissions/partner-api-keys/<id>/toggle_active/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.PartnerAPIKeyViewSet",
+  "doc": "ViewSet для управления API-ключами партнёров."
+ },
+ {
+  "path": "/api/permissions/",
+  "methods": [
+   "GET"
+  ],
+  "view": "rest_framework.routers.APIRootView",
+  "doc": "The default basic root view for DefaultRouter"
+ },
+ {
+  "path": "/api/permissions/auth/login/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.auth_views.login_view",
+  "doc": "Вход пользователя"
+ },
+ {
+  "path": "/api/permissions/auth/logout/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.auth_views.logout_view",
+  "doc": "Выход пользователя."
+ },
+ {
+  "path": "/api/permissions/auth/password-reset/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.auth_views.password_reset_request",
+  "doc": "Запрос на восстановление пароля"
+ },
+ {
+  "path": "/api/permissions/auth/password-reset/confirm/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.auth_views.password_reset_confirm",
+  "doc": "Подтверждение сброса пароля и установка нового"
+ },
+ {
+  "path": "/api/permissions/me/",
+  "methods": [
+   "GET",
+   "PATCH"
+  ],
+  "view": "permissions.views.CurrentUserProfileView",
+  "doc": "Получение профиля текущего пользователя"
+ },
+ {
+  "path": "/api/permissions/stats/",
+  "methods": [
+   "GET"
+  ],
+  "view": "permissions.views.PermissionStatsView",
+  "doc": "Статистика по разрешениям и ролям"
+ },
+ {
+  "path": "/api/token/",
+  "methods": [
+   "POST"
+  ],
+  "view": "real_estate_project.urls.ThrottledTokenObtainPairView",
+  "doc": ""
+ },
+ {
+  "path": "/api/token/refresh/",
+  "methods": [
+   "POST"
+  ],
+  "view": "real_estate_project.urls.CookieTokenRefreshView",
+  "doc": "Обновление access-токена по refresh из httpOnly cookie."
+ },
+ {
+  "path": "/media/<path:path>",
+  "methods": [
+   "GET"
+  ],
+  "view": "real_estate_project.media_access",
+  "doc": "Отдаёт файл из MEDIA_ROOT с проверкой доступа."
+ },
+ {
+  "path": "/api/schema/",
+  "methods": [
+   "GET"
+  ],
+  "view": "drf_spectacular.views.SpectacularAPIView",
+  "doc": "OpenApi3 schema for this API. Format can be selected via content negotiation."
+ },
+ {
+  "path": "/api/schema/swagger/",
+  "methods": [
+   "GET"
+  ],
+  "view": "drf_spectacular.views.SpectacularSwaggerView",
+  "doc": ""
+ },
+ {
+  "path": "/api/schema/redoc/",
+  "methods": [
+   "GET"
+  ],
+  "view": "drf_spectacular.views.SpectacularRedocView",
+  "doc": ""
+ }
+]
