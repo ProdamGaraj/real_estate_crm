@@ -1,6 +1,13 @@
 """
 Management команда для инициализации базовых разрешений и ролей
-Использование: python manage.py init_permissions
+Использование: python manage.py init_permissions [--with-roles] [--sync-roles]
+
+Разрешения создаются всегда. Типовые роли создаются только при первичной
+установке (в системе ещё нет ни одной роли) или по ключу --with-roles:
+в работающей системе администратор настраивает роли сам, и команда,
+запущенная после обновления, иначе добавляла бы к ним дубли — на проде
+так появились «Системный администратор» рядом с «Администратор» и
+«Руководитель отдела» рядом с «Руководитель».
 """
 from django.core.management.base import BaseCommand
 from permissions.models import Permission, Role
@@ -10,6 +17,14 @@ class Command(BaseCommand):
     help = 'Инициализирует базовые разрешения и роли в системе'
 
     def add_arguments(self, parser):
+        parser.add_argument(
+            '--with-roles',
+            action='store_true',
+            help=(
+                'Создать недостающие типовые роли и в системе, где роли уже '
+                'заведены. Без ключа они создаются только при первичной установке.'
+            ),
+        )
         parser.add_argument(
             '--sync-roles',
             action='store_true',
@@ -23,6 +38,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.sync_roles = options.get('sync_roles', False)
+        # Первичная установка — ролей ещё нет: типовые роли нужны, чтобы было
+        # с чего начать. Проверяем до создания чего-либо
+        self.with_roles = options.get('with_roles', False) or not Role.objects.exists()
+        self.skipped_roles = []
         self.stdout.write(self.style.SUCCESS('Начинаем инициализацию разрешений и ролей...'))
         
         # Создаем все возможные разрешения
@@ -30,6 +49,13 @@ class Command(BaseCommand):
         
         # Создаем базовые роли
         self.create_roles()
+
+        if self.skipped_roles:
+            self.stdout.write(self.style.WARNING(
+                '  ! Типовые роли не созданы — в системе уже есть свои роли: '
+                + ', '.join(self.skipped_roles)
+                + '. Создать их: init_permissions --with-roles'
+            ))
         
         self.stdout.write(self.style.SUCCESS('✅ Инициализация завершена успешно!'))
 
@@ -81,6 +107,8 @@ class Command(BaseCommand):
         (например, MANAGER) — её состав прав нельзя молча перезаписывать
         шаблоном, иначе сотрудники потеряют настроенные для них права.
         """
+        if role is None:
+            return False
         if created:
             return True
         if not self.sync_roles:
@@ -92,6 +120,20 @@ class Command(BaseCommand):
             ))
             return False
         return True
+
+    def _typical_role(self, code, defaults):
+        """
+        Типовая роль по коду: существующая возвращается как есть, отсутствующая
+        создаётся только при первичной установке или с ключом --with-roles.
+        Возвращает (роль или None, создана ли).
+        """
+        role = Role.objects.filter(code=code).first()
+        if role is not None:
+            return role, False
+        if not self.with_roles:
+            self.skipped_roles.append(f"{code} «{defaults['name']}»")
+            return None, False
+        return Role.objects.create(code=code, **defaults), True
 
     def create_roles(self):
         """
@@ -116,7 +158,7 @@ class Command(BaseCommand):
 
     def create_system_admin_role(self):
         """Системный администратор - полный доступ"""
-        role, created = Role.objects.get_or_create(
+        role, created = self._typical_role(
             code='SYSTEM_ADMIN',
             defaults={
                 'name': 'Системный администратор',
@@ -138,7 +180,7 @@ class Command(BaseCommand):
 
     def create_company_admin_role(self):
         """Администратор компании - управление компанией"""
-        role, created = Role.objects.get_or_create(
+        role, created = self._typical_role(
             code='COMPANY_ADMIN',
             defaults={
                 'name': 'Администратор компании',
@@ -171,7 +213,7 @@ class Command(BaseCommand):
 
     def create_department_manager_role(self):
         """Руководитель отдела - управление отделом"""
-        role, created = Role.objects.get_or_create(
+        role, created = self._typical_role(
             code='DEPARTMENT_MANAGER',
             defaults={
                 'name': 'Руководитель отдела',
@@ -218,7 +260,7 @@ class Command(BaseCommand):
 
     def create_manager_role(self):
         """Менеджер - работа с клиентами и сделками"""
-        role, created = Role.objects.get_or_create(
+        role, created = self._typical_role(
             code='MANAGER',
             defaults={
                 'name': 'Менеджер',
@@ -271,7 +313,7 @@ class Command(BaseCommand):
 
     def create_viewer_role(self):
         """Наблюдатель - только просмотр"""
-        role, created = Role.objects.get_or_create(
+        role, created = self._typical_role(
             code='VIEWER',
             defaults={
                 'name': 'Наблюдатель',

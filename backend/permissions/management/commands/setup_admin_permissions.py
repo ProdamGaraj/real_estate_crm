@@ -58,14 +58,14 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f'✓ Найден отдел: {department.name}')
 
-        # Получить роль системного администратора
-        try:
-            system_admin_role = Role.objects.get(code='SYSTEM_ADMIN')
+        # Полный доступ даёт признак системного администратора. Типовую роль
+        # SYSTEM_ADMIN назначаем, если она есть: в системе со своими ролями её
+        # может не быть (init_permissions не создаёт её без --with-roles)
+        system_admin_role = Role.objects.filter(code='SYSTEM_ADMIN').first()
+        if system_admin_role:
             self.stdout.write(f'✓ Найдена роль: {system_admin_role.name}')
-        except Role.DoesNotExist:
-            self.stdout.write(self.style.ERROR('✗ Роль SYSTEM_ADMIN не найдена'))
-            self.stdout.write('Запустите: python manage.py init_permissions')
-            return
+        else:
+            self.stdout.write('  Роли SYSTEM_ADMIN нет — достаточно признака системного администратора')
 
         # Получить или создать профиль пользователя
         profile, created = UserProfile.objects.get_or_create(
@@ -91,7 +91,9 @@ class Command(BaseCommand):
             self.stdout.write(f'✓ Создан профиль пользователя')
 
         # Назначить роль системного администратора
-        if system_admin_role not in profile.roles.all():
+        if system_admin_role is None:
+            pass
+        elif system_admin_role not in profile.roles.all():
             profile.roles.add(system_admin_role)
             self.stdout.write(f'✓ Назначена роль: {system_admin_role.name}')
         else:
@@ -107,7 +109,7 @@ class Command(BaseCommand):
         self.stdout.write(f'Email: {user.email or "не указан"}')
         self.stdout.write(f'Компания: {company.name}')
         self.stdout.write(f'Отдел: {department.name}')
-        self.stdout.write(f'Роль: {system_admin_role.name}')
+        self.stdout.write(f'Роль: {system_admin_role.name if system_admin_role else "—"}')
         self.stdout.write(f'Разрешений: {profile.get_all_permissions().count()}')
         self.stdout.write(f'Системный администратор: {"Да" if profile.is_system_admin else "Нет"}')
         self.stdout.write('')

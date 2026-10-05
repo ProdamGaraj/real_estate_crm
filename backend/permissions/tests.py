@@ -237,3 +237,42 @@ class InitPermissionsSyncGuardTests(TestCase):
         call_command('init_permissions', sync_roles=True, stdout=_io.StringIO())
 
         self.assertTrue(role.permissions.exists())
+
+
+class InitPermissionsTypicalRolesTests(TestCase):
+    """Типовые роли создаются только при первичной установке или по ключу."""
+
+    TYPICAL = {'SYSTEM_ADMIN', 'COMPANY_ADMIN', 'DEPARTMENT_MANAGER', 'MANAGER', 'VIEWER'}
+
+    def test_fresh_install_gets_typical_roles(self):
+        call_command('init_permissions', stdout=_io.StringIO())
+        self.assertEqual(set(Role.objects.values_list('code', flat=True)), self.TYPICAL)
+
+    def test_existing_roles_get_no_duplicates(self):
+        # Как на проде: свои роли уже заведены, после обновления запускают команду
+        Role.objects.create(name='Администратор', code='ADMINISTRATOR', is_system=False)
+        Role.objects.create(name='Руководитель', code='RUKOVODITEL', is_system=False)
+        out = _io.StringIO()
+
+        call_command('init_permissions', stdout=out)
+
+        self.assertEqual(set(Role.objects.values_list('code', flat=True)), {'ADMINISTRATOR', 'RUKOVODITEL'})
+        # Разрешения на новые ресурсы при этом создаются
+        self.assertTrue(Permission.objects.filter(resource='EXCHANGE_RATE').exists())
+        self.assertIn('--with-roles', out.getvalue())
+
+    def test_with_roles_creates_missing_typical_roles(self):
+        Role.objects.create(name='Руководитель', code='RUKOVODITEL', is_system=False)
+
+        call_command('init_permissions', with_roles=True, stdout=_io.StringIO())
+
+        self.assertEqual(set(Role.objects.values_list('code', flat=True)), self.TYPICAL | {'RUKOVODITEL'})
+
+    def test_setup_admin_works_without_system_admin_role(self):
+        # На проде типовой роли SYSTEM_ADMIN нет — полный доступ даёт признак профиля
+        Role.objects.create(name='Администратор', code='ADMINISTRATOR', is_system=False)
+        get_user_model().objects.create_user('boss', password='pass-for-tests')
+
+        call_command('setup_admin_permissions', username='boss', stdout=_io.StringIO())
+
+        self.assertTrue(UserProfile.objects.get(user__username='boss').is_system_admin)
