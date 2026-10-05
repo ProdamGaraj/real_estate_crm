@@ -24,7 +24,7 @@ from permissions.reference_scope import is_admin
 
 from .currency import (
     CURRENCIES, CURRENCY_CODES, BASE_CURRENCY, _lookup,
-    company_base_currency, fetch_cbu_rates, supported_currencies, user_company,
+    company_base_currency, fetch_cbu_rates, supported_currencies, try_fetch_cbu_rates, user_company,
 )
 from .models import ExchangeRate
 
@@ -131,18 +131,18 @@ class ExchangeRateListView(APIView):
         codes = [c.strip().upper() for c in codes.split(',')] if codes else supported_currencies(company)
 
         rates = {}
+        attempted = False
         for code in codes:
             if code == BASE_CURRENCY:
                 rates[code] = {'currency': code, 'rate': '1', 'date': on_date.isoformat(), 'source': 'BASE'}
                 continue
             record = _lookup(code, on_date, company)
-            if record is None:
-                # Курса ещё нет — пробуем загрузить с ЦБ один раз
-                try:
-                    fetch_cbu_rates(None if on_date >= timezone.localdate() else on_date)
-                except Exception:
-                    pass
-                record = _lookup(code, on_date, company)
+            if record is None and not attempted:
+                # Курса ещё нет — пробуем загрузить с ЦБ, один раз на запрос:
+                # загрузка приносит сразу все валюты
+                attempted = True
+                if try_fetch_cbu_rates(on_date):
+                    record = _lookup(code, on_date, company)
             rates[code] = _rate_payload(record) if record else {'currency': code, 'rate': None}
         return Response({
             'date': on_date.isoformat(),

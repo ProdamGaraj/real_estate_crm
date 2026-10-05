@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,20 +15,54 @@ import BookingForm from '../deals/BookingForm';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import { getMediaUrl } from '../../utils/media';
-import { formatMoney } from '../../utils/currency';
+import { convertAmount, formatMoney, formatRate, crossRate } from '../../utils/currency';
+import { getCurrencySettings, getCurrentRates } from '../../api/currency';
+import InstallmentCalculator from '../installments/InstallmentCalculator';
 
 interface ModalProps {
   property: Property | null;
   buildingId: number;
+  /** Для шапки расчёта рассрочки */
+  buildingName?: string;
+  projectName?: string;
   open: boolean;
   onClose: () => void;
 }
 
-export default function PropertyDetailModal({ property, buildingId, open, onClose }: ModalProps) {
+export default function PropertyDetailModal({ property, buildingId, buildingName, projectName, open, onClose }: ModalProps) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
+  const [isInstallmentOpen, setInstallmentOpen] = useState(false);
+
+  // Рассрочку считаем в валюте сделок компании: цена из прайса пересчитывается
+  // по сегодняшнему курсу так же, как при брони
+  const { data: currencySettings } = useQuery({
+    queryKey: ['currencySettings', null],
+    queryFn: () => getCurrencySettings(),
+    enabled: isInstallmentOpen,
+  });
+  const priceCurrency = property?.price_currency || currencySettings?.deal_currency || '';
+  const dealCurrency = currencySettings?.deal_currency || priceCurrency;
+  const { data: rates } = useQuery({
+    queryKey: ['exchangeRates', 'current', null, [priceCurrency, dealCurrency]],
+    queryFn: () => getCurrentRates({ currencies: [priceCurrency, dealCurrency] }),
+    enabled: isInstallmentOpen && Boolean(priceCurrency) && priceCurrency !== dealCurrency,
+  });
+  const convertedPrice = property && priceCurrency !== dealCurrency
+    ? convertAmount(Number(property.price), priceCurrency, dealCurrency, rates?.rates)
+    : null;
+  const calcCurrency = convertedPrice !== null ? dealCurrency : priceCurrency;
+  const calcPrice = property ? (convertedPrice ?? Number(property.price)) : null;
+  const calcNote = property && priceCurrency !== dealCurrency
+    ? (convertedPrice !== null
+      ? t('installments.converted_note', {
+          catalog: formatMoney(property.price, priceCurrency, i18n.language),
+          rate: formatRate(crossRate(rates?.rates, priceCurrency, dealCurrency), i18n.language),
+        })
+      : t('installments.no_rate', { currency: priceCurrency }))
+    : null;
   const { register, handleSubmit, setValue } = useForm<{ description: string }>();
 
   const [activeStep, setActiveStep] = useState(0);
@@ -199,6 +233,8 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
                       <Button variant="contained" color="secondary" onClick={() => setBookingModalOpen(true)}>{t('pages.properties.book')}</Button>}
                   </>
                 )}
+                {/* Варианты оплаты для клиента — в любом статусе объекта */}
+                <Button variant="outlined" onClick={() => setInstallmentOpen(true)}>{t('installments.open_button')}</Button>
               </Stack>
 
               <Box component="form" onSubmit={handleSubmit(onCommentSave)}>
@@ -218,6 +254,18 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
           </Grid>
         </DialogContent>
       </Dialog>
+
+      <InstallmentCalculator
+        open={isInstallmentOpen}
+        onClose={() => setInstallmentOpen(false)}
+        basePrice={calcPrice}
+        currency={calcCurrency}
+        heading={[
+          [projectName, buildingName].filter(Boolean).join(', '),
+          `${t('installments.unit')} №${property.unit_number}, ${t('pages.properties.floor')} ${property.floor}, ${property.area} ${t('pages.properties.sqm')}`,
+        ].filter(Boolean)}
+        priceNote={calcNote}
+      />
 
       <Dialog open={isBookingModalOpen} onClose={() => setBookingModalOpen(false)}>
           <DialogTitle>{t('pages.properties.book_property', { number: property.unit_number })}</DialogTitle>

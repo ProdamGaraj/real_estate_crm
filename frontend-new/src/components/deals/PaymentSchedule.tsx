@@ -53,8 +53,14 @@ const PROTECTED_STATUSES: Payment['status'][] = ['PAID', 'TO_BE_RETURNED', 'RETU
 
 
 export default function PaymentSchedule({
-  dealId, contractPrice, dealCurrency, dealCompanyId, existingPayments, isDealTerminated, isReadOnly,
+  dealId, contractPrice, dealCurrency, dealCompanyId, existingPayments: unsortedPayments, isDealTerminated, isReadOnly,
 }: PaymentScheduleProps) {
+  // График читается по порядку сроков. API отдаёт платежи от поздних к ранним —
+  // так удобно списку «Финансы», но не графику сделки
+  const existingPayments = useMemo(
+    () => [...unsortedPayments].sort((a, b) => a.due_date.localeCompare(b.due_date) || a.id - b.id),
+    [unsortedPayments]
+  );
   const { t, i18n } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
@@ -154,12 +160,16 @@ export default function PaymentSchedule({
   // Предпросмотр в валюте сделки: каждая строка округляется до копеек, как
   // на бэкенде. Расхождение с договором в пределах копейки валюты ввода на
   // каждую пересчитанную строку бэкенд отнесёт на последнюю такую строку
-  const preview = useMemo(() => {
+  //
+  // Считается заново при каждой отрисовке и по свежим значениям формы: массив
+  // из watch() при правке строки сохраняет ту же ссылку, и useMemo по нему
+  // отдавал устаревший остаток — «Добавить платеж» подставлял ноль
+  const computePreview = (rows: PaymentSchedulePayloadItem[]) => {
     let total = 0;
     let tolerance = 0;
     let converted = 0;
     const missing = new Set<string>();
-    for (const row of watchedPayments) {
+    for (const row of rows) {
       const amount = Number(row.amount) || 0;
       const currency = row.currency || dealCurrency;
       if (currency === dealCurrency) {
@@ -180,10 +190,11 @@ export default function PaymentSchedule({
     // Копеечный допуск на погрешность float у строк в валюте сделки
     const balanced = missing.size === 0 && Math.abs(remaining) <= (converted ? tolerance : 0.001);
     return { total, remaining, balanced, missing: [...missing], converted };
-  }, [watchedPayments, rates, dealCurrency, contractPrice]);
+  };
+  const preview = computePreview(watchedPayments);
 
   const handleAddPayment = () => {
-    const left = preview.remaining;
+    const left = computePreview(getValues('payments')).remaining;
     append({
       amount: left > 0 ? left : 0,
       due_date: '',

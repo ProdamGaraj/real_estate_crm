@@ -53,6 +53,11 @@ CBU_URL_ON_DATE = 'https://cbu.uz/ru/arkhiv-kursov-valyut/json/all/{date}/'
 
 # Если ближайший известный курс старше этого, его пытаются освежить с ЦБ
 STALE_DAYS = 7
+# После неудачной загрузки по требованию следующая попытка — не раньше чем
+# через это время: иначе при недоступном ЦБ каждая бронь и каждое открытие
+# графика ждали бы таймаут запроса
+FETCH_RETRY_SECONDS = 600
+_FETCH_FAILED_KEY = 'finances:cbu_fetch_failed'
 
 CENT = Decimal('0.01')
 # Курс к суму: ЦБ публикует его с 2 знаками, 8 знаков — с запасом
@@ -128,6 +133,33 @@ def _lookup(currency, on_date, company):
             .first())
 
 
+def try_fetch_cbu_rates(on_date):
+    """
+    Загрузка курсов ЦБ по требованию (бронь, график, экран курсов).
+
+    Возвращает, удалась ли загрузка. После неудачи повторные попытки
+    пропускаются на FETCH_RETRY_SECONDS. Регламентное задание и кнопка
+    «Обновить курсы ЦБ» вызывают fetch_cbu_rates напрямую и пробуют всегда.
+    """
+    from django.core.cache import cache
+
+    try:
+        if cache.get(_FETCH_FAILED_KEY):
+            return False
+    except Exception:  # кэш недоступен — просто пробуем загрузить
+        pass
+    try:
+        fetch_cbu_rates(None if on_date >= timezone.localdate() else on_date)
+        return True
+    except Exception as error:  # сеть, формат ответа — работаем с тем, что есть
+        logger.warning('Не удалось загрузить курсы ЦБ на %s: %s', on_date, error)
+        try:
+            cache.set(_FETCH_FAILED_KEY, True, FETCH_RETRY_SECONDS)
+        except Exception:
+            pass
+        return False
+
+
 def get_rate(currency, on_date=None, company=None, fetch=True):
     """Сколько сумов стоит единица валюты на дату."""
     if currency == BASE_CURRENCY:
@@ -135,11 +167,8 @@ def get_rate(currency, on_date=None, company=None, fetch=True):
     on_date = on_date or timezone.localdate()
     record = _lookup(currency, on_date, company)
     if fetch and (record is None or (on_date - record.date).days > STALE_DAYS):
-        try:
-            fetch_cbu_rates(None if on_date >= timezone.localdate() else on_date)
+        if try_fetch_cbu_rates(on_date):
             record = _lookup(currency, on_date, company)
-        except Exception as error:  # сеть, формат ответа — работаем с тем, что есть
-            logger.warning('Не удалось загрузить курсы ЦБ на %s: %s', on_date, error)
     if record is None:
         raise RateUnavailable(
             f'Нет курса {currency} на {on_date:%d.%m.%Y}. '

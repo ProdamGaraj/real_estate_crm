@@ -1,8 +1,8 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Box } from '@mui/material';
 import type { DataGridProps, GridColDef } from '@mui/x-data-grid';
 import LocalizedDataGrid from './LocalizedDataGrid';
-import MobileCardList, { MobileCardField } from './MobileCardList';
+import MobileCardList, { type MobileCardField } from './MobileCardList';
 import { useIsMobile } from '../../hooks/useMobile';
 
 export interface ResponsiveDataViewProps<T extends { id: number | string }> {

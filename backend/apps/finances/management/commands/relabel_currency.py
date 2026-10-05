@@ -6,6 +6,11 @@
 и платежей записаны в долларах, хотя помечены как сумы. Команда меняет
 только пометку валюты, числа остаются прежними.
 
+Сделки, суммы которых уже получены пересчётом (цена при брони пересчитана
+из прайса в другой валюте или сделка пересчитана командой
+convert_deals_currency), и сделки с платежами, введёнными в другой валюте,
+не трогаются: их пометка валюты верна, и смена пометки испортила бы суммы.
+
 По умолчанию — пробный запуск: показывает, что будет изменено.
 
     python manage.py relabel_currency --company 5 --deals USD --projects USD
@@ -14,6 +19,7 @@
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import F, Q
 
 from apps.deals.models import Deal
 from apps.finances.currency import CURRENCY_CODES
@@ -46,10 +52,22 @@ class Command(BaseCommand):
         self.stdout.write(f'Компания: {company.name}')
         if options['deals']:
             target = options['deals'].upper()
-            changed_deals = deals.exclude(currency=target)
-            changed_payments = payments.exclude(currency=target)
+            # Пометка валюты у таких сделок верна: суммы получены пересчётом
+            converted = (Q(catalog_rate__isnull=False) & ~Q(catalog_currency='')
+                         & ~Q(catalog_currency=F('currency')))
+            entered = Q(payments__entered_currency__gt='')
+            protected = deals.filter(converted | entered).distinct()
+            # Список id фиксируем сразу: после смены валюты сделок условие
+            # «валюта не равна целевой» уже не нашло бы их платежи
+            changed_ids = list(deals.exclude(currency=target).exclude(pk__in=protected.values('pk'))
+                               .values_list('pk', flat=True))
+            changed_deals = Deal.objects.filter(pk__in=changed_ids)
+            changed_payments = payments.filter(deal_id__in=changed_ids).exclude(currency=target)
             self.stdout.write(f'  сделок к изменению: {changed_deals.count()} из {deals.count()} → {target}')
             self.stdout.write(f'  платежей к изменению: {changed_payments.count()} из {payments.count()} → {target}')
+            if protected.exists():
+                self.stdout.write(self.style.WARNING(
+                    f'  пропущено сделок с пересчитанными суммами: {protected.count()}'))
         if options['projects']:
             target_p = options['projects'].upper()
             changed_projects = projects.exclude(price_currency=target_p)

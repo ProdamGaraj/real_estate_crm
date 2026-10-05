@@ -473,7 +473,7 @@
       "create_deal": "Create Deal",
       "application_optional": "Application (optional)",
       "currency_fixed_hint": "Set by company settings at booking",
-      "catalog_conversion": "The catalog price {{catalog}} was converted at the booking-day rate {{rate}}: {{price}}."
+      "catalog_conversion": "The catalog price {{catalog}} was converted to the deal currency at the rate {{rate}}: {{price}}."
     },
     "projects": {
       "title": "Projects",
@@ -967,7 +967,8 @@
         "history_title": "Rate history",
         "entered_by": "Entered by",
         "confirm_delete": "Delete the manual rate? The CBU rate will apply on this date again."
-      }
+      },
+      "installments_tab": "Installments"
     },
     "api_keys": {
       "title": "Partner API Keys",
@@ -1457,5 +1458,64 @@
     "2": "Q2",
     "3": "Q3",
     "4": "Q4"
+  },
+  "installments": {
+    "title": "Payment options",
+    "open_button": "Installments",
+    "create_from_terms": "Create schedule from installment terms",
+    "unit": "Unit",
+    "base_price": "Price",
+    "applied_discounts": "Discounts already applied to the deal: {{percent}}% — added to the term discount.",
+    "converted_note": "Price list price {{catalog}}, converted at the rate {{rate}}.",
+    "no_rate": "No rate for {{currency}} — calculated in the price list currency.",
+    "no_terms": "Installment terms are not set up. Management sets them in Settings → Installments.",
+    "compare_title": "Terms compared",
+    "full_payment": "100% payment",
+    "months": "{{months}} mo.",
+    "row_discount_percent": "Discount",
+    "row_discount_amount": "Discount amount",
+    "row_price": "Price after discount",
+    "row_down": "Down payment",
+    "row_monthly": "Monthly",
+    "schedule_title": "Schedule: {{variant}}",
+    "down_percent": "Down payment, %",
+    "min_hint": "At least {{percent}}%",
+    "start_date": "First payment date",
+    "col_number": "#",
+    "col_date": "Date",
+    "col_kind": "Payment",
+    "col_amount": "Amount",
+    "col_balance": "Balance",
+    "kind_full": "Full payment",
+    "kind_down": "Down payment",
+    "kind_monthly": "Monthly",
+    "total": "Total",
+    "print": "Print",
+    "print_title": "Payment options",
+    "popup_blocked": "The browser blocked the print window — allow pop-ups for this site.",
+    "disclaimer": "Preliminary calculation, not an offer. Rate and terms as of {{date}}.",
+    "down_type": "Down payment type",
+    "monthly_type": "Monthly payment type",
+    "create_schedule": "Create schedule",
+    "creating": "Creating…",
+    "create_confirm": "The contract price will become {{price}}; the schedule will have {{count}} payments. Continue?",
+    "created": "Schedule created. Contract price: {{price}}. You can still edit it manually.",
+    "schedule_exists": "The deal already has a schedule — edit it on the Payment schedule step.",
+    "deal_read_only": "The deal is closed for changes — a schedule cannot be created.",
+    "settings": {
+      "title": "Installment terms",
+      "hint": "For each term: a discount and a minimum down payment. Managers use them to show payment options to clients and to create a deal schedule in one click. Term 0 means paying the full amount at once.",
+      "term": "Term",
+      "months": "Term, months",
+      "months_hint": "0 — paid at once",
+      "discount": "Discount, %",
+      "down_payment": "Min. down payment, %",
+      "active": "Active",
+      "confirm_delete": "Delete the \"{{term}}\" term?"
+    },
+    "no_types": "The company has no payment types or beneficiary accounts — a schedule cannot be created. Contact the administrator.",
+    "zero_price": "The price after discounts is zero — check the deal discounts.",
+    "no_rights": "No rights to edit the deal or create payments — the deal manager or head can create the schedule.",
+    "create_confirm_replace": "The contract price will become {{price}} (now {{current}}); the schedule will have {{count}} payments. Continue?"
   }
 }

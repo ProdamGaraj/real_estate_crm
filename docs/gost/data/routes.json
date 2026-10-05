@@ -518,6 +518,24 @@
   "doc": "Удаление ручного курса своей компании. Курсы ЦБ не удаляются."
  },
  {
+  "path": "/api/finances/installment-plans/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.finances.installment_views.InstallmentPlanListView",
+  "doc": "GET — условия компании (с ``all=1`` — и отключённые); POST — новое условие."
+ },
+ {
+  "path": "/api/finances/installment-plans/<int:pk>/",
+  "methods": [
+   "DELETE",
+   "PATCH"
+  ],
+  "view": "apps.finances.installment_views.InstallmentPlanDetailView",
+  "doc": "PATCH — изменить условие, DELETE — удалить. Только условия своей компании."
+ },
+ {
   "path": "/api/templates/",
   "methods": [
    "GET",

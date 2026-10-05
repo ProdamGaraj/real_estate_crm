@@ -473,7 +473,7 @@
       "signed_uploaded": "Imzolangan hujjat yuklandi.",
       "application_optional": "Ariza (ixtiyoriy)",
       "currency_fixed_hint": "Bron paytida kompaniya sozlamasi bilan belgilanadi",
-      "catalog_conversion": "Prays bo'yicha narx {{catalog}} bron kunidagi {{rate}} kurs bo'yicha qayta hisoblandi: {{price}}."
+      "catalog_conversion": "Prays bo'yicha narx {{catalog}} bitim valyutasiga {{rate}} kurs bo'yicha qayta hisoblandi: {{price}}."
     },
     "projects": {
       "title": "Loyihalar",
@@ -967,7 +967,8 @@
         "history_title": "Kurslar tarixi",
         "entered_by": "Kim kiritgan",
         "confirm_delete": "Qo'lda kiritilgan kurs o'chirilsinmi? Bu sanada yana MB kursi amal qiladi."
-      }
+      },
+      "installments_tab": "Bo'lib to'lash"
     },
     "api_keys": {
       "title": "Hamkor API-kalitlari",
@@ -1490,5 +1491,64 @@
     "2": "2-chorak",
     "3": "3-chorak",
     "4": "4-chorak"
+  },
+  "installments": {
+    "title": "To'lov variantlari",
+    "open_button": "Bo'lib to'lash",
+    "create_from_terms": "Bo'lib to'lash shartlari bo'yicha jadval yaratish",
+    "unit": "Obyekt",
+    "base_price": "Narx",
+    "applied_discounts": "Bitimda qo'llangan chegirmalar: {{percent}}% — muddat chegirmasiga qo'shilgan.",
+    "converted_note": "Prays bo'yicha narx {{catalog}}, {{rate}} kurs bo'yicha qayta hisoblangan.",
+    "no_rate": "{{currency}} kursi yo'q — hisob prays valyutasida.",
+    "no_terms": "Bo'lib to'lash shartlari sozlanmagan. Ularni rahbariyat belgilaydi: «Sozlamalar» → «Bo'lib to'lash».",
+    "compare_title": "Muddatlarni solishtirish",
+    "full_payment": "100% to'lov",
+    "months": "{{months}} oy",
+    "row_discount_percent": "Chegirma",
+    "row_discount_amount": "Chegirma summasi",
+    "row_price": "Chegirmali narx",
+    "row_down": "Boshlang'ich to'lov",
+    "row_monthly": "Har oy",
+    "schedule_title": "Jadval: {{variant}}",
+    "down_percent": "Boshlang'ich to'lov, %",
+    "min_hint": "Kamida {{percent}}%",
+    "start_date": "Birinchi to'lov sanasi",
+    "col_number": "№",
+    "col_date": "Sana",
+    "col_kind": "To'lov",
+    "col_amount": "Summa",
+    "col_balance": "Qoldiq",
+    "kind_full": "To'liq to'lov",
+    "kind_down": "Boshlang'ich to'lov",
+    "kind_monthly": "Oylik",
+    "total": "Jami",
+    "print": "Chop etish",
+    "print_title": "To'lov variantlari",
+    "popup_blocked": "Brauzer chop etish oynasini to'sib qo'ydi — bu sayt uchun qalqib chiquvchi oynalarga ruxsat bering.",
+    "disclaimer": "Hisob dastlabki va oferta hisoblanmaydi. Kurs va shartlar — {{date}} holatiga.",
+    "down_type": "Boshlang'ich to'lov turi",
+    "monthly_type": "Oylik to'lovlar turi",
+    "create_schedule": "Jadval yaratish",
+    "creating": "Yaratilmoqda…",
+    "create_confirm": "Shartnoma narxi {{price}} bo'ladi, jadvalda to'lovlar soni: {{count}}. Davom etilsinmi?",
+    "created": "Jadval yaratildi. Shartnoma narxi — {{price}}. Uni qo'lda tuzatish mumkin.",
+    "schedule_exists": "Bitimda jadval allaqachon bor — uni «To'lov jadvali» bosqichida tuzating.",
+    "deal_read_only": "Bitim o'zgartirish uchun yopiq — jadval yaratib bo'lmaydi.",
+    "settings": {
+      "title": "Bo'lib to'lash shartlari",
+      "hint": "Har bir muddat uchun — chegirma va eng kam boshlang'ich to'lov. Ular bo'yicha menejerlar mijozga to'lov variantlarini ko'rsatadi va bitim jadvalini bitta tugma bilan yaratadi. Muddat 0 — butun summani darhol to'lash.",
+      "term": "Muddat",
+      "months": "Muddat, oy",
+      "months_hint": "0 — darhol to'lov",
+      "discount": "Chegirma, %",
+      "down_payment": "Eng kam boshlang'ich to'lov, %",
+      "active": "Amalda",
+      "confirm_delete": "«{{term}}» sharti o'chirilsinmi?"
+    },
+    "no_types": "Kompaniyada to'lov turlari yoki oluvchi hisobvaraqlari yo'q — jadval yaratib bo'lmaydi. Administratorga murojaat qiling.",
+    "zero_price": "Chegirmali narx nolga teng chiqdi — bitim chegirmalarini tekshiring.",
+    "no_rights": "Bitimni o'zgartirish yoki to'lov yaratish huquqi yo'q — jadvalni bitim menejeri yoki rahbar yaratadi.",
+    "create_confirm_replace": "Shartnoma narxi {{price}} bo'ladi (hozir {{current}}), jadvalda to'lovlar soni: {{count}}. Davom etilsinmi?"
   }
 }

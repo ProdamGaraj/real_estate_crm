@@ -206,3 +206,35 @@ class ExchangeRate(models.Model):
 
     def __str__(self):
         return f"{self.currency} {self.date:%d.%m.%Y} = {self.rate} UZS"
+
+
+class InstallmentPlan(models.Model):
+    """
+    Условия оплаты компании: срок рассрочки, скидка за этот срок и минимальный
+    первоначальный взнос.
+
+    По ним менеджер показывает клиенту варианты оплаты объекта и одной кнопкой
+    собирает график платежей сделки. Срок 0 — оплата всей суммой сразу.
+    Условия задаёт руководство; менеджер их только применяет.
+    """
+    company = models.ForeignKey('permissions.Company', on_delete=models.CASCADE,
+                                related_name='installment_plans', verbose_name="Компания")
+    months = models.PositiveSmallIntegerField(verbose_name="Срок рассрочки, мес. (0 — полная оплата)")
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                           verbose_name="Скидка за этот срок, %")
+    down_payment_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0,
+                                               verbose_name="Минимальный первоначальный взнос, %")
+    is_active = models.BooleanField(default=True, verbose_name="Действует")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата изменения")
+
+    class Meta:
+        verbose_name = "Условие рассрочки"
+        verbose_name_plural = "Условия рассрочки"
+        ordering = ['months']
+        constraints = [
+            models.UniqueConstraint(fields=['company', 'months'], name='uniq_installment_term_per_company'),
+        ]
+
+    def __str__(self):
+        return f"{self.months} мес., скидка {self.discount_percent}%"

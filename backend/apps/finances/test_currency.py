@@ -19,8 +19,8 @@ from rest_framework.test import APIClient
 
 from apps.crm.models import Client
 from apps.deals.models import Deal
-from apps.finances.currency import Converter, RateUnavailable, convert, cross_rate, get_rate
-from apps.finances.models import BeneficiaryAccount, ExchangeRate, Payment, PaymentType
+from apps.finances.currency import Converter, RateUnavailable, convert, cross_rate, get_rate, money
+from apps.finances.models import BeneficiaryAccount, ExchangeRate, InstallmentPlan, Payment, PaymentType
 from apps.realty.models import Building, Project, Property
 from permissions.models import Company, Department, Permission, Role, UserProfile
 
@@ -274,3 +274,219 @@ class MultiCurrencyDealTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['kpi']['currency'], 'UZS')
         self.assertEqual(Decimal(response.data['kpi']['monthlySales']), Decimal('17000000.00'))
+
+
+class LegacyDealsMixin:
+    """Компания с прайсом в долларах и сделки, созданные до мультивалютности."""
+
+    def setUp(self):
+        self.today = timezone.localdate()
+        cbu('USD', self.today, '12000')
+        self.company = Company.objects.create(name='Андижан', code='AND', deal_currency='UZS')
+        self.user = User.objects.create_user('mgr', password='pass-for-tests')
+        project = Project.objects.create(name='ЖК', address='А', company=self.company, price_currency='USD')
+        building = Building.objects.create(project=project, name='1', floors_count=9)
+        self.property = Property.objects.create(building=building, property_type='APARTMENT', unit_number='1',
+                                                floor=1, area=Decimal('50'), price=Decimal('21000'))
+        self.client_obj = Client.objects.create(full_name='Клиент', company=self.company, created_by=self.user)
+        self.ptype = PaymentType.objects.create(name='Рассрочка', company=self.company)
+        self.account = BeneficiaryAccount.objects.create(name='Счёт', details='-', company=self.company)
+
+    def legacy_deal(self, price='21000', payments=('7000', '7000', '7000'), **extra):
+        deal = Deal.objects.create(
+            company=self.company, client=self.client_obj, property=self.property, created_by=self.user,
+            booking_end_date=timezone.now(), initial_price=Decimal(price), initial_price_per_sqm=Decimal('420'),
+            contract_price=Decimal(price), currency='UZS', status=Deal.DealStatus.IN_PROGRESS, **extra,
+        )
+        for index, amount in enumerate(payments):
+            Payment.objects.create(
+                company=self.company, deal=deal, client=self.client_obj, amount=Decimal(amount), currency='UZS',
+                payment_type=self.ptype, method='CASHLESS', beneficiary_account=self.account,
+                due_date=self.today + timedelta(days=30 * (index + 1)),
+                status=Payment.PaymentStatus.PAID if index == 0 else Payment.PaymentStatus.PENDING,
+            )
+        return deal
+
+    def run_command(self, *args):
+        out = io.StringIO()
+        call_command('convert_deals_currency', '--company', str(self.company.id), '--assume-from', 'USD',
+                     *args, stdout=out)
+        return out.getvalue()
+
+
+@NO_NETWORK
+class ConvertDealsCurrencyTests(LegacyDealsMixin, TestCase):
+    """Старые сделки: суммы в долларах с пометкой «сум» пересчитываются в сумы."""
+
+    def test_legacy_deal_and_payments_are_converted_with_originals_kept(self, _):
+        deal = self.legacy_deal()
+        self.run_command('--apply')
+        deal.refresh_from_db()
+        self.assertEqual((deal.currency, deal.contract_price, deal.initial_price),
+                         ('UZS', Decimal('252000000.00'), Decimal('252000000.00')))
+        self.assertEqual((deal.catalog_price, deal.catalog_currency), (Decimal('21000.00'), 'USD'))
+        paid = deal.payments.get(status=Payment.PaymentStatus.PAID)
+        self.assertEqual((paid.amount, paid.currency, paid.entered_amount, paid.entered_currency),
+                         (Decimal('84000000.00'), 'UZS', Decimal('7000.00'), 'USD'))
+        self.assertTrue(deal.logs.filter(action__startswith='Сделка пересчитана из USD в UZS').exists())
+
+    def test_dry_run_changes_nothing(self, _):
+        deal = self.legacy_deal()
+        output = self.run_command()
+        deal.refresh_from_db()
+        self.assertEqual((deal.currency, deal.contract_price), ('UZS', Decimal('21000.00')))
+        self.assertIn('Пробный запуск', output)
+
+    def test_second_run_does_not_convert_twice(self, _):
+        deal = self.legacy_deal()
+        self.run_command('--apply')
+        self.run_command('--apply')
+        deal.refresh_from_db()
+        self.assertEqual(deal.contract_price, Decimal('252000000.00'))
+
+    def test_rounding_tail_goes_to_last_unpaid_payment(self, _):
+        ExchangeRate.objects.filter(currency='USD').update(rate=Decimal('11772.95'))
+        deal = self.legacy_deal(price='10000.01', payments=('3333.33', '3333.34', '3333.34'))
+        self.run_command('--apply')
+        deal.refresh_from_db()
+        self.assertEqual(sum(p.amount for p in deal.payments.all()), deal.contract_price)
+        # Оплаченный платёж пересчитан ровно по курсу, хвост — на последнем неоплаченном
+        paid = deal.payments.get(status=Payment.PaymentStatus.PAID)
+        self.assertEqual(paid.amount, money(Decimal('3333.33') * Decimal('11772.95')))
+
+    def test_deal_booked_from_usd_price_list_is_left_alone(self, _):
+        # Сделка, созданная после того, как у проекта указали валюту прайса: уже в сумах
+        deal = self.legacy_deal(price='252000000', payments=(), catalog_price=Decimal('21000'),
+                                catalog_currency='USD', catalog_rate=Decimal('12000'))
+        self.run_command('--apply')
+        deal.refresh_from_db()
+        self.assertEqual(deal.contract_price, Decimal('252000000.00'))
+
+    def test_deal_with_sum_sized_amounts_is_skipped(self, _):
+        deal = self.legacy_deal(price='252000000', payments=('252000000',))
+        output = self.run_command('--apply')
+        deal.refresh_from_db()
+        self.assertEqual(deal.contract_price, Decimal('252000000.00'))
+        self.assertIn('похоже, уже в UZS', output)
+
+
+@LOCAL_CACHE
+class InstallmentPlanApiTests(TestCase):
+    """Условия рассрочки: читает вся компания, меняет тот, кто ведёт скидки."""
+
+    def setUp(self):
+        call_command('init_permissions', stdout=io.StringIO())
+        self.company = Company.objects.create(name='А', code='A')
+        self.other = Company.objects.create(name='Б', code='B')
+        dept = Department.objects.create(company=self.company, name='Отдел', code='D1')
+        self.role = Role.objects.create(name='Менеджер', code='SALES_MANAGER')
+        self.role.permissions.set(Permission.objects.filter(resource='DISCOUNT', action='VIEW', scope='COMPANY'))
+        user = User.objects.create_user('mgr', password='pass-for-tests')
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company, profile.department = self.company, dept
+        profile.save()
+        profile.roles.set([self.role])
+        self.api = APIClient()
+        self.api.force_authenticate(User.objects.get(pk=user.pk))
+        InstallmentPlan.objects.create(company=self.company, months=12, discount_percent=5, down_payment_percent=30)
+        InstallmentPlan.objects.create(company=self.company, months=36, discount_percent=0, down_payment_percent=30,
+                                       is_active=False)
+        InstallmentPlan.objects.create(company=self.other, months=6, discount_percent=7)
+
+    def grant(self, *actions):
+        self.role.permissions.add(*Permission.objects.filter(resource='DISCOUNT', action__in=actions, scope='COMPANY'))
+
+    def test_company_sees_only_its_active_terms(self):
+        response = self.api.get('/api/finances/installment-plans/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['months'] for row in response.data], [12])
+        response = self.api.get('/api/finances/installment-plans/?all=1')
+        self.assertEqual([row['months'] for row in response.data], [12, 36])
+
+    def test_changes_require_discount_rights(self):
+        response = self.api.post('/api/finances/installment-plans/', {'months': 24, 'discount_percent': '3'},
+                                 format='json')
+        self.assertEqual(response.status_code, 403)
+        self.grant('ADD', 'EDIT', 'DELETE')
+        response = self.api.post('/api/finances/installment-plans/',
+                                 {'months': 24, 'discount_percent': '3', 'down_payment_percent': '20'}, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(InstallmentPlan.objects.get(pk=response.data['id']).company, self.company)
+
+    def test_duplicate_term_and_bad_values_are_rejected(self):
+        self.grant('ADD')
+        response = self.api.post('/api/finances/installment-plans/', {'months': 12}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('months', response.data)
+        response = self.api.post('/api/finances/installment-plans/',
+                                 {'months': 6, 'down_payment_percent': '100'}, format='json')
+        self.assertEqual(response.status_code, 400)
+
+    def test_other_company_term_cannot_be_changed(self):
+        self.grant('EDIT', 'DELETE')
+        foreign = InstallmentPlan.objects.get(company=self.other)
+        self.assertEqual(self.api.patch(f'/api/finances/installment-plans/{foreign.id}/',
+                                        {'discount_percent': '50'}, format='json').status_code, 404)
+        self.assertEqual(self.api.delete(f'/api/finances/installment-plans/{foreign.id}/').status_code, 404)
+
+
+@LOCAL_CACHE
+class CbuFetchBackoffTests(TestCase):
+    """Недоступный ЦБ не должен тормозить каждую бронь и каждый экран."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.day = timezone.localdate()
+
+    def test_failed_fetch_is_not_retried_immediately(self):
+        with mock.patch('apps.finances.currency.fetch_cbu_rates', side_effect=OSError('нет сети')) as fetch:
+            for _ in range(3):
+                with self.assertRaises(RateUnavailable):
+                    get_rate('USD', self.day)
+            self.assertEqual(fetch.call_count, 1)
+
+    def test_rates_screen_tries_cbu_once_per_request(self):
+        company = Company.objects.create(name='А', code='A', supported_currencies=['UZS', 'USD', 'EUR', 'RUB'])
+        user = User.objects.create_user('viewer', password='pass-for-tests')
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company = company
+        profile.save()
+        api = APIClient()
+        api.force_authenticate(User.objects.get(pk=user.pk))
+        with mock.patch('apps.finances.currency.fetch_cbu_rates', return_value=0) as fetch:
+            response = api.get('/api/finances/exchange-rates/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(fetch.call_count, 1)
+        self.assertIsNone(response.data['rates']['EUR']['rate'])
+
+
+@NO_NETWORK
+class RelabelGuardTests(LegacyDealsMixin, TestCase):
+    """Смена пометки валюты не трогает сделки, суммы которых уже пересчитаны."""
+
+    def relabel(self):
+        call_command('relabel_currency', '--company', str(self.company.id), '--deals', 'USD', '--apply',
+                     stdout=io.StringIO())
+
+    def test_legacy_deal_and_its_payments_are_relabelled(self, _):
+        deal = self.legacy_deal()
+        self.relabel()
+        deal.refresh_from_db()
+        self.assertEqual(deal.currency, 'USD')
+        self.assertEqual({p.currency for p in deal.payments.all()}, {'USD'})
+
+    def test_converted_deal_keeps_its_label(self, _):
+        deal = self.legacy_deal()
+        self.run_command('--apply')
+        self.relabel()
+        deal.refresh_from_db()
+        self.assertEqual((deal.currency, deal.contract_price), ('UZS', Decimal('252000000.00')))
+        self.assertEqual({p.currency for p in deal.payments.all()}, {'UZS'})
+
+    def test_deal_booked_from_usd_price_list_keeps_its_label(self, _):
+        deal = self.legacy_deal(price='252000000', payments=(), catalog_price=Decimal('21000'),
+                                catalog_currency='USD', catalog_rate=Decimal('12000'))
+        self.relabel()
+        deal.refresh_from_db()
+        self.assertEqual(deal.currency, 'UZS')

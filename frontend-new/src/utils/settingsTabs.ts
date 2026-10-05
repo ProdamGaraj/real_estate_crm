@@ -46,6 +46,8 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
   { id: 'realty', labelKey: 'pages.settings.realty_tab', resources: ['BUILDING_TYPE'] },
   { id: 'finances', labelKey: 'pages.settings.finances_tab', resources: ['PAYMENT_TYPE', 'BENEFICIARY_ACCOUNT'] },
   { id: 'currencies', labelKey: 'pages.settings.currencies_tab', resources: ['EXCHANGE_RATE'] },
+  // Скидка за срок оплаты — та же скидка: условия ведёт тот, кто ведёт скидки
+  { id: 'installments', labelKey: 'pages.settings.installments_tab', resources: ['DISCOUNT'] },
   { id: 'templates', labelKey: 'pages.settings.templates_tab', resources: ['TEMPLATE'] },
   { id: 'api-keys', labelKey: 'pages.settings.api_keys_tab', resources: ['PARTNER_API_KEY'] },
 ];

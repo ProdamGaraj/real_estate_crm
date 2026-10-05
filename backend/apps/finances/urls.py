@@ -9,6 +9,7 @@ from .views import (
 from .currency_views import (
     CurrencySettingsView, ExchangeRateDetailView, ExchangeRateListView, ExchangeRateRefreshView,
 )
+from .installment_views import InstallmentPlanDetailView, InstallmentPlanListView
 
 urlpatterns = [
     path('finances/payments/', PaymentListView.as_view(), name='payment-list'),
@@ -26,4 +27,6 @@ urlpatterns = [
     path('finances/exchange-rates/', ExchangeRateListView.as_view(), name='exchange-rate-list'),
     path('finances/exchange-rates/refresh/', ExchangeRateRefreshView.as_view(), name='exchange-rate-refresh'),
     path('finances/exchange-rates/<int:pk>/', ExchangeRateDetailView.as_view(), name='exchange-rate-detail'),
+    path('finances/installment-plans/', InstallmentPlanListView.as_view(), name='installment-plan-list'),
+    path('finances/installment-plans/<int:pk>/', InstallmentPlanDetailView.as_view(), name='installment-plan-detail'),
 ]

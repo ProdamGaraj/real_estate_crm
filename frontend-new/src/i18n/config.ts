@@ -24,11 +24,16 @@ i18n
   .init({
     resources,
     fallbackLng: 'ru',
+    supportedLngs: ['ru', 'en', 'uz'],
     defaultNS: 'translation',
     
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+      // Браузер сообщает «ru-RU», а приложение сравнивает язык с «ru» (тема,
+      // таблицы, даты). Без приведения при первом входе подписи пагинации и
+      // форматы дат были английскими, хотя интерфейс — русский
+      convertDetectedLanguage: (lng: string) => lng.split('-')[0],
     },
 
     interpolation: {

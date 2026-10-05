@@ -198,9 +198,11 @@ export default function CurrencySettingsManager() {
     <Stack spacing={4}>
       {systemAdmin && (
         <FormControl size="small" sx={{ maxWidth: 360 }}>
-          <InputLabel>{t('common.company')}</InputLabel>
+          <InputLabel shrink>{t('common.company')}</InputLabel>
           <Select
             label={t('common.company')}
+            displayEmpty
+            notched
             value={companyId ?? ''}
             onChange={(e) => {
               const value = e.target.value as number | '';

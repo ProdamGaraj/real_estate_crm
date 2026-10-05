@@ -21,6 +21,13 @@ import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineC
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { extractApiError } from '../utils/apiError';
 import { formatMoney, formatRate } from '../utils/currency';
+import InstallmentCalculator from '../components/installments/InstallmentCalculator';
+import { paymentTypeFor } from '../components/installments/InstallmentCalculator';
+import type { ScheduleOptions } from '../components/installments/InstallmentCalculator';
+import { useAuthStore } from '../store/authStore';
+import { hasPermission } from '../utils/permissions';
+import type { InstallmentVariant } from '../utils/installments';
+import { createPaymentSchedule } from '../api/finances';
 
 type DealFormInputs = Pick<DealUpdatePayload, 'contract_price' | 'notes' | 'contract_number' | 'contract_date' | 'client_signature_date' | 'company_signature_date'> & {
   signed_document_scan?: FileList;
@@ -54,6 +61,8 @@ export default function DealDetailPage() {
   const [activeStep, setActiveStep] = useState(0); // Для шагов внутри степпера
   const [isInitialized, setIsInitialized] = useState(false);
   const [isCancellationModalOpen, setCancellationModalOpen] = useState(false);
+  const [isInstallmentOpen, setInstallmentOpen] = useState(false);
+  const { user } = useAuthStore();
 
   const getDateLocale = () => {
     const localeMap: Record<string, string> = { ru: 'ru-RU', en: 'en-US', uz: 'uz-UZ' };
@@ -122,6 +131,51 @@ export default function DealDetailPage() {
     updateDealMutation.mutate({ id: Number(dealId), payload });
   };
 
+  // График по условиям рассрочки: стоимость по договору — цена выбранного
+  // варианта, строки — его платежи. Дальше график правится вручную, как обычно
+  const installmentMutation = useMutation({
+    mutationFn: async ({ variant, options }: { variant: InstallmentVariant; options: ScheduleOptions }) => {
+      const previousPrice = deal!.contract_price;
+      await updateDeal({ id: Number(dealId), payload: { contract_price: variant.price } });
+      try {
+        await createPaymentSchedule({
+          dealId: Number(dealId),
+          payments: variant.rows.map(row => ({
+            amount: row.amount,
+            due_date: row.date,
+            payment_type_id: paymentTypeFor(row.kind, options),
+            beneficiary_account_id: options.accountId,
+            currency: deal!.currency,
+            method: 'CASHLESS' as const,
+          })),
+        });
+      } catch (error) {
+        // Стоимость уже сменилась, а график не сохранился — возвращаем прежнюю,
+        // чтобы сделка не осталась с ценой варианта без графика
+        if (previousPrice !== null && Number(previousPrice) !== variant.price) {
+          try {
+            await updateDeal({ id: Number(dealId), payload: { contract_price: Number(previousPrice) } });
+          } catch {
+            // Пользователю важнее исходная причина отказа
+          }
+        }
+        throw error;
+      }
+      return variant;
+    },
+    onSuccess: (variant) => {
+      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+      setInstallmentOpen(false);
+      setActiveStep(2);
+      alert(t('installments.created', { price: formatMoney(variant.price, deal?.currency, i18n.language) }));
+    },
+    onError: (error: unknown) => {
+      // Стоимость по договору могла уже сохраниться — перечитываем сделку
+      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+      alert(extractApiError(error, t('finances.error_prefix')));
+    },
+  });
+
   const handleDiscountsSave = (newPrice: number, selectedIds: number[]) => {
     setValue('contract_price', newPrice);
     const payload: DealUpdatePayload = {
@@ -138,6 +192,13 @@ export default function DealDetailPage() {
 
   const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status);
   const isDealTerminated = deal.status === 'TERMINATED';
+  // Скидки, уже применённые в сделке, складываются со скидкой за срок рассрочки
+  const appliedDiscountPercent = deal.applied_discounts.reduce((sum, d) => sum + (Number(d.percentage_value) || 0), 0);
+  const canBuildSchedule = hasPermission(user, 'EDIT', 'DEAL') && hasPermission(user, 'ADD', 'PAYMENT');
+  const installmentBlockReason = isDealReadOnly
+    ? t('installments.deal_read_only')
+    : (deal.payments?.length ?? 0) > 0 ? t('installments.schedule_exists')
+      : !canBuildSchedule ? t('installments.no_rights') : null;
   // Кнопка расторжения доступна для сделок в работе и успешно закрытых (но не для уже отменённых/расторгнутых)
   const canTerminateDeal = !['CANCELLED', 'TERMINATED'].includes(deal.status);
 
@@ -247,7 +308,7 @@ export default function DealDetailPage() {
                               </Alert>
                             </Grid>
                           )}
-                          <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>{t('pages.deals.apply_discounts')}</Button> <Typography component="span">{t('pages.deals.applied')}: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || t('common.none')}</Typography></Grid>
+                          <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>{t('pages.deals.apply_discounts')}</Button> <Button variant="outlined" sx={{mb: 1}} onClick={() => setInstallmentOpen(true)}>{t('installments.open_button')}</Button> <Typography component="span">{t('pages.deals.applied')}: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || t('common.none')}</Typography></Grid>
                           <Grid size={{ xs: 12 }}><TextField label={t('pages.deals.deal_notes')} multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
                         </Grid>
                         <Stack direction="row" spacing={2} sx={{mt: 2}}>
@@ -262,6 +323,11 @@ export default function DealDetailPage() {
                   <Step>
                     <StepLabel onClick={() => deal.contract_price && setActiveStep(2)} error={!deal.contract_price} sx={{cursor: 'pointer'}}>{t('pages.deals.step_payments')}</StepLabel>
                     <StepContent>
+                       {!installmentBlockReason && (
+                        <Button variant="outlined" sx={{ mb: 2 }} onClick={() => setInstallmentOpen(true)}>
+                          {t('installments.create_from_terms')}
+                        </Button>
+                       )}
                        {deal.contract_price ? (
                         <PaymentSchedule
                             dealId={deal.id}
@@ -380,6 +446,29 @@ export default function DealDetailPage() {
               deal={deal}
           />
       )}
+
+      <InstallmentCalculator
+        open={isInstallmentOpen}
+        onClose={() => setInstallmentOpen(false)}
+        basePrice={Number(deal.initial_price) || null}
+        currency={deal.currency}
+        extraDiscountPercent={appliedDiscountPercent}
+        heading={[
+          `${t('pages.deals.client')}: ${deal.client.full_name}`,
+          `${t('pages.deals.property')}: ${t(`property_types.${deal.property.property_type}`)} №${deal.property.unit_number}, ${deal.property.area} ${t('common.sqm')}`,
+        ]}
+        priceNote={deal.catalog_currency && deal.catalog_currency !== deal.currency
+          ? t('installments.converted_note', {
+              catalog: formatMoney(deal.catalog_price, deal.catalog_currency, i18n.language),
+              rate: formatRate(deal.catalog_rate, i18n.language),
+            })
+          : null}
+        companyId={deal.company}
+        onCreateSchedule={(variant, options) => installmentMutation.mutate({ variant, options })}
+        createDisabledReason={installmentBlockReason}
+        currentContractPrice={deal.contract_price ? Number(deal.contract_price) : null}
+        isCreating={installmentMutation.isPending}
+      />
 
       {isDiscountModalOpen && (
         <DiscountsModal

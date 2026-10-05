@@ -1,6 +1,6 @@
 // frontend-new/src/theme.ts
 
-import { createTheme, PaletteMode } from '@mui/material/styles';
+import { createTheme, type PaletteMode } from '@mui/material/styles';
 import i18n from './i18n';
 
 // Function to get pagination labels based on current language

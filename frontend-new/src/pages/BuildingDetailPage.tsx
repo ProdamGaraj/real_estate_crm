@@ -492,6 +492,8 @@ export default function BuildingDetailPage() {
       <PropertyDetailModal
         property={selectedProperty}
         buildingId={Number(buildingId)}
+        buildingName={building.name}
+        projectName={building.project.name}
         open={!!selectedProperty}
         onClose={() => setSelectedProperty(null)}
       />

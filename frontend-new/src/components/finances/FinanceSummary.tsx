@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getFinanceSummary, downloadFinanceSummary, type FinanceSummaryFilters } from '../../api/finances';
+import { translatePaymentStatus } from '../../utils/translations';
 import { Link as RouterLink } from 'react-router-dom';
 import {
     Box,
@@ -70,7 +71,11 @@ export default function FinanceSummary() {
     });
 
     const columns: GridColDef[] = [
-        { field: Object.keys(data?.summary[0] || {})[0], headerName: t('pages.finances.summary_group'), flex: 1 },
+        {
+            field: Object.keys(data?.summary[0] || {})[0], headerName: t('pages.finances.summary_group'), flex: 1,
+            // При группировке по статусу сервер отдаёт код (PENDING, PAID) — показываем название
+            valueFormatter: (value: string, _row, column) => (column.field === 'Status' ? translatePaymentStatus(value) : value),
+        },
         { field: 'Currency', headerName: t('pages.finances.currency'), width: 110 },
         { field: 'Total Amount', headerName: t('pages.finances.total_amount'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '0' },
     ];
