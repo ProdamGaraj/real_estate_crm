@@ -158,7 +158,8 @@
       "top_sales_month": "Top sales this month",
       "upcoming_meetings": "Upcoming meetings",
       "sales_label": "Sales:",
-      "no_data": "No data to display"
+      "no_data": "No data to display",
+      "missing_rates": "No rate for {{currencies}}: amounts in these currencies are not included in the totals. Update rates in Settings (Currencies)."
     },
     "clients": {
       "title": "Clients",
@@ -470,7 +471,9 @@
       "status_cancelled": "Cancelled",
       "booking_end_date": "Booking End Date",
       "create_deal": "Create Deal",
-      "application_optional": "Application (optional)"
+      "application_optional": "Application (optional)",
+      "currency_fixed_hint": "Set by company settings at booking",
+      "catalog_conversion": "The catalog price {{catalog}} was converted at the booking-day rate {{rate}}: {{price}}."
     },
     "projects": {
       "title": "Projects",
@@ -503,7 +506,9 @@
       "form": {
         "name": "Project Name",
         "address": "Address"
-      }
+      },
+      "price_currency": "Price list currency",
+      "price_currency_hint": "Unit prices are set in this currency. Changing it does not convert prices — change it together with the price list."
     },
     "buildings": {
       "title": "Building Details",
@@ -631,7 +636,10 @@
       "save_schedule": "Save Schedule",
       "schedule_saved": "Payment schedule saved successfully!",
       "error_prefix": "Error:",
-      "currency": "Currency"
+      "currency": "Currency",
+      "overdue_in_base": "Overdue, total in {{currency}}",
+      "paid_in_base": "Paid, total in {{currency}}",
+      "missing_rates": "No rate for {{currencies}}: amounts in these currencies are not included in the overall total."
     },
     "reports": {
       "title": "Reports",
@@ -658,7 +666,8 @@
       "plan": "Plan",
       "fact": "Fact",
       "fact_percent": "% fact",
-      "forecast_percent": "% forecast"
+      "forecast_percent": "% forecast",
+      "missing_rates": "No rate for {{currencies}}: amounts in these currencies are not included in the money actuals."
     },
     "discounts": {
       "title": "Discounts",
@@ -927,7 +936,37 @@
         "user_deleted": "User deleted",
         "actions": "Actions",
         "employees": "Employees",
-        "company": "Company"
+        "company": "Company",
+        "resource_exchange_rate": "Exchange rates"
+      },
+      "currencies_tab": "Currencies",
+      "currencies": {
+        "own_company": "Own company",
+        "settings_title": "Deal currency",
+        "settings_hint": "All new deals and payment schedules are kept in the deal currency; the dashboard and reports are converted to it as well. Schedule amounts can also be entered in supported currencies — on saving they are converted to the deal currency at the rate of the saving day.",
+        "deal_currency": "Deal currency",
+        "supported": "Supported currencies",
+        "deal_currency_change_warning": "The new deal currency applies to new bookings. Existing deals and their schedules keep their currency.",
+        "rates_title": "Today's rates",
+        "rates_hint": "Central Bank of Uzbekistan rates are loaded automatically every hour. A rate is how many {{base}} per 1 unit of currency. If there is no rate for today yet, the latest known one applies.",
+        "refresh": "Refresh CBU rates",
+        "refreshing": "Loading…",
+        "refreshed": "CBU rates refreshed: {{saved}} currencies.",
+        "refresh_error": "Could not load CBU rates. Enter the rate manually.",
+        "missing_rates": "No rate for: {{currencies}}. Schedule rows in these currencies cannot be saved — refresh CBU rates or enter a rate manually.",
+        "currency": "Currency",
+        "rate_in_base": "Rate, {{base}} per unit",
+        "rate_date": "Rate date",
+        "source": "Source",
+        "source_cbu": "Central Bank of Uzbekistan",
+        "source_manual": "Company manual rate",
+        "source_base": "Base currency",
+        "no_rate": "No rate",
+        "manual_title": "Manual rate",
+        "manual_hint": "Applies only within your company and replaces the CBU rate on the given date. Use it when the CBU is unavailable or settlements use an internal rate.",
+        "history_title": "Rate history",
+        "entered_by": "Entered by",
+        "confirm_delete": "Delete the manual rate? The CBU rate will apply on this date again."
       }
     },
     "api_keys": {
@@ -1211,7 +1250,8 @@
     "TASK": "Tasks",
     "OTHER": "Other",
     "PARTNER_API_KEY": "Partner API Keys",
-    "TASK_LOG": "Task Logs"
+    "TASK_LOG": "Task Logs",
+    "EXCHANGE_RATE": "Exchange rates"
   },
   "forms": {
     "full_name": "Full Name",
@@ -1347,7 +1387,13 @@
     "contract_amount": "Contract Amount",
     "distributed": "Distributed",
     "remaining": "Remaining",
-    "currency_label": "Currency"
+    "currency_label": "Currency",
+    "entered_as": "Entered: {{amount}} at rate {{rate}}",
+    "will_be_converted": "≈ {{amount}} at rate {{rate}}",
+    "no_rate_short": "No rate",
+    "no_rate_for": "No rate for {{currencies}}. Refresh CBU rates or enter a rate manually in Settings (Currencies).",
+    "converted_note": "Rows in other currencies are converted to {{currency}} at today's rate on saving.",
+    "rounding_gap": "The {{amount}} difference is rounding from the rate conversion; it will be added to the last payment in another currency."
   },
   "buildings": {
     "chessboard": {

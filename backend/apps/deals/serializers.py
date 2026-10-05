@@ -85,7 +85,7 @@ class DealListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deal
-        fields = ['id', 'status', 'client', 'property', 'contract_price', 'created_by', 'created_at']
+        fields = ['id', 'status', 'client', 'property', 'contract_price', 'currency', 'created_by', 'created_at']
         read_only_fields = ['created_at']
 
 
@@ -149,17 +149,6 @@ class DealDetailSerializer(serializers.ModelSerializer):
                     )
                 })
 
-        # Валюта задаётся до сборки графика: платежи уже созданы в ней,
-        # и молчаливая смена валюты превратила бы суммы в бессмыслицу
-        if 'currency' in data and instance.pk:
-            if data['currency'] != instance.currency and instance.payments.exists():
-                raise serializers.ValidationError({
-                    'currency': (
-                        'По сделке уже есть график платежей — валюту сменить нельзя. '
-                        'Удалите платежи и соберите график заново.'
-                    )
-                })
-
         # Стоимость договора и график должны сойтись, но требовать этого
         # в момент смены цены нельзя: график пересобирается только под уже
         # сохранённую стоимость, и взаимная проверка запирала бы сделку —
@@ -204,11 +193,15 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'initial_price', 'initial_price_per_sqm', 'contract_price', 'currency', 'notes',
             'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
             'payments', 'contract_number', 'contract_date', 'application', 'logs_total',
-            'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
+            'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
+            'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
         ]
+        # Валюта сделки задаётся настройкой компании при брони и дальше не меняется:
+        # весь график платежей хранится в ней
         read_only_fields = [
             'id', 'status', 'booking_start_date', 'client', 'property', 'application',
-            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs','cancellation_reason', 'termination_document_scan', 'termination_date'
+            'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
+            'currency', 'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
         ]
 
     # ИСПРАВЛЕНИЕ: Добавляем метод для сериализации платежей

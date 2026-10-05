@@ -6,6 +6,11 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 
+def default_supported_currencies():
+    """Валюты ввода сумм у новой компании по умолчанию."""
+    return ['UZS', 'USD']
+
+
 class Company(models.Model):
     """
     Компания - верхний уровень организационной иерархии
@@ -14,6 +19,14 @@ class Company(models.Model):
     code = models.CharField(max_length=50, unique=True, verbose_name="Код компании")
     description = models.TextField(blank=True, verbose_name="Описание")
     is_active = models.BooleanField(default=True, verbose_name="Активна")
+
+    # Валюта сделок: в ней ведутся все новые сделки и графики платежей компании
+    # и к ней приводятся отчёты. Поддерживаемые валюты — в каких ещё валютах
+    # можно вводить суммы графика (при сохранении они пересчитываются по курсу).
+    deal_currency = models.CharField(max_length=3, default='UZS', verbose_name="Валюта сделок")
+    supported_currencies = models.JSONField(default=default_supported_currencies,
+                                            verbose_name="Поддерживаемые валюты")
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
@@ -114,6 +127,7 @@ class Permission(models.Model):
         COMPANY = 'COMPANY', 'Компании'
         DEPARTMENT = 'DEPARTMENT', 'Отделы'
         PARTNER_API_KEY = 'PARTNER_API_KEY', 'API-ключи партнёров'
+        EXCHANGE_RATE = 'EXCHANGE_RATE', 'Курсы валют'
         # Системные
         DASHBOARD = 'DASHBOARD', 'Дашборд'
         SETTINGS = 'SETTINGS', 'Настройки'

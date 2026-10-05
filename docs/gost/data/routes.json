@@ -484,6 +484,40 @@
   "doc": ""
  },
  {
+  "path": "/api/finances/currency-settings/",
+  "methods": [
+   "GET",
+   "PATCH"
+  ],
+  "view": "apps.finances.currency_views.CurrencySettingsView",
+  "doc": "Валюта сделок и поддерживаемые валюты компании."
+ },
+ {
+  "path": "/api/finances/exchange-rates/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.finances.currency_views.ExchangeRateListView",
+  "doc": "GET — курсы на дату (по умолчанию сегодня) для поддерживаемых валют"
+ },
+ {
+  "path": "/api/finances/exchange-rates/refresh/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.finances.currency_views.ExchangeRateRefreshView",
+  "doc": "Загрузка актуальных курсов ЦБ по кнопке."
+ },
+ {
+  "path": "/api/finances/exchange-rates/<int:pk>/",
+  "methods": [
+   "DELETE"
+  ],
+  "view": "apps.finances.currency_views.ExchangeRateDetailView",
+  "doc": "Удаление ручного курса своей компании. Курсы ЦБ не удаляются."
+ },
+ {
   "path": "/api/templates/",
   "methods": [
    "GET",

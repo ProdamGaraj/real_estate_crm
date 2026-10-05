@@ -8,8 +8,8 @@ class Plan(models.Model):
     year = models.IntegerField(verbose_name="Год")
     month = models.IntegerField(verbose_name="Месяц", validators=[MinValueValidator(1), MaxValueValidator(12)])
     contracting_units_plan = models.IntegerField(verbose_name="План по контрактации (штуки)", default=0)
-    contracting_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по контрактации (деньги)", default=0)
-    revenue_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по поступлениям (деньги)", default=0)
+    contracting_money_plan = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="План по контрактации (деньги)", default=0)
+    revenue_money_plan = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="План по поступлениям (деньги)", default=0)
 
     class Meta:
         verbose_name = "План продаж (по проектам)"
@@ -25,8 +25,8 @@ class EmployeePlan(models.Model):
     year = models.IntegerField(verbose_name="Год")
     month = models.IntegerField(verbose_name="Месяц", validators=[MinValueValidator(1), MaxValueValidator(12)])
     contracting_units_plan = models.IntegerField(verbose_name="План по контрактации (штуки)", default=0)
-    contracting_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по контрактации (деньги)", default=0)
-    revenue_money_plan = models.DecimalField(max_digits=15, decimal_places=2, verbose_name="План по поступлениям (деньги)", default=0)
+    contracting_money_plan = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="План по контрактации (деньги)", default=0)
+    revenue_money_plan = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="План по поступлениям (деньги)", default=0)
 
     class Meta:
         verbose_name = "План продаж (по сотрудникам)"

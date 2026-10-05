@@ -15,9 +15,10 @@ import {
     Box, Button, CircularProgress, Paper, Tab, Tabs, Typography, Dialog,
     DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Stack, Link as MuiLink, Grid,
     Avatar, IconButton, Card, CardMedia, CardActions, Alert, CardContent, CardHeader,
-    FormControl, InputLabel, Select, MenuItem
+    FormControl, InputLabel, Select, MenuItem, FormHelperText
 } from '@mui/material';
 import { getCompanies } from '../api/permissions';
+import { getCurrencySettings } from '../api/currency';
 import { useAuthStore } from '../store/authStore';
 import { hasPermission } from '../utils/permissions';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
@@ -80,6 +81,11 @@ export default function ProjectDetailPage() {
     queryKey: ['companies'],
     queryFn: getCompanies,
     enabled: !!isSystemAdmin,
+  });
+
+  const { data: currencySettings } = useQuery({
+    queryKey: ['currencySettings', null],
+    queryFn: () => getCurrencySettings(),
   });
 
   const { register, handleSubmit, reset, control } = useForm<ProjectUpdatePayload>();
@@ -257,6 +263,29 @@ export default function ProjectDetailPage() {
                               fullWidth
                             />
                           )}/>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          {/* Цены объектов проекта заданы в этой валюте. При брони цена
+                              пересчитывается в валюту сделок компании по курсу на день брони */}
+                          <Controller
+                            name="price_currency"
+                            control={control}
+                            render={({ field }) => (
+                              <FormControl fullWidth>
+                                <InputLabel>{t('pages.projects.price_currency')}</InputLabel>
+                                <Select
+                                  {...field}
+                                  label={t('pages.projects.price_currency')}
+                                  value={field.value ?? ''}
+                                >
+                                  {currencySettings?.available_currencies.map(c => (
+                                    <MenuItem key={c.code} value={c.code}>{c.code} — {c.name}</MenuItem>
+                                  ))}
+                                </Select>
+                                <FormHelperText>{t('pages.projects.price_currency_hint')}</FormHelperText>
+                              </FormControl>
+                            )}
+                          />
                         </Grid>
                         {isSystemAdmin && (
                           <Grid size={{ xs: 12, md: 6 }}>

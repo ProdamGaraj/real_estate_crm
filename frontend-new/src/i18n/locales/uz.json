@@ -158,7 +158,8 @@
       "top_sales_month": "Oylik eng ko'p sotuvlar",
       "upcoming_meetings": "Kelgusi uchrashuvlar",
       "sales_label": "Sotuvlar:",
-      "no_data": "Ko'rsatish uchun ma'lumot yo'q"
+      "no_data": "Ko'rsatish uchun ma'lumot yo'q",
+      "missing_rates": "{{currencies}} kursi yo'q: bu valyutalardagi summalar jamiga kirmadi. Kurslarni sozlamalarda («Valyutalar») yangilang."
     },
     "clients": {
       "title": "Mijozlar",
@@ -470,7 +471,9 @@
       "save_and_schedule": "Saqlash va jadvalga o'tish",
       "save_price_first": "Avval oldingi bosqichda \"Shartnoma narxi\" ni saqlang.",
       "signed_uploaded": "Imzolangan hujjat yuklandi.",
-      "application_optional": "Ariza (ixtiyoriy)"
+      "application_optional": "Ariza (ixtiyoriy)",
+      "currency_fixed_hint": "Bron paytida kompaniya sozlamasi bilan belgilanadi",
+      "catalog_conversion": "Prays bo'yicha narx {{catalog}} bron kunidagi {{rate}} kurs bo'yicha qayta hisoblandi: {{price}}."
     },
     "projects": {
       "title": "Loyihalar",
@@ -503,7 +506,9 @@
       "form": {
         "name": "Loyiha nomi",
         "address": "Manzil"
-      }
+      },
+      "price_currency": "Prays valyutasi",
+      "price_currency_hint": "Obyektlar narxlari shu valyutada. Valyutani o'zgartirish narxlarni qayta hisoblamaydi — prays bilan birga o'zgartiring."
     },
     "buildings": {
       "title": "Bino tafsilotlari",
@@ -631,7 +636,10 @@
       "save_schedule": "Jadvalni saqlash",
       "schedule_saved": "To'lov jadvali muvaffaqiyatli saqlandi!",
       "error_prefix": "Xatolik:",
-      "currency": "Valyuta"
+      "currency": "Valyuta",
+      "overdue_in_base": "Muddati o'tgan, jami {{currency}}da",
+      "paid_in_base": "To'langan, jami {{currency}}da",
+      "missing_rates": "{{currencies}} kursi yo'q: bu valyutalardagi summalar umumiy jamiga kirmadi."
     },
     "reports": {
       "title": "Hisobotlar",
@@ -658,7 +666,8 @@
       "forecast_percent": "% prognoz",
       "generate": "Shakllantirish",
       "uploading": "Yuklanmoqda...",
-      "upload_error": "Yuklash xatosi:"
+      "upload_error": "Yuklash xatosi:",
+      "missing_rates": "{{currencies}} kursi yo'q: bu valyutalardagi summalar pul faktiga kirmadi."
     },
     "discounts": {
       "title": "Chegirmalar",
@@ -927,7 +936,37 @@
         "user_deleted": "Foydalanuvchi o'chirildi",
         "actions": "Amallar",
         "employees": "Xodimlar",
-        "company": "Kompaniya"
+        "company": "Kompaniya",
+        "resource_exchange_rate": "Valyuta kurslari"
+      },
+      "currencies_tab": "Valyutalar",
+      "currencies": {
+        "own_company": "O'z kompaniyam",
+        "settings_title": "Bitimlar valyutasi",
+        "settings_hint": "Barcha yangi bitimlar va to'lov jadvallari bitimlar valyutasida yuritiladi, dashboard va hisobotlar ham shu valyutaga keltiriladi. Jadval summalarini qo'llab-quvvatlanadigan valyutalarda ham kiritish mumkin — saqlashda ular saqlangan kundagi kurs bo'yicha bitimlar valyutasiga qayta hisoblanadi.",
+        "deal_currency": "Bitimlar valyutasi",
+        "supported": "Qo'llab-quvvatlanadigan valyutalar",
+        "deal_currency_change_warning": "Yangi bitimlar valyutasi yangi bronlarga amal qiladi. Mavjud bitimlar va ularning jadvallari avvalgi valyutada qoladi.",
+        "rates_title": "Bugungi kurslar",
+        "rates_hint": "O'zbekiston Markaziy banki kurslari har soatda avtomatik yuklanadi. Kurs — valyutaning 1 birligi uchun necha {{base}}. Bugungi kurs hali bo'lmasa, oxirgi ma'lum kurs amal qiladi.",
+        "refresh": "MB kurslarini yangilash",
+        "refreshing": "Yuklanmoqda…",
+        "refreshed": "MB kurslari yangilandi: {{saved}} ta valyuta.",
+        "refresh_error": "MB kurslarini yuklab bo'lmadi. Kursni qo'lda kiriting.",
+        "missing_rates": "Kurs yo'q: {{currencies}}. Bu valyutalardagi jadval qatorlarini saqlab bo'lmaydi — MB kurslarini yangilang yoki kursni qo'lda kiriting.",
+        "currency": "Valyuta",
+        "rate_in_base": "Kurs, 1 birlik uchun {{base}}",
+        "rate_date": "Kurs sanasi",
+        "source": "Manba",
+        "source_cbu": "O'zbekiston Markaziy banki",
+        "source_manual": "Kompaniyaning qo'lda kiritilgan kursi",
+        "source_base": "Asosiy valyuta",
+        "no_rate": "Kurs yo'q",
+        "manual_title": "Qo'lda kiritilgan kurs",
+        "manual_hint": "Faqat sizning kompaniyangizda amal qiladi va ko'rsatilgan sanada MB kursi o'rnini bosadi. MB mavjud bo'lmaganda yoki hisob-kitoblar ichki kurs bo'yicha yuritilganda kerak.",
+        "history_title": "Kurslar tarixi",
+        "entered_by": "Kim kiritgan",
+        "confirm_delete": "Qo'lda kiritilgan kurs o'chirilsinmi? Bu sanada yana MB kursi amal qiladi."
       }
     },
     "api_keys": {
@@ -1169,7 +1208,8 @@
     "TASK": "Vazifalar",
     "OTHER": "Boshqa",
     "PARTNER_API_KEY": "Hamkor API kalitlari",
-    "TASK_LOG": "Vazifa loglari"
+    "TASK_LOG": "Vazifa loglari",
+    "EXCHANGE_RATE": "Valyuta kurslari"
   },
   "forms": {
     "full_name": "F.I.O.",
@@ -1307,7 +1347,13 @@
     "contract_amount": "Shartnoma summasi",
     "distributed": "Taqsimlangan",
     "remaining": "Qoldiq",
-    "currency_label": "Valyuta"
+    "currency_label": "Valyuta",
+    "entered_as": "Kiritilgan: {{amount}}, kurs {{rate}}",
+    "will_be_converted": "≈ {{amount}}, kurs {{rate}}",
+    "no_rate_short": "Kurs yo'q",
+    "no_rate_for": "{{currencies}} kursi yo'q. MB kurslarini yangilang yoki kursni sozlamalarda («Valyutalar») qo'lda kiriting.",
+    "converted_note": "Boshqa valyutalardagi qatorlar saqlashda bugungi kurs bo'yicha {{currency}}ga qayta hisoblanadi.",
+    "rounding_gap": "{{amount}} farq — kurs bo'yicha qayta hisoblashdagi yaxlitlash; u boshqa valyutadagi oxirgi to'lovga qo'shiladi."
   },
   "buildings": {
     "chessboard": {

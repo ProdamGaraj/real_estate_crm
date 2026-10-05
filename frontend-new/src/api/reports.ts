@@ -8,7 +8,14 @@ export interface PlanFactData {
     forecast_percentage: number;
 }
 
-export interface ProjectReportData {
+/** Денежный факт приведён к валюте сделок компании по курсу на дату события */
+interface ReportMoneyMeta {
+    currency?: string;
+    /** Валюты без курса: их суммы в факт не вошли */
+    missing_rates?: string[];
+}
+
+export interface ProjectReportData extends ReportMoneyMeta {
     project_id: number | string;
     project_name: string;
     contracting_units: PlanFactData;
@@ -16,7 +23,7 @@ export interface ProjectReportData {
     revenue_money: PlanFactData;
 }
 
-export interface EmployeeReportData {
+export interface EmployeeReportData extends ReportMoneyMeta {
     employee_id: number | string;
     employee_name: string;
     contracting_units: PlanFactData;

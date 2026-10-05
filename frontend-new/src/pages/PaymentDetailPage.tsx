@@ -12,6 +12,7 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloseIcon from '@mui/icons-material/Close';
 import UndoIcon from '@mui/icons-material/Undo';
+import { formatMoney, formatRate } from '../utils/currency';
 
 const getStatusChipColor = (status: string) => {
     switch (status) {
@@ -86,7 +87,16 @@ export default function PaymentDetailPage() {
         <CardContent>
             <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <Typography><b>{t('pages.finances.amount')}:</b> {Number(payment.amount).toLocaleString()} {payment.currency}</Typography>
+                    <Typography><b>{t('pages.finances.amount')}:</b> {formatMoney(payment.amount, payment.currency, i18n.language)}</Typography>
+                    {/* Строка графика, введённая в другой валюте и пересчитанная в валюту сделки */}
+                    {payment.entered_currency && (
+                      <Typography variant="body2" color="text.secondary">
+                        {t('finances.entered_as', {
+                          amount: formatMoney(payment.entered_amount, payment.entered_currency, i18n.language),
+                          rate: formatRate(payment.entered_rate, i18n.language),
+                        })}
+                      </Typography>
+                    )}
                     <Typography><b>{t('pages.finances.payment_type')}:</b> {payment.payment_type}</Typography>
                     <Typography><b>{t('pages.payments.method')}:</b> {payment.method}</Typography>
                 </Grid>

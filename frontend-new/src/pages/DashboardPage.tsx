@@ -58,6 +58,8 @@ export default function DashboardPage() {
   if (isError || !data) return <Alert severity="error">{t('errors.load_data_error')}</Alert>;
 
   const { kpi, charts, topManagers, upcomingMeetings } = data;
+  // Суммы приведены бэкендом к валюте сделок компании по курсу на дату события
+  const moneyLabel = kpi.currency || t('common.currency');
 
   // Подготовка данных для графика статусов заявок
   const statusData = charts?.applicationStatuses?.map((item, index) => ({
@@ -95,12 +97,18 @@ export default function DashboardPage() {
             {t('pages.dashboard.title')}
         </Typography>
 
+        {(kpi.missingRates?.length ?? 0) > 0 && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+                {t('pages.dashboard.missing_rates', { currencies: kpi.missingRates!.join(', ') })}
+            </Alert>
+        )}
+
         {/* Блок KPI - 2 columns on mobile */}
         <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
             <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_clients_today')} value={String(kpi.newClientsToday)} icon={<PeopleIcon />} compact={isMobile} /></Grid>
             <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_applications_today')} value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" compact={isMobile} /></Grid>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.monthly_sales')} value={`${kpi.monthlySales.toLocaleString()} ${t('common.currency')}`} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={`${kpi.overduePayments.toLocaleString()} ${t('common.currency')}`} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.monthly_sales')} value={`${kpi.monthlySales.toLocaleString()} ${moneyLabel}`} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={`${kpi.overduePayments.toLocaleString()} ${moneyLabel}`} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
         </Grid>
 
         {/* Блок воронок и графиков */}
@@ -202,7 +210,7 @@ export default function DashboardPage() {
                                 <ListItem key={index} divider>
                                     <ListItemText 
                                         primary={`${manager.first_name} ${manager.last_name}`} 
-                                        secondary={`${t('pages.dashboard.sales_label')} ${manager.total_sales.toLocaleString()} ${t('common.currency')}`} 
+                                        secondary={`${t('pages.dashboard.sales_label')} ${manager.total_sales.toLocaleString()} ${moneyLabel}`} 
                                         primaryTypographyProps={{ variant: isMobile ? 'body2' : 'body1' }}
                                         secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
                                     />

@@ -55,9 +55,12 @@ class PaymentSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'created_at', 'payment_type', 'beneficiary_account',
             'created_by', 'responsible_employee', 'payment_type_id',
             'beneficiary_account_id', 'responsible_employee_id', 'client', 'deal',
-            'payment_type_ref', 'beneficiary_account_ref'
+            'payment_type_ref', 'beneficiary_account_ref',
+            'entered_amount', 'entered_currency', 'entered_rate',
         ]
-        read_only_fields = ['created_at', 'status_display', 'client', 'status']
+        # Исходный ввод заполняет сервер при пересчёте графика, а не клиент
+        read_only_fields = ['created_at', 'status_display', 'client', 'status',
+                            'entered_amount', 'entered_currency', 'entered_rate']
 
     def validate_payment_type_id(self, value):
         """Тип платежа — своей компании или общесистемный."""

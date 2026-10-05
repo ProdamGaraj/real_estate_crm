@@ -19,8 +19,18 @@ export interface Deal {
   initial_price: string;
   initial_price_per_sqm: string;
   contract_price: string | null;
-  /** Валюта договора. Весь график платежей ведётся в ней же */
-  currency: 'UZS' | 'USD' | 'EUR';
+  /**
+   * Валюта сделки. Задаётся при брони по настройке компании и дальше не
+   * меняется: в ней цена, договор и весь график платежей
+   */
+  currency: string;
+  /** Цена по прайсу проекта на момент брони — в валюте прайса */
+  catalog_price: string | null;
+  catalog_currency: string;
+  /** Курс пересчёта прайса в валюту сделки на дату брони */
+  catalog_rate: string | null;
+  /** Компания сделки: её настройки валют действуют для графика */
+  company: number | null;
   notes: string;
   applied_discounts: Discount[];
   payments: Payment[];
@@ -42,6 +52,7 @@ export interface DealListItem {
     client: string;
     property: string;
     contract_price: string | null;
+    currency: string;
     created_by: string | null;
     created_at: string;
 }
@@ -98,7 +109,6 @@ export interface DealPayload {
  * Тип для данных при обновлении сделки.
  */
 export interface DealUpdatePayload {
-    currency?: 'UZS' | 'USD' | 'EUR';
     notes?: string;
     contract_price?: number;
     applied_discounts_ids?: number[];

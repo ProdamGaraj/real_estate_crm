@@ -15,6 +15,7 @@ import BookingForm from '../deals/BookingForm';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import { getMediaUrl } from '../../utils/media';
+import { formatMoney } from '../../utils/currency';
 
 interface ModalProps {
   property: Property | null;
@@ -24,7 +25,7 @@ interface ModalProps {
 }
 
 export default function PropertyDetailModal({ property, buildingId, open, onClose }: ModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
@@ -171,7 +172,7 @@ export default function PropertyDetailModal({ property, buildingId, open, onClos
               <Stack spacing={1} sx={{mb:2}}>
                 <Typography><b>{t('forms.status')}:</b> {t(`statuses.property.${property.status}`)}</Typography>
                 <Typography><b>{t('pages.properties.area')}:</b> {property.area} {t('pages.properties.sqm')}</Typography>
-                <Typography><b>{t('table.price')}:</b> {Number(property.price).toLocaleString()} {t('common.currency')}</Typography>
+                <Typography><b>{t('table.price')}:</b> {formatMoney(property.price, property.price_currency || t('common.currency'), i18n.language)}</Typography>
                 <Divider/>
                 <Typography><b>{t('pages.properties.floor')}:</b> {property.floor}</Typography>
                 <Typography><b>{t('pages.properties.entrance')}:</b> {property.entrance || 'N/A'}</Typography>

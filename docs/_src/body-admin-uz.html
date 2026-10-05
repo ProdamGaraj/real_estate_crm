@@ -98,6 +98,7 @@
           <tr><td><span class="ui">Arizalar</span></td><td>Ariza holatlari, rad etish sabablari</td><td class="num">09</td></tr>
           <tr><td><span class="ui">Ko&lsquo;chmas mulk</span></td><td>Bino turlari</td><td class="num">09</td></tr>
           <tr><td><span class="ui">Moliya</span></td><td>To&lsquo;lov turlari, oluvchi hisobvaraqlari</td><td class="num">09</td></tr>
+          <tr><td><span class="ui">Valyutalar</span></td><td>Bitimlar valyutasi, qo&lsquo;llab-quvvatlanadigan valyutalar, kurslar</td><td class="num">09</td></tr>
           <tr><td><span class="ui">Shablonlar</span></td><td>Shartnoma yaratish uchun .docx fayllar</td><td class="num">10</td></tr>
           <tr><td><span class="ui">API-kalitlar</span></td><td>Hamkor va saytning ma&lsquo;lumotga kirishi</td><td class="num">11</td></tr>
         </tbody>
@@ -110,7 +111,7 @@
 
     <div class="tip">
       <p><b>Sozlamalar yorliqlarini topshirish mumkin.</b> Kirish ikki bosqichda beriladi. Avval rolda <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> huquqini belgilang — bu bo&lsquo;limning kaliti. So&lsquo;ng aniq ma&lsquo;lumotnomalarga huquq qo&lsquo;shing: qaysi yorliqlar ko&lsquo;rinishini aynan ular belgilaydi.</p>
-      <p>Masalan, moliyachiga bo&lsquo;limga huquq va <span class="ui">To&lsquo;lov turlari</span> bilan <span class="ui">Oluvchi hisobvaraqlari</span> yetarli — u <span class="ui">Moliya</span> yorlig&lsquo;ini oladi va har bir yangi hisob uchun sizga kelmaydi, ammo rollar, foydalanuvchilar va API-kalitlarni ko&lsquo;rmaydi. Ariza ma&lsquo;lumotnomalari va bino turlari ham xuddi shunday topshiriladi.</p>
+      <p>Masalan, moliyachiga bo&lsquo;limga huquq va <span class="ui">To&lsquo;lov turlari</span> bilan <span class="ui">Oluvchi hisobvaraqlari</span> yetarli — u <span class="ui">Moliya</span> yorlig&lsquo;ini oladi va har bir yangi hisob uchun sizga kelmaydi, ammo rollar, foydalanuvchilar va API-kalitlarni ko&lsquo;rmaydi. Ariza ma&lsquo;lumotnomalari va bino turlari ham xuddi shunday topshiriladi, valyuta kurslari esa — <span class="ui">Valyuta kurslari</span> resursiga huquqlar bilan.</p>
     </div>
 
     <div class="warn">
@@ -313,6 +314,7 @@
       <li><p><span class="ui">Tavsif</span> va <span class="ui">Rejalashtirilgan kadastr sanasi</span> ni qo&lsquo;shing.</p></li>
       <li><p><span class="ui">Noyob savdo takliflari (USP)</span> blokini to&lsquo;ldiring — <span class="ui">USP 1</span>, <span class="ui">USP 2</span>, <span class="ui">USP 3</span>. Menejerlar bu iboralarni mijoz bilan suhbatda ishlatadi.</p></li>
       <li><p><span class="ui">Yuridik ma&lsquo;lumotlar</span> va <span class="ui">Quruvchi rekvizitlari</span> ni kiriting — ular shartnomalarga qo&lsquo;yiladi.</p></li>
+      <li><p><span class="ui">Prays valyutasi</span> ni tanlang — ob&lsquo;ektlar narxlari berilgan valyuta. Bron paytida narx bron kunidagi kurs bo&lsquo;yicha kompaniyaning bitimlar valyutasiga qayta hisoblanadi. Prays valyutasini o&lsquo;zgartirish narxlarni qayta hisoblamaydi: uni prays bilan birga o&lsquo;zgartiring.</p></li>
       <li><p>Saqlang, so&lsquo;ng <span class="ui">Galereya</span> yorlig&lsquo;ida <span class="ui">Rasm yuklash</span> orqali suratlarni yuklang.</p></li>
     </ol>
 
@@ -352,7 +354,7 @@
           <tr><td>Подъезд</td><td>Bo&lsquo;sh qoldirish mumkin</td></tr>
           <tr><td>Стояк</td><td>Ixtiyoriy</td></tr>
           <tr><td>Площадь (кв.м)</td><td>Son, kasr qismi mumkin</td></tr>
-          <tr><td>Стоимость</td><td>Probel va valyuta belgisisiz son</td></tr>
+          <tr><td>Стоимость</td><td>Probel va valyuta belgisisiz son, loyiha prays valyutasida</td></tr>
           <tr><td>Тип объекта</td><td>Kod: <code>APARTMENT</code>, <code>COMMERCIAL</code>, <code>PARKING</code>, <code>STORAGE</code>, <code>COTTAGE</code></td></tr>
           <tr><td>Статус</td><td>Faqat <code>SELECTION</code> yoki <code>RESERVE</code></td></tr>
           <tr><td>Название планировки</td><td>Bunday nomli plan bo&lsquo;lmasa, u avtomatik yaratiladi</td></tr>
@@ -493,6 +495,19 @@
     <div class="warn">
       <p><b>Kamida bitta to&lsquo;lov turi va bitta oluvchi hisobvarag&lsquo;i bo&lsquo;lmasa, menejer to&lsquo;lov jadvalini saqlay olmaydi</b> — bitim uchinchi bosqichda to&lsquo;xtab qoladi. Bu ikki ma&lsquo;lumotnomani sotuv boshlanishidan oldin to&lsquo;ldiring.</p>
     </div>
+
+    <h4>&laquo;Valyutalar&raquo; yorlig&lsquo;i</h4>
+    <ol class="steps">
+      <li><p><span class="ui">Bitimlar valyutasi</span> ni tanlang — kompaniya uchun bitta. Barcha yangi bitimlar va jadvallar shu valyutada yuritiladi, dashboard va hisobotlar shu valyutaga keltiriladi.</p></li>
+      <li><p><span class="ui">Qo&lsquo;llab-quvvatlanadigan valyutalar</span> ni belgilang — menejerlar jadval qatorlarini yana qaysi valyutalarda kiritishi mumkin. Saqlashda bunday qatorlar bugungi kurs bo&lsquo;yicha bitim valyutasiga qayta hisoblanadi.</p></li>
+      <li><p><span class="ui">Saqlash</span> ni bosing va <span class="ui">Bugungi kurslar</span> jadvalini tekshiring: har bir qo&lsquo;llab-quvvatlanadigan valyutada kurs bo&lsquo;lishi kerak.</p></li>
+    </ol>
+    <div class="warn">
+      <p><b>Yangi bitimlar valyutasi faqat yangi bronlarga amal qiladi.</b> Yaratilgan bitimlar va ularning jadvallari avvalgi valyutada qoladi — ulardagi summalar qayta hisoblanmaydi.</p>
+    </div>
+    <div class="note">
+      <p>O&lsquo;zbekiston Markaziy banki kurslari har soatda avtomatik yuklanadi; <span class="ui">MB kurslarini yangilash</span> tugmasi ularni darhol yuklaydi. MB mavjud bo&lsquo;lmasa yoki kompaniya o&lsquo;z kursi bo&lsquo;yicha hisoblasa, sanaga <span class="ui">Qo&lsquo;lda kiritilgan kurs</span> kiriting — u faqat sizning kompaniyangizda amal qiladi. Tizim administratori kompaniyani sozlamalar ustidagi ro&lsquo;yxatdan tanlaydi.</p>
+    </div>
   </section>
 
   <!-- ═══════════════ 10 ═══════════════ -->
@@ -598,6 +613,7 @@
       <li><p><b>Bo&lsquo;limlar.</b> Kerak bo&lsquo;lsa ierarxiya bilan bo&lsquo;linmalar tuzilmasini yarating.</p></li>
       <li><p><b>Rollar.</b> Asosiy rollarni tekshiring va yetishmasa o&lsquo;zingiznikini yarating. Har birining ta&lsquo;sir doirasini belgilang.</p></li>
       <li><p><b>Moliya ma&lsquo;lumotnomalari.</b> Kamida bitta <span class="ui">To&lsquo;lov turi</span> va bitta <span class="ui">Hisob</span> yarating — usiz bitimlar to&lsquo;xtaydi.</p></li>
+      <li><p><b>Valyutalar.</b> <span class="path">Sozlamalar<i>&rsaquo;</i>Valyutalar</span>: bitimlar valyutasi va qo&lsquo;llab-quvvatlanadigan valyutalar; bugungi kurslar yuklanganini tekshiring. Loyihalarda <span class="ui">Prays valyutasi</span> ni ko&lsquo;rsating.</p></li>
       <li><p><b>Ariza ma&lsquo;lumotnomalari.</b> Ariza holatlari, rad etish va maqsadsiz sabablari.</p></li>
       <li><p><b>Bino turlari.</b> Ishlatiladigan konstruksiya turlarini kiriting.</p></li>
       <li><p><b>Foydalanuvchilar.</b> Hisoblar yarating, kompaniya va bo&lsquo;limga biriktiring, rollarni tayinlang.</p></li>
@@ -634,7 +650,10 @@
       <dd>Avval kompaniyani tanlang: bo&lsquo;limlar ro&lsquo;yxati shundan keyingina yuklanadi. Bo&lsquo;limlar yo&lsquo;q bo&lsquo;lsa — <span class="ui">Bo&lsquo;limlar</span> yorlig&lsquo;ida yarating.</dd>
 
       <dt>Menejer to&lsquo;lov jadvalini saqlay olmayapti</dt>
-      <dd>Ikki asosiy sabab: to&lsquo;lovlar summasi shartnoma narxiga mos kelmayapti yoki tizimda to&lsquo;lov turlari va oluvchi hisobvaraqlari yo&lsquo;q. Sozlamalardagi <span class="ui">Moliya</span> yorlig&lsquo;ini tekshiring.</dd>
+      <dd>Asosiy sabablar: to&lsquo;lovlar summasi shartnoma narxiga mos kelmayapti; tizimda to&lsquo;lov turlari va oluvchi hisobvaraqlari yo&lsquo;q — sozlamalardagi <span class="ui">Moliya</span> yorlig&lsquo;ini tekshiring; qator kursi yo&lsquo;q valyutada kiritilgan — <span class="ui">Valyutalar</span> yorlig&lsquo;ida kurslarni yangilang.</dd>
+
+      <dt>Bitimlar valyutasini o&lsquo;zgartirdik, eski bitimlar esa avvalgisida qoldi</dt>
+      <dd>Shunday bo&lsquo;lishi kerak: bitim valyutasi bron paytida qayd etiladi, aks holda shartnoma va o&lsquo;tkazilgan to&lsquo;lovlar mos kelmay qolardi. Yangi valyuta yangi bronlarga amal qiladi. Dashboard va hisobotlar barcha bitimlar summalarini voqea sanasidagi kurs bo&lsquo;yicha joriy bitimlar valyutasiga keltiradi.</dd>
 
       <dt>Excel yuklangandan keyin ob&lsquo;ektlar ikkilanib ketdi</dt>
       <dd>Endi bunday bo&lsquo;lmaydi: ob&lsquo;ekt bino + ob&lsquo;ekt raqami bo&lsquo;yicha aniqlanadi, fayldagi qavat yoki kirish tuzatilsa — mavjud yozuv yangilanadi. Avvalgi yuklashlardan qolgan takrorlarni <code>python manage.py find_duplicate_units</code> buyrug&lsquo;i ko&lsquo;rsatadi; ortiqchasini o&lsquo;chiring — raqam bino ichida yagona bo&lsquo;lishi kerak.</dd>

@@ -99,6 +99,8 @@ services:
         condition: service_healthy
     networks:
       - backend_network
+      # Выход в интернет: курсы валют ЦБ и отправка почты
+      - egress_network
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
       interval: 30s
@@ -128,6 +130,7 @@ services:
       python manage.py refresh_overdue_payments || true;
       python manage.py expire_bookings || true;
       python manage.py close_stale_meetings || true;
+      python manage.py fetch_exchange_rates || true;
       sleep 3600;
       done"
     volumes:
@@ -156,6 +159,8 @@ services:
         condition: service_healthy
     networks:
       - backend_network
+      # Выход в интернет: загрузка курсов ЦБ
+      - egress_network
 
   # =============================================================================
   # Frontend React/Vite (Production с nginx)
@@ -304,3 +309,8 @@ networks:
   backend_network:
     driver: bridge
     internal: true
+
+  # Сеть с выходом в интернет — только для backend и scheduler: курсы валют
+  # ЦБ и почта. БД и Redis в неё не входят и наружу по-прежнему недоступны
+  egress_network:
+    driver: bridge

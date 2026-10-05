@@ -106,11 +106,13 @@ class BuildingLogSerializer(serializers.ModelSerializer):
 class PropertyListSerializer(serializers.ModelSerializer):
     layout = LayoutMiniSerializer(read_only=True)
     active_deal_id = serializers.SerializerMethodField()
+    # Цена объекта задана в валюте прайса его проекта
+    price_currency = serializers.CharField(source='building.project.price_currency', read_only=True)
 
     class Meta:
         model = Property
         fields = [
-            'id', 'unit_number', 'property_type', 'status', 'area', 'price',
+            'id', 'unit_number', 'property_type', 'status', 'area', 'price', 'price_currency',
             'floor', 'entrance', 'riser', 'has_finishing', 'layout', 'description', 'active_deal_id'
         ]
 
@@ -243,7 +245,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['id', 'name', 'address', 'created_at', 'buildings', 'company', 'company_name']
+        fields = ['id', 'name', 'address', 'price_currency', 'created_at', 'buildings', 'company', 'company_name']
         read_only_fields = ['created_at']
 
 
@@ -310,11 +312,13 @@ class PublicImageLayoutSerializer(serializers.ModelSerializer):
 
 class PublicPropertySerializer(serializers.ModelSerializer):
     """ Сериализатор для объектов недвижимости (публичный) """
+    # Партнёру без валюты цена непонятна
+    price_currency = serializers.CharField(source='building.project.price_currency', read_only=True)
     layout = PublicImageLayoutSerializer(read_only=True)
     class Meta:
         model = Property
         fields = [
-            'id', 'unit_number', 'property_type', 'status', 'area', 'price',
+            'id', 'unit_number', 'property_type', 'status', 'area', 'price', 'price_currency',
             'floor', 'entrance', 'has_finishing', 'layout'
         ]
 

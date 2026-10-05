@@ -7,6 +7,10 @@ export interface KpiData {
     newApplicationsToday: number;
     monthlySales: number;
     overduePayments: number;
+    /** Валюта сумм: валюта сделок компании */
+    currency?: string;
+    /** Валюты без курса — их суммы в итоги не вошли */
+    missingRates?: string[];
 }
 
 export interface ChartData {

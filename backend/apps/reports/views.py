@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from apps.finances.currency import Converter, company_base_currency, user_company
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -101,6 +102,11 @@ class PlanFactReportView(APIView):
         # Фильтруем проекты по разрешениям пользователя
         projects = get_filtered_queryset(request.user, projects, 'PROJECT', max_scope=report_scope)
         report_data = []
+        # Факт приводится к валюте сделок компании по курсу на дату события:
+        # договор — на дату договора, поступление — на дату оплаты.
+        # План загружается в той же валюте.
+        company = user_company(request.user)
+        to_base = Converter(company_base_currency(company), company)
 
         total_metrics = {
             'plan_units': 0, 'plan_money': 0, 'plan_revenue': 0,
@@ -132,8 +138,12 @@ class PlanFactReportView(APIView):
             payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT', max_scope=report_scope)
 
             fact_units = deals_qs.count()
-            fact_money = deals_qs.aggregate(Sum('contract_price'))['contract_price__sum'] or 0
-            fact_revenue = payments_qs.aggregate(Sum('amount'))['amount__sum'] or 0
+            fact_money = to_base.total(
+                (price, currency, contract_date or closed_at)
+                for price, currency, contract_date, closed_at in deals_qs.values_list(
+                    'contract_price', 'currency', 'contract_date', 'closed_at')
+            )
+            fact_revenue = to_base.total(payments_qs.values_list('amount', 'currency', 'payment_date'))
 
             # Accumulate totals
             total_metrics['plan_units'] += plan_data['units'] or 0
@@ -160,6 +170,11 @@ class PlanFactReportView(APIView):
                                                end_date),
         })
 
+        # Валюта сумм и валюты без курса — в каждой строке, чтобы формат ответа
+        # (список строк отчёта) остался прежним
+        for row in report_data:
+            row['currency'] = to_base.target
+            row['missing_rates'] = sorted(to_base.missing)
         return Response(report_data)
 
 
@@ -275,6 +290,11 @@ class EmployeePlanFactReportView(APIView):
         # Определяем scope отчёта
         report_scope = get_user_max_scope(request.user, 'REPORT')
         report_data = []
+        # Факт приводится к валюте сделок компании по курсу на дату события:
+        # договор — на дату договора, поступление — на дату оплаты.
+        # План загружается в той же валюте.
+        company = user_company(request.user)
+        to_base = Converter(company_base_currency(company), company)
 
         total_metrics = {
             'plan_units': 0, 'plan_money': 0, 'plan_revenue': 0,
@@ -304,8 +324,12 @@ class EmployeePlanFactReportView(APIView):
             payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT', max_scope=report_scope)
 
             fact_units = deals_qs.count()
-            fact_money = deals_qs.aggregate(Sum('contract_price'))['contract_price__sum'] or 0
-            fact_revenue = payments_qs.aggregate(Sum('amount'))['amount__sum'] or 0
+            fact_money = to_base.total(
+                (price, currency, contract_date or closed_at)
+                for price, currency, contract_date, closed_at in deals_qs.values_list(
+                    'contract_price', 'currency', 'contract_date', 'closed_at')
+            )
+            fact_revenue = to_base.total(payments_qs.values_list('amount', 'currency', 'payment_date'))
 
             # Skip employee if they have no plan and no fact
             if not any([plan_data['units'], plan_data['money'], plan_data['revenue'], fact_units, fact_money,
@@ -338,6 +362,11 @@ class EmployeePlanFactReportView(APIView):
                                                end_date),
         })
 
+        # Валюта сумм и валюты без курса — в каждой строке, чтобы формат ответа
+        # (список строк отчёта) остался прежним
+        for row in report_data:
+            row['currency'] = to_base.target
+            row['missing_rates'] = sorted(to_base.missing)
         return Response(report_data)
 
 

@@ -19,8 +19,16 @@ export interface BeneficiaryAccount {
 // Платеж
 export interface Payment {
   id: number;
+  /** Сумма в валюте сделки */
   amount: string;
   currency: string;
+  /**
+   * Как строку ввели, если не в валюте сделки: сумма, валюта и курс пересчёта.
+   * У строк, введённых сразу в валюте сделки, пусто
+   */
+  entered_amount: string | null;
+  entered_currency: string;
+  entered_rate: string | null;
   method: string;
   due_date: string;
   payment_date: string | null;
@@ -50,7 +58,11 @@ export interface PaymentSchedulePayloadItem {
   due_date: string;
   payment_type_id: number;
   beneficiary_account_id: number;
-  currency: 'UZS' | 'USD' | 'EUR';
+  /**
+   * Валюта ввода: валюта сделки или одна из поддерживаемых валют компании.
+   * Строки не в валюте сделки бэкенд пересчитывает при сохранении
+   */
+  currency: string;
   method: 'CASH' | 'CASHLESS';
 }
 
@@ -81,10 +93,20 @@ export interface FinanceCurrencyTotals {
     paid_sum: number;
 }
 
+/** Итоги, приведённые к валюте сделок компании по курсу на дату события */
+export interface FinanceBaseTotals {
+    currency: string;
+    overdue_sum: number;
+    paid_sum: number;
+    /** Валюты без курса: их суммы в итог не вошли */
+    missing_rates: string[];
+}
+
 export interface FinanceSummaryResponse {
     summary: any[];
     widgets: {
         by_currency: FinanceCurrencyTotals[];
+        in_base?: FinanceBaseTotals;
     };
 }
 

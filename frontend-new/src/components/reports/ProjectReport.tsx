@@ -59,6 +59,9 @@ export default function ProjectReport() {
         queryFn: () => getPlanFactReport(filters!),
         enabled: !!filters,
     });
+    // Денежный факт приведён к валюте сделок компании; валюта одна на весь отчёт
+    const reportCurrency = reportData?.[0]?.currency ?? '';
+    const reportMissingRates = reportData?.[0]?.missing_rates ?? [];
 
     const uploadMutation = useMutation({
         mutationFn: uploadPlan,
@@ -151,6 +154,9 @@ export default function ProjectReport() {
 
             {isLoadingReport && <CircularProgress />}
             {isError && <Alert severity="error">{(error as Error).message}</Alert>}
+            {reportMissingRates.length > 0 && (
+                <Alert severity="warning">{t('pages.reports.missing_rates', { currencies: reportMissingRates.join(', ') })}</Alert>
+            )}
             {reportData && (
                 <TableContainer component={Paper} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
                     <Table stickyHeader size={isMobile ? 'small' : 'medium'}>
@@ -158,8 +164,8 @@ export default function ProjectReport() {
                             <TableRow>
                                 <TableCell rowSpan={2} sx={{...separatorStyle, ...stickyColumnStyle, verticalAlign: 'bottom'}}>{t('pages.reports.projects_column')}</TableCell>
                                 <TableCell align="center" colSpan={4} sx={separatorStyle}>{t('pages.reports.quantity_pcs')}</TableCell>
-                                <TableCell align="center" colSpan={4} sx={separatorStyle}>{t('pages.reports.contracting')}</TableCell>
-                                <TableCell align="center" colSpan={4}>{t('pages.reports.revenue')}</TableCell>
+                                <TableCell align="center" colSpan={4} sx={separatorStyle}>{t('pages.reports.contracting')}{reportCurrency && `, ${reportCurrency}`}</TableCell>
+                                <TableCell align="center" colSpan={4}>{t('pages.reports.revenue')}{reportCurrency && `, ${reportCurrency}`}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell align="right">{t('pages.reports.plan')}</TableCell>

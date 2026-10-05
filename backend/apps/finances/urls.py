@@ -6,6 +6,9 @@ from .views import (
     PaymentTypeDetailView, BeneficiaryAccountDetailView,PaymentDetailView, PaymentMarkAsReturnedView,
     PaymentListView, FinanceSummaryView
 )
+from .currency_views import (
+    CurrencySettingsView, ExchangeRateDetailView, ExchangeRateListView, ExchangeRateRefreshView,
+)
 
 urlpatterns = [
     path('finances/payments/', PaymentListView.as_view(), name='payment-list'),
@@ -19,4 +22,8 @@ urlpatterns = [
     path('deals/<int:deal_pk>/payment-schedule/', DealPaymentScheduleCreateView.as_view(),
          name='deal-payment-schedule-create'),
     path('finances/summary/', FinanceSummaryView.as_view(), name='finance-summary'),
+    path('finances/currency-settings/', CurrencySettingsView.as_view(), name='currency-settings'),
+    path('finances/exchange-rates/', ExchangeRateListView.as_view(), name='exchange-rate-list'),
+    path('finances/exchange-rates/refresh/', ExchangeRateRefreshView.as_view(), name='exchange-rate-refresh'),
+    path('finances/exchange-rates/<int:pk>/', ExchangeRateDetailView.as_view(), name='exchange-rate-detail'),
 ]

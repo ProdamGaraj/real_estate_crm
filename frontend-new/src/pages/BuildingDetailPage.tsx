@@ -12,6 +12,7 @@ import { getBuildingTypes } from '../api/projects';
 import type { BuildingType } from '../api/projects';
 import apiClient from '../api/axios';
 import { getMediaUrl } from '../utils/media';
+import { formatMoney } from '../utils/currency';
 
 import { styled } from '@mui/material/styles';
 import {
@@ -228,7 +229,11 @@ export default function BuildingDetailPage() {
     { field: 'unit_number', headerName: t('pages.buildings.unit_number'), flex: 1 },
     { field: 'status', headerName: t('common.status'), flex: 1 },
     { field: 'area', headerName: t('pages.buildings.area'), type: 'number' },
-    { field: 'price', headerName: t('pages.buildings.price'), type: 'number', flex: 1 },
+    {
+      field: 'price', headerName: t('pages.buildings.price'), type: 'number', flex: 1,
+      // Цена в валюте прайса проекта
+      valueFormatter: (value: number, row: Property) => formatMoney(value, row.price_currency, i18n.language),
+    },
   ];
 
   return (

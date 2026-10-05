@@ -29,6 +29,7 @@ export type ResourceType =
   | 'COMPANY'
   | 'DEPARTMENT'
   | 'PARTNER_API_KEY'
+  | 'EXCHANGE_RATE'
   | 'DASHBOARD'
   | 'SETTINGS';
 

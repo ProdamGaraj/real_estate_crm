@@ -24,7 +24,11 @@ from django.http import HttpResponse
 from django.db.models import Sum, Count, Q
 from permissions.permissions import PaymentPermission, PaymentTypePermission, BeneficiaryAccountPermission, ReportPermission
 from permissions.backends import get_filtered_queryset, can_user_perform_action
-from permissions.reference_scope import CompanyScopedReferenceMixin
+from permissions.reference_scope import CompanyScopedReferenceMixin, with_shared_records
+from .currency import (
+    CENT, Converter, RateUnavailable, company_base_currency, cross_rate, money, stored_rate,
+    supported_currencies, user_company,
+)
 
 
 class ProtectedReferenceDeleteMixin:
@@ -102,6 +106,18 @@ class FinanceSummaryView(APIView):
                 for row in widgets_rows
             ]
         }
+        # Те же витрины, приведённые к валюте сделок компании по курсу на дату
+        # события: просрочка — на дату платежа по графику, оплата — на дату оплаты
+        company = user_company(request.user)
+        to_base = Converter(company_base_currency(company), company)
+        widgets_data['in_base'] = {
+            'currency': to_base.target,
+            'overdue_sum': to_base.total(queryset.filter(status=Payment.PaymentStatus.OVERDUE)
+                                         .values_list('amount', 'currency', 'due_date')),
+            'paid_sum': to_base.total(queryset.filter(status=Payment.PaymentStatus.PAID)
+                                      .values_list('amount', 'currency', 'payment_date')),
+        }
+        widgets_data['in_base']['missing_rates'] = sorted(to_base.missing)
 
         if group_by == 'status':
             summary = queryset.values('status', 'currency').annotate(
@@ -239,7 +255,9 @@ class BeneficiaryAccountListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, BeneficiaryAccountPermission]
 
     def get_queryset(self):
-        return get_filtered_queryset(
+        # Счета своей компании и общесистемные: без них менеджер не находил
+        # в графике платежей счёт, заведённый администратором для всех
+        return with_shared_records(
             self.request.user,
             BeneficiaryAccount.objects.all(),
             'BENEFICIARY_ACCOUNT'
@@ -295,28 +313,81 @@ class DealPaymentScheduleCreateView(APIView):
         if not isinstance(payments_data, list) or not all(isinstance(p, dict) for p in payments_data):
             return Response({"error": "Ожидается список платежей."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            # str() обязателен: Decimal(float) даёт двоичный «хвост»,
-            # из-за которого корректная сумма не сходится со стоимостью по договору.
-            total_amount = sum(Decimal(str(p.get('amount', 0))) for p in payments_data)
-        except (InvalidOperation, TypeError):
-            return Response({"error": "Некорректная сумма платежа."}, status=status.HTTP_400_BAD_REQUEST)
+        existing_payments = {p.id: p for p in deal.payments.all()}
 
-        # Складывать суммы можно только в одной валюте. Раньше платежи в разных
-        # валютах суммировались как одно число и «сходились» со стоимостью договора.
-        currencies = {p.get('currency') or deal.currency for p in payments_data}
-        if len(currencies) > 1:
+        # График хранится в валюте сделки. Строки можно вводить в любой
+        # поддерживаемой валюте компании — при сохранении они пересчитываются
+        # по курсу на сегодня, а введённая сумма и курс запоминаются.
+        # Проведённые платежи не пересчитываются: деньги по ним уже учтены.
+        company = deal.company or user_company(request.user)
+        allowed = set(supported_currencies(company)) | {deal.currency}
+        on_date = timezone.localdate()
+        prepared, converted = [], []
+        # Допустимое расхождение из-за округления: по копейке валюты ввода на
+        # каждую пересчитанную строку. Доллар делится только до цента, а цент —
+        # это больше сотни сумов, поэтому точную сумму договора в сумах
+        # долларами набрать обычно нельзя.
+        tolerance = Decimal(0)
+        for index, row in enumerate(payments_data):
+            row = dict(row)
+            entered_currency = str(row.get('currency') or deal.currency).upper()
+            try:
+                # str() обязателен: Decimal(float) даёт двоичный «хвост»,
+                # из-за которого корректная сумма не сходится со стоимостью по договору
+                entered_amount = Decimal(str(row.get('amount', 0)))
+            except (InvalidOperation, TypeError):
+                return Response({"error": "Некорректная сумма платежа."}, status=status.HTTP_400_BAD_REQUEST)
+            if entered_currency not in allowed:
+                return Response({
+                    "error": (
+                        f"Валюта {entered_currency} не входит в поддерживаемые валюты компании "
+                        f"({', '.join(sorted(allowed))})."
+                    )
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            instance = existing_payments.get(row.get('id'))
+            settled = instance is not None and instance.status in self.PROTECTED_STATUSES
+            entered = None
+            if entered_currency != deal.currency and not settled:
+                try:
+                    rate = cross_rate(entered_currency, deal.currency, on_date, company)
+                except RateUnavailable as error:
+                    return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+                entered = (money(entered_amount), entered_currency, stored_rate(rate))
+                row['amount'] = str(money(entered_amount * rate))
+                row['currency'] = deal.currency
+                converted.append(index)
+                tolerance += max(CENT, CENT * rate)
+            else:
+                row['currency'] = entered_currency
+                # Строка, которую при правке графика не меняли, сохраняет
+                # исходный ввод: иначе правка одного платежа стирала бы у
+                # остальных сведения о том, что их вносили в долларах
+                if (instance is not None and instance.entered_currency
+                        and entered_currency == instance.currency
+                        and money(entered_amount) == instance.amount):
+                    entered = (instance.entered_amount, instance.entered_currency, instance.entered_rate)
+            prepared.append((row, entered))
+
+        total_amount = sum((Decimal(str(row['amount'])) for row, _ in prepared), Decimal(0))
+
+        # Сумма пересчитанных строк расходится со стоимостью договора на
+        # округление (см. tolerance). Такой хвост относим на последнюю
+        # пересчитанную строку — график в валюте сделки сходится точно.
+        difference = deal.contract_price - total_amount
+        if difference and converted and abs(difference) <= tolerance:
+            row, _ = prepared[converted[-1]]
+            row['amount'] = str(Decimal(row['amount']) + difference)
+            total_amount = deal.contract_price
+
+        # Проведённый платёж в другой валюте (из графика до пересчётов) нельзя
+        # сложить с остальными как одно число
+        mixed = sorted({row['currency'] for row, _ in prepared} - {deal.currency})
+        if mixed:
             return Response({
                 "error": (
-                    f"В графике смешаны валюты: {', '.join(sorted(currencies))}. "
-                    f"Все платежи должны быть в валюте договора ({deal.currency})."
-                )
-            }, status=status.HTTP_400_BAD_REQUEST)
-        if currencies and currencies != {deal.currency}:
-            return Response({
-                "error": (
-                    f"Валюта платежей ({currencies.pop()}) не совпадает "
-                    f"с валютой договора ({deal.currency})."
+                    f"В графике есть проведённые платежи в валюте {', '.join(mixed)}, "
+                    f"а договор — в {deal.currency}. Отмените оплату по ним и пересоберите график."
                 )
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -326,7 +397,6 @@ class DealPaymentScheduleCreateView(APIView):
                          f"со стоимостью по договору ({deal.contract_price} {deal.currency})."
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        existing_payments = {p.id: p for p in deal.payments.all()}
         submitted_id_list = [p.get('id') for p in payments_data if p.get('id') in existing_payments]
         if len(submitted_id_list) != len(set(submitted_id_list)):
             # Иначе одна строка перезаписала бы другую и график сошёлся бы не на всю сумму
@@ -362,7 +432,7 @@ class DealPaymentScheduleCreateView(APIView):
         resulting_payments = []
 
         with transaction.atomic():
-            for payment_data in payments_data:
+            for payment_data, entered in prepared:
                 instance = existing_payments.get(payment_data.get('id'))
                 serializer = PaymentSerializer(instance=instance, data=payment_data)
                 serializer.is_valid(raise_exception=True)
@@ -392,6 +462,14 @@ class DealPaymentScheduleCreateView(APIView):
                         status=new_status,
                     )
                     updated_count += 1
+
+                # Исходный ввод храним только у пересчитанных строк; строка,
+                # введённая сразу в валюте сделки, его сбрасывает
+                if instance is None or instance.status not in self.PROTECTED_STATUSES:
+                    payment.entered_amount, payment.entered_currency, payment.entered_rate = (
+                        entered if entered else (None, '', None)
+                    )
+                    payment.save(update_fields=['entered_amount', 'entered_currency', 'entered_rate'])
 
                 resulting_payments.append(PaymentSerializer(payment).data)
 

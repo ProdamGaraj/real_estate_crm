@@ -14,6 +14,7 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { getDeals, type DealListItem, type DealFilters } from '../api/deals';
 import { getUsers, type User } from '../api/users';
+import { formatMoney } from '../utils/currency';
 import DealSummary from '../components/deals/DealSummary';
 import { LocalizedDateField } from '../components/common/LocalizedDateField';
 import { useIsMobile } from '../hooks/useMobile';
@@ -42,7 +43,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function DealsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const navigate = useNavigate();
     const isMobile = useIsMobile();
     const [filtersExpanded, setFiltersExpanded] = useState(!isMobile);
@@ -66,7 +67,11 @@ export default function DealsPage() {
         },
         { field: 'client', headerName: t('table.client'), flex: 1 },
         { field: 'property', headerName: t('table.property'), flex: 1 },
-        { field: 'contract_price', headerName: t('table.contract_price'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '' },
+        {
+            field: 'contract_price', headerName: t('table.contract_price'), flex: 1,
+            // Сделки компании могут быть в разных валютах (старые — в прежней валюте сделок)
+            valueFormatter: (value: number, row: DealListItem) => value ? formatMoney(value, row.currency, i18n.language) : '',
+        },
         { field: 'created_by', headerName: t('table.manager'), flex: 1 },
         {
             field: 'created_at',
@@ -107,7 +112,7 @@ export default function DealsPage() {
         {
             key: 'contract_price',
             label: 'table.contract_price',
-            render: (value: number) => value ? value.toLocaleString() : '-',
+            render: (value: number, item: DealListItem) => value ? formatMoney(value, item.currency, i18n.language) : '-',
         },
         {
             key: 'created_by',

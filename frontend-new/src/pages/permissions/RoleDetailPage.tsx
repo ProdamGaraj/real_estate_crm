@@ -83,7 +83,7 @@ export default function RoleDetailPage() {
   }), [t]);
 
   // Названия для resource
-  // Синхронизировано с backend Permission.Resource (27 ресурсов)
+  // Синхронизировано с backend Permission.Resource
   const RESOURCE_LABELS = useMemo(() => ({
     CLIENT: t('pages.settings.permissions.resource_client'),
     APPLICATION: t('pages.settings.permissions.resource_application'),
@@ -110,6 +110,7 @@ export default function RoleDetailPage() {
     USER: t('pages.settings.permissions.resource_user'),
     PERMISSION: t('pages.settings.permissions.resource_permission'),
     PARTNER_API_KEY: t('pages.settings.permissions.resource_partner_api_key'),
+    EXCHANGE_RATE: t('pages.settings.permissions.resource_exchange_rate'),
     DASHBOARD: t('pages.settings.permissions.resource_dashboard'),
     SETTINGS: t('pages.settings.permissions.resource_settings'),
   }), [t]);

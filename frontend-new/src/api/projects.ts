@@ -13,6 +13,8 @@ export interface Project {
   id: number;
   name: string;
   address: string;
+  /** Валюта прайса: в ней заданы цены объектов проекта */
+  price_currency?: string;
   created_at: string;
   buildings: BuildingMini[]; // <-- Добавляем это поле
   company?: number | null;

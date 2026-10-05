@@ -1546,6 +1546,63 @@
     "default": null
    },
    {
+    "name": "price_currency",
+    "column": "price_currency",
+    "type": "CharField",
+    "verbose": "Валюта прайса",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 3,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "UZS",
+      "Узбекский сум"
+     ],
+     [
+      "USD",
+      "Доллар США"
+     ],
+     [
+      "EUR",
+      "Евро"
+     ],
+     [
+      "RUB",
+      "Российский рубль"
+     ],
+     [
+      "CNY",
+      "Китайский юань"
+     ],
+     [
+      "KZT",
+      "Казахстанский тенге"
+     ],
+     [
+      "GBP",
+      "Фунт стерлингов"
+     ],
+     [
+      "AED",
+      "Дирхам ОАЭ"
+     ],
+     [
+      "TRY",
+      "Турецкая лира"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "'UZS'"
+   },
+   {
     "name": "created_at",
     "column": "created_at",
     "type": "DateTimeField",
@@ -1993,7 +2050,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 12,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -4843,6 +4900,30 @@
      [
       "EUR",
       "Евро"
+     ],
+     [
+      "RUB",
+      "Российский рубль"
+     ],
+     [
+      "CNY",
+      "Китайский юань"
+     ],
+     [
+      "KZT",
+      "Казахстанский тенге"
+     ],
+     [
+      "GBP",
+      "Фунт стерлингов"
+     ],
+     [
+      "AED",
+      "Дирхам ОАЭ"
+     ],
+     [
+      "TRY",
+      "Турецкая лира"
      ]
     ],
     "related_model": null,
@@ -4862,7 +4943,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 12,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -4882,7 +4963,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 12,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -4942,8 +5023,105 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 12,
+    "max_digits": 18,
     "decimal_places": 2,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "catalog_price",
+    "column": "catalog_price",
+    "type": "DecimalField",
+    "verbose": "Цена по прайсу",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 18,
+    "decimal_places": 2,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "catalog_currency",
+    "column": "catalog_currency",
+    "type": "CharField",
+    "verbose": "Валюта прайса",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 3,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "UZS",
+      "Узбекский сум"
+     ],
+     [
+      "USD",
+      "Доллар США"
+     ],
+     [
+      "EUR",
+      "Евро"
+     ],
+     [
+      "RUB",
+      "Российский рубль"
+     ],
+     [
+      "CNY",
+      "Китайский юань"
+     ],
+     [
+      "KZT",
+      "Казахстанский тенге"
+     ],
+     [
+      "GBP",
+      "Фунт стерлингов"
+     ],
+     [
+      "AED",
+      "Дирхам ОАЭ"
+     ],
+     [
+      "TRY",
+      "Турецкая лира"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "catalog_rate",
+    "column": "catalog_rate",
+    "type": "DecimalField",
+    "verbose": "Курс пересчёта прайса в валюту сделки",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 30,
+    "decimal_places": 12,
     "choices": [],
     "related_model": null,
     "related_table": null,
@@ -5623,6 +5801,240 @@
  },
  {
   "app": "finances",
+  "model": "ExchangeRate",
+  "table": "finances_exchangerate",
+  "verbose": "Курс валюты",
+  "verbose_plural": "Курсы валют",
+  "doc": "Курс валюты к суму на дату.\n\nКурс ЦБ общий для всех компаний (компания не указана). Ручной курс\nпринадлежит компании и действует только в её расчётах.",
+  "unique_together": [],
+  "constraints": [
+   "uniq_cbu_rate_per_day",
+   "uniq_company_rate_per_day"
+  ],
+  "indexes": [
+   {
+    "fields": [
+     "currency",
+     "date"
+    ],
+    "name": "finances_ex_currenc_2bc3fa_idx"
+   }
+  ],
+  "ordering": [
+   "-date",
+   "currency"
+  ],
+  "fields": [
+   {
+    "name": "id",
+    "column": "id",
+    "type": "BigAutoField",
+    "verbose": "ID",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": true,
+    "primary_key": true,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "currency",
+    "column": "currency",
+    "type": "CharField",
+    "verbose": "Валюта",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 3,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "UZS",
+      "Узбекский сум"
+     ],
+     [
+      "USD",
+      "Доллар США"
+     ],
+     [
+      "EUR",
+      "Евро"
+     ],
+     [
+      "RUB",
+      "Российский рубль"
+     ],
+     [
+      "CNY",
+      "Китайский юань"
+     ],
+     [
+      "KZT",
+      "Казахстанский тенге"
+     ],
+     [
+      "GBP",
+      "Фунт стерлингов"
+     ],
+     [
+      "AED",
+      "Дирхам ОАЭ"
+     ],
+     [
+      "TRY",
+      "Турецкая лира"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "date",
+    "column": "date",
+    "type": "DateField",
+    "verbose": "Дата курса",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "rate",
+    "column": "rate",
+    "type": "DecimalField",
+    "verbose": "Сумов за единицу валюты",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 24,
+    "decimal_places": 8,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "source",
+    "column": "source",
+    "type": "CharField",
+    "verbose": "Источник",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 10,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "CBU",
+      "ЦБ Узбекистана"
+     ],
+     [
+      "MANUAL",
+      "Введён вручную"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "ExchangeRate.Source.CBU"
+   },
+   {
+    "name": "company",
+    "column": "company_id",
+    "type": "ForeignKey",
+    "verbose": "Компания (для ручного курса)",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "permissions.Company",
+    "related_table": "permissions_company",
+    "through_table": null,
+    "on_delete": "CASCADE",
+    "default": null
+   },
+   {
+    "name": "created_by",
+    "column": "created_by_id",
+    "type": "ForeignKey",
+    "verbose": "Кем введён",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "auth.User",
+    "related_table": "auth_user",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   },
+   {
+    "name": "created_at",
+    "column": "created_at",
+    "type": "DateTimeField",
+    "verbose": "Дата создания",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   }
+  ]
+ },
+ {
+  "app": "finances",
   "model": "Payment",
   "table": "finances_payment",
   "verbose": "Платёж",
@@ -5780,7 +6192,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 12,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -5814,6 +6226,30 @@
      [
       "EUR",
       "Евро"
+     ],
+     [
+      "RUB",
+      "Российский рубль"
+     ],
+     [
+      "CNY",
+      "Китайский юань"
+     ],
+     [
+      "KZT",
+      "Казахстанский тенге"
+     ],
+     [
+      "GBP",
+      "Фунт стерлингов"
+     ],
+     [
+      "AED",
+      "Дирхам ОАЭ"
+     ],
+     [
+      "TRY",
+      "Турецкая лира"
      ]
     ],
     "related_model": null,
@@ -5821,6 +6257,103 @@
     "through_table": null,
     "on_delete": null,
     "default": "Payment.Currency.UZS"
+   },
+   {
+    "name": "entered_amount",
+    "column": "entered_amount",
+    "type": "DecimalField",
+    "verbose": "Введённая сумма",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 18,
+    "decimal_places": 2,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "entered_currency",
+    "column": "entered_currency",
+    "type": "CharField",
+    "verbose": "Валюта ввода",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 3,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "UZS",
+      "Узбекский сум"
+     ],
+     [
+      "USD",
+      "Доллар США"
+     ],
+     [
+      "EUR",
+      "Евро"
+     ],
+     [
+      "RUB",
+      "Российский рубль"
+     ],
+     [
+      "CNY",
+      "Китайский юань"
+     ],
+     [
+      "KZT",
+      "Казахстанский тенге"
+     ],
+     [
+      "GBP",
+      "Фунт стерлингов"
+     ],
+     [
+      "AED",
+      "Дирхам ОАЭ"
+     ],
+     [
+      "TRY",
+      "Турецкая лира"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "entered_rate",
+    "column": "entered_rate",
+    "type": "DecimalField",
+    "verbose": "Курс пересчёта в валюту сделки",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 30,
+    "decimal_places": 12,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
    },
    {
     "name": "payment_type",
@@ -7384,7 +7917,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 15,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -7404,7 +7937,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 15,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -7548,7 +8081,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 15,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -7568,7 +8101,7 @@
     "unique": false,
     "primary_key": false,
     "max_length": null,
-    "max_digits": 15,
+    "max_digits": 18,
     "decimal_places": 2,
     "choices": [],
     "related_model": null,
@@ -7692,6 +8225,46 @@
     "through_table": null,
     "on_delete": null,
     "default": "True"
+   },
+   {
+    "name": "deal_currency",
+    "column": "deal_currency",
+    "type": "CharField",
+    "verbose": "Валюта сделок",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 3,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "'UZS'"
+   },
+   {
+    "name": "supported_currencies",
+    "column": "supported_currencies",
+    "type": "JSONField",
+    "verbose": "Поддерживаемые валюты",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "default_supported_currencies"
    },
    {
     "name": "created_at",
@@ -8526,6 +9099,10 @@
      [
       "PARTNER_API_KEY",
       "API-ключи партнёров"
+     ],
+     [
+      "EXCHANGE_RATE",
+      "Курсы валют"
      ],
      [
       "DASHBOARD",

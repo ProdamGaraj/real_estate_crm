@@ -84,10 +84,41 @@ export default function FinanceSummary() {
 
     return (
         <Stack spacing={2}>
+            {/* Итог в валюте сделок — когда платежи в нескольких валютах.
+                Пересчёт по курсу на дату события: просрочка — на дату по графику,
+                оплата — на дату оплаты */}
+            {data?.widgets.in_base && (data.widgets.by_currency ?? []).length > 1 && (
+                <>
+                    <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <KpiCard
+                                title={t('pages.finances.overdue_in_base', { currency: data.widgets.in_base.currency })}
+                                value={data.widgets.in_base.overdue_sum || 0}
+                                color="error.main"
+                                linkTo={{ tab: 0, filters: { status: 'OVERDUE' } }}
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <KpiCard
+                                title={t('pages.finances.paid_in_base', { currency: data.widgets.in_base.currency })}
+                                value={data.widgets.in_base.paid_sum || 0}
+                                color="success.main"
+                                linkTo={{ tab: 0, filters: { status: 'PAID' } }}
+                            />
+                        </Grid>
+                    </Grid>
+                    {data.widgets.in_base.missing_rates.length > 0 && (
+                        <Alert severity="warning">
+                            {t('pages.finances.missing_rates', { currencies: data.widgets.in_base.missing_rates.join(', ') })}
+                        </Alert>
+                    )}
+                </>
+            )}
+
             {/* По карточке на валюту: суммы в разных валютах не складываются */}
             {(data?.widgets.by_currency ?? []).map((totals) => (
                 <Grid container spacing={2} key={totals.currency}>
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                         <KpiCard
                             title={`${t('pages.finances.overdue_payments')}, ${totals.currency}`}
                             value={totals.overdue_sum || 0}
@@ -95,7 +126,7 @@ export default function FinanceSummary() {
                             linkTo={{ tab: 0, filters: { status: 'OVERDUE' } }}
                         />
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                         <KpiCard
                             title={`${t('pages.finances.paid_payments')}, ${totals.currency}`}
                             value={totals.paid_sum || 0}

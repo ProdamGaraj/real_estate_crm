@@ -28,6 +28,7 @@ REFERENCE_MODELS = [
     ('deals', 'PurchasePurpose'),
     ('deals', 'PaymentType'),
     ('finances', 'PaymentType'),
+    ('finances', 'BeneficiaryAccount'),
 ]
 
 # Бизнес-данные: у них компания заполняется при создании, но у старых

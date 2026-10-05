@@ -45,6 +45,29 @@ def scope_reference_queryset(user, queryset):
     return queryset.filter(Q(company_id=profile.company_id) | Q(company__isnull=True))
 
 
+def with_shared_records(user, queryset, resource_type):
+    """
+    Записи по области видимости разрешений плюс общесистемные (без компании).
+
+    Для справочников, у которых видимость зависит от области разрешения
+    (счета получателей, шаблоны договоров). Общесистемную запись заводит
+    системный администратор для всех компаний — так работают типы платежей
+    и статусы заявок, и так описано в документации. Здесь же запись без
+    компании не видел никто, кроме компании её автора: менеджер не находил
+    в графике платежей счёт получателя, а в сделке — шаблон договора.
+
+    Только для чтения: менять общесистемную запись может лишь администратор.
+    """
+    from .backends import can_user_perform_action, get_filtered_queryset
+
+    scoped = get_filtered_queryset(user, queryset, resource_type)
+    if is_admin(user) or not can_user_perform_action(user, 'VIEW', resource_type):
+        return scoped
+    return queryset.filter(
+        Q(pk__in=scoped.values('pk')) | Q(company__isnull=True)
+    ).distinct()
+
+
 class CompanyScopedReferenceMixin:
     """
     Подмешивается к представлениям справочников.

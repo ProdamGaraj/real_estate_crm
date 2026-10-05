@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { createProject } from '../../api/projects';
 import type { ProjectPayload } from '../../api/projects';
 import { getCompanies } from '../../api/permissions';
+import { getCurrencySettings } from '../../api/currency';
 import { useAuthStore } from '../../store/authStore';
 
 interface ProjectFormProps {
@@ -13,6 +14,7 @@ interface ProjectFormProps {
 
 interface ProjectFormData extends ProjectPayload {
   company?: number | null;
+  description?: string;
 }
 
 export default function ProjectForm({ onSuccess }: ProjectFormProps) {
@@ -29,6 +31,12 @@ export default function ProjectForm({ onSuccess }: ProjectFormProps) {
     enabled: isSystemAdmin,
   });
 
+  // Валюта прайса по умолчанию — валюта сделок компании
+  const { data: currencySettings } = useQuery({
+    queryKey: ['currencySettings', null],
+    queryFn: () => getCurrencySettings(),
+  });
+
   const mutation = useMutation({
     mutationFn: createProject,
     onSuccess: () => {
@@ -37,7 +45,10 @@ export default function ProjectForm({ onSuccess }: ProjectFormProps) {
   });
 
   const onSubmit: SubmitHandler<ProjectFormData> = (data) => {
-    mutation.mutate(data as ProjectPayload);
+    mutation.mutate({
+      ...data,
+      price_currency: data.price_currency || currencySettings?.deal_currency,
+    } as ProjectPayload);
   };
 
   return (
@@ -85,6 +96,25 @@ export default function ProjectForm({ onSuccess }: ProjectFormProps) {
           error={!!errors.address}
           helperText={errors.address?.message}
         />
+        <FormControl fullWidth>
+          <InputLabel>{t('pages.projects.price_currency')}</InputLabel>
+          <Controller
+            name="price_currency"
+            control={control}
+            render={({ field }) => (
+              <Select
+                {...field}
+                label={t('pages.projects.price_currency')}
+                value={field.value || currencySettings?.deal_currency || ''}
+              >
+                {currencySettings?.available_currencies.map(c => (
+                  <MenuItem key={c.code} value={c.code}>{c.code} — {c.name}</MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+        </FormControl>
+
         <TextField
           label={t('common.description')}
           fullWidth

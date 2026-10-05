@@ -24,6 +24,8 @@ export interface Property {
   status: string;
   area: number;
   price: number;
+  /** Валюта прайса проекта, в которой задана цена */
+  price_currency?: string;
   floor: number;
   entrance: string | null;
   riser: string;

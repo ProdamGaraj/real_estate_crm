@@ -14,6 +14,7 @@ from .models import Template
 from .serializers import TemplateSerializer
 from permissions.permissions import TemplatePermission
 from permissions.backends import can_user_perform_action, get_filtered_queryset
+from permissions.reference_scope import with_shared_records
 
 
 class TemplateListCreateView(generics.ListCreateAPIView):
@@ -22,11 +23,8 @@ class TemplateListCreateView(generics.ListCreateAPIView):
     parser_classes = [MultiPartParser]
 
     def get_queryset(self):
-        return get_filtered_queryset(
-            self.request.user,
-            Template.objects.all(),
-            'TEMPLATE'
-        )
+        # Шаблоны своей компании и общесистемные
+        return with_shared_records(self.request.user, Template.objects.all(), 'TEMPLATE')
 
     def perform_create(self, serializer):
         company = None
@@ -41,6 +39,10 @@ class TemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
     parser_classes = [MultiPartParser]
 
     def get_queryset(self):
+        # Общесистемный шаблон можно открыть, но менять и удалять —
+        # только администратору (ему доступно всё по области видимости)
+        if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return with_shared_records(self.request.user, Template.objects.all(), 'TEMPLATE')
         return get_filtered_queryset(
             self.request.user,
             Template.objects.all(),
@@ -83,7 +85,7 @@ class DealTemplatesListView(generics.ListAPIView):
             if not applies_to_types or prop_type in applies_to_types:
                 filtered_pks.append(template.pk)
 
-        return get_filtered_queryset(
+        return with_shared_records(
             self.request.user,
             Template.objects.filter(pk__in=filtered_pks),
             'TEMPLATE'
@@ -116,7 +118,7 @@ class GenerateDocumentView(APIView):
             )
 
         # Шаблон тоже фильтруем по scope (нельзя использовать чужой шаблон)
-        template_qs = get_filtered_queryset(request.user, Template.objects.all(), 'TEMPLATE')
+        template_qs = with_shared_records(request.user, Template.objects.all(), 'TEMPLATE')
         try:
             template = template_qs.get(pk=template_pk)
         except Template.DoesNotExist:

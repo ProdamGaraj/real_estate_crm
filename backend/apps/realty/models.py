@@ -33,6 +33,17 @@ class Project(models.Model):
     # --- Юридическая информация ---
     developer_details = models.TextField(blank=True, verbose_name="Реквизиты застройщика")
 
+    # Валюта прайса: в ней заданы цены всех объектов проекта. При брони цена
+    # пересчитывается в валюту сделок компании по курсу на дату брони.
+    price_currency = models.CharField(
+        max_length=3,
+        choices=[('UZS', 'Узбекский сум'), ('USD', 'Доллар США'), ('EUR', 'Евро'),
+                 ('RUB', 'Российский рубль'), ('CNY', 'Китайский юань'), ('KZT', 'Казахстанский тенге'),
+                 ('GBP', 'Фунт стерлингов'), ('AED', 'Дирхам ОАЭ'), ('TRY', 'Турецкая лира')],
+        default='UZS',
+        verbose_name="Валюта прайса",
+    )
+
     # --- Системные поля (Логи) ---
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
@@ -224,7 +235,7 @@ class Property(models.Model):
     riser = models.CharField(max_length=20, blank=True, verbose_name="Стояк")
     area = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Площадь (кв.м)")
     has_finishing = models.BooleanField(default=False, verbose_name="Наличие отделки")
-    price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Стоимость")
+    price = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="Стоимость")
     description = models.TextField(blank=True, verbose_name="Описание")
     layout = models.ForeignKey(Layout, on_delete=models.SET_NULL, null=True, blank=True, related_name="properties",
                                verbose_name="Планировка")

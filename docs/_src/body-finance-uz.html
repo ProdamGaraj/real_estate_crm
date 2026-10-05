@@ -103,6 +103,7 @@
           <tr><td><span class="ui">Mijozlar</span></td><td>Ko&lsquo;rish</td><td>To&lsquo;lovchini aniqlash</td></tr>
           <tr><td><span class="ui">Hisobotlar</span></td><td>Ko&lsquo;rish</td><td>&laquo;Moliya&raquo; bo&lsquo;limidagi umumiy jadval va ko&lsquo;rsatkichlar</td></tr>
           <tr><td><span class="ui">Oluvchi hisobvaraqlari</span></td><td>Ko&lsquo;rish</td><td>Jadvalda hisobni tanlash</td></tr>
+          <tr><td><span class="ui">Valyuta kurslari</span></td><td>Ko&lsquo;rish, Yaratish, Tahrirlash, O&lsquo;chirish</td><td>Kurslarni siz yuritsangiz: sozlamalardagi &laquo;Valyutalar&raquo; yorlig&lsquo;i, MB kurslarini yuklash, qo&lsquo;lda kiritilgan kurs (10-bob)</td></tr>
         </tbody>
       </table>
     </div>
@@ -173,14 +174,15 @@
           <tr><td><span class="ui">To&lsquo;lov sanasi</span></td><td>Rejadagi muddat. Kechikish shu bo&lsquo;yicha hisoblanadi</td></tr>
           <tr><td><span class="ui">To&lsquo;lov turi</span></td><td>Ma&lsquo;lumotnomadan: boshlang&lsquo;ich to&lsquo;lov, bo&lsquo;lib to&lsquo;lash va hokazo</td></tr>
           <tr><td><span class="ui">Hisob</span></td><td>Tushum kutilayotgan oluvchi hisobvarag&lsquo;i</td></tr>
-          <tr><td>Valyuta</td><td>Butun jadval uchun bitta — shartnoma valyutasi bilan bir xil. Joriy versiyada qatorlar UZS da yaratiladi</td></tr>
+          <tr><td><span class="ui">Valyuta</span></td><td>Odatda — bitim valyutasi. Kompaniyada ruxsat etilgan boshqa valyutani tanlash mumkin: saqlashda qator bugungi kurs bo&lsquo;yicha bitim valyutasiga qayta hisoblanadi, kiritilgan summa va kurs esa jadvalda ko&lsquo;rinib turadi</td></tr>
           <tr><td>To&lsquo;lov usuli</td><td>Naqd yoki pul ko&lsquo;chirish</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="warn">
-      <p><b>Hozircha bitimlarni so&lsquo;mda (UZS) rasmiylashtiring.</b> Joriy versiyada jadval qatorlari UZS da yaratiladi va formada boshqa valyutani tanlab bo&lsquo;lmaydi. &laquo;Shartlar&raquo; qadamida bitim uchun USD yoki EUR tanlangan bo&lsquo;lsa, jadval saqlanmaydi: tizim valyutalar mos kelmasligi sababli rad etadi. Cheklov ma&lsquo;lum va bartaraf etiladi; ungacha shartnoma valyutasini UZS qilib ko&lsquo;rsating.</p>
+      <p><b>Butun jadval bitim valyutasida saqlanadi.</b> Ro&lsquo;yxatdagi to&lsquo;lov summasi, to&lsquo;lov belgilari, kechikish va hisobotlar shu valyutada hisoblanadi. Dollar faqat sentgacha bo&lsquo;linadi, shuning uchun dollardagi jadval bilan so&lsquo;mdagi aniq shartnoma summasini odatda yig&lsquo;ib bo&lsquo;lmaydi: yaxlitlashdan bir necha so&lsquo;m farqqa ruxsat beriladi va u oxirgi qayta hisoblangan to&lsquo;lovga qo&lsquo;shiladi.</p>
+      <p>Jadvalni tahrirlashda qatorlar bitim valyutasida ko&lsquo;rsatiladi; o&lsquo;zgartirilmagan qatorlarda ular qanday kiritilgani haqidagi ma&lsquo;lumot saqlanadi. To&lsquo;langan to&lsquo;lovlar qayta hisoblanmaydi.</p>
     </div>
 
     <div class="note">
@@ -256,29 +258,29 @@
   <!-- ═══════════════ 06 ═══════════════ -->
   <section class="ch" id="c6">
     <h3><em>06</em>Muddati o&lsquo;tgan to&lsquo;lovlar</h3>
-    <p class="lede">&laquo;Muddati o&lsquo;tgan&raquo; holatini tizim o&lsquo;zi, serverdagi jadval bo&lsquo;yicha qo&lsquo;yadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">&laquo;Muddati o&lsquo;tgan&raquo; holatini tizim o&lsquo;zi, serverdagi jadval bo&lsquo;yicha qo&lsquo;yadi.</p>
 
     <div class="note">
-      <p><b>Bu qanday ishlaydi.</b> <span class="ui">To&lsquo;lanishi kerak</span> holatidagi, <span class="ui">To&lsquo;lov sanasi</span> o&lsquo;tib ketgan to&lsquo;lovlar avtomatik ravishda <span class="ui">Muddati o&lsquo;tgan</span> holatiga o&lsquo;tkaziladi. Qayta hisoblashni serverdagi xizmat vazifasi bajaradi — o&lsquo;sha vazifa muddati o&lsquo;tgan bronlarni ham olib tashlaydi va unutilgan uchrashuvlarni yopadi. Qo&lsquo;shimcha ravishda holatlar to&lsquo;lovlar ro&lsquo;yxati, umumiy jadval va boshqaruv paneli ochilganda yangilanadi, lekin bir necha daqiqada bir martadan ko&lsquo;p emas. Shuning uchun kechikish raqami uchala joyda bir xil va kimning qachon kirganiga bog&lsquo;liq emas. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
-      <p>Muddati o&lsquo;tgan sana bilan yaratilgan yangi to&lsquo;lov jadval saqlanishi bilanoq <span class="ui">Muddati o&lsquo;tgan</span> holatini oladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b>Bu qanday ishlaydi.</b> <span class="ui">To&lsquo;lanishi kerak</span> holatidagi, <span class="ui">To&lsquo;lov sanasi</span> o&lsquo;tib ketgan to&lsquo;lovlar avtomatik ravishda <span class="ui">Muddati o&lsquo;tgan</span> holatiga o&lsquo;tkaziladi. Qayta hisoblashni serverdagi xizmat vazifasi bajaradi — o&lsquo;sha vazifa muddati o&lsquo;tgan bronlarni ham olib tashlaydi va unutilgan uchrashuvlarni yopadi. Qo&lsquo;shimcha ravishda holatlar to&lsquo;lovlar ro&lsquo;yxati, umumiy jadval va boshqaruv paneli ochilganda yangilanadi, lekin bir necha daqiqada bir martadan ko&lsquo;p emas. Shuning uchun kechikish raqami uchala joyda bir xil va kimning qachon kirganiga bog&lsquo;liq emas.</p>
+      <p>Muddati o&lsquo;tgan sana bilan yaratilgan yangi to&lsquo;lov jadval saqlanishi bilanoq <span class="ui">Muddati o&lsquo;tgan</span> holatini oladi.</p>
     </div>
 
     <h4>Kechikish bilan kundalik ish</h4>
     <ol class="steps">
-      <li><p><span class="path">Moliya</span> &rarr; <span class="ui">To&lsquo;lovlar ro&lsquo;yxati</span> ni oching. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p><span class="ui">To&lsquo;lov sanasigacha</span> maydoniga kechagi sanani qo&lsquo;ying. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p><span class="ui">Umumiy jadval</span> ga o&lsquo;ting va <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> ko&lsquo;rsatkichiga qarang — u yerda umumiy summa. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Qo&lsquo;ng&lsquo;iroqlar uchun ro&lsquo;yxat topshirish maqsadida <span class="ui">Menejer bo&lsquo;yicha</span>, rahbarga hisobot uchun <span class="ui">Loyiha bo&lsquo;yicha</span> guruhlang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Excelga eksport qilib mas&lsquo;ullarga yuboring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p><span class="path">Moliya</span> &rarr; <span class="ui">To&lsquo;lovlar ro&lsquo;yxati</span> ni oching.</p></li>
+      <li><p><span class="ui">To&lsquo;lov sanasigacha</span> maydoniga kechagi sanani qo&lsquo;ying.</p></li>
+      <li><p><span class="ui">Umumiy jadval</span> ga o&lsquo;ting va <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> ko&lsquo;rsatkichiga qarang — u yerda umumiy summa.</p></li>
+      <li><p>Qo&lsquo;ng&lsquo;iroqlar uchun ro&lsquo;yxat topshirish maqsadida <span class="ui">Menejer bo&lsquo;yicha</span>, rahbarga hisobot uchun <span class="ui">Loyiha bo&lsquo;yicha</span> guruhlang.</p></li>
+      <li><p>Excelga eksport qilib mas&lsquo;ullarga yuboring.</p></li>
     </ol>
 
-    <p>Kechikish summasi <span class="path">Boshqaruv paneli</span> dagi <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> blokida ham ko&lsquo;rsatiladi — uni rahbar va direktor ko&lsquo;radi, shuning uchun raqam dolzarb bo&lsquo;lishi kerak. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p>Kechikish summasi <span class="path">Boshqaruv paneli</span> dagi <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> blokida ham ko&lsquo;rsatiladi — uni rahbar va direktor ko&lsquo;radi, shuning uchun raqam dolzarb bo&lsquo;lishi kerak.</p>
   </section>
 
   <!-- ═══════════════ 07 ═══════════════ -->
   <section class="ch" id="c7">
     <h3><em>07</em>Qaytarishlar</h3>
-    <p class="lede">Shartnoma buzilgandan keyin mijoz puli bilan nima qilish kerak. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">Shartnoma buzilgandan keyin mijoz puli bilan nima qilish kerak.</p>
 
     <div class="flow">
       <div class="st"><b>Shartnoma buzildi</b><span>Rasmiylashtirish bo&lsquo;limi</span></div>
@@ -290,32 +292,32 @@
       <div class="st"><b>Qaytarilgan</b><span>Siz yopasiz</span></div>
     </div>
 
-    <p>Shartnoma buzilganda <span class="chip g">To&lsquo;langan</span> holatidagi barcha to&lsquo;lovlar avtomatik ravishda <span class="chip y">Qaytarilishi kerak</span> holatiga o&lsquo;tadi. Shu paytdan boshlab ular sizning javobgarlik zonangiz. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p>Shartnoma buzilganda <span class="chip g">To&lsquo;langan</span> holatidagi barcha to&lsquo;lovlar avtomatik ravishda <span class="chip y">Qaytarilishi kerak</span> holatiga o&lsquo;tadi. Shu paytdan boshlab ular sizning javobgarlik zonangiz.</p>
 
     <ol class="steps">
-      <li><p>Bunday to&lsquo;lovlarni toping: <span class="path">Moliya</span> &rarr; <span class="ui">Umumiy jadval</span> &rarr; <span class="ui">Holat bo&lsquo;yicha</span> guruhlash, yoki ro&lsquo;yxatni kerakli bitim bo&lsquo;yicha filtrlang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Kompaniyada qabul qilingan tartibda mijozga pulni haqiqatda qaytaring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>To&lsquo;lovni oching va <span class="ui">Qaytarilgan deb belgilash</span> ni bosing (bitim jadvalida — <span class="ui">Qaytarish</span> tugmasi). Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Holat <span class="chip n">Qaytarilgan</span> ga o&lsquo;zgaradi, loglarda tegishli yozuv paydo bo&lsquo;ladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Bunday to&lsquo;lovlarni toping: <span class="path">Moliya</span> &rarr; <span class="ui">Umumiy jadval</span> &rarr; <span class="ui">Holat bo&lsquo;yicha</span> guruhlash, yoki ro&lsquo;yxatni kerakli bitim bo&lsquo;yicha filtrlang.</p></li>
+      <li><p>Kompaniyada qabul qilingan tartibda mijozga pulni haqiqatda qaytaring.</p></li>
+      <li><p>To&lsquo;lovni oching va <span class="ui">Qaytarilgan deb belgilash</span> ni bosing (bitim jadvalida — <span class="ui">Qaytarish</span> tugmasi).</p></li>
+      <li><p>Holat <span class="chip n">Qaytarilgan</span> ga o&lsquo;zgaradi, loglarda tegishli yozuv paydo bo&lsquo;ladi.</p></li>
     </ol>
 
     <div class="warn">
-      <p><b><span class="ui">Qaytarilishi kerak</span> holati — bu mijoz oldidagi ochiq majburiyat.</b> To&lsquo;lov bo&lsquo;yicha qaytarish tugmasi bosilmaguncha kompaniya qarzdor hisoblanadi. Bu holatni har hafta alohida band sifatida tekshiring: bunday to&lsquo;lovlar na kechikishga, na tushumga tushadi va shuning uchun oson ko&lsquo;zdan qochadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b><span class="ui">Qaytarilishi kerak</span> holati — bu mijoz oldidagi ochiq majburiyat.</b> To&lsquo;lov bo&lsquo;yicha qaytarish tugmasi bosilmaguncha kompaniya qarzdor hisoblanadi. Bu holatni har hafta alohida band sifatida tekshiring: bunday to&lsquo;lovlar na kechikishga, na tushumga tushadi va shuning uchun oson ko&lsquo;zdan qochadi.</p>
     </div>
 
-    <p>Qaytarish tugmasi faqat <span class="ui">Qaytarilishi kerak</span> holatidagi to&lsquo;lovlar uchun ishlaydi. Boshqa holatdagi to&lsquo;lov uchun tizim &laquo;To&lsquo;lovni qaytarilgan deb belgilab bo&lsquo;lmaydi&raquo; xatosini qaytaradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p>Qaytarish tugmasi faqat <span class="ui">Qaytarilishi kerak</span> holatidagi to&lsquo;lovlar uchun ishlaydi. Boshqa holatdagi to&lsquo;lov uchun tizim &laquo;To&lsquo;lovni qaytarilgan deb belgilab bo&lsquo;lmaydi&raquo; xatosini qaytaradi.</p>
   </section>
 
   <!-- ═══════════════ 08 ═══════════════ -->
   <section class="ch" id="c8">
     <h3><em>08</em>Umumiy jadval va Excel</h3>
-    <p class="lede">Hisobot uchun va ma&lsquo;lumotni CRM dan tashqariga uzatish uchun vosita. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">Hisobot uchun va ma&lsquo;lumotni CRM dan tashqariga uzatish uchun vosita.</p>
 
     <ol class="steps">
-      <li><p><span class="path">Moliya</span> &rarr; <span class="ui">Umumiy jadval</span> ni oching. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Davrni belgilang. Tushum hisoboti uchun haqiqiy to&lsquo;lov sanasi, reja uchun <span class="ui">To&lsquo;lov sanasidan / gacha</span> dan foydalaning. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p><span class="ui">Guruhlash</span> ni tanlang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p><span class="ui">Excel ga eksport</span> ni bosing. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p><span class="path">Moliya</span> &rarr; <span class="ui">Umumiy jadval</span> ni oching.</p></li>
+      <li><p>Davrni belgilang. Tushum hisoboti uchun haqiqiy to&lsquo;lov sanasi, reja uchun <span class="ui">To&lsquo;lov sanasidan / gacha</span> dan foydalaning.</p></li>
+      <li><p><span class="ui">Guruhlash</span> ni tanlang.</p></li>
+      <li><p><span class="ui">Excel ga eksport</span> ni bosing.</p></li>
     </ol>
 
     <div class="scroll">
@@ -329,25 +331,26 @@
       </table>
     </div>
 
-    <p>Jadval ustidagi ko&lsquo;rsatkichlar tanlangan davr uchun <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> va <span class="ui">To&lsquo;langan to&lsquo;lovlar</span> ni ko&lsquo;rsatadi — har bir valyuta uchun alohida juftlik bilan. Turli valyutadagi summalar bitta songa qo&lsquo;shilmaydi, shuning uchun jadvalda <span class="ui">Valyuta</span> ustuni ham bor: har bir valyutaga guruhning bitta qatori to&lsquo;g&lsquo;ri keladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p>Jadval ustidagi ko&lsquo;rsatkichlar tanlangan davr uchun <span class="ui">Muddati o&lsquo;tgan to&lsquo;lovlar</span> va <span class="ui">To&lsquo;langan to&lsquo;lovlar</span> ni ko&lsquo;rsatadi — har bir valyuta uchun alohida juftlik bilan. Turli valyutadagi summalar bitta songa qo&lsquo;shilmaydi, shuning uchun jadvalda <span class="ui">Valyuta</span> ustuni ham bor: har bir valyutaga guruhning bitta qatori to&lsquo;g&lsquo;ri keladi.</p>
+    <p>Valyutalar bir nechta bo&lsquo;lsa, ular ustida kompaniyaning bitimlar valyutasidagi umumiy jami chiqadi: muddati o&lsquo;tgan to&lsquo;lovlar to&lsquo;lov sanasidagi kurs bo&lsquo;yicha, to&lsquo;langanlari — haqiqiy to&lsquo;lov sanasidagi kurs bo&lsquo;yicha qayta hisoblanadi. Biror valyuta uchun kurs bo&lsquo;lmasa, uning summalari umumiy jamiga kirmaydi va tizim bu haqda ogohlantiradi.</p>
 
     <div class="note">
-      <p><b>Eksport siz ekranda ko&lsquo;rgan narsani aynan o&lsquo;zini beradi.</b> U ko&lsquo;rish doirangiz va qo&lsquo;yilgan filtrlar bilan cheklangan. Faylda ma&lsquo;lumot yetishmasa, avval filtrlarni, so&lsquo;ng kirish doirangizni tekshiring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b>Eksport siz ekranda ko&lsquo;rgan narsani aynan o&lsquo;zini beradi.</b> U ko&lsquo;rish doirangiz va qo&lsquo;yilgan filtrlar bilan cheklangan. Faylda ma&lsquo;lumot yetishmasa, avval filtrlarni, so&lsquo;ng kirish doirangizni tekshiring.</p>
     </div>
   </section>
 
   <!-- ═══════════════ 09 ═══════════════ -->
   <section class="ch" id="c9">
     <h3><em>09</em>Buxgalteriya bilan solishtirish</h3>
-    <p class="lede">CRM — buxgalteriya dasturi emas. U shartnoma majburiyatlarini aks ettiradi, provodkalarni emas. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">CRM — buxgalteriya dasturi emas. U shartnoma majburiyatlarini aks ettiradi, provodkalarni emas.</p>
 
-    <p>Muntazam solishtirish sotuv bo&lsquo;limi ko&lsquo;rayotgan va hisobda turgan ma&lsquo;lumot orasidagi tafovutdan himoya qiladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p>Muntazam solishtirish sotuv bo&lsquo;limi ko&lsquo;rayotgan va hisobda turgan ma&lsquo;lumot orasidagi tafovutdan himoya qiladi.</p>
 
     <ol class="steps">
-      <li><p>Haqiqiy to&lsquo;lov sanasi filtri bilan davr uchun to&lsquo;lovlarni CRM dan eksport qiling. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Har bir oluvchi <span class="ui">Hisob</span> i bo&lsquo;yicha bank ko&lsquo;chirmasi bilan solishtiring. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Tafovutlarni quyidagi jadvaldagi turlar bo&lsquo;yicha tahlil qiling. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>CRM ga tegishlisini CRM da tuzating, qolganini buxgalteriya uchun qayd eting. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p>Haqiqiy to&lsquo;lov sanasi filtri bilan davr uchun to&lsquo;lovlarni CRM dan eksport qiling.</p></li>
+      <li><p>Har bir oluvchi <span class="ui">Hisob</span> i bo&lsquo;yicha bank ko&lsquo;chirmasi bilan solishtiring.</p></li>
+      <li><p>Tafovutlarni quyidagi jadvaldagi turlar bo&lsquo;yicha tahlil qiling.</p></li>
+      <li><p>CRM ga tegishlisini CRM da tuzating, qolganini buxgalteriya uchun qayd eting.</p></li>
     </ol>
 
     <div class="scroll">
@@ -364,14 +367,14 @@
     </div>
 
     <div class="tip">
-      <p><b>Oluvchi hisobvaraqlari bo&lsquo;yicha solishtiring.</b> <span class="ui">Hisob</span> bo&lsquo;yicha bo&lsquo;linish qator qaysi ko&lsquo;chirmaga tegishli ekanini darhol ko&lsquo;rsatadi. Kompaniyada bir necha hisob bo&lsquo;lib, CRM da bittasi kiritilgan bo&lsquo;lsa, administratordan qolganlarini kiritishni so&lsquo;rang — aks holda solishtirish har safar qo&lsquo;lda bo&lsquo;ladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b>Oluvchi hisobvaraqlari bo&lsquo;yicha solishtiring.</b> <span class="ui">Hisob</span> bo&lsquo;yicha bo&lsquo;linish qator qaysi ko&lsquo;chirmaga tegishli ekanini darhol ko&lsquo;rsatadi. Kompaniyada bir necha hisob bo&lsquo;lib, CRM da bittasi kiritilgan bo&lsquo;lsa, administratordan qolganlarini kiritishni so&lsquo;rang — aks holda solishtirish har safar qo&lsquo;lda bo&lsquo;ladi.</p>
     </div>
   </section>
 
   <!-- ═══════════════ 10 ═══════════════ -->
   <section class="ch" id="c10">
     <h3><em>10</em>Ma&lsquo;lumotnoma va hisoblar</h3>
-    <p class="lede">Ularsiz birorta jadval saqlanmaydigan ikki ma&lsquo;lumotnoma. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">Ularsiz birorta jadval saqlanmaydigan ikki ma&lsquo;lumotnoma.</p>
 
     <div class="scroll">
       <table>
@@ -384,15 +387,15 @@
     </div>
 
     <div class="warn">
-      <p><b>Bu ma&lsquo;lumotnomalar <span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> bo&lsquo;limida joylashgan.</b> Kirishni administrator ikki huquq bilan beradi: <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> — u bo&lsquo;limning o&lsquo;zini ochadi, hamda <span class="ui">To&lsquo;lov turlari</span> va <span class="ui">Oluvchi hisobvaraqlari</span> huquqlari — ular yorliqni qo&lsquo;shadi. Yon menyuda <span class="ui">Sozlamalar</span> paydo bo&lsquo;ladi va unda faqat <span class="ui">Moliya</span> yorlig&lsquo;i ko&lsquo;rinadi — qolganlari (rollar, foydalanuvchilar, API-kalitlar) ko&lsquo;rsatilmaydi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b>Bu ma&lsquo;lumotnomalar <span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> bo&lsquo;limida joylashgan.</b> Kirishni administrator ikki huquq bilan beradi: <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> — u bo&lsquo;limning o&lsquo;zini ochadi, hamda <span class="ui">To&lsquo;lov turlari</span> va <span class="ui">Oluvchi hisobvaraqlari</span> huquqlari — ular yorliqni qo&lsquo;shadi. Yon menyuda <span class="ui">Sozlamalar</span> paydo bo&lsquo;ladi va unda faqat <span class="ui">Moliya</span> yorlig&lsquo;i ko&lsquo;rinadi — qolganlari (rollar, foydalanuvchilar, API-kalitlar) ko&lsquo;rsatilmaydi.</p>
     </div>
 
     <h4>To&lsquo;lov turi yoki hisob qo&lsquo;shish</h4>
     <ol class="steps">
-      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> ni oching. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>To&lsquo;lov turi uchun <span class="ui">Yangi tur</span> ni bosing va <span class="ui">To&lsquo;lov turi nomi</span> ni kiriting — jadvalda qanday ko&lsquo;rinishi kerak bo&lsquo;lsa, xuddi shunday. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Hisob uchun <span class="ui">Yangi hisob</span> ni bosing, <span class="ui">Hisob nomi</span> va to&lsquo;liq rekvizitlarni kiriting — ular hujjatlarga tushadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
-      <li><p>Saqlang. Yangi qiymat menejerlarga to&lsquo;lov jadvalida darhol ochiladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p></li>
+      <li><p><span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> ni oching.</p></li>
+      <li><p>To&lsquo;lov turi uchun <span class="ui">Yangi tur</span> ni bosing va <span class="ui">To&lsquo;lov turi nomi</span> ni kiriting — jadvalda qanday ko&lsquo;rinishi kerak bo&lsquo;lsa, xuddi shunday.</p></li>
+      <li><p>Hisob uchun <span class="ui">Yangi hisob</span> ni bosing, <span class="ui">Hisob nomi</span> va to&lsquo;liq rekvizitlarni kiriting — ular hujjatlarga tushadi.</p></li>
+      <li><p>Saqlang. Yangi qiymat menejerlarga to&lsquo;lov jadvalida darhol ochiladi.</p></li>
     </ol>
 
     <div class="note">
@@ -400,20 +403,42 @@
     </div>
 
     <div class="note">
-      <p>Hisoblar kompaniyaga bog&lsquo;langan: kiritilgan hisob faqat o&lsquo;z kompaniyasida ko&lsquo;rinadi. Tizimda bir nechta yuridik shaxs bo&lsquo;lsa, hisob har birida alohida kiritiladi. Menyuda <span class="ui">Sozlamalar</span> bo&lsquo;lmasa — huquq berilmagan, administratordan <span class="ui">To&lsquo;lov turlari</span> va <span class="ui">Oluvchi hisobvaraqlari</span> resurslariga kirish so&lsquo;rang. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p>Hisoblar kompaniyaga bog&lsquo;langan: kiritilgan hisob faqat o&lsquo;z kompaniyasida ko&lsquo;rinadi. Tizimda bir nechta yuridik shaxs bo&lsquo;lsa, hisob har birida alohida kiritiladi. Menyuda <span class="ui">Sozlamalar</span> bo&lsquo;lmasa — huquq berilmagan, administratordan <span class="ui">To&lsquo;lov turlari</span> va <span class="ui">Oluvchi hisobvaraqlari</span> resurslariga kirish so&lsquo;rang.</p>
     </div>
 
     <div class="tip">
-      <p><b>Yangi loyiha bo&lsquo;yicha sotuv boshlanishidan oldin ma&lsquo;lumotnomalarni tekshiring.</b> To&lsquo;lov turlari yoki hisoblar bo&lsquo;lmasa, menejer bitimning uchinchi bosqichida shunga duch keladi — va eng noqulay paytda sizga keladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b>Yangi loyiha bo&lsquo;yicha sotuv boshlanishidan oldin ma&lsquo;lumotnomalarni tekshiring.</b> To&lsquo;lov turlari yoki hisoblar bo&lsquo;lmasa, menejer bitimning uchinchi bosqichida shunga duch keladi — va eng noqulay paytda sizga keladi.</p>
+    </div>
+
+    <h4>Valyutalar va kurslar</h4>
+    <p><span class="path">Sozlamalar<i>&rsaquo;</i>Valyutalar</span> yorlig&lsquo;i <span class="ui">Valyuta kurslari</span> resursiga huquq bo&lsquo;lganda ochiladi.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Blok</th><th>Unda nima bor</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">Bitimlar valyutasi</span></td><td>Kompaniya uchun bitta. Yangi bitimlar va jadvallar shu valyutada yuritiladi, dashboard va hisobotlar shu valyutaga keltiriladi. O&lsquo;zgartirish faqat yangi bronlarga amal qiladi</td></tr>
+          <tr><td><span class="ui">Qo&lsquo;llab-quvvatlanadigan valyutalar</span></td><td>Menejer jadval qatorlarini yana qaysi valyutalarda kiritishi mumkin. Bitimlar valyutasi doim kiradi</td></tr>
+          <tr><td><span class="ui">Bugungi kurslar</span></td><td>Har bir qo&lsquo;llab-quvvatlanadigan valyuta kursi — 1 birlik uchun necha so&lsquo;m, kurs sanasi va manbasi</td></tr>
+          <tr><td><span class="ui">Qo&lsquo;lda kiritilgan kurs</span></td><td>Kompaniyangizda MB kursi o&lsquo;rniga amal qiladigan sanadagi kurs</td></tr>
+          <tr><td><span class="ui">Kurslar tarixi</span></td><td>MB kurslari va kompaniyaning qo&lsquo;lda kiritilgan kurslari; qo&lsquo;lda kiritilgan kursni o&lsquo;chirish mumkin</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ol class="steps">
+      <li><p>O&lsquo;zbekiston Markaziy banki kurslari har soatda avtomatik yuklanadi. Ularni darhol yangilash kerak bo&lsquo;lsa, <span class="ui">MB kurslarini yangilash</span> ni bosing.</p></li>
+      <li><p>MB mavjud bo&lsquo;lmasa yoki kompaniya o&lsquo;z kursi bo&lsquo;yicha hisoblasa, <span class="ui">Qo&lsquo;lda kiritilgan kurs</span> ni to&lsquo;ldiring: valyuta, sana, 1 birlik uchun so&lsquo;mdagi kurs — va <span class="ui">Qo&lsquo;shish</span> ni bosing.</p></li>
+    </ol>
+    <div class="note">
+      <p>Sanaga qayta hisoblash uchun shu sanadan kech bo&lsquo;lmagan oxirgi kurs olinadi. Shu sanadagi qo&lsquo;lda kiritilgan kurs MB kursidan ustun va faqat sizning kompaniyangizda amal qiladi. Qo&lsquo;lda kiritilgan kurs o&lsquo;chirilgach, uning sanasida yana MB kursi amal qiladi. MB kurslari o&lsquo;chirilmaydi.</p>
     </div>
   </section>
 
   <!-- ═══════════════ 11 ═══════════════ -->
   <section class="ch" id="c11">
     <h3><em>11</em>Hisobotlardagi tushum</h3>
-    <p class="lede">Sizning belgilaringiz boshqaruv hisobotiga qanday aylanadi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">Sizning belgilaringiz boshqaruv hisobotiga qanday aylanadi.</p>
 
-    <p><span class="path">Hisobotlar</span> bo&lsquo;limida loyihalar va xodimlar bo&lsquo;yicha reja-fakt hisoboti shakllanadi. U uch blokdan iborat va ulardan biri to&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri sizning ma&lsquo;lumotingiz bilan oziqlanadi: Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p><span class="path">Hisobotlar</span> bo&lsquo;limida loyihalar va xodimlar bo&lsquo;yicha reja-fakt hisoboti shakllanadi. U uch blokdan iborat va ulardan biri to&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri sizning ma&lsquo;lumotingiz bilan oziqlanadi:</p>
 
     <div class="scroll">
       <table>
@@ -426,17 +451,19 @@
       </table>
     </div>
 
+    <p>Hisobotning pul bloklari kompaniyaning bitimlar valyutasiga keltirilgan (u ustun sarlavhasida ko&lsquo;rsatilgan): shartnoma tuzish — shartnoma sanasidagi kurs bo&lsquo;yicha, tushum — to&lsquo;lov sanasidagi kurs bo&lsquo;yicha. Reja ham shu valyutada yuklanadi.</p>
+
     <div class="note">
-      <p><b>To&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri natija.</b> Belgilanmagan to&lsquo;lov — bu rahbar hisobotidagi kam ko&lsquo;rsatilgan tushum va tushum bo&lsquo;yicha pasaytirilgan <span class="ui">% fakt</span>. Bir necha kun kechikish bilan qo&lsquo;yilgan belgilar pulni keyingi hisobot davriga suradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b>To&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri natija.</b> Belgilanmagan to&lsquo;lov — bu rahbar hisobotidagi kam ko&lsquo;rsatilgan tushum va tushum bo&lsquo;yicha pasaytirilgan <span class="ui">% fakt</span>. Bir necha kun kechikish bilan qo&lsquo;yilgan belgilar pulni keyingi hisobot davriga suradi.</p>
     </div>
 
-    <p><span class="ui">Shartnoma tuzish</span> va <span class="ui">Tushum</span> orasidagi farq — bu kompaniyaning debitorlik qarzi. Aynan shu farqni rahbar yig&lsquo;ilishda muhokama qiladi va ko&lsquo;pincha uni tushuntirish moliya bo&lsquo;limiga to&lsquo;g&lsquo;ri keladi. Kechikish va qaytarishlarni dolzarb holatda saqlang, shunda suhbat noaniq ma&lsquo;lumot haqida emas, haqiqiy pul haqida boradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p><span class="ui">Shartnoma tuzish</span> va <span class="ui">Tushum</span> orasidagi farq — bu kompaniyaning debitorlik qarzi. Aynan shu farqni rahbar yig&lsquo;ilishda muhokama qiladi va ko&lsquo;pincha uni tushuntirish moliya bo&lsquo;limiga to&lsquo;g&lsquo;ri keladi. Kechikish va qaytarishlarni dolzarb holatda saqlang, shunda suhbat noaniq ma&lsquo;lumot haqida emas, haqiqiy pul haqida boradi.</p>
   </section>
 
   <!-- ═══════════════ 12 ═══════════════ -->
   <section class="ch" id="c12">
     <h3><em>12</em>To&lsquo;lov loglari</h3>
-    <p class="lede">To&lsquo;lov bilan bog&lsquo;liq har bir amal avtomatik yoziladi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">To&lsquo;lov bilan bog&lsquo;liq har bir amal avtomatik yoziladi.</p>
 
     <div class="scroll">
       <table>
@@ -452,29 +479,29 @@
     </div>
 
     <div class="tip">
-      <p><b>Bu qanday yordam beradi.</b> Jadval tarkibi kutilganiga mos kelmasa, bitimning <span class="ui">Loglar</span> yorlig&lsquo;ini oching: jadvalni yangilash haqidagi yozuv kim va qachon o&lsquo;zgartirganini hamda nechta to&lsquo;lov qo&lsquo;shilgani, o&lsquo;zgartirilgani va o&lsquo;chirilganini ko&lsquo;rsatadi. Bu darhol tushuntirish ham, savol manzili ham beradi. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+      <p><b>Bu qanday yordam beradi.</b> Jadval tarkibi kutilganiga mos kelmasa, bitimning <span class="ui">Loglar</span> yorlig&lsquo;ini oching: jadvalni yangilash haqidagi yozuv kim va qachon o&lsquo;zgartirganini hamda nechta to&lsquo;lov qo&lsquo;shilgani, o&lsquo;zgartirilgani va o&lsquo;chirilganini ko&lsquo;rsatadi. Bu darhol tushuntirish ham, savol manzili ham beradi.</p>
     </div>
 
-    <p>Loglar faqat o&lsquo;qish uchun ochiq. Yozuvlarni faqat loglarni o&lsquo;chirish huquqiga ega xodim olib tashlashi mumkin. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p>Loglar faqat o&lsquo;qish uchun ochiq. Yozuvlarni faqat loglarni o&lsquo;chirish huquqiga ega xodim olib tashlashi mumkin.</p>
   </section>
 
   <!-- ═══════════════ 13 ═══════════════ -->
   <section class="ch" id="c13">
     <h3><em>13</em>Ish ritmi</h3>
-    <p class="lede">Tayyor tartib. Chop etib, yoningizda saqlash mumkin. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+    <p class="lede">Tayyor tartib. Chop etib, yoningizda saqlash mumkin.</p>
 
     <div class="cols">
       <div>
         <h6>Har kuni</h6>
-        <p>Ko&lsquo;chirma bo&lsquo;yicha kechagi tushumlarni belgilash. Yangi kechikkan to&lsquo;lovlarni ko&lsquo;rib chiqish va qo&lsquo;ng&lsquo;iroqlar uchun ro&lsquo;yxat topshirish. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+        <p>Ko&lsquo;chirma bo&lsquo;yicha kechagi tushumlarni belgilash. Yangi kechikkan to&lsquo;lovlarni ko&lsquo;rib chiqish va qo&lsquo;ng&lsquo;iroqlar uchun ro&lsquo;yxat topshirish.</p>
       </div>
       <div>
         <h6>Har hafta</h6>
-        <p><span class="ui">Qaytarilishi kerak</span> holatidagi to&lsquo;lovlarni tekshirish va o&lsquo;tkazilgan qaytarishlarni yopish. Rahbar uchun menejer va loyihalar kesimida kechikish bo&lsquo;yicha ma&lsquo;lumot. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+        <p><span class="ui">Qaytarilishi kerak</span> holatidagi to&lsquo;lovlarni tekshirish va o&lsquo;tkazilgan qaytarishlarni yopish. Rahbar uchun menejer va loyihalar kesimida kechikish bo&lsquo;yicha ma&lsquo;lumot.</p>
       </div>
       <div>
         <h6>Har oy</h6>
-        <p>Har bir oluvchi hisobi bo&lsquo;yicha buxgalteriya bilan solishtirish. Reja-fakt hisobotidagi <span class="ui">Tushum</span> blokini tekshirish. Yangi loyihalar boshlanishidan oldin ma&lsquo;lumotnomalarni ko&lsquo;rib chiqish. Kelajakdagi sana bilan to&lsquo;lovni ham tizim qabul qilmaydi.</p>
+        <p>Har bir oluvchi hisobi bo&lsquo;yicha buxgalteriya bilan solishtirish. Reja-fakt hisobotidagi <span class="ui">Tushum</span> blokini tekshirish. Yangi loyihalar boshlanishidan oldin ma&lsquo;lumotnomalarni ko&lsquo;rib chiqish.</p>
       </div>
     </div>
 
@@ -498,6 +525,12 @@
 
       <dt>Jadval saqlanmayapti</dt>
       <dd>Barcha to&lsquo;lovlar summasi <span class="ui">Shartnoma narxi</span> ga teng emas. Xato matnida tizim ikkala summani ko&lsquo;rsatadi. <span class="ui">Qoldiq</span> ni nolga tenglashtiring.</dd>
+
+      <dt>Jadval ustida kurs yo&lsquo;qligi haqida xabar, jadval saqlanmayapti</dt>
+      <dd>Qator kiritilgan valyuta kursi yuklanmagan. <span class="ui">MB kurslarini yangilash</span> ni bosing yoki <span class="path">Sozlamalar<i>&rsaquo;</i>Valyutalar</span> da qo&lsquo;lda kurs kiriting.</dd>
+
+      <dt>Jadvaldagi to&lsquo;lov summasi yaxlit emas</dt>
+      <dd>Qator boshqa valyutada kiritilgan va saqlashda bitim valyutasiga qayta hisoblangan. Summa ostida qancha va qaysi kurs bo&lsquo;yicha kiritilgani ko&lsquo;rsatilgan. Yaxlitlashdan kelib chiqqan tiyin farqi oxirgi qayta hisoblangan to&lsquo;lovga qo&lsquo;shiladi.</dd>
 
       <dt>&laquo;To&lsquo;lov turi&raquo; yoki &laquo;Hisob&raquo; ro&lsquo;yxati bo&lsquo;sh</dt>
       <dd>Ma&lsquo;lumotnomalar to&lsquo;ldirilmagan. Qiymatlarni <span class="path">Sozlamalar<i>&rsaquo;</i>Moliya</span> da kiriting. Menyuda &laquo;Sozlamalar&raquo; bo&lsquo;lmasa — administratordan <span class="ui">Sozlamalar</span> resursiga <span class="ui">Ko&lsquo;rish</span> huquqini to&lsquo;lov turlari va oluvchi hisobvaraqlari huquqlari bilan birga so&lsquo;rang: biri boshqasisiz yetarli emas.</dd>

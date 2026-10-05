@@ -1,4 +1,5 @@
 from django.utils import timezone
+from apps.finances.currency import Converter, company_base_currency, money, user_company
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -311,15 +312,27 @@ class DashboardAnalyticsView(APIView):
             status=Deal.DealStatus.CLOSED_WON,
             closed_at__gte=start_of_month
         )
-        monthly_sales = closed_this_month.aggregate(total=Sum('contract_price'))['total'] or 0
+        # Суммы сделок и платежей могут быть в разных валютах: приводим их к
+        # валюте сделок компании по курсу на дату события (договора, платежа).
+        # Раньше числа в сумах и долларах складывались в одно и подписывались «у.е.»
+        company = user_company(request.user)
+        to_base = Converter(company_base_currency(company), company)
+        sales_rows = list(closed_this_month.values_list(
+            'contract_price', 'currency', 'contract_date', 'closed_at',
+            'created_by', 'created_by__first_name', 'created_by__last_name',
+        ))
+        monthly_sales = to_base.total(
+            (price, currency, contract_date or closed_at)
+            for price, currency, contract_date, closed_at, *_ in sales_rows
+        )
         # Актуализируем просрочку, иначе цифра зависит от того, открывал ли
         # кто-то сегодня раздел «Финансы»
         refresh_overdue_payments_throttled(payments_qs)
         # Берём тот же признак, что и витрина «Финансы»: раньше дашборд
         # добавлял сюда ещё и PENDING, и две цифры просрочки не сходились
-        overdue_payments = payments_qs.filter(
+        overdue_payments = to_base.total(payments_qs.filter(
             status=Payment.PaymentStatus.OVERDUE
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        ).values_list('amount', 'currency', 'due_date'))
 
         # Charts - используем отфильтрованный queryset
         # .order_by() сбрасывает Meta.ordering, иначе created_at попадает в GROUP BY и дублирует строки
@@ -341,23 +354,18 @@ class DashboardAnalyticsView(APIView):
             for offset in range(7)
         ]
 
-        # Top Managers - на основе отфильтрованных сделок
-        from django.db.models import OuterRef, Subquery
-        # Одним запросом вместо выборки id и отдельного запроса на каждого
-        top_rows = closed_this_month.order_by().values(
-            'created_by', 'created_by__first_name', 'created_by__last_name'
-        ).annotate(
-            total_sales=Sum('contract_price')
-        ).order_by('-total_sales')[:5]
-
-        top_managers = [
-            {
-                'first_name': row['created_by__first_name'] or '',
-                'last_name': row['created_by__last_name'] or '',
-                'total_sales': row['total_sales'] or 0,
-            }
-            for row in top_rows if row['created_by']
-        ]
+        # Рейтинг менеджеров — по тем же сделкам, суммы приведены к одной валюте
+        by_manager = {}
+        for price, currency, contract_date, closed_at, user_id, first_name, last_name in sales_rows:
+            if not user_id:
+                continue
+            entry = by_manager.setdefault(user_id, {
+                'first_name': first_name or '', 'last_name': last_name or '', 'total_sales': 0,
+            })
+            entry['total_sales'] += to_base(price, currency, contract_date or closed_at)
+        top_managers = sorted(by_manager.values(), key=lambda e: e['total_sales'], reverse=True)[:5]
+        for entry in top_managers:
+            entry['total_sales'] = money(entry['total_sales'])
 
         # Upcoming Meetings - используем отфильтрованный queryset
         upcoming_meetings = meetings_qs.filter(
@@ -371,6 +379,9 @@ class DashboardAnalyticsView(APIView):
                 'newApplicationsToday': new_applications_today,
                 'monthlySales': monthly_sales,
                 'overduePayments': overdue_payments,
+                # Валюта, в которой даны суммы, и валюты без курса (их суммы не учтены)
+                'currency': to_base.target,
+                'missingRates': sorted(to_base.missing),
             },
             'charts': {
                 'applicationStatuses': list(application_statuses),

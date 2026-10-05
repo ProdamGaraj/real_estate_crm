@@ -14,6 +14,7 @@ import BeneficiaryAccountManager from '../components/settings/BeneficiaryAccount
 import TemplateManager from '../components/settings/TemplateManager';
 import TemplateTagsCheatSheet from '../components/settings/TemplateTagsCheatSheet';
 import PartnerAPIKeyManager from '../components/settings/PartnerAPIKeyManager';
+import CurrencySettingsManager from '../components/settings/CurrencySettingsManager';
 import CompaniesPage from './permissions/CompaniesPage';
 import DepartmentsPage from './permissions/DepartmentsPage';
 import RolesPage from './permissions/RolesPage';
@@ -141,6 +142,11 @@ export default function SettingsPage() {
               <BeneficiaryAccountManager />
             </Grid>
           </Grid>
+        </TabPanel>
+
+        {/* Вкладка "Валюты" */}
+        <TabPanel active={activeTabId === 'currencies'}>
+          <CurrencySettingsManager />
         </TabPanel>
 
         {/* Вкладка "Шаблоны" */}

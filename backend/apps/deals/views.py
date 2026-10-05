@@ -14,6 +14,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework import serializers
 from .filters import DealFilter
 from apps.finances.models import Payment
+from apps.finances.currency import RateUnavailable, company_base_currency, cross_rate, money, stored_rate
 import pandas as pd
 from django.http import HttpResponse
 from decimal import Decimal
@@ -182,12 +183,35 @@ class DealListView(generics.ListCreateAPIView):
                 "невозможно зафиксировать цену сделки."
             )
 
+        # Сделка ведётся в валюте сделок компании, а прайс проекта может быть
+        # в другой валюте: цену пересчитываем по курсу на дату брони и
+        # запоминаем исходную цену и курс — так расчёт можно проверить
+        deal_currency = company_base_currency(company)
+        catalog_currency = property_instance.building.project.price_currency or deal_currency
+        try:
+            rate = cross_rate(catalog_currency, deal_currency, timezone.localdate(), company)
+        except RateUnavailable as error:
+            raise PropertyUnavailable(str(error))
+
         deal = serializer.save(
             created_by=self.request.user,
-            initial_price=property_instance.price,
-            initial_price_per_sqm=price_per_sqm,
+            currency=deal_currency,
+            initial_price=money(property_instance.price * rate),
+            initial_price_per_sqm=money(price_per_sqm * rate),
+            catalog_price=property_instance.price,
+            catalog_currency=catalog_currency,
+            catalog_rate=stored_rate(rate),
             company=company
         )
+        if catalog_currency != deal_currency:
+            DealLog.objects.create(
+                deal=deal,
+                user=self.request.user,
+                action=(
+                    f"Цена по прайсу {property_instance.price} {catalog_currency} пересчитана "
+                    f"по курсу {stored_rate(rate).normalize():f} в {deal.initial_price} {deal_currency}."
+                )
+            )
         property_instance.status = Property.PropertyStatus.BOOKING
         property_instance.save(update_fields=['status', 'updated_at'])
         DealLog.objects.create(

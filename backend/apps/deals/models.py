@@ -97,6 +97,12 @@ class Deal(models.Model):
         UZS = 'UZS', 'Узбекский сум'
         USD = 'USD', 'Доллар США'
         EUR = 'EUR', 'Евро'
+        RUB = 'RUB', 'Российский рубль'
+        CNY = 'CNY', 'Китайский юань'
+        KZT = 'KZT', 'Казахстанский тенге'
+        GBP = 'GBP', 'Фунт стерлингов'
+        AED = 'AED', 'Дирхам ОАЭ'
+        TRY = 'TRY', 'Турецкая лира'
 
     # Без валюты договора сумма графика сравнивалась со стоимостью вслепую:
     # платежи в разных валютах складывались как одно число
@@ -108,9 +114,9 @@ class Deal(models.Model):
     )
 
     # --- Поля для фиксации стоимости на момент начала сделки ---
-    initial_price = models.DecimalField(max_digits=12, decimal_places=2,
+    initial_price = models.DecimalField(max_digits=18, decimal_places=2,
                                         verbose_name="Стоимость на момент начала сделки")
-    initial_price_per_sqm = models.DecimalField(max_digits=12, decimal_places=2,
+    initial_price_per_sqm = models.DecimalField(max_digits=18, decimal_places=2,
                                                 verbose_name="Цена за м² на момент начала сделки")
 
     # --- Детали этапа "В работе" ---
@@ -119,8 +125,18 @@ class Deal(models.Model):
                                          verbose_name="Цель приобретения")
     payment_type = models.ForeignKey(PaymentType, on_delete=models.SET_NULL, null=True, blank=True,
                                      verbose_name="Тип оплаты")
-    contract_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+    contract_price = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True,
                                          verbose_name="Стоимость по договору")
+
+    # Цена объекта по прайсу в валюте проекта и курс, по которому она пересчитана
+    # в валюту сделки при брони. Нужны, чтобы цену сделки можно было проверить:
+    # «прайс 21 000 USD × 11 772,95 = 247 231 950 UZS».
+    catalog_price = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True,
+                                        verbose_name="Цена по прайсу")
+    catalog_currency = models.CharField(max_length=3, choices=Currency.choices, blank=True,
+                                        verbose_name="Валюта прайса")
+    catalog_rate = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True,
+                                       verbose_name="Курс пересчёта прайса в валюту сделки")
     notes = models.TextField(blank=True, verbose_name="Примечание к сделке")
     # --- Поля для документов ---
     contract_number = models.CharField(

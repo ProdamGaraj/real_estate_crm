@@ -72,6 +72,27 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS(f'Создано {created_count} новых разрешений'))
 
+    def _should_fill(self, role, created):
+        """
+        Заполнять ли состав прав типовой роли.
+
+        Новая роль заполняется всегда. С --sync-roles обновляются только
+        системные роли: администратор мог завести свою роль с тем же кодом
+        (например, MANAGER) — её состав прав нельзя молча перезаписывать
+        шаблоном, иначе сотрудники потеряют настроенные для них права.
+        """
+        if created:
+            return True
+        if not self.sync_roles:
+            return False
+        if not role.is_system:
+            self.stdout.write(self.style.WARNING(
+                f'  ! Роль {role.code} «{role.name}» заведена вручную — '
+                f'состав её прав не изменён'
+            ))
+            return False
+        return True
+
     def create_roles(self):
         """
         Создание базовых ролей с предустановленными разрешениями
@@ -107,7 +128,7 @@ class Command(BaseCommand):
         )
         
         # При --sync-roles состав прав обновляется и у существующей роли
-        if created or self.sync_roles:
+        if self._should_fill(role, created):
             # Все разрешения уровня SYSTEM
             permissions = Permission.objects.filter(scope='SYSTEM')
             role.permissions.set(permissions)
@@ -129,7 +150,7 @@ class Command(BaseCommand):
         )
         
         # При --sync-roles состав прав обновляется и у существующей роли
-        if created or self.sync_roles:
+        if self._should_fill(role, created):
             # Все разрешения уровня COMPANY + VIEW SYSTEM для некоторых справочников
             permissions = Permission.objects.filter(
                 scope__in=['COMPANY', 'DEPARTMENT', 'OWN']
@@ -162,7 +183,7 @@ class Command(BaseCommand):
         )
         
         # При --sync-roles состав прав обновляется и у существующей роли
-        if created or self.sync_roles:
+        if self._should_fill(role, created):
             # Все разрешения уровня DEPARTMENT и OWN для основных ресурсов
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',
@@ -209,7 +230,7 @@ class Command(BaseCommand):
         )
         
         # При --sync-roles состав прав обновляется и у существующей роли
-        if created or self.sync_roles:
+        if self._should_fill(role, created):
             # Полный доступ к своим клиентам, заявкам, встречам, сделкам, задачам
             own_resources = ['CLIENT', 'APPLICATION', 'MEETING', 'DEAL', 'PAYMENT', 'TASK']
             own_permissions = Permission.objects.filter(
@@ -262,7 +283,7 @@ class Command(BaseCommand):
         )
         
         # При --sync-roles состав прав обновляется и у существующей роли
-        if created or self.sync_roles:
+        if self._should_fill(role, created):
             # Только VIEW разрешения уровня COMPANY для основных ресурсов
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',
