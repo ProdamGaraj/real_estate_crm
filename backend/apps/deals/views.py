@@ -22,6 +22,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 from apps.realty.views import _filter_by_company_scope
+from apps.realty.discounts import available_discounts
 from permissions.permissions import DealPermission, ReportPermission, DiscountPermission
 from permissions.backends import get_filtered_queryset, can_user_perform_action
 
@@ -466,26 +467,6 @@ class AvailableDiscountsView(generics.ListAPIView):
         if not can_user_perform_action(self.request.user, 'VIEW', 'DEAL', obj=deal):
             return Discount.objects.none()
 
-        property_obj = deal.property
-        building_obj = property_obj.building
-        today = timezone.now().date()
-
-        # Ограничения складываются, а не заменяют друг друга: скидка подходит,
-        # если её ограничение по дому И ограничение по типу недвижимости
-        # выполняются одновременно. При ИЛИ скидка одного дома попадала
-        # в подбор для другого — достаточно было совпадения типа объекта.
-        matches_building = Q(buildings__isnull=True) | Q(buildings=building_obj)
-        matches_type = Q(property_type__isnull=True) | Q(property_type='') | \
-            Q(property_type=property_obj.property_type)
-        # Скидка действует, если период начался и ещё не закончился
-        in_period = Q(start_date__lte=today) & (Q(end_date__isnull=True) | Q(end_date__gte=today))
-
-        queryset = Discount.objects.filter(
-            matches_building,
-            matches_type,
-            in_period,
-            is_active=True,
-        ).distinct()
-
-        # Скидка принадлежит компании — чужие условия к сделке не предлагаем
-        return _filter_by_company_scope(self.request.user, queryset, 'company', 'DISCOUNT').distinct()
+        # Ограничение скидки планами оплаты возвращается вместе со скидкой:
+        # интерфейс показывает такие скидки и не даёт применить их при другом плане
+        return available_discounts(self.request.user, deal.property)

@@ -9,6 +9,8 @@ import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import type { Discount, DiscountPayload } from '../../api/discounts';
 import { translatePropertyType } from '../../utils/translations';
+import { getPaymentTypes } from '../../api/finances';
+import { comparePlans, isPlan } from '../../utils/installments';
 import LocalizedDateField from '../common/LocalizedDateField';
 
 interface DiscountFormProps {
@@ -32,6 +34,11 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
   const { data: projects, isLoading } = useQuery<Project[]>({ queryKey: ['projects'], queryFn: getProjects });
 
   const buildings = projects?.flatMap(p => p.buildings ? p.buildings.map(b => ({ ...b, projectName: p.name })) : []) || [];
+
+  // Планы оплаты — типы платежей с заданным планом. Скидка может действовать
+  // только при некоторых из них (например, «за 100% оплату»)
+  const { data: paymentTypes } = useQuery({ queryKey: ['paymentTypes'], queryFn: getPaymentTypes });
+  const plans = (paymentTypes ?? []).filter(isPlan).sort(comparePlans);
 
   const handleFormSubmit = (data: DiscountPayload) => {
     // Проверка дат перед отправкой
@@ -68,7 +75,7 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
             control={control}
             defaultValue={null}
             render={({ field }) => (
-              <Select {...field} label={t('pages.discounts.property_type_optional')}>
+              <Select {...field} value={field.value ?? ''} label={t('pages.discounts.property_type_optional')}>
                 <MenuItem value=""><em>{t('common.none')}</em></MenuItem>
                 {propertyTypeKeys.map(pt => <MenuItem key={pt} value={pt}>{translatePropertyType(pt)}</MenuItem>)}
               </Select>
@@ -97,6 +104,33 @@ export default function DiscountForm({ onSubmit, isPending, initialData }: Disco
                 </li>
               )}
               renderInput={(params) => <TextField {...params} label={t('pages.discounts.apply_to_buildings')} />}
+            />
+          )}
+        />
+
+        <Controller
+          name="payment_plans"
+          control={control}
+          defaultValue={initialData?.payment_plans || []}
+          render={({ field }) => (
+            <Autocomplete
+              multiple
+              options={plans}
+              disableCloseOnSelect
+              value={plans.filter(plan => field.value?.includes(plan.id))}
+              getOptionLabel={(option) => option.name}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              onChange={(_, data) => field.onChange(data.map(plan => plan.id))}
+              renderOption={(props, option, { selected }) => (
+                <li {...props}>
+                  <Checkbox icon={<CheckBoxOutlineBlankIcon />} checkedIcon={<CheckBoxIcon />} checked={selected} />
+                  {option.name}
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField {...params} label={t('pages.discounts.payment_plans')}
+                  helperText={t('pages.discounts.payment_plans_hint')} />
+              )}
             />
           )}
         />

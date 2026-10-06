@@ -576,7 +576,10 @@ class BeneficiaryAccountDetailView(ProtectedReferenceDeleteMixin, generics.Retri
 
     def perform_update(self, serializer):
         self._ensure_editable(serializer.instance)
-        serializer.save()
+        if is_admin(self.request.user) and 'company' in self.request.data:
+            serializer.save(company=company_for_new_record(self.request))
+        else:
+            serializer.save()
 
 
 class PaymentDetailView(generics.RetrieveUpdateAPIView):

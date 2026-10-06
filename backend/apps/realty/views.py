@@ -1086,3 +1086,20 @@ class PublicLayoutListView(generics.ListAPIView):
         partner_companies = getattr(self.request, 'partner_companies', [])
         queryset = queryset.filter(building__project__company__in=partner_companies)
         return queryset
+
+
+class PropertyAvailableDiscountsView(generics.ListAPIView):
+    """Скидки, которые можно применить к объекту сегодня, — для калькулятора рассрочки."""
+    serializer_class = DiscountListSerializer
+    permission_classes = [IsAuthenticated, DiscountPermission]
+
+    def get_queryset(self):
+        from .discounts import available_discounts
+
+        visible = _filter_by_company_scope(
+            self.request.user, Property.objects.filter(pk=self.kwargs['property_pk']),
+            'building__project__company', 'PROPERTY',
+        ).select_related('building').first()
+        if visible is None:
+            return Discount.objects.none()
+        return available_discounts(self.request.user, visible)

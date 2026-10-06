@@ -31,8 +31,7 @@ export interface ScheduleRow {
 export interface InstallmentVariant {
   plan: PaymentType;
   basePrice: number;
-  planDiscountPercent: number;
-  /** Скидка плана плюс скидки, уже применённые в сделке */
+  /** Сумма отмеченных скидок, действующих при этом плане */
   discountPercent: number;
   discountAmount: number;
   price: number;
@@ -78,20 +77,27 @@ export function addMonths(isoDate: string, months: number): string {
   return `${targetYear}-${pad(targetMonth + 1)}-${pad(Math.min(day, lastDay))}`;
 }
 
+/**
+ * Скидки → цена → план: сначала скидки (только действующие при плане)
+ * дают цену, затем план делит эту цену на платежи. Своей скидки у плана нет.
+ */
 export function buildVariant(
   basePrice: number,
   plan: PaymentType,
-  options: { currency: string; startDate: string; extraDiscountPercent?: number; downPaymentPercent?: number },
+  options: { currency: string; startDate: string; discountPercent?: number; downPaymentPercent?: number },
 ): InstallmentVariant {
   const step = roundingStep(options.currency);
-  const planDiscountPercent = Number(plan.discount_percent) || 0;
   // Проценты складываются в float: 2.5 + 0.1 дало бы 2.6000000000000001 %
-  const discountPercent = Math.min(100, Math.round((planDiscountPercent + (options.extraDiscountPercent || 0)) * 100) / 100);
-  const price = Math.round(basePrice * (1 - discountPercent / 100));
+  const discountPercent = Math.min(100, Math.round((options.discountPercent || 0) * 100) / 100);
+  // Цена со скидками — в копейках, затем вниз до целых. Округление вверх давало
+  // цену больше той, что считает сервер (146 629 737,66 → 146 629 738), и график
+  // не создавался; без скидки цена остаётся как есть
+  const exact = Math.round(basePrice * (100 - discountPercent)) / 100;
+  const price = discountPercent ? Math.floor(exact) : exact;
   const months = plan.plan_months;
 
   const variant: InstallmentVariant = {
-    plan, basePrice, planDiscountPercent, discountPercent,
+    plan, basePrice, discountPercent,
     discountAmount: basePrice - price, price,
     downPaymentPercent: 100, downPayment: price, monthly: 0, rest: 0, rows: [],
   };

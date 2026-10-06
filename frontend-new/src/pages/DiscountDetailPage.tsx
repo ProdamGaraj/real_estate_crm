@@ -218,6 +218,12 @@ export default function DiscountDetailPage() {
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <InfoField
+                      label={t('pages.discounts.payment_plans_short')}
+                      value={discount.payment_plans_info?.length ? discount.payment_plans_info.join(', ') : t('pages.discounts.any_plan')}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <InfoField
                       label={t('pages.discounts.start_date_label')}
                       value={formatDate(discount.start_date)}
                     />

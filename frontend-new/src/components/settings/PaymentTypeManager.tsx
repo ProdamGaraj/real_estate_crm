@@ -4,22 +4,26 @@
  * Типы платежей и планы оплаты.
  *
  * Тип платежа — название, которое получают платежи графика. Если задать ему
- * план («Рассрочка на 12 месяцев»: взнос 30 % и 12 ежемесячных платежей,
- * скидка 5 %), он появится вариантом в калькуляторе рассрочки, и по нему
- * можно одной кнопкой собрать график сделки.
+ * план («Рассрочка на 12 месяцев»: взнос 30 % и 12 ежемесячных платежей), он
+ * появится вариантом в калькуляторе рассрочки, и по нему можно одной кнопкой
+ * собрать график сделки. Своей скидки у плана нет: скидки заводятся в разделе
+ * «Скидки» и могут действовать только для отдельных планов.
  *
- * Общие записи (без компании) видны всем компаниям, а менять и удалять их
- * может только системный администратор. Тип, который есть в платежах,
- * удалить нельзя — только переименовать.
+ * Добавление и правка — в окне. Общие записи (без компании) видны всем
+ * компаниям, а менять и удалять их может только системный администратор.
+ * Тип, который есть в платежах, удалить нельзя — только переименовать.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Alert, Box, Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField, Typography,
+  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel,
+  MenuItem, Select, Stack, TextField, Typography,
 } from '@mui/material';
 import { GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
+import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
@@ -34,7 +38,122 @@ import { hasPermission, isSystemAdmin } from '../../utils/permissions';
 import { extractApiError } from '../../utils/apiError';
 
 const PLAN_KINDS: PlanKind[] = ['', 'FULL', 'INSTALLMENT', 'DEFERRED'];
-const EMPTY_FORM = { name: '', plan_kind: '' as PlanKind, plan_months: '', discount_percent: '', down_payment_percent: '' };
+
+interface FormState {
+  name: string;
+  plan_kind: PlanKind;
+  plan_months: string;
+  down_payment_percent: string;
+  company: number | null;
+}
+
+const toForm = (type: PaymentType | null): FormState => ({
+  name: type?.name ?? '',
+  plan_kind: type?.plan_kind ?? '',
+  plan_months: type && type.plan_months ? String(type.plan_months) : '',
+  down_payment_percent: type && Number(type.down_payment_percent) ? String(Number(type.down_payment_percent)) : '',
+  company: type?.company ?? null,
+});
+
+interface DialogProps {
+  open: boolean;
+  type: PaymentType | null;
+  admin: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+/** Окно добавления и правки типа платежа */
+function PaymentTypeDialog({ open, type, admin, onClose, onSaved }: DialogProps) {
+  const { t } = useTranslation();
+  const [form, setForm] = useState<FormState>(toForm(type));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setForm(toForm(type));
+      setError(null);
+    }
+  }, [open, type]);
+
+  const save = useMutation({
+    mutationFn: (payload: PaymentTypePayload) => (type
+      ? updatePaymentType({ id: type.id, payload })
+      : createPaymentType(payload)),
+    onSuccess: () => { onSaved(); onClose(); },
+    onError: (err: unknown) => setError(extractApiError(err, t('errors.error_occurred'))),
+  });
+
+  const withTerm = form.plan_kind === 'INSTALLMENT' || form.plan_kind === 'DEFERRED';
+  const kindLabel = (kind: PlanKind) => t(`pages.settings.finance_refs.plan_${kind || 'none'}`);
+
+  const submit = () => {
+    const payload: PaymentTypePayload = {
+      name: form.name.trim(),
+      plan_kind: form.plan_kind,
+      plan_months: withTerm ? Number(form.plan_months) || 0 : 0,
+      down_payment_percent: withTerm ? (form.down_payment_percent || '0') : '0',
+    };
+    // Компанию записи выбирает только системный администратор
+    if (admin) payload.company = form.company;
+    save.mutate(payload);
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>{type ? t('pages.settings.finance_refs.edit_type') : t('pages.settings.finance_refs.add_type')}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ mt: 1 }}>
+          {error && <Alert severity="error">{error}</Alert>}
+          <TextField
+            label={t('pages.settings.payment_type_name')} fullWidth autoFocus
+            value={form.name} onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+          />
+          <FormControl fullWidth>
+            <InputLabel shrink>{t('pages.settings.finance_refs.plan')}</InputLabel>
+            <Select
+              label={t('pages.settings.finance_refs.plan')}
+              displayEmpty
+              notched
+              value={form.plan_kind}
+              onChange={(e) => setForm(prev => ({ ...prev, plan_kind: e.target.value as PlanKind }))}
+            >
+              {PLAN_KINDS.map(kind => <MenuItem key={kind || 'none'} value={kind}>{kindLabel(kind)}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <Typography variant="body2" color="text.secondary">
+            {t(`pages.settings.finance_refs.plan_${form.plan_kind || 'none'}_hint`)}
+          </Typography>
+          {withTerm && (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label={form.plan_kind === 'DEFERRED'
+                  ? t('pages.settings.finance_refs.months_deferred')
+                  : t('pages.settings.finance_refs.months_installment')}
+                type="number" fullWidth
+                value={form.plan_months} onChange={(e) => setForm(prev => ({ ...prev, plan_months: e.target.value }))}
+                inputProps={{ min: 0, max: 120 }}
+              />
+              <TextField
+                label={t('pages.settings.finance_refs.down_payment')} type="number" fullWidth
+                value={form.down_payment_percent}
+                onChange={(e) => setForm(prev => ({ ...prev, down_payment_percent: e.target.value }))}
+                inputProps={{ min: 0, max: 99, step: 1 }}
+              />
+            </Stack>
+          )}
+          {admin && <CompanyChoice value={form.company} onChange={(company) => setForm(prev => ({ ...prev, company }))} />}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>{t('common.cancel')}</Button>
+        <Button variant="contained" onClick={submit} disabled={!form.name.trim() || save.isPending}>
+          {save.isPending ? t('common.saving') : t('common.save')}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 export default function PaymentTypeManager() {
   const { t } = useTranslation();
@@ -48,14 +167,7 @@ export default function PaymentTypeManager() {
   const { data, isLoading } = useQuery({ queryKey: ['paymentTypes'], queryFn: getPaymentTypes });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['paymentTypes'] });
 
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [company, setCompany] = useState<number | null>(null);
-
-  const createMutation = useMutation({
-    mutationFn: createPaymentType,
-    onSuccess: () => { refresh(); setForm(EMPTY_FORM); },
-    onError: (error: unknown) => alert(extractApiError(error, t('errors.error_occurred'))),
-  });
+  const [dialog, setDialog] = useState<{ open: boolean; type: PaymentType | null }>({ open: false, type: null });
   const deleteMutation = useMutation({
     mutationFn: deletePaymentType,
     onSuccess: refresh,
@@ -63,163 +175,90 @@ export default function PaymentTypeManager() {
     onError: (error: unknown) => alert(extractApiError(error, t('errors.error_occurred'))),
   });
 
-  const kindLabel = (kind: PlanKind) => t(`pages.settings.finance_refs.plan_${kind || 'none'}`);
-  const monthsLabel = (kind: PlanKind) => (kind === 'DEFERRED'
-    ? t('pages.settings.finance_refs.months_deferred')
-    : t('pages.settings.finance_refs.months_installment'));
   // Общую запись меняет только системный администратор
   const editable = (row: PaymentType) => admin || row.company !== null;
-
-  const submit = () => {
-    const payload: PaymentTypePayload = {
-      name: form.name.trim(),
-      plan_kind: form.plan_kind,
-      plan_months: Number(form.plan_months) || 0,
-      discount_percent: form.discount_percent || '0',
-      down_payment_percent: form.down_payment_percent || '0',
-    };
-    if (admin) payload.company = company;
-    createMutation.mutate(payload);
+  const kindLabel = (kind: PlanKind) => t(`pages.settings.finance_refs.plan_${kind || 'none'}`);
+  /** «12 мес., взнос от 30 %» — условия плана одной строкой */
+  const termsText = (row: PaymentType) => {
+    if (row.plan_kind === 'INSTALLMENT') {
+      return t('pages.settings.finance_refs.terms_installment', { months: row.plan_months, down: Number(row.down_payment_percent) });
+    }
+    if (row.plan_kind === 'DEFERRED') {
+      return t('pages.settings.finance_refs.terms_deferred', { months: row.plan_months, down: Number(row.down_payment_percent) });
+    }
+    return '';
   };
 
   const columns: GridColDef<PaymentType>[] = [
-    { field: 'name', headerName: t('pages.settings.payment_type_name'), flex: 1.4, minWidth: 180, editable: canEdit },
+    { field: 'name', headerName: t('pages.settings.payment_type_name'), flex: 1.2, minWidth: 180 },
     {
-      field: 'plan_kind', headerName: t('pages.settings.finance_refs.plan'), flex: 1.2, minWidth: 170,
-      editable: canEdit, type: 'singleSelect',
-      valueOptions: PLAN_KINDS.map(kind => ({ value: kind, label: kindLabel(kind) })),
+      field: 'plan_kind', headerName: t('pages.settings.finance_refs.plan'), flex: 1.1, minWidth: 170,
+      valueGetter: (value: PlanKind) => kindLabel(value),
     },
     {
-      field: 'plan_months', headerName: t('pages.settings.finance_refs.months'), width: 110,
-      editable: canEdit, type: 'number',
+      field: 'terms', headerName: t('pages.settings.finance_refs.terms'), flex: 1.5, minWidth: 260,
+      valueGetter: (_value, row) => termsText(row),
     },
     {
-      field: 'discount_percent', headerName: t('pages.settings.finance_refs.discount'), width: 110,
-      editable: canEdit, type: 'number', valueGetter: (value: string) => Number(value),
-    },
-    {
-      field: 'down_payment_percent', headerName: t('pages.settings.finance_refs.down_payment'), width: 130,
-      editable: canEdit, type: 'number', valueGetter: (value: string) => Number(value),
-    },
-    {
-      field: 'company_name', headerName: t('common.company'), width: 150,
+      field: 'company_name', headerName: t('common.company'), width: 170,
       valueGetter: (value: string | null) => value || t('pages.settings.finance_refs.shared'),
     },
     {
-      field: 'actions', type: 'actions', width: 60,
-      getActions: (params) => (canDelete && editable(params.row) ? [
-        <GridActionsCellItem
-          key="delete"
-          icon={<DeleteIcon />}
-          label={t('common.delete')}
-          onClick={() => {
-            if (window.confirm(t('pages.settings.finance_refs.confirm_delete', { name: params.row.name }))) {
-              deleteMutation.mutate(params.row.id);
-            }
-          }}
-        />,
-      ] : []),
+      field: 'actions', type: 'actions', width: 90,
+      getActions: (params) => [
+        ...(canEdit && editable(params.row) ? [
+          <GridActionsCellItem
+            key="edit"
+            icon={<EditIcon />}
+            label={t('common.edit')}
+            onClick={() => setDialog({ open: true, type: params.row })}
+          />,
+        ] : []),
+        ...(canDelete && editable(params.row) ? [
+          <GridActionsCellItem
+            key="delete"
+            icon={<DeleteIcon />}
+            label={t('common.delete')}
+            onClick={() => {
+              if (window.confirm(t('pages.settings.finance_refs.confirm_delete', { name: params.row.name }))) {
+                deleteMutation.mutate(params.row.id);
+              }
+            }}
+          />,
+        ] : []),
+      ],
     },
   ];
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 1 }}>{t('pages.settings.payment_types')}</Typography>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+        <Typography variant="h6">{t('pages.settings.payment_types')}</Typography>
+        {canAdd && (
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialog({ open: true, type: null })}>
+            {t('pages.settings.finance_refs.add_type')}
+          </Button>
+        )}
+      </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{t('pages.settings.finance_refs.types_hint')}</Typography>
-
-      {canAdd && (
-        <Grid container spacing={2} alignItems="flex-start" sx={{ mb: 2 }}>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              label={t('pages.settings.new_payment_type')} size="small" fullWidth
-              value={form.name} onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel shrink>{t('pages.settings.finance_refs.plan')}</InputLabel>
-              <Select
-                label={t('pages.settings.finance_refs.plan')}
-                displayEmpty
-                notched
-                value={form.plan_kind}
-                onChange={(e) => setForm(prev => ({ ...prev, plan_kind: e.target.value as PlanKind }))}
-              >
-                {PLAN_KINDS.map(kind => <MenuItem key={kind || 'none'} value={kind}>{kindLabel(kind)}</MenuItem>)}
-              </Select>
-            </FormControl>
-          </Grid>
-          {(form.plan_kind === 'INSTALLMENT' || form.plan_kind === 'DEFERRED') && (
-            <Grid size={{ xs: 6, md: 2 }}>
-              <TextField
-                label={monthsLabel(form.plan_kind)} type="number" size="small" fullWidth
-                value={form.plan_months} onChange={(e) => setForm(prev => ({ ...prev, plan_months: e.target.value }))}
-                inputProps={{ min: 0, max: 120 }}
-              />
-            </Grid>
-          )}
-          {form.plan_kind && (
-            <Grid size={{ xs: 6, md: 1.5 }}>
-              <TextField
-                label={t('pages.settings.finance_refs.discount')} type="number" size="small" fullWidth
-                value={form.discount_percent} onChange={(e) => setForm(prev => ({ ...prev, discount_percent: e.target.value }))}
-                inputProps={{ min: 0, max: 99.99, step: 0.5 }}
-              />
-            </Grid>
-          )}
-          {(form.plan_kind === 'INSTALLMENT' || form.plan_kind === 'DEFERRED') && (
-            <Grid size={{ xs: 6, md: 1.5 }}>
-              <TextField
-                label={t('pages.settings.finance_refs.down_payment')} type="number" size="small" fullWidth
-                value={form.down_payment_percent}
-                onChange={(e) => setForm(prev => ({ ...prev, down_payment_percent: e.target.value }))}
-                inputProps={{ min: 0, max: 99, step: 1 }}
-              />
-            </Grid>
-          )}
-          {admin && (
-            <Grid size={{ xs: 12, md: 4 }}>
-              <CompanyChoice value={company} onChange={setCompany} />
-            </Grid>
-          )}
-          <Grid size={{ xs: 12, md: 2 }}>
-            <Button variant="contained" onClick={submit} disabled={!form.name.trim() || createMutation.isPending}>
-              {t('common.add')}
-            </Button>
-          </Grid>
-        </Grid>
-      )}
-
-      {canEdit && <Alert severity="info" sx={{ mb: 1 }}>{t('pages.settings.finance_refs.edit_hint')}</Alert>}
       <Box sx={{ height: 420, width: '100%' }}>
         <LocalizedDataGrid
           rows={data ?? []}
           columns={columns}
           loading={isLoading}
-          isCellEditable={(params) => editable(params.row as PaymentType)}
-          processRowUpdate={async (updated: PaymentType, original: PaymentType) => {
-            const payload: PaymentTypePayload = {};
-            if (updated.name !== original.name) payload.name = updated.name.trim();
-            if (updated.plan_kind !== original.plan_kind) payload.plan_kind = updated.plan_kind;
-            if (Number(updated.plan_months) !== Number(original.plan_months)) payload.plan_months = Number(updated.plan_months) || 0;
-            if (Number(updated.discount_percent) !== Number(original.discount_percent)) {
-              payload.discount_percent = String(updated.discount_percent || 0);
-            }
-            if (Number(updated.down_payment_percent) !== Number(original.down_payment_percent)) {
-              payload.down_payment_percent = String(updated.down_payment_percent || 0);
-            }
-            if (!Object.keys(payload).length) return original;
-            // Сервер приводит условия к виду плана (у «100%» нет срока и взноса) — берём его ответ
-            const saved = await updatePaymentType({ id: original.id, payload });
-            refresh();
-            return saved;
-          }}
-          onProcessRowUpdateError={(error: unknown) => {
-            refresh();
-            alert(extractApiError(error, t('errors.update_error')));
+          onRowDoubleClick={(params) => {
+            const row = params.row as PaymentType;
+            if (canEdit && editable(row)) setDialog({ open: true, type: row });
           }}
         />
       </Box>
+      <PaymentTypeDialog
+        open={dialog.open}
+        type={dialog.type}
+        admin={admin}
+        onClose={() => setDialog({ open: false, type: null })}
+        onSaved={refresh}
+      />
     </Box>
   );
 }

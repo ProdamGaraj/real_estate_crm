@@ -21,7 +21,7 @@ from apps.crm.models import Client
 from apps.deals.models import Deal
 from apps.finances.currency import Converter, RateUnavailable, convert, cross_rate, get_rate, money
 from apps.finances.models import BeneficiaryAccount, ExchangeRate, Payment, PaymentType
-from apps.realty.models import Building, Project, Property
+from apps.realty.models import Building, Discount, Project, Property
 from permissions.models import Company, Department, Permission, Role, UserProfile
 
 User = get_user_model()
@@ -404,22 +404,21 @@ class PaymentTypePlanTests(TestCase):
 
     def test_installment_plan_is_saved_and_validated(self):
         response = self.post_type(name='Рассрочка на 12 месяцев', plan_kind='INSTALLMENT', plan_months=12,
-                                  discount_percent='5', down_payment_percent='30')
+                                  down_payment_percent='30')
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual((response.data['plan_months'], response.data['company']), (12, self.company.id))
-        # Рассрочка без срока, со взносом 100 % и скидка 100 % — ошибки
+        # Своей скидки у плана нет — скидки заводятся в разделе «Скидки»
+        self.assertNotIn('discount_percent', response.data)
+        # Рассрочка без срока и со взносом 100 % — ошибки
         self.assertEqual(self.post_type(name='Пустая', plan_kind='INSTALLMENT', plan_months=0).status_code, 400)
         self.assertEqual(self.post_type(name='Взнос 100', plan_kind='INSTALLMENT', plan_months=6,
                                         down_payment_percent='100').status_code, 400)
-        self.assertEqual(self.post_type(name='Скидка 100', plan_kind='FULL', discount_percent='100').status_code, 400)
 
     def test_full_payment_and_plain_type_drop_extra_conditions(self):
-        full = self.post_type(name='100% оплата', plan_kind='FULL', plan_months=12, down_payment_percent='30',
-                              discount_percent='10').data
-        self.assertEqual((full['plan_months'], Decimal(full['down_payment_percent']), Decimal(full['discount_percent'])),
-                         (0, Decimal(0), Decimal('10')))
-        plain = self.post_type(name='Доплата', plan_months=5, discount_percent='3').data
-        self.assertEqual((plain['plan_kind'], plain['plan_months'], Decimal(plain['discount_percent'])),
+        full = self.post_type(name='100% оплата', plan_kind='FULL', plan_months=12, down_payment_percent='30').data
+        self.assertEqual((full['plan_months'], Decimal(full['down_payment_percent'])), (0, Decimal(0)))
+        plain = self.post_type(name='Доплата', plan_months=5, down_payment_percent='20').data
+        self.assertEqual((plain['plan_kind'], plain['plan_months'], Decimal(plain['down_payment_percent'])),
                          ('', 0, Decimal(0)))
 
     def test_type_can_be_renamed_and_turned_into_plan(self):
@@ -480,6 +479,95 @@ class PaymentTypePlanTests(TestCase):
         # Обычный пользователь компанию не выбирает
         response = self.post_type(name='Чужой', company=self.other.id)
         self.assertEqual(PaymentType.objects.get(pk=response.data['id']).company, self.company)
+
+    def test_admin_moves_record_to_another_company(self):
+        api = self.make_admin()
+        ptype = PaymentType.objects.create(name='18 месяцев', company=self.other)
+        response = api.patch(f'/api/finances/payment-types/{ptype.id}/', {'company': self.company.id}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        ptype.refresh_from_db()
+        self.assertEqual(ptype.company, self.company)
+        account = BeneficiaryAccount.objects.create(name='Счёт', details='-', company=self.other)
+        api.patch(f'/api/finances/beneficiary-accounts/{account.id}/', {'company': None}, format='json')
+        account.refresh_from_db()
+        self.assertIsNone(account.company)
+
+
+@NO_NETWORK
+@LOCAL_CACHE
+class DiscountPaymentPlanTests(LegacyDealsMixin, TestCase):
+    """Скидка может действовать только для отдельных планов; цена сделки идёт в план."""
+
+    def setUp(self):
+        super().setUp()
+        call_command('init_permissions', stdout=io.StringIO())
+        self.full = PaymentType.objects.create(name='100% оплата', plan_kind='FULL', company=self.company)
+        self.installment = PaymentType.objects.create(name='Рассрочка на 12 месяцев', plan_kind='INSTALLMENT',
+                                                      plan_months=12, down_payment_percent=30, company=self.company)
+        self.only_full = Discount.objects.create(name='За полную оплату', percentage_value=10, company=self.company,
+                                                 start_date=self.today - timedelta(days=1))
+        self.only_full.payment_plans.set([self.full])
+        self.any_plan = Discount.objects.create(name='Осенняя', percentage_value=3, company=self.company,
+                                                start_date=self.today - timedelta(days=1))
+        role = Role.objects.create(name='Руководитель', code='HEAD')
+        role.permissions.set(Permission.objects.filter(
+            resource__in=['DEAL', 'DISCOUNT', 'PROPERTY', 'PAYMENT_TYPE'], scope='COMPANY'))
+        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        profile.company = self.company
+        profile.save()
+        profile.roles.set([role])
+        self.api = APIClient()
+        self.api.force_authenticate(User.objects.get(pk=self.user.pk))
+        self.deal = self.legacy_deal(payments=())
+        self.deal.status = Deal.DealStatus.BOOKING
+        self.deal.save()
+
+    def patch_deal(self, **data):
+        return self.api.patch(f'/api/deals/{self.deal.id}/', data, format='json')
+
+    def test_plan_only_discount_needs_that_plan(self, _):
+        response = self.patch_deal(applied_discounts_ids=[self.only_full.id], contract_price='18900')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('только для планов', str(response.data))
+        response = self.patch_deal(payment_plan=self.installment.id, applied_discounts_ids=[self.only_full.id],
+                                   contract_price='18900')
+        self.assertEqual(response.status_code, 400)
+        # С подходящим планом скидка применяется; цена сделки — со скидкой
+        response = self.patch_deal(payment_plan=self.full.id,
+                                   applied_discounts_ids=[self.only_full.id, self.any_plan.id], contract_price='18270')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data['payment_plan_name'], '100% оплата')
+
+    def test_discount_without_plans_works_with_any_plan_or_none(self, _):
+        response = self.patch_deal(applied_discounts_ids=[self.any_plan.id], contract_price='20370')
+        self.assertEqual(response.status_code, 200, response.data)
+        response = self.patch_deal(payment_plan=self.installment.id)
+        self.assertEqual(response.status_code, 200, response.data)
+
+    def test_plan_change_conflicting_with_applied_discount_is_refused(self, _):
+        self.patch_deal(payment_plan=self.full.id, applied_discounts_ids=[self.only_full.id], contract_price='18900')
+        response = self.patch_deal(payment_plan=self.installment.id)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('За полную оплату', str(response.data))
+
+    def test_deal_plan_must_be_a_plan(self, _):
+        plain = PaymentType.objects.create(name='Доплата', company=self.company)
+        self.assertEqual(self.patch_deal(payment_plan=plain.id).status_code, 400)
+
+    def test_discount_accepts_only_plans(self, _):
+        plain = PaymentType.objects.create(name='Доплата', company=self.company)
+        response = self.api.patch(f'/api/discounts/{self.any_plan.id}/', {'payment_plans': [plain.id]}, format='json')
+        self.assertEqual(response.status_code, 400)
+        response = self.api.patch(f'/api/discounts/{self.any_plan.id}/', {'payment_plans': [self.installment.id]},
+                                  format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+
+    def test_property_lists_current_discounts_with_plans(self, _):
+        response = self.api.get(f'/api/properties/{self.property.id}/available-discounts/')
+        self.assertEqual(response.status_code, 200)
+        by_name = {row['name']: row for row in response.data}
+        self.assertEqual(by_name['За полную оплату']['payment_plans'], [self.full.id])
+        self.assertEqual(by_name['Осенняя']['payment_plans'], [])
 
 
 @LOCAL_CACHE

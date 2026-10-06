@@ -3,22 +3,24 @@
 /**
  * Калькулятор вариантов оплаты по планам компании.
  *
- * План оплаты — это тип платежа с заданными условиями («Рассрочка на
- * 12 месяцев», «100% оплата», «Ипотека»): вид плана, срок, скидка и
- * минимальный первоначальный взнос. Сверху — сравнение всех планов, ниже —
- * график выбранного. Таблицу можно распечатать или сохранить в PDF, чтобы
- * показать клиенту.
+ * Порядок расчёта: скидки → цена → план. Менеджер отмечает скидки, которые
+ * действуют для объекта сегодня; в каждой колонке плана учитываются только
+ * скидки, действующие при этом плане (скидка может быть «только для 100%
+ * оплаты»). Получившуюся цену план делит на платежи: вид плана, срок и
+ * минимальный первоначальный взнос заданы в типе платежа. Своей скидки у
+ * плана нет.
  *
- * В сделке доступна кнопка «Создать график»: стоимость по договору становится
- * ценой выбранного варианта, а график сохраняется строками этого варианта —
- * все платежи получают тип выбранного плана. Дальше график правится вручную.
+ * В сделке доступна кнопка «Создать график»: в сделку сохраняются план,
+ * скидки, действующие при нём, и стоимость по договору — цена варианта,
+ * а график — строками варианта с типом платежа плана. Дальше график
+ * правится вручную.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  FormControl, Grid, InputLabel, MenuItem, Radio, Select, Stack, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, TextField, Typography,
+  Alert, Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
+  FormControl, FormControlLabel, Grid, InputLabel, MenuItem, Radio, Select, Stack, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import { useQuery } from '@tanstack/react-query';
@@ -27,6 +29,9 @@ import { useTranslation } from 'react-i18next';
 import LocalizedDateField from '../common/LocalizedDateField';
 import { getBeneficiaryAccounts, getPaymentTypes } from '../../api/finances';
 import type { PaymentType } from '../../api/finances';
+import { getAvailableDiscounts } from '../../api/deals';
+import { discountFitsPlan, getPropertyAvailableDiscounts } from '../../api/discounts';
+import type { Discount } from '../../api/discounts';
 import { useIsMobile } from '../../hooks/useMobile';
 import { formatMoney } from '../../utils/currency';
 import { buildVariant, comparePlans, isPlan, todayIso } from '../../utils/installments';
@@ -34,16 +39,24 @@ import type { InstallmentVariant } from '../../utils/installments';
 
 export interface ScheduleOptions {
   accountId: number;
+  /** Отмеченные скидки, действующие при выбранном плане */
+  discountIds: number[];
 }
+
+/** Откуда брать скидки: доступные для сделки или для объекта (карточка на шахматке) */
+export type DiscountSource = { dealId: number } | { propertyId: number };
 
 interface InstallmentCalculatorProps {
   open: boolean;
   onClose: () => void;
-  /** Цена, от которой считаются скидки, в валюте currency */
+  /** Цена до скидок, в валюте currency */
   basePrice: number | null;
   currency: string;
-  /** Скидки, уже применённые в сделке, % — складываются со скидкой плана */
-  extraDiscountPercent?: number;
+  discountSource: DiscountSource;
+  /** Скидки, уже применённые в сделке: отмечены сразу, даже если срок их действия прошёл */
+  appliedDiscounts?: Discount[];
+  /** План сделки — выбран сразу */
+  preferredPlanId?: number | null;
   /** Строки шапки для экрана и печати: проект, дом, объект, площадь */
   heading: string[];
   /** Пояснение к цене, например пересчёт из прайса по курсу */
@@ -62,8 +75,8 @@ const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export default function InstallmentCalculator({
-  open, onClose, basePrice, currency, extraDiscountPercent = 0, heading, priceNote, companyId,
-  onCreateSchedule, createDisabledReason, isCreating, currentContractPrice,
+  open, onClose, basePrice, currency, discountSource, appliedDiscounts, preferredPlanId, heading, priceNote,
+  companyId, onCreateSchedule, createDisabledReason, isCreating, currentContractPrice,
 }: InstallmentCalculatorProps) {
   const { t, i18n } = useTranslation();
   const isMobile = useIsMobile();
@@ -75,6 +88,22 @@ export default function InstallmentCalculator({
   const { data: accounts } = useQuery({
     queryKey: ['beneficiaryAccounts'], queryFn: getBeneficiaryAccounts, enabled: open && scheduleMode,
   });
+  const discountsQuery = useQuery({
+    queryKey: 'dealId' in discountSource
+      ? ['availableDiscounts', discountSource.dealId]
+      : ['propertyDiscounts', discountSource.propertyId],
+    queryFn: () => ('dealId' in discountSource
+      ? getAvailableDiscounts(discountSource.dealId)
+      : getPropertyAvailableDiscounts(discountSource.propertyId)),
+    enabled: open,
+  });
+
+  // Доступные сегодня скидки плюс уже применённые в сделке (их срок мог пройти)
+  const discounts = useMemo(() => {
+    const byId = new Map<number, Discount>();
+    [...(appliedDiscounts ?? []), ...(discountsQuery.data ?? [])].forEach(d => byId.set(d.id, d));
+    return [...byId.values()];
+  }, [appliedDiscounts, discountsQuery.data]);
 
   // Планы — типы платежей с заданным планом. Системный администратор видит
   // справочники всех компаний: в сделке оставляем планы её компании и общие
@@ -84,6 +113,7 @@ export default function InstallmentCalculator({
     .sort(comparePlans), [typesQuery.data, companyId]);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [checkedDiscounts, setCheckedDiscounts] = useState<number[]>([]);
   const [downPercent, setDownPercent] = useState<string>('');
   const [startDate, setStartDate] = useState(todayIso());
   const [accountId, setAccountId] = useState(0);
@@ -92,8 +122,10 @@ export default function InstallmentCalculator({
     if (open) {
       setStartDate(todayIso());
       setDownPercent('');
+      setCheckedDiscounts((appliedDiscounts ?? []).map(d => d.id));
+      setSelectedId(preferredPlanId ?? null);
     }
-  }, [open]);
+  }, [open, appliedDiscounts, preferredPlanId]);
 
   useEffect(() => {
     if (plans.length && !plans.some(plan => plan.id === selectedId)) {
@@ -107,17 +139,23 @@ export default function InstallmentCalculator({
     }
   }, [accounts, accountId]);
 
+  /** Отмеченные скидки, действующие при плане */
+  const discountsFor = (plan: PaymentType) =>
+    discounts.filter(d => checkedDiscounts.includes(d.id) && discountFitsPlan(d, plan.id));
+  const percentFor = (plan: PaymentType) => discountsFor(plan).reduce((sum, d) => sum + Number(d.percentage_value), 0);
+
   // Сравнение — по минимальному взносу; выбранный план — с учётом введённого взноса
   const variants = useMemo(() => (basePrice ? plans.map(plan => buildVariant(basePrice, plan, {
-    currency, startDate, extraDiscountPercent,
-  })) : []), [basePrice, plans, currency, startDate, extraDiscountPercent]);
+    currency, startDate, discountPercent: percentFor(plan),
+  })) : []), [basePrice, plans, currency, startDate, discounts, checkedDiscounts]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedPlan: PaymentType | null = plans.find(plan => plan.id === selectedId) ?? null;
   const selected = useMemo(() => (basePrice && selectedPlan ? buildVariant(basePrice, selectedPlan, {
-    currency, startDate, extraDiscountPercent,
+    currency, startDate, discountPercent: percentFor(selectedPlan),
     downPaymentPercent: downPercent === '' ? undefined : Number(downPercent),
-  }) : null), [basePrice, selectedPlan, currency, startDate, extraDiscountPercent, downPercent]);
+  }) : null), [basePrice, selectedPlan, currency, startDate, discounts, checkedDiscounts, downPercent]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const planNames = (discount: Discount) => discount.payment_plans_info?.join(', ') ?? '';
   const kindLabel = (kind: string) => t(`installments.kind_${kind}`);
   /** Как платится остаток после взноса: «12 × 13 700 000 UZS», «164 409 353 UZS через 3 мес.» */
   const restText = (v: InstallmentVariant) => {
@@ -131,8 +169,8 @@ export default function InstallmentCalculator({
   };
 
   const comparisonRows: { label: string; value: (v: InstallmentVariant) => string }[] = [
-    { label: t('installments.row_discount_percent'), value: v => `${v.discountPercent}%` },
-    { label: t('installments.row_discount_amount'), value: v => money(v.discountAmount) },
+    { label: t('installments.row_discount_percent'), value: v => (v.discountPercent ? `${v.discountPercent}%` : '—') },
+    { label: t('installments.row_discount_amount'), value: v => (v.discountAmount ? money(v.discountAmount) : '—') },
     { label: t('installments.row_price'), value: v => money(v.price) },
     {
       label: t('installments.row_down'),
@@ -144,6 +182,7 @@ export default function InstallmentCalculator({
   const handlePrint = () => {
     if (!selected) return;
     const head = heading.map(line => `<div>${escapeHtml(line)}</div>`).join('');
+    const applied = discountsFor(selected.plan).map(d => `${d.name} — ${d.percentage_value}%`).join('; ');
     const compareHead = variants.map(v => `<th>${escapeHtml(v.plan.name)}</th>`).join('');
     const compareBody = comparisonRows.map(row =>
       `<tr><th class="l">${escapeHtml(row.label)}</th>${variants.map(v => `<td>${escapeHtml(row.value(v))}</td>`).join('')}</tr>`
@@ -169,6 +208,7 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
 <h2>${escapeHtml(t('installments.compare_title'))}</h2>
 <table><thead><tr><th class="l"></th>${compareHead}</tr></thead><tbody>${compareBody}</tbody></table>
 <h2>${escapeHtml(t('installments.schedule_title', { variant: selected.plan.name }))}</h2>
+${applied ? `<div class="note">${escapeHtml(t('installments.discounts_applied', { list: applied }))}</div>` : ''}
 <table><thead><tr><th>${escapeHtml(t('installments.col_number'))}</th><th>${escapeHtml(t('installments.col_date'))}</th>
 <th class="l">${escapeHtml(t('installments.col_kind'))}</th><th>${escapeHtml(t('installments.col_amount'))}</th>
 <th>${escapeHtml(t('installments.col_balance'))}</th></tr></thead><tbody>${scheduleBody}</tbody>
@@ -194,7 +234,7 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
         })
       : t('installments.create_confirm', { price: money(selected.price), count: selected.rows.length });
     if (window.confirm(message)) {
-      onCreateSchedule(selected, { accountId });
+      onCreateSchedule(selected, { accountId, discountIds: discountsFor(selected.plan).map(d => d.id) });
     }
   };
 
@@ -222,11 +262,41 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
               <b>{t('installments.base_price')}:</b> {basePrice ? money(basePrice) : '—'}
             </Typography>
             {priceNote && <Typography variant="caption" color="text.secondary">{priceNote}</Typography>}
-            {extraDiscountPercent > 0 && (
-              <Typography variant="caption" color="text.secondary" display="block">
-                {t('installments.applied_discounts', { percent: extraDiscountPercent })}
-              </Typography>
+          </Box>
+
+          {/* Скидки → цена: в колонке плана учитываются только скидки, действующие при нём */}
+          <Box>
+            <Typography variant="subtitle1">{t('installments.discounts_title')}</Typography>
+            {discountsQuery.isLoading && <CircularProgress size={20} />}
+            {discountsQuery.isSuccess && !discounts.length && (
+              <Typography variant="body2" color="text.secondary">{t('installments.no_discounts')}</Typography>
             )}
+            {discountsQuery.isError && <Alert severity="warning">{t('installments.no_discounts_access')}</Alert>}
+            <Stack>
+              {discounts.map(discount => (
+                <FormControlLabel
+                  key={discount.id}
+                  control={(
+                    <Checkbox
+                      size="small"
+                      checked={checkedDiscounts.includes(discount.id)}
+                      onChange={(e) => setCheckedDiscounts(prev => (e.target.checked
+                        ? [...prev, discount.id] : prev.filter(id => id !== discount.id)))}
+                    />
+                  )}
+                  label={(
+                    <Typography variant="body2">
+                      {discount.name} — {discount.percentage_value}%
+                      {discount.payment_plans?.length > 0 && (
+                        <Typography component="span" variant="caption" color="text.secondary">
+                          {' '}({t('installments.discount_only_for', { plans: planNames(discount) })})
+                        </Typography>
+                      )}
+                    </Typography>
+                  )}
+                />
+              ))}
+            </Stack>
           </Box>
 
           {typesQuery.isLoading && <CircularProgress />}

@@ -118,6 +118,21 @@ class DealDetailSerializer(serializers.ModelSerializer):
         queryset=Deal.applied_discounts.field.related_model.objects.all(),
         source='applied_discounts'
     )
+    payment_plan_name = serializers.CharField(source='payment_plan.name', read_only=True, default=None)
+
+    def validate_payment_plan(self, value):
+        """План — тип платежа с видом плана, своей компании или общий."""
+        if value is None:
+            return value
+        from permissions.reference_scope import scope_reference_queryset
+        from apps.finances.models import PaymentType
+
+        if not value.plan_kind:
+            raise serializers.ValidationError(f'«{value.name}» — не план оплаты.')
+        user = self.context['request'].user
+        if not scope_reference_queryset(user, PaymentType.objects.filter(pk=value.pk)).exists():
+            raise serializers.ValidationError('План оплаты не найден или недоступен.')
+        return value
 
     def validate(self, data):
         """
@@ -130,6 +145,19 @@ class DealDetailSerializer(serializers.ModelSerializer):
 
         discounts = data.get('applied_discounts', list(instance.applied_discounts.all()))
         contract_price = data.get('contract_price', instance.contract_price)
+
+        # Скидка «только для планов» применима лишь при одном из этих планов
+        plan = data.get('payment_plan', instance.payment_plan)
+        for discount in discounts:
+            plans = list(discount.payment_plans.all())
+            if plans and plan not in plans:
+                names = ', '.join(f'«{p.name}»' for p in plans)
+                raise serializers.ValidationError({
+                    'applied_discounts_ids': (
+                        f'Скидка «{discount.name}» действует только для планов оплаты: {names}. '
+                        f'Выберите один из них в поле «План оплаты» или уберите скидку.'
+                    )
+                })
 
         # Суммарный процент ограничивался только у каждой скидки по отдельности
         total_percent = sum((d.percentage_value or 0) for d in discounts)
@@ -195,6 +223,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'payments', 'contract_number', 'contract_date', 'application', 'logs_total',
             'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
             'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
+            'payment_plan', 'payment_plan_name',
         ]
         # Валюта сделки задаётся настройкой компании при брони и дальше не меняется:
         # весь график платежей хранится в ней

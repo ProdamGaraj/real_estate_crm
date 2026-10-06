@@ -17,10 +17,22 @@ export interface Discount {
   property_type: string | null;
   buildings: number[];
   buildings_info: string[];
+  /** Пусто — скидка действует при любом плане оплаты; иначе — только при этих планах */
+  payment_plans: number[];
+  payment_plans_info: string[];
   logs?: DiscountLog[];
 }
 
-export type DiscountPayload = Omit<Discount, 'id' | 'buildings_info' | 'logs'>;
+export type DiscountPayload = Omit<Discount, 'id' | 'buildings_info' | 'payment_plans_info' | 'logs'>;
+
+/** Скидки, которые можно применить к объекту сегодня (для калькулятора в карточке объекта) */
+export const getPropertyAvailableDiscounts = async (propertyId: number): Promise<Discount[]> => {
+  return (await apiClient.get(`/properties/${propertyId}/available-discounts/`)).data;
+};
+
+/** Действует ли скидка при плане оплаты: без ограничения — при любом */
+export const discountFitsPlan = (discount: Discount, planId: number | null | undefined) =>
+  !discount.payment_plans?.length || (planId != null && discount.payment_plans.includes(planId));
 
 export const getDiscounts = async (): Promise<Discount[]> => {
   return (await apiClient.get('/discounts/')).data;

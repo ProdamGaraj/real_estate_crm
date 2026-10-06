@@ -473,7 +473,10 @@
       "signed_uploaded": "Imzolangan hujjat yuklandi.",
       "application_optional": "Ariza (ixtiyoriy)",
       "currency_fixed_hint": "Bron paytida kompaniya sozlamasi bilan belgilanadi",
-      "catalog_conversion": "Prays bo'yicha narx {{catalog}} bitim valyutasiga {{rate}} kurs bo'yicha qayta hisoblandi: {{price}}."
+      "catalog_conversion": "Prays bo'yicha narx {{catalog}} bitim valyutasiga {{rate}} kurs bo'yicha qayta hisoblandi: {{price}}.",
+      "payment_plan": "To'lov rejasi",
+      "payment_plan_hint": "Qaysi chegirmalar amal qilishi rejaga bog'liq; chegirmali narx reja bo'yicha to'lovlarga bo'linadi.",
+      "no_plan": "Tanlanmagan"
     },
     "projects": {
       "title": "Loyihalar",
@@ -694,7 +697,13 @@
       "indefinite": "Muddatsiz",
       "no_building_restriction": "Cheklov yo'q (barcha binolar)",
       "no_comment": "Tavsif yo'q",
-      "end_date_error": "Tugash sanasi boshlanish sanasidan keyin bo'lishi kerak"
+      "end_date_error": "Tugash sanasi boshlanish sanasidan keyin bo'lishi kerak",
+      "payment_plans": "Faqat to'lov rejalari uchun",
+      "payment_plans_hint": "Bo'sh — chegirma har qanday rejada amal qiladi. Masalan, «100% to'lov uchun» chegirmasini «100% darhol» rejasi bilan cheklang.",
+      "payment_plans_short": "To'lov rejalari",
+      "any_plan": "Istalgan reja",
+      "only_for_plans": "faqat rejalar uchun: {{plans}}",
+      "choose_plan_first": "bitimda mos to'lov rejasini tanlang"
     },
     "permissions": {
       "permissions_matrix": "Ruxsatlar matritsasi"
@@ -978,12 +987,21 @@
         "months": "Muddat, oy",
         "months_installment": "Oylik to'lovlar soni",
         "months_deferred": "Qoldiq, necha oydan keyin",
-        "discount": "Chegirma, %",
         "down_payment": "Eng kam boshlang'ich, %",
-        "types_hint": "To'lov turi — jadval to'lovlari oladigan nom. Turga reja berilsa, u «Bo'lib to'lash» kalkulyatorida variantga aylanadi va u bo'yicha bitim jadvalini bitta tugma bilan yaratish mumkin: «100% darhol» — butun summa bitta to'lovda; «Boshlang'ich va oylik to'lovlar» — boshlang'ich to'lov va har oy teng to'lovlar; «Boshlang'ich va qoldiq bitta to'lovda» — boshlang'ich to'lov va qoldiq ko'rsatilgan oylardan keyin (ipoteka).",
-        "edit_hint": "Yozuvni o'zgartirish uchun katakchani ikki marta bosing. To'lovlarda ishlatilgan turni o'chirib bo'lmaydi — uni qayta nomlash mumkin. Umumiy yozuvlarni faqat tizim administratori o'zgartiradi.",
-        "accounts_hint": "Nom yoki rekvizitlarni o'zgartirish uchun katakchani ikki marta bosing. To'lovlari bor hisobni o'chirib bo'lmaydi — uni qayta nomlang (masalan, «123» → «Payme»). Umumiy hisoblarni faqat tizim administratori o'zgartiradi.",
-        "confirm_delete": "«{{name}}» o'chirilsinmi?"
+        "types_hint": "To'lov turi — jadval to'lovlari oladigan nom. Turga reja berilsa, u «Bo'lib to'lash» kalkulyatorida variantga aylanadi va u bo'yicha bitim jadvalini bitta tugma bilan yaratish mumkin. Rejaning o'z chegirmasi yo'q: chegirmalar «Chegirmalar» bo'limida yaratiladi va ularni alohida rejalar bilan cheklash mumkin (masalan, «faqat 100% to'lovda»). To'lovlari bor turni o'chirib bo'lmaydi — uni qayta nomlang. Umumiy yozuvlarni faqat tizim administratori o'zgartiradi.",
+        "accounts_hint": "To'lovlari bor hisobni o'chirib bo'lmaydi — uni qayta nomlang (masalan, «123» → «Payme»). Umumiy hisoblarni faqat tizim administratori o'zgartiradi.",
+        "confirm_delete": "«{{name}}» o'chirilsinmi?",
+        "add_type": "Tur qo'shish",
+        "edit_type": "To'lov turini tahrirlash",
+        "add_account": "Hisob qo'shish",
+        "edit_account": "Hisobni tahrirlash",
+        "terms": "Shartlar",
+        "terms_installment": "{{months}} oy, boshlang'ich {{down}}% dan",
+        "terms_deferred": "Boshlang'ich {{down}}% dan, qoldiq {{months}} oydan keyin",
+        "plan_none_hint": "Shunchaki to'lov nomi — «Bo'lib to'lash» kalkulyatorida ishtirok etmaydi.",
+        "plan_FULL_hint": "Butun summa bitta to'lovda. «100% to'lov uchun» chegirmasini «Chegirmalar» bo'limida yarating va unda shu rejani ko'rsating.",
+        "plan_INSTALLMENT_hint": "Boshlang'ich to'lov (ko'rsatilgan foizdan kam emas) va har oy teng to'lovlar.",
+        "plan_DEFERRED_hint": "Boshlang'ich to'lov va qoldiq ko'rsatilgan oylardan keyin bitta to'lovda (ipoteka). 0 — qoldiq darhol."
       }
     },
     "api_keys": {
@@ -1514,7 +1532,6 @@
     "create_from_terms": "Bo'lib to'lash shartlari bo'yicha jadval yaratish",
     "unit": "Obyekt",
     "base_price": "Narx",
-    "applied_discounts": "Bitimda qo'llangan chegirmalar: {{percent}}% — muddat chegirmasiga qo'shilgan.",
     "converted_note": "Prays bo'yicha narx {{catalog}}, {{rate}} kurs bo'yicha qayta hisoblangan.",
     "no_rate": "{{currency}} kursi yo'q — hisob prays valyutasida.",
     "compare_title": "Muddatlarni solishtirish",
@@ -1556,6 +1573,11 @@
     "monthly_times": "{{count}} × {{amount}}",
     "rest_after": "{{amount}} {{months}} oydan keyin",
     "rest_now": "{{amount}} darhol",
-    "kind_rest": "Qoldiq"
+    "kind_rest": "Qoldiq",
+    "discounts_title": "Chegirmalar",
+    "no_discounts": "Bu obyekt uchun hozir amaldagi chegirmalar yo'q.",
+    "no_discounts_access": "Chegirmalarga ruxsat yo'q — hisob chegirmasiz.",
+    "discount_only_for": "faqat: {{plans}}",
+    "discounts_applied": "Hisobga olingan chegirmalar: {{list}}"
   }
 }

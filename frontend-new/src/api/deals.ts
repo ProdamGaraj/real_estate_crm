@@ -31,6 +31,11 @@ export interface Deal {
   catalog_rate: string | null;
   /** Компания сделки: её настройки валют действуют для графика */
   company: number | null;
+  /** План оплаты сделки (тип платежа с планом); от него зависят доступные скидки */
+  payment_plan: number | null;
+  payment_plan_name: string | null;
+  contract_number?: string;
+  contract_date?: string | null;
   notes: string;
   applied_discounts: Discount[];
   payments: Payment[];
@@ -138,6 +143,17 @@ export const getDealById = async (id: number): Promise<Deal> => {
 /**
  * Обновляет сделку по ее ID.
  */
+/**
+ * Условия сделки одним JSON-запросом: план оплаты, скидки и стоимость по договору.
+ * FormData из updateDeal не умеет передать пустой список скидок или пустой план,
+ * поэтому снять их через него нельзя.
+ */
+export const updateDealTerms = async (
+  { id, terms }: { id: number; terms: { payment_plan?: number | null; applied_discounts_ids?: number[]; contract_price?: number | null } }
+): Promise<Deal> => {
+  return (await apiClient.patch(`/deals/${id}/`, terms)).data;
+};
+
 export const updateDeal = async ({ id, payload }: { id: number; payload: DealUpdatePayload }): Promise<Deal> => {
     const formData = new FormData();
 

@@ -75,6 +75,10 @@ export default function DiscountsPage() {
       field: 'buildings_info', headerName: t('pages.discounts.applied_to_buildings'), flex: 2,
       valueGetter: (value: string[]) => value.join(', ') || t('common.all')
     },
+    {
+      field: 'payment_plans_info', headerName: t('pages.discounts.payment_plans_short'), flex: 1.5,
+      valueGetter: (value: string[] | undefined) => value?.join(', ') || t('pages.discounts.any_plan')
+    },
     { field: 'start_date', headerName: t('table.start_date'), type: 'date', width: 120, valueGetter: (value) => value ? new Date(value) : null },
     { field: 'end_date', headerName: t('table.end_date'), type: 'date', width: 120, valueGetter: (value) => value ? new Date(value) : null },
     {

@@ -23,7 +23,6 @@ export interface PaymentType {
   company_name: string | null;
   plan_kind: PlanKind;
   plan_months: number;
-  discount_percent: string;
   down_payment_percent: string;
 }
 

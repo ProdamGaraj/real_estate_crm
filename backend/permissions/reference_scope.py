@@ -130,7 +130,12 @@ class CompanyScopedReferenceMixin:
 
     def perform_update(self, serializer):
         self._ensure_editable(serializer.instance)
-        serializer.save()
+        # Системный администратор может перенести запись в другую компанию или
+        # сделать общей — так исправляются записи, заведённые не в той компании
+        if is_admin(self.request.user) and 'company' in getattr(self.request, 'data', {}):
+            serializer.save(company=company_for_new_record(self.request))
+        else:
+            serializer.save()
 
     def perform_destroy(self, instance):
         self._ensure_editable(instance)

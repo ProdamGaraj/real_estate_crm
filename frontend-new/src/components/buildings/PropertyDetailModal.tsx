@@ -260,6 +260,7 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
         onClose={() => setInstallmentOpen(false)}
         basePrice={calcPrice}
         currency={calcCurrency}
+        discountSource={{ propertyId: property.id }}
         heading={[
           [projectName, buildingName].filter(Boolean).join(', '),
           `${t('installments.unit')} №${property.unit_number}, ${t('pages.properties.floor')} ${property.floor}, ${property.area} ${t('pages.properties.sqm')}`,

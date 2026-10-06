@@ -121,6 +121,10 @@ class Deal(models.Model):
 
     # --- Детали этапа "В работе" ---
     applied_discounts = models.ManyToManyField('realty.Discount', blank=True, verbose_name="Примененные скидки")
+    # План оплаты (тип платежа с планом). От него зависят доступные скидки:
+    # скидка «только для 100% оплаты» применима, лишь когда выбран этот план
+    payment_plan = models.ForeignKey('finances.PaymentType', on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='deals', verbose_name="План оплаты")
     purchase_purpose = models.ForeignKey(PurchasePurpose, on_delete=models.SET_NULL, null=True, blank=True,
                                          verbose_name="Цель приобретения")
     payment_type = models.ForeignKey(PaymentType, on_delete=models.SET_NULL, null=True, blank=True,

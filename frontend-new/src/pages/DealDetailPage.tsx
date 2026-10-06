@@ -3,7 +3,7 @@ import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { getDealById, updateDeal } from '../api/deals';
+import { getDealById, updateDeal, updateDealTerms } from '../api/deals';
 import type { DealUpdatePayload, Deal } from '../api/deals';
 import DiscountsModal from '../components/deals/DiscountsModal';
 import PaymentSchedule from '../components/deals/PaymentSchedule';
@@ -15,7 +15,7 @@ import { useIsMobile } from '../hooks/useMobile';
 
 import {
   Typography, CircularProgress, Alert, Paper, Grid, Box, TextField, Button,
-  Divider, Link as MuiLink, Stack, Stepper, Step, StepLabel, StepContent, Tabs, Tab
+  Divider, Link as MuiLink, Stack, Stepper, Step, StepLabel, StepContent, Tabs, Tab, MenuItem
 } from '@mui/material';
 import { Timeline, TimelineItem, TimelineSeparator, TimelineConnector, TimelineContent, TimelineDot } from '@mui/lab';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
@@ -26,7 +26,8 @@ import type { ScheduleOptions } from '../components/installments/InstallmentCalc
 import { useAuthStore } from '../store/authStore';
 import { hasPermission } from '../utils/permissions';
 import type { InstallmentVariant } from '../utils/installments';
-import { createPaymentSchedule } from '../api/finances';
+import { comparePlans, isPlan } from '../utils/installments';
+import { createPaymentSchedule, getPaymentTypes } from '../api/finances';
 
 type DealFormInputs = Pick<DealUpdatePayload, 'contract_price' | 'notes' | 'contract_number' | 'contract_date' | 'client_signature_date' | 'company_signature_date'> & {
   signed_document_scan?: FileList;
@@ -132,10 +133,30 @@ export default function DealDetailPage() {
 
   // График по условиям рассрочки: стоимость по договору — цена выбранного
   // варианта, строки — его платежи. Дальше график правится вручную, как обычно
+  // Планы оплаты — типы платежей с заданным планом; в сделке — планы её компании и общие
+  const { data: paymentTypes } = useQuery({ queryKey: ['paymentTypes'], queryFn: getPaymentTypes });
+
+  // План оплаты сделки сохраняется сразу: от него зависят доступные скидки
+  const planMutation = useMutation({
+    mutationFn: (planId: number | null) => updateDealTerms({ id: Number(dealId), terms: { payment_plan: planId } }),
+    onSuccess: (updatedDeal) => queryClient.setQueryData(['deal', dealId], updatedDeal),
+    // Например, применена скидка «только для 100% оплаты», а выбран другой план
+    onError: (error: unknown) => alert(extractApiError(error, t('errors.update_error'))),
+  });
+
   const installmentMutation = useMutation({
     mutationFn: async ({ variant, options }: { variant: InstallmentVariant; options: ScheduleOptions }) => {
-      const previousPrice = deal!.contract_price;
-      await updateDeal({ id: Number(dealId), payload: { contract_price: variant.price } });
+      // Скидки → цена → план: в сделку записываются план, действующие при нём
+      // скидки и цена со скидками, затем — график этой цены
+      const previous = {
+        payment_plan: deal!.payment_plan,
+        applied_discounts_ids: deal!.applied_discounts.map(d => d.id),
+        contract_price: deal!.contract_price === null ? null : Number(deal!.contract_price),
+      };
+      await updateDealTerms({
+        id: Number(dealId),
+        terms: { payment_plan: variant.plan.id, applied_discounts_ids: options.discountIds, contract_price: variant.price },
+      });
       try {
         await createPaymentSchedule({
           dealId: Number(dealId),
@@ -150,14 +171,12 @@ export default function DealDetailPage() {
           })),
         });
       } catch (error) {
-        // Стоимость уже сменилась, а график не сохранился — возвращаем прежнюю,
+        // Условия уже сменились, а график не сохранился — возвращаем прежние,
         // чтобы сделка не осталась с ценой варианта без графика
-        if (previousPrice !== null && Number(previousPrice) !== variant.price) {
-          try {
-            await updateDeal({ id: Number(dealId), payload: { contract_price: Number(previousPrice) } });
-          } catch {
-            // Пользователю важнее исходная причина отказа
-          }
+        try {
+          await updateDealTerms({ id: Number(dealId), terms: previous });
+        } catch {
+          // Пользователю важнее исходная причина отказа
         }
         throw error;
       }
@@ -192,8 +211,10 @@ export default function DealDetailPage() {
 
   const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status);
   const isDealTerminated = deal.status === 'TERMINATED';
-  // Скидки, уже применённые в сделке, складываются со скидкой за срок рассрочки
-  const appliedDiscountPercent = deal.applied_discounts.reduce((sum, d) => sum + (Number(d.percentage_value) || 0), 0);
+  const plans = (paymentTypes ?? [])
+    .filter(isPlan)
+    .filter(plan => plan.company === null || !deal.company || plan.company === deal.company)
+    .sort(comparePlans);
   const canBuildSchedule = hasPermission(user, 'EDIT', 'DEAL') && hasPermission(user, 'ADD', 'PAYMENT');
   const installmentBlockReason = isDealReadOnly
     ? t('installments.deal_read_only')
@@ -308,7 +329,27 @@ export default function DealDetailPage() {
                               </Alert>
                             </Grid>
                           )}
-                          <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>{t('pages.deals.apply_discounts')}</Button> <Button variant="outlined" sx={{mb: 1}} onClick={() => setInstallmentOpen(true)}>{t('installments.open_button')}</Button> <Typography component="span">{t('pages.deals.applied')}: {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || t('common.none')}</Typography></Grid>
+                          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                            {/* План оплаты: от него зависят скидки «только для планов»; дальше скидки дают цену, а план делит её на платежи */}
+                            <TextField
+                              select
+                              fullWidth
+                              label={t('pages.deals.payment_plan')}
+                              value={deal.payment_plan ?? ''}
+                              onChange={(e) => planMutation.mutate(e.target.value === '' ? null : Number(e.target.value))}
+                              disabled={isDealReadOnly || planMutation.isPending}
+                              helperText={t('pages.deals.payment_plan_hint')}
+                              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
+                            >
+                              <MenuItem value="">{t('pages.deals.no_plan')}</MenuItem>
+                              {plans.map(plan => <MenuItem key={plan.id} value={plan.id}>{plan.name}</MenuItem>)}
+                              {/* План сделки мог перестать быть планом или уйти из списка — показываем его, чтобы поле не опустело */}
+                              {deal.payment_plan && !plans.some(plan => plan.id === deal.payment_plan) && (
+                                <MenuItem value={deal.payment_plan}>{deal.payment_plan_name}</MenuItem>
+                              )}
+                            </TextField>
+                          </Grid>
+                          <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>{t('pages.deals.apply_discounts')}</Button> <Button variant="outlined" sx={{mb: 1}} onClick={() => setInstallmentOpen(true)}>{t('installments.open_button')}</Button> <Typography component="span">{t('pages.deals.applied')} {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || t('common.none')}</Typography></Grid>
                           <Grid size={{ xs: 12 }}><TextField label={t('pages.deals.deal_notes')} multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
                         </Grid>
                         <Stack direction="row" spacing={2} sx={{mt: 2}}>
@@ -452,7 +493,9 @@ export default function DealDetailPage() {
         onClose={() => setInstallmentOpen(false)}
         basePrice={Number(deal.initial_price) || null}
         currency={deal.currency}
-        extraDiscountPercent={appliedDiscountPercent}
+        discountSource={{ dealId: deal.id }}
+        appliedDiscounts={deal.applied_discounts}
+        preferredPlanId={deal.payment_plan}
         heading={[
           `${t('pages.deals.client')}: ${deal.client.full_name}`,
           `${t('pages.deals.property')}: ${t(`property_types.${deal.property.property_type}`)} №${deal.property.unit_number}, ${deal.property.area} ${t('common.sqm')}`,
@@ -476,6 +519,7 @@ export default function DealDetailPage() {
             dealId={Number(dealId)}
             basePrice={Number(deal.initial_price)}
             appliedDiscountIds={deal.applied_discounts.map(d => d.id)}
+            dealPlanId={deal.payment_plan}
             onClose={() => setDiscountModalOpen(false)}
             onSave={handleDiscountsSave}
         />

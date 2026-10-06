@@ -309,6 +309,15 @@ class Discount(models.Model):
         related_name="discounts",
         verbose_name="Привязать к домам"
     )
+    # Пусто — скидка действует при любом плане оплаты (и при ручном графике).
+    # Иначе — только при оплате по одному из этих планов: например, скидка 10 %
+    # только для «100% оплаты»
+    payment_plans = models.ManyToManyField(
+        'finances.PaymentType',
+        blank=True,
+        related_name='discounts',
+        verbose_name="Только для планов оплаты"
+    )
     is_active = models.BooleanField(default=True, verbose_name="Активна")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")

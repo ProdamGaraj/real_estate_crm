@@ -201,6 +201,24 @@ class DiscountBuildingsScopeMixin:
             )
         return value
 
+    def validate_payment_plans(self, value):
+        """Только планы оплаты (типы с видом плана) своей компании или общие."""
+        from permissions.reference_scope import scope_reference_queryset
+        from apps.finances.models import PaymentType
+
+        request = self.context.get('request')
+        not_plans = [plan.name for plan in value if not plan.plan_kind]
+        if not_plans:
+            raise serializers.ValidationError(
+                f'Это не планы оплаты: {", ".join(not_plans)}. Задайте им план в «Настройки» → «Финансы».')
+        if request is not None:
+            ids = [plan.pk for plan in value]
+            visible = set(scope_reference_queryset(request.user, PaymentType.objects.filter(pk__in=ids))
+                          .values_list('pk', flat=True))
+            if set(ids) - visible:
+                raise serializers.ValidationError('Планы оплаты не найдены или недоступны.')
+        return value
+
     def validate(self, data):
         data = super().validate(data)
         start_date = data.get('start_date', getattr(self.instance, 'start_date', None))
@@ -214,6 +232,7 @@ class DiscountBuildingsScopeMixin:
 
 class DiscountListSerializer(DiscountBuildingsScopeMixin, serializers.ModelSerializer):
     buildings_info = serializers.StringRelatedField(source='buildings', many=True, read_only=True)
+    payment_plans_info = serializers.StringRelatedField(source='payment_plans', many=True, read_only=True)
 
     class Meta:
         model = Discount
@@ -221,12 +240,13 @@ class DiscountListSerializer(DiscountBuildingsScopeMixin, serializers.ModelSeria
         # становилась глобальной, хотя интерфейс предлагал выбрать дома
         fields = [
             'id', 'name', 'percentage_value', 'property_type', 'start_date', 'end_date',
-            'buildings', 'buildings_info', 'comment', 'is_active',
+            'buildings', 'buildings_info', 'payment_plans', 'payment_plans_info', 'comment', 'is_active',
         ]
 
 
 class DiscountDetailSerializer(DiscountBuildingsScopeMixin, serializers.ModelSerializer):
     buildings_info = serializers.StringRelatedField(source='buildings', many=True, read_only=True)
+    payment_plans_info = serializers.StringRelatedField(source='payment_plans', many=True, read_only=True)
     logs = DiscountLogSerializer(many=True, read_only=True)
 
     class Meta:

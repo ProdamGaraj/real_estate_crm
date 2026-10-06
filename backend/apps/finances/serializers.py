@@ -26,11 +26,8 @@ class PaymentTypeSerializer(serializers.ModelSerializer):
 
         kind = current('plan_kind', '')
         months = current('plan_months', 0)
-        discount = Decimal(str(current('discount_percent', 0)))
         down = Decimal(str(current('down_payment_percent', 0)))
         errors = {}
-        if not Decimal(0) <= discount < Decimal(100):
-            errors['discount_percent'] = 'Скидка — от 0 до 100 %, не включая 100.'
         if not Decimal(0) <= down <= Decimal(100):
             errors['down_payment_percent'] = 'Первоначальный взнос — от 0 до 100 %.'
         if months > self.MAX_MONTHS:
@@ -46,7 +43,7 @@ class PaymentTypeSerializer(serializers.ModelSerializer):
             data['plan_months'] = 0
             data['down_payment_percent'] = Decimal(0)
         elif kind == '':
-            data.update(plan_months=0, discount_percent=Decimal(0), down_payment_percent=Decimal(0))
+            data.update(plan_months=0, down_payment_percent=Decimal(0))
         return data
 
 

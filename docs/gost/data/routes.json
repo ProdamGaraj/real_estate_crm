@@ -314,6 +314,14 @@
   "doc": ""
  },
  {
+  "path": "/api/properties/<int:property_pk>/available-discounts/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.realty.views.PropertyAvailableDiscountsView",
+  "doc": "Скидки, которые можно применить к объекту сегодня, — для калькулятора рассрочки."
+ },
+ {
   "path": "/api/discounts/<int:pk>/",
   "methods": [
    "DELETE",

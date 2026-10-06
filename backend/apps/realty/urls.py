@@ -8,7 +8,7 @@ from .views import (
     BuildingTypeDetailView,
     BuildingListViewAll
 )
-from .views import DiscountListView, DiscountDetailView
+from .views import DiscountListView, DiscountDetailView, PropertyAvailableDiscountsView
 from .views import PropertyDetailView
 from .views import LayoutListView, LayoutDetailView, LayoutBulkUploadView
 from .views import PropertyTemplateDownloadView, PropertyUploadView, ProjectImageCreateView,ProjectImageDetailView,BuildingImageCreateView,BuildingImageDetailView
@@ -30,6 +30,8 @@ urlpatterns = [
     path('projects/<int>/buildings/<int:building_pk>/properties/<int:pk>/', PropertyDetailView.as_view(), name='property-detail'),
     path('projects/<int:project_pk>/buildings/<int:building_pk>/download-template/', PropertyTemplateDownloadView.as_view(), name='property-template-download'),
     path('discounts/', DiscountListView.as_view(), name='discount-list'),
+    path('properties/<int:property_pk>/available-discounts/', PropertyAvailableDiscountsView.as_view(),
+         name='property-available-discounts'),
     path('discounts/<int:pk>/', DiscountDetailView.as_view(), name='discount-detail'),
     path('projects/<int:project_pk>/buildings/<int:building_pk>/gallery/', BuildingImageCreateView.as_view(), name='building-image-create'),
     path('projects/<int:project_pk>/buildings/<int:building_pk>/gallery/<int:pk>/', BuildingImageDetailView.as_view(), name='building-image-delete'),

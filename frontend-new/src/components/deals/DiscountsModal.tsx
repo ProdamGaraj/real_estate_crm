@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getAvailableDiscounts } from '../../api/deals';
-import type { Discount } from '../../api/discounts';
+import { discountFitsPlan, type Discount } from '../../api/discounts';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, List, ListItem, ListItemButton,
   ListItemText, Checkbox, CircularProgress, Alert, FormControlLabel, Switch
 } from '@mui/material';
 
@@ -13,12 +13,14 @@ interface DiscountsModalProps {
   dealId: number;
   basePrice: number; // Начальная цена для расчета
   appliedDiscountIds: number[];
+  /** План оплаты сделки: скидки «только для планов» применимы лишь при подходящем плане */
+  dealPlanId?: number | null;
   onClose: () => void;
   // Возвращаем и новую цену, и ID скидок
   onSave: (newPrice: number, selectedIds: number[]) => void;
 }
 
-export default function DiscountsModal({ open, dealId, basePrice, appliedDiscountIds, onClose, onSave }: DiscountsModalProps) {
+export default function DiscountsModal({ open, dealId, basePrice, appliedDiscountIds, dealPlanId, onClose, onSave }: DiscountsModalProps) {
   const { t } = useTranslation();
   const [selectedIds, setSelectedIds] = useState<number[]>(appliedDiscountIds);
   const [shouldRound, setShouldRound] = useState(false); // Состояние для округления
@@ -57,11 +59,11 @@ export default function DiscountsModal({ open, dealId, basePrice, appliedDiscoun
     );
 
     // 3. Рассчитываем итоговую цену
-    let finalPrice = basePrice * (1 - totalDiscountPercent / 100);
+    let finalPrice = Math.round(basePrice * (100 - totalDiscountPercent)) / 100;
 
-    // 4. Округляем, если нужно
+    // 4. Округляем, если нужно — вниз: цену больше, чем со скидками, сервер не примет
     if (shouldRound) {
-      finalPrice = Math.round(finalPrice);
+      finalPrice = Math.floor(finalPrice);
     }
 
     onSave(finalPrice, selectedIds);
@@ -77,20 +79,26 @@ export default function DiscountsModal({ open, dealId, basePrice, appliedDiscoun
         {availableDiscounts && (
           <>
             <List>
-              {availableDiscounts.map((discount) => (
-                <ListItem key={discount.id} dense button onClick={() => handleToggle(discount.id)}>
-                  <Checkbox
-                    edge="start"
-                    checked={selectedIds.includes(discount.id)}
-                    tabIndex={-1}
-                    disableRipple
-                  />
-                  <ListItemText
-                    primary={`${discount.name} (${discount.percentage_value}%)`}
-                    secondary={discount.comment}
-                  />
-                </ListItem>
-              ))}
+              {availableDiscounts.map((discount) => {
+                // Скидку «только для планов» при другом плане отметить нельзя; снять — можно
+                const fits = discountFitsPlan(discount, dealPlanId);
+                const checked = selectedIds.includes(discount.id);
+                const restriction = discount.payment_plans?.length
+                  ? t('pages.discounts.only_for_plans', { plans: discount.payment_plans_info.join(', ') })
+                  : '';
+                return (
+                  <ListItem key={discount.id} disablePadding>
+                    <ListItemButton dense disabled={!fits && !checked} onClick={() => handleToggle(discount.id)}>
+                      <Checkbox edge="start" checked={checked} tabIndex={-1} disableRipple />
+                      <ListItemText
+                        primary={`${discount.name} (${discount.percentage_value}%)`}
+                        secondary={[discount.comment, restriction, !fits ? t('pages.discounts.choose_plan_first') : '']
+                          .filter(Boolean).join(' · ')}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
             </List>
             <FormControlLabel
               control={
