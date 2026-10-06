@@ -27,7 +27,11 @@ gosu app python manage.py migrate --noinput
 echo "Collecting static files..."
 gosu app python manage.py collectstatic --noinput
 
-# Запуск сервера от имени non-root пользователя через gosu
+# Запуск сервера от имени non-root пользователя через gosu.
+# Управляющий сокет gunicorn 26 создаётся в домашнем каталоге, а у системного
+# пользователя app его нет (/nonexistent): в журнале была ошибка
+# «Control server error: Permission denied». Сокет нужен только утилите
+# gunicornc, поэтому он выключен
 echo "Starting Gunicorn server..."
 exec gosu app gunicorn real_estate_project.wsgi:application \
     --bind 0.0.0.0:8000 \
@@ -35,4 +39,5 @@ exec gosu app gunicorn real_estate_project.wsgi:application \
     --threads 2 \
     --timeout 120 \
     --access-logfile - \
-    --error-logfile -
+    --error-logfile - \
+    --no-control-socket

@@ -988,7 +988,7 @@
         "months_installment": "Monthly payments",
         "months_deferred": "Remainder after, mo.",
         "down_payment": "Min. down payment, %",
-        "types_hint": "A payment type is the name that schedule payments get. Give a type a plan and it becomes a variant in the Installments calculator, so a deal schedule can be built from it in one click. A plan has no discount of its own: discounts are set up under Discounts and can be limited to specific plans (for example, \"100% payment only\"). A type that payments use cannot be deleted — rename it instead. Shared records can be changed only by the system administrator.",
+        "types_hint": "A payment type is the name that schedule payments get. Give a type a plan and it becomes a variant in the \"Calculate payment plan\" calculator, so a deal schedule can be built from it in one click. A plan has no discount of its own: discounts are set up under Discounts and can be limited to specific plans (for example, \"100% payment only\"). A type that payments use cannot be deleted — rename it instead. Shared records can be changed only by the system administrator.",
         "accounts_hint": "An account that payments use cannot be deleted — rename it instead (for example, \"123\" → \"Payme\"). Shared accounts can be changed only by the system administrator.",
         "confirm_delete": "Delete \"{{name}}\"?",
         "add_type": "Add type",
@@ -998,7 +998,7 @@
         "terms": "Terms",
         "terms_installment": "{{months}} mo., down payment from {{down}}%",
         "terms_deferred": "Down payment from {{down}}%, rest in {{months}} mo.",
-        "plan_none_hint": "Just a payment name — not used by the Installments calculator.",
+        "plan_none_hint": "Just a payment name — not used by the \"Calculate payment plan\" calculator.",
         "plan_FULL_hint": "The full amount in one payment. Create a \"100% payment\" discount under Discounts and limit it to this plan.",
         "plan_INSTALLMENT_hint": "A down payment (at least the given percent) and equal monthly payments.",
         "plan_DEFERRED_hint": "A down payment and the rest in one payment after the given number of months (mortgage). 0 — the rest right away."
@@ -1495,8 +1495,8 @@
   },
   "installments": {
     "title": "Payment options",
-    "open_button": "Installments",
-    "create_from_terms": "Create schedule from installment terms",
+    "open_button": "Calculate payment plan",
+    "create_from_terms": "Create schedule from a payment plan",
     "unit": "Unit",
     "base_price": "Price",
     "converted_note": "Price list price {{catalog}}, converted at the rate {{rate}}.",

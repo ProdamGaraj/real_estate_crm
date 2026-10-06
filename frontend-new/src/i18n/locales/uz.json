@@ -988,7 +988,7 @@
         "months_installment": "Oylik to'lovlar soni",
         "months_deferred": "Qoldiq, necha oydan keyin",
         "down_payment": "Eng kam boshlang'ich, %",
-        "types_hint": "To'lov turi — jadval to'lovlari oladigan nom. Turga reja berilsa, u «Bo'lib to'lash» kalkulyatorida variantga aylanadi va u bo'yicha bitim jadvalini bitta tugma bilan yaratish mumkin. Rejaning o'z chegirmasi yo'q: chegirmalar «Chegirmalar» bo'limida yaratiladi va ularni alohida rejalar bilan cheklash mumkin (masalan, «faqat 100% to'lovda»). To'lovlari bor turni o'chirib bo'lmaydi — uni qayta nomlang. Umumiy yozuvlarni faqat tizim administratori o'zgartiradi.",
+        "types_hint": "To'lov turi — jadval to'lovlari oladigan nom. Turga reja berilsa, u «To'lov rejasini hisoblash» kalkulyatorida variantga aylanadi va u bo'yicha bitim jadvalini bitta tugma bilan yaratish mumkin. Rejaning o'z chegirmasi yo'q: chegirmalar «Chegirmalar» bo'limida yaratiladi va ularni alohida rejalar bilan cheklash mumkin (masalan, «faqat 100% to'lovda»). To'lovlari bor turni o'chirib bo'lmaydi — uni qayta nomlang. Umumiy yozuvlarni faqat tizim administratori o'zgartiradi.",
         "accounts_hint": "To'lovlari bor hisobni o'chirib bo'lmaydi — uni qayta nomlang (masalan, «123» → «Payme»). Umumiy hisoblarni faqat tizim administratori o'zgartiradi.",
         "confirm_delete": "«{{name}}» o'chirilsinmi?",
         "add_type": "Tur qo'shish",
@@ -998,7 +998,7 @@
         "terms": "Shartlar",
         "terms_installment": "{{months}} oy, boshlang'ich {{down}}% dan",
         "terms_deferred": "Boshlang'ich {{down}}% dan, qoldiq {{months}} oydan keyin",
-        "plan_none_hint": "Shunchaki to'lov nomi — «Bo'lib to'lash» kalkulyatorida ishtirok etmaydi.",
+        "plan_none_hint": "Shunchaki to'lov nomi — «To'lov rejasini hisoblash» kalkulyatorida ishtirok etmaydi.",
         "plan_FULL_hint": "Butun summa bitta to'lovda. «100% to'lov uchun» chegirmasini «Chegirmalar» bo'limida yarating va unda shu rejani ko'rsating.",
         "plan_INSTALLMENT_hint": "Boshlang'ich to'lov (ko'rsatilgan foizdan kam emas) va har oy teng to'lovlar.",
         "plan_DEFERRED_hint": "Boshlang'ich to'lov va qoldiq ko'rsatilgan oylardan keyin bitta to'lovda (ipoteka). 0 — qoldiq darhol."
@@ -1528,8 +1528,8 @@
   },
   "installments": {
     "title": "To'lov variantlari",
-    "open_button": "Bo'lib to'lash",
-    "create_from_terms": "Bo'lib to'lash shartlari bo'yicha jadval yaratish",
+    "open_button": "To'lov rejasini hisoblash",
+    "create_from_terms": "To'lov rejasi bo'yicha jadval yaratish",
     "unit": "Obyekt",
     "base_price": "Narx",
     "converted_note": "Prays bo'yicha narx {{catalog}}, {{rate}} kurs bo'yicha qayta hisoblangan.",

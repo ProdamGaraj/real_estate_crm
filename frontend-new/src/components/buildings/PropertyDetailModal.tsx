@@ -214,7 +214,7 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
                 <Typography><b>{t('pages.properties.finishing')}:</b> {property.has_finishing ? t('common.yes') : t('common.no')}</Typography>
               </Stack>
 
-              <Stack direction="row" spacing={2} sx={{ mt: 2, mb: 2, flexWrap: 'wrap' }}>
+              <Stack direction="row" spacing={2} useFlexGap sx={{ mt: 2, mb: 2, flexWrap: 'wrap' }}>
                 {property.active_deal_id ? (
                   <Button
                     variant="contained"

@@ -17,8 +17,9 @@ WORKDIR /app
 # Копирование файла зависимостей
 COPY requirements.txt .
 
-# Установка Python зависимостей
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+# Установка Python зависимостей. Версия gunicorn закреплена: без неё пересборка
+# молча ставила новую мажорную версию (26 добавила управляющий сокет)
+RUN pip install --no-cache-dir -r requirements.txt "gunicorn==26.2.0"
 
 # Копирование исходного кода
 COPY . .
