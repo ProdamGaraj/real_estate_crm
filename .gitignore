@@ -42,6 +42,7 @@ backend/full_dump_utf8.json
 backend/full_dump_fixed.json
 backend/full_dump_clean.json
 backend/sqlite_export.json
+backend/__pycache__/
 *.sql
 backups
 all

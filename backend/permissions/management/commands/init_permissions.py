@@ -98,6 +98,22 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS(f'Создано {created_count} новых разрешений'))
 
+    @staticmethod
+    def _schedule_references():
+        """
+        Просмотр типов платежей и счетов получателей.
+
+        Без него у менеджера пусты списки «Тип платежа» и «Счёт» в графике
+        платежей и в калькуляторе плана оплаты — график не сохранить. Списки
+        и так ограничены своей компанией и общими записями, поэтому область
+        права значения не имеет.
+        """
+        return list(Permission.objects.filter(
+            action='VIEW',
+            resource__in=['PAYMENT_TYPE', 'BENEFICIARY_ACCOUNT'],
+            scope='COMPANY',
+        ))
+
     def _should_fill(self, role, created):
         """
         Заполнять ли состав прав типовой роли.
@@ -253,6 +269,7 @@ class Command(BaseCommand):
             
             role.permissions.set(
                 list(permissions) + list(view_permissions) + list(dashboard_perms)
+                + self._schedule_references()
             )
             self.stdout.write(self.style.SUCCESS(
                 f'  ✓ Создана роль: {role.name} ({role.permissions.count()} разрешений)'
@@ -304,8 +321,9 @@ class Command(BaseCommand):
             role.permissions.set(
                 list(own_permissions) + 
                 list(dept_view_permissions) + 
-                list(realty_view) + 
-                list(dashboard_perms)
+                list(realty_view) +
+                list(dashboard_perms) +
+                self._schedule_references()
             )
             self.stdout.write(self.style.SUCCESS(
                 f'  ✓ Создана роль: {role.name} ({role.permissions.count()} разрешений)'

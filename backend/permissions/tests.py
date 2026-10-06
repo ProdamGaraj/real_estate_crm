@@ -239,6 +239,29 @@ class InitPermissionsSyncGuardTests(TestCase):
         self.assertTrue(role.permissions.exists())
 
 
+@override_settings(
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+)
+class TypicalRolesScheduleReferencesTests(TestCase):
+    """Менеджер и руководитель отдела видят типы платежей и счета для графика."""
+
+    def test_schedule_references_are_readable(self):
+        call_command('init_permissions', stdout=_io.StringIO())
+        company = Company.objects.create(name='Справочники')
+        for code in ('MANAGER', 'DEPARTMENT_MANAGER'):
+            user = User.objects.create_user(f'u_{code.lower()}', password='pass-for-tests')
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.company = company
+            profile.save()
+            profile.roles.set([Role.objects.get(code=code)])
+            api = APIClient()
+            api.force_authenticate(User.objects.get(pk=user.pk))
+            for url in ('/api/finances/payment-types/', '/api/finances/beneficiary-accounts/'):
+                self.assertEqual(api.get(url).status_code, 200, (code, url))
+            # Изменять справочники эти роли по-прежнему не могут
+            self.assertEqual(api.post('/api/finances/payment-types/', {'name': 'X'}).status_code, 403, code)
+
+
 class InitPermissionsTypicalRolesTests(TestCase):
     """Типовые роли создаются только при первичной установке или по ключу."""
 
