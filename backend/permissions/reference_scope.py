@@ -45,6 +45,31 @@ def scope_reference_queryset(user, queryset):
     return queryset.filter(Q(company_id=profile.company_id) | Q(company__isnull=True))
 
 
+def company_for_new_record(request):
+    """
+    Компания новой записи справочника.
+
+    Обычный пользователь создаёт записи своей компании. Системный
+    администратор может указать компанию (``company``: id) или сделать
+    запись общесистемной (``company``: пусто). Без указания — своя компания,
+    как раньше: так у администратора из «СИСТЕМЫ» записи оседали в его
+    служебной компании и были не видны рабочим.
+    """
+    user = request.user
+    own = getattr(_profile(user), 'company', None)
+    data = getattr(request, 'data', None)
+    if is_admin(user) and data is not None and 'company' in data:
+        value = data.get('company')
+        if value in (None, '', 'null', 'shared'):
+            return None
+        from .models import Company
+        company = Company.objects.filter(pk=value).first()
+        if company is None:
+            raise ValidationError({'company': 'Компания не найдена.'})
+        return company
+    return own
+
+
 def with_shared_records(user, queryset, resource_type):
     """
     Записи по области видимости разрешений плюс общесистемные (без компании).
@@ -85,7 +110,7 @@ class CompanyScopedReferenceMixin:
 
         # Общесистемную запись (без компании) заводит только администратор
         if is_admin(user):
-            company = getattr(profile, 'company', None)
+            company = company_for_new_record(self.request)
         else:
             company = getattr(profile, 'company', None)
             if company is None:

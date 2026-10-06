@@ -968,7 +968,23 @@
         "entered_by": "Kim kiritgan",
         "confirm_delete": "Qo'lda kiritilgan kurs o'chirilsinmi? Bu sanada yana MB kursi amal qiladi."
       },
-      "installments_tab": "Bo'lib to'lash"
+      "finance_refs": {
+        "shared": "Barcha kompaniyalar uchun umumiy",
+        "plan": "To'lov rejasi",
+        "plan_none": "Rejasiz",
+        "plan_FULL": "100% darhol",
+        "plan_INSTALLMENT": "Boshlang'ich va oylik to'lovlar",
+        "plan_DEFERRED": "Boshlang'ich va qoldiq bitta to'lovda",
+        "months": "Muddat, oy",
+        "months_installment": "Oylik to'lovlar soni",
+        "months_deferred": "Qoldiq, necha oydan keyin",
+        "discount": "Chegirma, %",
+        "down_payment": "Eng kam boshlang'ich, %",
+        "types_hint": "To'lov turi — jadval to'lovlari oladigan nom. Turga reja berilsa, u «Bo'lib to'lash» kalkulyatorida variantga aylanadi va u bo'yicha bitim jadvalini bitta tugma bilan yaratish mumkin: «100% darhol» — butun summa bitta to'lovda; «Boshlang'ich va oylik to'lovlar» — boshlang'ich to'lov va har oy teng to'lovlar; «Boshlang'ich va qoldiq bitta to'lovda» — boshlang'ich to'lov va qoldiq ko'rsatilgan oylardan keyin (ipoteka).",
+        "edit_hint": "Yozuvni o'zgartirish uchun katakchani ikki marta bosing. To'lovlarda ishlatilgan turni o'chirib bo'lmaydi — uni qayta nomlash mumkin. Umumiy yozuvlarni faqat tizim administratori o'zgartiradi.",
+        "accounts_hint": "Nom yoki rekvizitlarni o'zgartirish uchun katakchani ikki marta bosing. To'lovlari bor hisobni o'chirib bo'lmaydi — uni qayta nomlang (masalan, «123» → «Payme»). Umumiy hisoblarni faqat tizim administratori o'zgartiradi.",
+        "confirm_delete": "«{{name}}» o'chirilsinmi?"
+      }
     },
     "api_keys": {
       "title": "Hamkor API-kalitlari",
@@ -1501,10 +1517,7 @@
     "applied_discounts": "Bitimda qo'llangan chegirmalar: {{percent}}% — muddat chegirmasiga qo'shilgan.",
     "converted_note": "Prays bo'yicha narx {{catalog}}, {{rate}} kurs bo'yicha qayta hisoblangan.",
     "no_rate": "{{currency}} kursi yo'q — hisob prays valyutasida.",
-    "no_terms": "Bo'lib to'lash shartlari sozlanmagan. Ularni rahbariyat belgilaydi: «Sozlamalar» → «Bo'lib to'lash».",
     "compare_title": "Muddatlarni solishtirish",
-    "full_payment": "100% to'lov",
-    "months": "{{months}} oy",
     "row_discount_percent": "Chegirma",
     "row_discount_amount": "Chegirma summasi",
     "row_price": "Chegirmali narx",
@@ -1527,28 +1540,22 @@
     "print_title": "To'lov variantlari",
     "popup_blocked": "Brauzer chop etish oynasini to'sib qo'ydi — bu sayt uchun qalqib chiquvchi oynalarga ruxsat bering.",
     "disclaimer": "Hisob dastlabki va oferta hisoblanmaydi. Kurs va shartlar — {{date}} holatiga.",
-    "down_type": "Boshlang'ich to'lov turi",
-    "monthly_type": "Oylik to'lovlar turi",
     "create_schedule": "Jadval yaratish",
     "creating": "Yaratilmoqda…",
     "create_confirm": "Shartnoma narxi {{price}} bo'ladi, jadvalda to'lovlar soni: {{count}}. Davom etilsinmi?",
     "created": "Jadval yaratildi. Shartnoma narxi — {{price}}. Uni qo'lda tuzatish mumkin.",
     "schedule_exists": "Bitimda jadval allaqachon bor — uni «To'lov jadvali» bosqichida tuzating.",
     "deal_read_only": "Bitim o'zgartirish uchun yopiq — jadval yaratib bo'lmaydi.",
-    "settings": {
-      "title": "Bo'lib to'lash shartlari",
-      "hint": "Har bir muddat uchun — chegirma va eng kam boshlang'ich to'lov. Ular bo'yicha menejerlar mijozga to'lov variantlarini ko'rsatadi va bitim jadvalini bitta tugma bilan yaratadi. Muddat 0 — butun summani darhol to'lash.",
-      "term": "Muddat",
-      "months": "Muddat, oy",
-      "months_hint": "0 — darhol to'lov",
-      "discount": "Chegirma, %",
-      "down_payment": "Eng kam boshlang'ich to'lov, %",
-      "active": "Amalda",
-      "confirm_delete": "«{{term}}» sharti o'chirilsinmi?"
-    },
-    "no_types": "Kompaniyada to'lov turlari yoki oluvchi hisobvaraqlari yo'q — jadval yaratib bo'lmaydi. Administratorga murojaat qiling.",
     "zero_price": "Chegirmali narx nolga teng chiqdi — bitim chegirmalarini tekshiring.",
     "no_rights": "Bitimni o'zgartirish yoki to'lov yaratish huquqi yo'q — jadvalni bitim menejeri yoki rahbar yaratadi.",
-    "create_confirm_replace": "Shartnoma narxi {{price}} bo'ladi (hozir {{current}}), jadvalda to'lovlar soni: {{count}}. Davom etilsinmi?"
+    "create_confirm_replace": "Shartnoma narxi {{price}} bo'ladi (hozir {{current}}), jadvalda to'lovlar soni: {{count}}. Davom etilsinmi?",
+    "no_plans": "To'lov rejalari sozlanmagan. Ularni rahbariyat belgilaydi: «Sozlamalar» → «Moliya» → rejali to'lov turi.",
+    "no_types_access": "To'lov turlariga kirish yo'q — to'lov rejalarini yuklab bo'lmaydi. Administratorga murojaat qiling.",
+    "no_accounts": "Kompaniyada oluvchi hisobvaraqlari yo'q — jadval yaratib bo'lmaydi. Administratorga murojaat qiling.",
+    "row_rest": "Qolgan to'lovlar",
+    "monthly_times": "{{count}} × {{amount}}",
+    "rest_after": "{{amount}} {{months}} oydan keyin",
+    "rest_now": "{{amount}} darhol",
+    "kind_rest": "Qoldiq"
   }
 }

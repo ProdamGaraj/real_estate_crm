@@ -12,6 +12,7 @@ import { BarChart } from '@mui/x-charts/BarChart';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useTheme } from '@mui/material/styles';
 import { useIsMobile } from '../hooks/useMobile';
+import { formatMoney } from '../utils/currency';
 
 
 // Вспомогательный компонент для карточек KPI
@@ -107,8 +108,8 @@ export default function DashboardPage() {
         <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
             <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_clients_today')} value={String(kpi.newClientsToday)} icon={<PeopleIcon />} compact={isMobile} /></Grid>
             <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_applications_today')} value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" compact={isMobile} /></Grid>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.monthly_sales')} value={`${kpi.monthlySales.toLocaleString()} ${moneyLabel}`} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={`${kpi.overduePayments.toLocaleString()} ${moneyLabel}`} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.monthly_sales')} value={formatMoney(kpi.monthlySales, moneyLabel, i18n.language)} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={formatMoney(kpi.overduePayments, moneyLabel, i18n.language)} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
         </Grid>
 
         {/* Блок воронок и графиков */}
@@ -210,7 +211,7 @@ export default function DashboardPage() {
                                 <ListItem key={index} divider>
                                     <ListItemText 
                                         primary={`${manager.first_name} ${manager.last_name}`} 
-                                        secondary={`${t('pages.dashboard.sales_label')} ${manager.total_sales.toLocaleString()} ${moneyLabel}`} 
+                                        secondary={`${t('pages.dashboard.sales_label')} ${formatMoney(manager.total_sales, moneyLabel, i18n.language)}`} 
                                         primaryTypographyProps={{ variant: isMobile ? 'body2' : 'body1' }}
                                         secondaryTypographyProps={{ variant: isMobile ? 'caption' : 'body2' }}
                                     />

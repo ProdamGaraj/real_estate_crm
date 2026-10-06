@@ -1,6 +1,7 @@
 # real_estate_crm/backend/apps/finances/views.py
 
 from rest_framework import generics, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,7 +25,9 @@ from django.http import HttpResponse
 from django.db.models import Sum, Count, Q
 from permissions.permissions import PaymentPermission, PaymentTypePermission, BeneficiaryAccountPermission, ReportPermission
 from permissions.backends import get_filtered_queryset, can_user_perform_action
-from permissions.reference_scope import CompanyScopedReferenceMixin, with_shared_records
+from permissions.reference_scope import (
+    CompanyScopedReferenceMixin, company_for_new_record, is_admin, with_shared_records,
+)
 from .currency import (
     CENT, Converter, RateUnavailable, company_base_currency, cross_rate, money, stored_rate,
     supported_currencies, user_company,
@@ -42,9 +45,28 @@ class ProtectedReferenceDeleteMixin:
 
     protected_message = 'Запись используется и не может быть удалена.'
 
+    def usage_count(self, instance):
+        """
+        Сколько записей ссылается на эту без защиты на уровне базы.
+
+        Тип платежа связан с платежами через SET_NULL: удаление проходило и
+        молча стирало тип у всех платежей графиков. Такие связи проверяем сами.
+        """
+        return 0
+
     def perform_destroy(self, instance):
         from django.db.models import ProtectedError
         from rest_framework.exceptions import ValidationError as DRFValidationError
+
+        # Проверка «общесистемную запись меняет только администратор» живёт в
+        # CompanyScopedReferenceMixin.perform_destroy, а этот метод стоит в MRO
+        # раньше и её обходил — удалить общий тип мог любой с правом удаления
+        ensure_editable = getattr(self, '_ensure_editable', None)
+        if ensure_editable:
+            ensure_editable(instance)
+        used_by = self.usage_count(instance)
+        if used_by:
+            raise DRFValidationError({'detail': f'{self.protected_message} Связанных записей: {used_by}.'})
 
         try:
             instance.delete()
@@ -264,10 +286,8 @@ class BeneficiaryAccountListView(generics.ListCreateAPIView):
         )
 
     def perform_create(self, serializer):
-        company = None
-        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
-            company = self.request.user.profile.company
-        serializer.save(company=company, created_by=self.request.user)
+        # Системный администратор выбирает компанию счёта или делает его общим
+        serializer.save(company=company_for_new_record(self.request), created_by=self.request.user)
 
 
 class DealPaymentScheduleCreateView(APIView):
@@ -514,27 +534,49 @@ class DealPaymentScheduleCreateView(APIView):
         return Response(resulting_payments, status=status.HTTP_201_CREATED)
 
 
-class PaymentTypeDetailView(ProtectedReferenceDeleteMixin, CompanyScopedReferenceMixin, generics.DestroyAPIView):
+class PaymentTypeDetailView(ProtectedReferenceDeleteMixin, CompanyScopedReferenceMixin,
+                            generics.RetrieveUpdateDestroyAPIView):
+    """Правка (название, план оплаты) и удаление типа платежа."""
     queryset = PaymentType.objects.all()
     serializer_class = PaymentTypeSerializer
     permission_classes = [IsAuthenticated, PaymentTypePermission]
-    protected_message = 'Этот тип платежа используется в графиках платежей.'
+    protected_message = (
+        'Этот тип платежа есть в графиках платежей, поэтому удалить его нельзя: '
+        'платежи потеряли бы тип. Переименуйте его или заведите новый.'
+    )
+
+    def usage_count(self, instance):
+        return Payment.objects.filter(payment_type=instance).count()
 
 
-class BeneficiaryAccountDetailView(ProtectedReferenceDeleteMixin, generics.DestroyAPIView):
+class BeneficiaryAccountDetailView(ProtectedReferenceDeleteMixin, generics.RetrieveUpdateDestroyAPIView):
+    """Правка (название, реквизиты) и удаление счёта получателя."""
     serializer_class = BeneficiaryAccountSerializer
     permission_classes = [IsAuthenticated, BeneficiaryAccountPermission]
     protected_message = (
         'По этому счёту получателя есть платежи, поэтому удалить его нельзя. '
-        'Заведите новый счёт, а этот оставьте для истории.'
+        'Переименуйте его или заведите новый счёт, а этот оставьте для истории.'
     )
 
     def get_queryset(self):
-        return get_filtered_queryset(
+        # Общие счета видны всем — иначе на попытку их изменить приходил
+        # непонятный ответ «не найдено» вместо объяснения
+        return with_shared_records(
             self.request.user,
             BeneficiaryAccount.objects.all(),
             'BENEFICIARY_ACCOUNT'
         )
+
+    def _ensure_editable(self, instance):
+        if instance.company_id is None and not is_admin(self.request.user):
+            raise PermissionDenied(
+                'Это общий счёт для всех компаний. Изменить или удалить его может только '
+                'системный администратор.'
+            )
+
+    def perform_update(self, serializer):
+        self._ensure_editable(serializer.instance)
+        serializer.save()
 
 
 class PaymentDetailView(generics.RetrieveUpdateAPIView):

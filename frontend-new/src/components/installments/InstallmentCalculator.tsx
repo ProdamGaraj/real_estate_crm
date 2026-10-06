@@ -1,15 +1,17 @@
 // real_estate_crm/frontend-new/src/components/installments/InstallmentCalculator.tsx
 
 /**
- * Калькулятор рассрочки: варианты оплаты по условиям компании.
+ * Калькулятор вариантов оплаты по планам компании.
  *
- * Сверху — сравнение всех сроков (скидка, цена, взнос, ежемесячный платёж),
- * ниже — помесячный график выбранного срока. Таблицу можно распечатать или
- * сохранить в PDF, чтобы показать клиенту.
+ * План оплаты — это тип платежа с заданными условиями («Рассрочка на
+ * 12 месяцев», «100% оплата», «Ипотека»): вид плана, срок, скидка и
+ * минимальный первоначальный взнос. Сверху — сравнение всех планов, ниже —
+ * график выбранного. Таблицу можно распечатать или сохранить в PDF, чтобы
+ * показать клиенту.
  *
  * В сделке доступна кнопка «Создать график»: стоимость по договору становится
- * ценой выбранного варианта, а график сохраняется строками этого варианта.
- * Дальше график правится вручную, как обычно.
+ * ценой выбранного варианта, а график сохраняется строками этого варианта —
+ * все платежи получают тип выбранного плана. Дальше график правится вручную.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -23,24 +25,16 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
 import LocalizedDateField from '../common/LocalizedDateField';
-import { getInstallmentTerms } from '../../api/installments';
 import { getBeneficiaryAccounts, getPaymentTypes } from '../../api/finances';
+import type { PaymentType } from '../../api/finances';
 import { useIsMobile } from '../../hooks/useMobile';
 import { formatMoney } from '../../utils/currency';
-import { buildVariant, todayIso } from '../../utils/installments';
+import { buildVariant, comparePlans, isPlan, todayIso } from '../../utils/installments';
 import type { InstallmentVariant } from '../../utils/installments';
 
 export interface ScheduleOptions {
-  /** Тип платежа для оплаты всей суммой сразу (срок 0) */
-  fullPaymentTypeId: number;
-  downPaymentTypeId: number;
-  monthlyPaymentTypeId: number;
   accountId: number;
 }
-
-/** Тип платежа строки графика по её виду */
-export const paymentTypeFor = (kind: 'full' | 'down' | 'monthly', options: ScheduleOptions) =>
-  (kind === 'full' ? options.fullPaymentTypeId : kind === 'down' ? options.downPaymentTypeId : options.monthlyPaymentTypeId);
 
 interface InstallmentCalculatorProps {
   open: boolean;
@@ -48,12 +42,13 @@ interface InstallmentCalculatorProps {
   /** Цена, от которой считаются скидки, в валюте currency */
   basePrice: number | null;
   currency: string;
-  /** Скидки, уже применённые в сделке, % — складываются со скидкой за срок */
+  /** Скидки, уже применённые в сделке, % — складываются со скидкой плана */
   extraDiscountPercent?: number;
   /** Строки шапки для экрана и печати: проект, дом, объект, площадь */
   heading: string[];
   /** Пояснение к цене, например пересчёт из прайса по курсу */
   priceNote?: string | null;
+  /** Компания сделки: системному администратору показываем только её планы и общие */
   companyId?: number | null;
   /** Только в сделке: создать график по выбранному варианту */
   onCreateSchedule?: (variant: InstallmentVariant, options: ScheduleOptions) => void;
@@ -66,10 +61,6 @@ interface InstallmentCalculatorProps {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** Тип платежа по названию: «Первоначальный взнос», «Рассрочка» — если такие заведены */
-const findType = (types: { id: number; name: string }[] | undefined, words: string[]) =>
-  types?.find(type => words.some(word => type.name.toLowerCase().includes(word)))?.id ?? types?.[0]?.id ?? 0;
-
 export default function InstallmentCalculator({
   open, onClose, basePrice, currency, extraDiscountPercent = 0, heading, priceNote, companyId,
   onCreateSchedule, createDisabledReason, isCreating, currentContractPrice,
@@ -79,21 +70,23 @@ export default function InstallmentCalculator({
   const money = (value: number) => formatMoney(value, currency, i18n.language);
   const dateText = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString(i18n.language);
 
-  const { data: terms, isLoading } = useQuery({
-    queryKey: ['installmentTerms', companyId ?? null],
-    queryFn: () => getInstallmentTerms({ company: companyId }),
-    enabled: open,
-  });
   const scheduleMode = Boolean(onCreateSchedule);
-  const { data: paymentTypes } = useQuery({ queryKey: ['paymentTypes'], queryFn: getPaymentTypes, enabled: open && scheduleMode });
-  const { data: accounts } = useQuery({ queryKey: ['beneficiaryAccounts'], queryFn: getBeneficiaryAccounts, enabled: open && scheduleMode });
+  const typesQuery = useQuery({ queryKey: ['paymentTypes'], queryFn: getPaymentTypes, enabled: open });
+  const { data: accounts } = useQuery({
+    queryKey: ['beneficiaryAccounts'], queryFn: getBeneficiaryAccounts, enabled: open && scheduleMode,
+  });
+
+  // Планы — типы платежей с заданным планом. Системный администратор видит
+  // справочники всех компаний: в сделке оставляем планы её компании и общие
+  const plans = useMemo(() => (typesQuery.data ?? [])
+    .filter(isPlan)
+    .filter(plan => !companyId || plan.company === null || plan.company === companyId)
+    .sort(comparePlans), [typesQuery.data, companyId]);
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [downPercent, setDownPercent] = useState<string>('');
   const [startDate, setStartDate] = useState(todayIso());
-  const [options, setOptions] = useState<ScheduleOptions>({
-    fullPaymentTypeId: 0, downPaymentTypeId: 0, monthlyPaymentTypeId: 0, accountId: 0,
-  });
+  const [accountId, setAccountId] = useState(0);
 
   useEffect(() => {
     if (open) {
@@ -103,49 +96,55 @@ export default function InstallmentCalculator({
   }, [open]);
 
   useEffect(() => {
-    if (terms?.length && !terms.some(term => term.id === selectedId)) {
-      setSelectedId(terms[0].id);
+    if (plans.length && !plans.some(plan => plan.id === selectedId)) {
+      setSelectedId(plans[0].id);
     }
-  }, [terms, selectedId]);
+  }, [plans, selectedId]);
 
   useEffect(() => {
-    if (paymentTypes && accounts) {
-      setOptions({
-        fullPaymentTypeId: findType(paymentTypes, ['полн', '100', "to'liq", 'to‘liq']),
-        downPaymentTypeId: findType(paymentTypes, ['взнос', 'первонач', 'boshlang']),
-        monthlyPaymentTypeId: findType(paymentTypes, ['рассроч', "bo'lib", 'bo‘lib']),
-        accountId: accounts[0]?.id ?? 0,
-      });
+    if (accounts && !accounts.some(account => account.id === accountId)) {
+      setAccountId(accounts[0]?.id ?? 0);
     }
-  }, [paymentTypes, accounts]);
+  }, [accounts, accountId]);
 
-  // Сравнение сроков — по минимальному взносу; выбранный срок — с учётом введённого взноса
-  const variants = useMemo(() => (basePrice && terms ? terms.map(term => buildVariant(basePrice, term, {
+  // Сравнение — по минимальному взносу; выбранный план — с учётом введённого взноса
+  const variants = useMemo(() => (basePrice ? plans.map(plan => buildVariant(basePrice, plan, {
     currency, startDate, extraDiscountPercent,
-  })) : []), [basePrice, terms, currency, startDate, extraDiscountPercent]);
+  })) : []), [basePrice, plans, currency, startDate, extraDiscountPercent]);
 
-  const selectedTerm = terms?.find(term => term.id === selectedId) ?? null;
-  const selected = useMemo(() => (basePrice && selectedTerm ? buildVariant(basePrice, selectedTerm, {
+  const selectedPlan: PaymentType | null = plans.find(plan => plan.id === selectedId) ?? null;
+  const selected = useMemo(() => (basePrice && selectedPlan ? buildVariant(basePrice, selectedPlan, {
     currency, startDate, extraDiscountPercent,
     downPaymentPercent: downPercent === '' ? undefined : Number(downPercent),
-  }) : null), [basePrice, selectedTerm, currency, startDate, extraDiscountPercent, downPercent]);
+  }) : null), [basePrice, selectedPlan, currency, startDate, extraDiscountPercent, downPercent]);
 
-  const termLabel = (months: number) =>
-    (months === 0 ? t('installments.full_payment') : t('installments.months', { months }));
   const kindLabel = (kind: string) => t(`installments.kind_${kind}`);
+  /** Как платится остаток после взноса: «12 × 13 700 000 UZS», «164 409 353 UZS через 3 мес.» */
+  const restText = (v: InstallmentVariant) => {
+    if (v.plan.plan_kind === 'FULL') return '—';
+    if (v.plan.plan_kind === 'DEFERRED') {
+      return v.plan.plan_months > 0
+        ? t('installments.rest_after', { amount: money(v.rest), months: v.plan.plan_months })
+        : t('installments.rest_now', { amount: money(v.rest) });
+    }
+    return t('installments.monthly_times', { count: Math.max(1, v.plan.plan_months), amount: money(v.monthly) });
+  };
 
   const comparisonRows: { label: string; value: (v: InstallmentVariant) => string }[] = [
     { label: t('installments.row_discount_percent'), value: v => `${v.discountPercent}%` },
     { label: t('installments.row_discount_amount'), value: v => money(v.discountAmount) },
     { label: t('installments.row_price'), value: v => money(v.price) },
-    { label: t('installments.row_down'), value: v => (v.months === 0 ? '—' : `${money(v.downPayment)} (${v.downPaymentPercent}%)`) },
-    { label: t('installments.row_monthly'), value: v => (v.months === 0 ? '—' : money(v.monthly)) },
+    {
+      label: t('installments.row_down'),
+      value: v => (v.plan.plan_kind === 'FULL' ? '—' : `${money(v.downPayment)} (${v.downPaymentPercent}%)`),
+    },
+    { label: t('installments.row_rest'), value: restText },
   ];
 
   const handlePrint = () => {
     if (!selected) return;
     const head = heading.map(line => `<div>${escapeHtml(line)}</div>`).join('');
-    const compareHead = variants.map(v => `<th>${escapeHtml(termLabel(v.months))}</th>`).join('');
+    const compareHead = variants.map(v => `<th>${escapeHtml(v.plan.name)}</th>`).join('');
     const compareBody = comparisonRows.map(row =>
       `<tr><th class="l">${escapeHtml(row.label)}</th>${variants.map(v => `<td>${escapeHtml(row.value(v))}</td>`).join('')}</tr>`
     ).join('');
@@ -160,7 +159,7 @@ export default function InstallmentCalculator({
   h1{font-size:20px;margin:0 0 8px} h2{font-size:15px;margin:24px 0 8px}
   .head div{margin:2px 0} .note{color:#555;margin-top:6px}
   table{border-collapse:collapse;width:100%} th,td{border:1px solid #bbb;padding:5px 8px;text-align:right}
-  th{background:#f2f2f2} .l{text-align:left} .sel{background:#e8f0fe}
+  th{background:#f2f2f2} .l{text-align:left}
   .foot{color:#555;margin-top:16px;font-size:12px}
   @media print{body{margin:10mm}}
 </style></head><body>
@@ -169,7 +168,7 @@ export default function InstallmentCalculator({
 ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
 <h2>${escapeHtml(t('installments.compare_title'))}</h2>
 <table><thead><tr><th class="l"></th>${compareHead}</tr></thead><tbody>${compareBody}</tbody></table>
-<h2>${escapeHtml(t('installments.schedule_title', { variant: termLabel(selected.months) }))}</h2>
+<h2>${escapeHtml(t('installments.schedule_title', { variant: selected.plan.name }))}</h2>
 <table><thead><tr><th>${escapeHtml(t('installments.col_number'))}</th><th>${escapeHtml(t('installments.col_date'))}</th>
 <th class="l">${escapeHtml(t('installments.col_kind'))}</th><th>${escapeHtml(t('installments.col_amount'))}</th>
 <th>${escapeHtml(t('installments.col_balance'))}</th></tr></thead><tbody>${scheduleBody}</tbody>
@@ -195,23 +194,22 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
         })
       : t('installments.create_confirm', { price: money(selected.price), count: selected.rows.length });
     if (window.confirm(message)) {
-      onCreateSchedule(selected, options);
+      onCreateSchedule(selected, { accountId });
     }
   };
 
-  const minDown = Number(selectedTerm?.down_payment_percent ?? 0);
+  const hasDownPayment = selectedPlan !== null && selectedPlan.plan_kind !== 'FULL';
+  const minDown = Number(selectedPlan?.down_payment_percent ?? 0);
   const downInvalid = downPercent !== '' && (Number(downPercent) < minDown || Number(downPercent) >= 100);
   // Почему график по варианту создать нельзя — показываем, а не просто гасим кнопку
   let blockReason = createDisabledReason ?? null;
-  if (!blockReason && scheduleMode && paymentTypes && accounts && (!paymentTypes.length || !accounts.length)) {
-    blockReason = t('installments.no_types');
+  if (!blockReason && scheduleMode && accounts && !accounts.length) {
+    blockReason = t('installments.no_accounts');
   }
   if (!blockReason && selected && (selected.price <= 0 || !selected.rows.length)) {
     blockReason = t('installments.zero_price');
   }
-  const typesChosen = Boolean(selected) && options.accountId > 0
-    && selected!.rows.every(row => paymentTypeFor(row.kind, options) > 0);
-  const canCreate = Boolean(selected) && !blockReason && !downInvalid && typesChosen;
+  const canCreate = Boolean(selected) && !blockReason && !downInvalid && accountId > 0;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" fullScreen={isMobile}>
@@ -231,8 +229,9 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
             )}
           </Box>
 
-          {isLoading && <CircularProgress />}
-          {!isLoading && !terms?.length && <Alert severity="info">{t('installments.no_terms')}</Alert>}
+          {typesQuery.isLoading && <CircularProgress />}
+          {typesQuery.isError && <Alert severity="warning">{t('installments.no_types_access')}</Alert>}
+          {typesQuery.isSuccess && !plans.length && <Alert severity="info">{t('installments.no_plans')}</Alert>}
 
           {variants.length > 0 && (
             <>
@@ -244,17 +243,17 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
                       <TableCell />
                       {variants.map(v => (
                         <TableCell
-                          key={v.term.id}
+                          key={v.plan.id}
                           align="right"
                           onClick={() => {
-                            // Взнос, введённый для прежнего срока, мог быть ниже минимума нового
-                            setSelectedId(v.term.id);
+                            // Взнос, введённый для прежнего плана, мог быть ниже минимума нового
+                            setSelectedId(v.plan.id);
                             setDownPercent('');
                           }}
-                          sx={{ cursor: 'pointer', whiteSpace: 'nowrap', bgcolor: v.term.id === selectedId ? 'action.selected' : undefined }}
+                          sx={{ cursor: 'pointer', bgcolor: v.plan.id === selectedId ? 'action.selected' : undefined }}
                         >
-                          <Radio size="small" checked={v.term.id === selectedId} sx={{ p: 0.5 }} />
-                          {termLabel(v.months)}
+                          <Radio size="small" checked={v.plan.id === selectedId} sx={{ p: 0.5 }} />
+                          {v.plan.name}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -265,9 +264,9 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
                         <TableCell component="th">{row.label}</TableCell>
                         {variants.map(v => (
                           <TableCell
-                            key={v.term.id}
+                            key={v.plan.id}
                             align="right"
-                            sx={{ whiteSpace: 'nowrap', bgcolor: v.term.id === selectedId ? 'action.selected' : undefined }}
+                            sx={{ whiteSpace: 'nowrap', bgcolor: v.plan.id === selectedId ? 'action.selected' : undefined }}
                           >
                             {row.value(v)}
                           </TableCell>
@@ -282,9 +281,9 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
 
           {selected && (
             <>
-              <Typography variant="subtitle1">{t('installments.schedule_title', { variant: termLabel(selected.months) })}</Typography>
+              <Typography variant="subtitle1">{t('installments.schedule_title', { variant: selected.plan.name })}</Typography>
               <Grid container spacing={2}>
-                {selected.months > 0 && (
+                {hasDownPayment && (
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       label={t('installments.down_percent')}
@@ -306,6 +305,21 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
                     onChange={(date) => setStartDate(date || todayIso())}
                   />
                 </Grid>
+                {scheduleMode && !blockReason && (
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    {/* Тип платежа у всех строк — выбранный план; остаётся выбрать счёт */}
+                    <FormControl fullWidth size="small">
+                      <InputLabel>{t('finances.account')}</InputLabel>
+                      <Select
+                        label={t('finances.account')}
+                        value={accountId || ''}
+                        onChange={(e) => setAccountId(Number(e.target.value))}
+                      >
+                        {accounts?.map(account => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                )}
               </Grid>
               <TableContainer sx={{ maxHeight: 360 }}>
                 <Table size="small" stickyHeader>
@@ -339,56 +353,7 @@ ${priceNote ? `<div class="note">${escapeHtml(priceNote)}</div>` : ''}</div>
             </>
           )}
 
-          {scheduleMode && selected && (
-            <>
-              {blockReason && <Alert severity="info">{blockReason}</Alert>}
-              {!blockReason && (
-                <Grid container spacing={2}>
-                  {selected.months > 0 && (
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>{t('installments.down_type')}</InputLabel>
-                        <Select
-                          label={t('installments.down_type')}
-                          value={options.downPaymentTypeId || ''}
-                          onChange={(e) => setOptions(prev => ({ ...prev, downPaymentTypeId: Number(e.target.value) }))}
-                        >
-                          {paymentTypes?.map(type => <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>)}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  )}
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    {/* Полная оплата и ежемесячные платежи — разные типы платежа */}
-                    <FormControl fullWidth size="small">
-                      <InputLabel>{selected.months > 0 ? t('installments.monthly_type') : t('finances.payment_type')}</InputLabel>
-                      <Select
-                        label={selected.months > 0 ? t('installments.monthly_type') : t('finances.payment_type')}
-                        value={(selected.months > 0 ? options.monthlyPaymentTypeId : options.fullPaymentTypeId) || ''}
-                        onChange={(e) => setOptions(prev => (selected.months > 0
-                          ? { ...prev, monthlyPaymentTypeId: Number(e.target.value) }
-                          : { ...prev, fullPaymentTypeId: Number(e.target.value) }))}
-                      >
-                        {paymentTypes?.map(type => <MenuItem key={type.id} value={type.id}>{type.name}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>{t('finances.account')}</InputLabel>
-                      <Select
-                        label={t('finances.account')}
-                        value={options.accountId || ''}
-                        onChange={(e) => setOptions(prev => ({ ...prev, accountId: Number(e.target.value) }))}
-                      >
-                        {accounts?.map(account => <MenuItem key={account.id} value={account.id}>{account.name}</MenuItem>)}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              )}
-            </>
-          )}
+          {scheduleMode && selected && blockReason && <Alert severity="info">{blockReason}</Alert>}
 
           <Typography variant="caption" color="text.secondary">
             {t('installments.disclaimer', { date: dateText(todayIso()) })}

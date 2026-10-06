@@ -6,12 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { getPlanFactReport, downloadPlanTemplate, uploadPlan, type ReportFilters } from '../../api/reports';
 import { useIsMobile } from '../../hooks/useMobile';
 import { extractApiError } from '../../utils/apiError';
+import { formatNumber } from '../../utils/currency';
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
 export default function ProjectReport() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const num = (value: number) => formatNumber(value, i18n.language);
     const isMobile = useIsMobile();
     const [filters, setFilters] = useState<ReportFilters | null>(null);
     const queryClient = useQueryClient();
@@ -190,18 +192,18 @@ export default function ProjectReport() {
                                             {project.project_name}
                                         </Typography>
                                     </TableCell>
-                                    <TableCell align="right">{project.contracting_units.plan.toLocaleString()}</TableCell>
-                                    <TableCell align="right">{project.contracting_units.fact.toLocaleString()}</TableCell>
+                                    <TableCell align="right">{num(project.contracting_units.plan)}</TableCell>
+                                    <TableCell align="right">{num(project.contracting_units.fact)}</TableCell>
                                     <TableCell align="right">{project.contracting_units.percentage}%</TableCell>
-                                    <TableCell align="right" sx={separatorStyle}>{project.contracting_units.forecast.toLocaleString()} ({project.contracting_units.forecast_percentage}%)</TableCell>
-                                    <TableCell align="right">{project.contracting_money.plan.toLocaleString()}</TableCell>
-                                    <TableCell align="right">{project.contracting_money.fact.toLocaleString()}</TableCell>
+                                    <TableCell align="right" sx={separatorStyle}>{num(project.contracting_units.forecast)} ({project.contracting_units.forecast_percentage}%)</TableCell>
+                                    <TableCell align="right">{num(project.contracting_money.plan)}</TableCell>
+                                    <TableCell align="right">{num(project.contracting_money.fact)}</TableCell>
                                     <TableCell align="right">{project.contracting_money.percentage}%</TableCell>
-                                    <TableCell align="right" sx={separatorStyle}>{project.contracting_money.forecast.toLocaleString()} ({project.contracting_money.forecast_percentage}%)</TableCell>
-                                    <TableCell align="right">{project.revenue_money.plan.toLocaleString()}</TableCell>
-                                    <TableCell align="right">{project.revenue_money.fact.toLocaleString()}</TableCell>
+                                    <TableCell align="right" sx={separatorStyle}>{num(project.contracting_money.forecast)} ({project.contracting_money.forecast_percentage}%)</TableCell>
+                                    <TableCell align="right">{num(project.revenue_money.plan)}</TableCell>
+                                    <TableCell align="right">{num(project.revenue_money.fact)}</TableCell>
                                     <TableCell align="right">{project.revenue_money.percentage}%</TableCell>
-                                    <TableCell align="right">{project.revenue_money.forecast.toLocaleString()} ({project.revenue_money.forecast_percentage}%)</TableCell>
+                                    <TableCell align="right">{num(project.revenue_money.forecast)} ({project.revenue_money.forecast_percentage}%)</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

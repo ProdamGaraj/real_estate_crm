@@ -6,15 +6,43 @@ import type { DealListItem } from './deals';
 // --- ИНТЕРФЕЙСЫ ---
 
 // Справочники
+
+/**
+ * План оплаты типа платежа:
+ * FULL — вся сумма сразу; INSTALLMENT — взнос и ежемесячные платежи;
+ * DEFERRED — взнос и остаток одним платежом через plan_months (ипотека).
+ * Пусто — тип без плана, просто название платежа.
+ */
+export type PlanKind = '' | 'FULL' | 'INSTALLMENT' | 'DEFERRED';
+
 export interface PaymentType {
   id: number;
   name: string;
+  /** Пусто — общий для всех компаний (меняет только системный администратор) */
+  company: number | null;
+  company_name: string | null;
+  plan_kind: PlanKind;
+  plan_months: number;
+  discount_percent: string;
+  down_payment_percent: string;
 }
+
+export type PaymentTypePayload = Partial<Omit<PaymentType, 'id' | 'company' | 'company_name'>> & {
+  /** Только системный администратор: id компании или null — общий тип */
+  company?: number | null;
+};
 
 export interface BeneficiaryAccount {
   id: number;
   name: string;
+  details: string;
+  company: number | null;
+  company_name: string | null;
 }
+
+export type BeneficiaryAccountPayload = Partial<Pick<BeneficiaryAccount, 'name' | 'details'>> & {
+  company?: number | null;
+};
 
 // Платеж
 export interface Payment {
@@ -150,8 +178,11 @@ export const getPaymentTypes = async (): Promise<PaymentType[]> => {
   const response = await apiClient.get('/finances/payment-types/');
   return response.data;
 };
-export const createPaymentType = async (payload: { name: string }): Promise<PaymentType> => {
+export const createPaymentType = async (payload: PaymentTypePayload): Promise<PaymentType> => {
   return (await apiClient.post('/finances/payment-types/', payload)).data;
+};
+export const updatePaymentType = async ({ id, payload }: { id: number; payload: PaymentTypePayload }): Promise<PaymentType> => {
+  return (await apiClient.patch(`/finances/payment-types/${id}/`, payload)).data;
 };
 export const deletePaymentType = async (id: number): Promise<void> => {
   await apiClient.delete(`/finances/payment-types/${id}/`);
@@ -165,8 +196,13 @@ export const createPaymentSchedule = async ({ dealId, payments }: { dealId: numb
   const response = await apiClient.post(`/deals/${dealId}/payment-schedule/`, payments);
   return response.data;
 };
-export const createBeneficiaryAccount = async (payload: { name: string; details: string }): Promise<BeneficiaryAccount> => {
+export const createBeneficiaryAccount = async (payload: BeneficiaryAccountPayload): Promise<BeneficiaryAccount> => {
   return (await apiClient.post('/finances/beneficiary-accounts/', payload)).data;
+};
+export const updateBeneficiaryAccount = async (
+  { id, payload }: { id: number; payload: BeneficiaryAccountPayload }
+): Promise<BeneficiaryAccount> => {
+  return (await apiClient.patch(`/finances/beneficiary-accounts/${id}/`, payload)).data;
 };
 export const deleteBeneficiaryAccount = async (id: number): Promise<void> => {
   await apiClient.delete(`/finances/beneficiary-accounts/${id}/`);

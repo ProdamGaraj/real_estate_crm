@@ -105,7 +105,13 @@ export default function LocalizedDataGrid(props: DataGridProps) {
   const localeText = useMemo(() => {
     // Use official MUI localization for Russian
     if (lang === 'ru') {
-      return ruRU.components.MuiDataGrid.defaultProps.localeText;
+      return {
+        ...ruRU.components.MuiDataGrid.defaultProps.localeText,
+        // В официальной локали строка закомментирована, и подвал таблицы
+        // показывал английское «1–5 of 5» рядом с русским «Строк на странице»
+        paginationDisplayedRows: ({ from, to, count }: { from: number; to: number; count: number }) =>
+          `${from}–${to} из ${count !== -1 ? count : `более ${to}`}`,
+      };
     }
     // Use custom localization for Uzbek and others
     return getDataGridLocaleText(lang);

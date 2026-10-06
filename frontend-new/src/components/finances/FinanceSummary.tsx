@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getFinanceSummary, downloadFinanceSummary, type FinanceSummaryFilters } from '../../api/finances';
 import { translatePaymentStatus } from '../../utils/translations';
+import { formatNumber } from '../../utils/currency';
 import { Link as RouterLink } from 'react-router-dom';
 import {
     Box,
@@ -27,19 +28,22 @@ import { LocalizedDateField } from '../common/LocalizedDateField';
 
 type GroupBy = 'status' | 'project' | 'manager';
 
-const KpiCard = ({ title, value, color = 'text.primary', linkTo }: { title: string; value: number; color?: string, linkTo?: object }) => (
-    <Card sx={{ height: '100%', textDecoration: 'none' }} component={RouterLink} to="/finances" state={linkTo}>
-        <CardContent sx={{ textAlign: 'center' }}>
-            <Typography color="text.secondary">{title}</Typography>
-            <Typography variant="h4" component="div" color={color}>
-                {value.toLocaleString()}
-            </Typography>
-        </CardContent>
-    </Card>
-);
+const KpiCard = ({ title, value, color = 'text.primary', linkTo }: { title: string; value: number; color?: string, linkTo?: object }) => {
+    const { i18n } = useTranslation();
+    return (
+        <Card sx={{ height: '100%', textDecoration: 'none' }} component={RouterLink} to="/finances" state={linkTo}>
+            <CardContent sx={{ textAlign: 'center' }}>
+                <Typography color="text.secondary">{title}</Typography>
+                <Typography variant="h4" component="div" color={color}>
+                    {formatNumber(value, i18n.language)}
+                </Typography>
+            </CardContent>
+        </Card>
+    );
+};
 
 export default function FinanceSummary() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [filters, setFilters] = useState<FinanceSummaryFilters>({ group_by: 'status' });
 
     const { control, watch } = useForm<FinanceSummaryFilters>({
@@ -77,7 +81,7 @@ export default function FinanceSummary() {
             valueFormatter: (value: string, _row, column) => (column.field === 'Status' ? translatePaymentStatus(value) : value),
         },
         { field: 'Currency', headerName: t('pages.finances.currency'), width: 110 },
-        { field: 'Total Amount', headerName: t('pages.finances.total_amount'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '0' },
+        { field: 'Total Amount', headerName: t('pages.finances.total_amount'), flex: 1, valueFormatter: (value: number) => formatNumber(value || 0, i18n.language) },
     ];
 
     const handleDownload = () => {

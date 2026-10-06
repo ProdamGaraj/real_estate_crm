@@ -15,7 +15,6 @@ import TemplateManager from '../components/settings/TemplateManager';
 import TemplateTagsCheatSheet from '../components/settings/TemplateTagsCheatSheet';
 import PartnerAPIKeyManager from '../components/settings/PartnerAPIKeyManager';
 import CurrencySettingsManager from '../components/settings/CurrencySettingsManager';
-import InstallmentPlanManager from '../components/settings/InstallmentPlanManager';
 import CompaniesPage from './permissions/CompaniesPage';
 import DepartmentsPage from './permissions/DepartmentsPage';
 import RolesPage from './permissions/RolesPage';
@@ -135,11 +134,12 @@ export default function SettingsPage() {
 
         {/* Вкладка "Финансы" */}
         <TabPanel active={activeTabId === 'finances'}>
+           {/* Типы платежей с планами оплаты — широкая таблица, поэтому блоки друг под другом */}
            <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12 }}>
               <PaymentTypeManager />
             </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
+            <Grid size={{ xs: 12 }}>
               <BeneficiaryAccountManager />
             </Grid>
           </Grid>
@@ -148,11 +148,6 @@ export default function SettingsPage() {
         {/* Вкладка "Валюты" */}
         <TabPanel active={activeTabId === 'currencies'}>
           <CurrencySettingsManager />
-        </TabPanel>
-
-        {/* Вкладка "Рассрочка" */}
-        <TabPanel active={activeTabId === 'installments'}>
-          <InstallmentPlanManager />
         </TabPanel>
 
         {/* Вкладка "Шаблоны" */}

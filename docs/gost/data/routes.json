@@ -427,10 +427,13 @@
  {
   "path": "/api/finances/payment-types/<int:pk>/",
   "methods": [
-   "DELETE"
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
   ],
   "view": "apps.finances.views.PaymentTypeDetailView",
-  "doc": ""
+  "doc": "Правка (название, план оплаты) и удаление типа платежа."
  },
  {
   "path": "/api/finances/beneficiary-accounts/",
@@ -444,10 +447,13 @@
  {
   "path": "/api/finances/beneficiary-accounts/<int:pk>/",
   "methods": [
-   "DELETE"
+   "DELETE",
+   "GET",
+   "PATCH",
+   "PUT"
   ],
   "view": "apps.finances.views.BeneficiaryAccountDetailView",
-  "doc": ""
+  "doc": "Правка (название, реквизиты) и удаление счёта получателя."
  },
  {
   "path": "/api/finances/payments/<int:pk>/",
@@ -516,24 +522,6 @@
   ],
   "view": "apps.finances.currency_views.ExchangeRateDetailView",
   "doc": "Удаление ручного курса своей компании. Курсы ЦБ не удаляются."
- },
- {
-  "path": "/api/finances/installment-plans/",
-  "methods": [
-   "GET",
-   "POST"
-  ],
-  "view": "apps.finances.installment_views.InstallmentPlanListView",
-  "doc": "GET — условия компании (с ``all=1`` — и отключённые); POST — новое условие."
- },
- {
-  "path": "/api/finances/installment-plans/<int:pk>/",
-  "methods": [
-   "DELETE",
-   "PATCH"
-  ],
-  "view": "apps.finances.installment_views.InstallmentPlanDetailView",
-  "doc": "PATCH — изменить условие, DELETE — удалить. Только условия своей компании."
  },
  {
   "path": "/api/templates/",

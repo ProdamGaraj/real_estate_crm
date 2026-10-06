@@ -1,5 +1,7 @@
 # real_estate_crm/backend/apps/finances/serializers.py
 
+from decimal import Decimal
+
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework import serializers
@@ -7,13 +9,50 @@ from .models import Payment, PaymentType, BeneficiaryAccount
 from apps.crm.serializers import ClientListSerializer
 
 class PaymentTypeSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True, default=None)
+
     class Meta:
         model = PaymentType
         fields = '__all__'
-        # Компанию проставляет представление по профилю пользователя
+        # Компанию проставляет представление: по профилю, а системному
+        # администратору — по его выбору
         read_only_fields = ['company']
 
+    MAX_MONTHS = 120
+
+    def validate(self, data):
+        def current(field, default):
+            return data.get(field, getattr(self.instance, field, default))
+
+        kind = current('plan_kind', '')
+        months = current('plan_months', 0)
+        discount = Decimal(str(current('discount_percent', 0)))
+        down = Decimal(str(current('down_payment_percent', 0)))
+        errors = {}
+        if not Decimal(0) <= discount < Decimal(100):
+            errors['discount_percent'] = 'Скидка — от 0 до 100 %, не включая 100.'
+        if not Decimal(0) <= down <= Decimal(100):
+            errors['down_payment_percent'] = 'Первоначальный взнос — от 0 до 100 %.'
+        if months > self.MAX_MONTHS:
+            errors['plan_months'] = f'Срок — не больше {self.MAX_MONTHS} месяцев.'
+        if kind == PaymentType.PlanKind.INSTALLMENT and months < 1:
+            errors['plan_months'] = 'Для рассрочки укажите число ежемесячных платежей — от 1.'
+        if kind in (PaymentType.PlanKind.INSTALLMENT, PaymentType.PlanKind.DEFERRED) and down >= Decimal(100):
+            errors['down_payment_percent'] = 'При рассрочке первоначальный взнос должен быть меньше 100 %.'
+        if errors:
+            raise serializers.ValidationError(errors)
+        # У оплаты всей суммой срока и взноса нет; у типа без плана — никаких условий
+        if kind == PaymentType.PlanKind.FULL:
+            data['plan_months'] = 0
+            data['down_payment_percent'] = Decimal(0)
+        elif kind == '':
+            data.update(plan_months=0, discount_percent=Decimal(0), down_payment_percent=Decimal(0))
+        return data
+
+
 class BeneficiaryAccountSerializer(serializers.ModelSerializer):
+    company_name = serializers.CharField(source='company.name', read_only=True, default=None)
+
     class Meta:
         model = BeneficiaryAccount
         fields = '__all__'

@@ -20,7 +20,7 @@ from rest_framework.test import APIClient
 from apps.crm.models import Client
 from apps.deals.models import Deal
 from apps.finances.currency import Converter, RateUnavailable, convert, cross_rate, get_rate, money
-from apps.finances.models import BeneficiaryAccount, ExchangeRate, InstallmentPlan, Payment, PaymentType
+from apps.finances.models import BeneficiaryAccount, ExchangeRate, Payment, PaymentType
 from apps.realty.models import Building, Project, Property
 from permissions.models import Company, Department, Permission, Role, UserProfile
 
@@ -371,63 +371,115 @@ class ConvertDealsCurrencyTests(LegacyDealsMixin, TestCase):
 
 
 @LOCAL_CACHE
-class InstallmentPlanApiTests(TestCase):
-    """Условия рассрочки: читает вся компания, меняет тот, кто ведёт скидки."""
+class PaymentTypePlanTests(TestCase):
+    """Тип платежа как план оплаты; правка и удаление справочников финансов."""
 
     def setUp(self):
         call_command('init_permissions', stdout=io.StringIO())
         self.company = Company.objects.create(name='А', code='A')
         self.other = Company.objects.create(name='Б', code='B')
         dept = Department.objects.create(company=self.company, name='Отдел', code='D1')
-        self.role = Role.objects.create(name='Менеджер', code='SALES_MANAGER')
-        self.role.permissions.set(Permission.objects.filter(resource='DISCOUNT', action='VIEW', scope='COMPANY'))
-        user = User.objects.create_user('mgr', password='pass-for-tests')
+        self.role = Role.objects.create(name='Финансист', code='FIN')
+        self.role.permissions.set(Permission.objects.filter(
+            resource__in=['PAYMENT_TYPE', 'BENEFICIARY_ACCOUNT'], scope='COMPANY'))
+        user = User.objects.create_user('fin', password='pass-for-tests')
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company, profile.department = self.company, dept
         profile.save()
         profile.roles.set([self.role])
         self.api = APIClient()
         self.api.force_authenticate(User.objects.get(pk=user.pk))
-        InstallmentPlan.objects.create(company=self.company, months=12, discount_percent=5, down_payment_percent=30)
-        InstallmentPlan.objects.create(company=self.company, months=36, discount_percent=0, down_payment_percent=30,
-                                       is_active=False)
-        InstallmentPlan.objects.create(company=self.other, months=6, discount_percent=7)
 
-    def grant(self, *actions):
-        self.role.permissions.add(*Permission.objects.filter(resource='DISCOUNT', action__in=actions, scope='COMPANY'))
+    def make_admin(self):
+        admin = User.objects.create_user('root', password='pass-for-tests')
+        profile, _ = UserProfile.objects.get_or_create(user=admin)
+        profile.company, profile.is_system_admin = self.other, True
+        profile.save()
+        api = APIClient()
+        api.force_authenticate(User.objects.get(pk=admin.pk))
+        return api
 
-    def test_company_sees_only_its_active_terms(self):
-        response = self.api.get('/api/finances/installment-plans/')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual([row['months'] for row in response.data], [12])
-        response = self.api.get('/api/finances/installment-plans/?all=1')
-        self.assertEqual([row['months'] for row in response.data], [12, 36])
+    def post_type(self, **data):
+        return self.api.post('/api/finances/payment-types/', data, format='json')
 
-    def test_changes_require_discount_rights(self):
-        response = self.api.post('/api/finances/installment-plans/', {'months': 24, 'discount_percent': '3'},
-                                 format='json')
-        self.assertEqual(response.status_code, 403)
-        self.grant('ADD', 'EDIT', 'DELETE')
-        response = self.api.post('/api/finances/installment-plans/',
-                                 {'months': 24, 'discount_percent': '3', 'down_payment_percent': '20'}, format='json')
+    def test_installment_plan_is_saved_and_validated(self):
+        response = self.post_type(name='Рассрочка на 12 месяцев', plan_kind='INSTALLMENT', plan_months=12,
+                                  discount_percent='5', down_payment_percent='30')
         self.assertEqual(response.status_code, 201, response.data)
-        self.assertEqual(InstallmentPlan.objects.get(pk=response.data['id']).company, self.company)
+        self.assertEqual((response.data['plan_months'], response.data['company']), (12, self.company.id))
+        # Рассрочка без срока, со взносом 100 % и скидка 100 % — ошибки
+        self.assertEqual(self.post_type(name='Пустая', plan_kind='INSTALLMENT', plan_months=0).status_code, 400)
+        self.assertEqual(self.post_type(name='Взнос 100', plan_kind='INSTALLMENT', plan_months=6,
+                                        down_payment_percent='100').status_code, 400)
+        self.assertEqual(self.post_type(name='Скидка 100', plan_kind='FULL', discount_percent='100').status_code, 400)
 
-    def test_duplicate_term_and_bad_values_are_rejected(self):
-        self.grant('ADD')
-        response = self.api.post('/api/finances/installment-plans/', {'months': 12}, format='json')
-        self.assertEqual(response.status_code, 400)
-        self.assertIn('months', response.data)
-        response = self.api.post('/api/finances/installment-plans/',
-                                 {'months': 6, 'down_payment_percent': '100'}, format='json')
-        self.assertEqual(response.status_code, 400)
+    def test_full_payment_and_plain_type_drop_extra_conditions(self):
+        full = self.post_type(name='100% оплата', plan_kind='FULL', plan_months=12, down_payment_percent='30',
+                              discount_percent='10').data
+        self.assertEqual((full['plan_months'], Decimal(full['down_payment_percent']), Decimal(full['discount_percent'])),
+                         (0, Decimal(0), Decimal('10')))
+        plain = self.post_type(name='Доплата', plan_months=5, discount_percent='3').data
+        self.assertEqual((plain['plan_kind'], plain['plan_months'], Decimal(plain['discount_percent'])),
+                         ('', 0, Decimal(0)))
 
-    def test_other_company_term_cannot_be_changed(self):
-        self.grant('EDIT', 'DELETE')
-        foreign = InstallmentPlan.objects.get(company=self.other)
-        self.assertEqual(self.api.patch(f'/api/finances/installment-plans/{foreign.id}/',
-                                        {'discount_percent': '50'}, format='json').status_code, 404)
-        self.assertEqual(self.api.delete(f'/api/finances/installment-plans/{foreign.id}/').status_code, 404)
+    def test_type_can_be_renamed_and_turned_into_plan(self):
+        ptype = PaymentType.objects.create(name='123', company=self.company)
+        response = self.api.patch(f'/api/finances/payment-types/{ptype.id}/',
+                                  {'name': 'Ипотека', 'plan_kind': 'DEFERRED', 'plan_months': 3,
+                                   'down_payment_percent': '30'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        ptype.refresh_from_db()
+        self.assertEqual((ptype.name, ptype.plan_kind, ptype.plan_months), ('Ипотека', 'DEFERRED', 3))
+
+    def test_used_type_is_not_deleted_and_payments_keep_it(self):
+        ptype = PaymentType.objects.create(name='Рассрочка', company=self.company)
+        account = BeneficiaryAccount.objects.create(name='Счёт', details='-', company=self.company)
+        client = Client.objects.create(full_name='Клиент', company=self.company)
+        payment = Payment.objects.create(company=self.company, client=client, amount=Decimal('100'), currency='UZS',
+                                         payment_type=ptype, method='CASHLESS', beneficiary_account=account,
+                                         due_date=timezone.localdate())
+        response = self.api.delete(f'/api/finances/payment-types/{ptype.id}/')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Связанных записей: 1', str(response.data))
+        payment.refresh_from_db()
+        self.assertEqual(payment.payment_type, ptype)
+        # Счёт с платежами тоже не удаляется, но причину видно
+        response = self.api.delete(f'/api/finances/beneficiary-accounts/{account.id}/')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Переименуйте', str(response.data))
+
+    def test_shared_records_are_read_only_for_company_users(self):
+        shared_type = PaymentType.objects.create(name='Общий', company=None)
+        shared_account = BeneficiaryAccount.objects.create(name='Общий счёт', details='-', company=None)
+        self.assertEqual(self.api.delete(f'/api/finances/payment-types/{shared_type.id}/').status_code, 403)
+        self.assertEqual(self.api.patch(f'/api/finances/payment-types/{shared_type.id}/', {'name': 'Мой'},
+                                        format='json').status_code, 403)
+        response = self.api.patch(f'/api/finances/beneficiary-accounts/{shared_account.id}/', {'name': 'Мой'},
+                                  format='json')
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(PaymentType.objects.filter(pk=shared_type.id).exists())
+
+    def test_account_can_be_renamed(self):
+        account = BeneficiaryAccount.objects.create(name='123', details='123', company=self.company)
+        response = self.api.patch(f'/api/finances/beneficiary-accounts/{account.id}/',
+                                  {'name': 'Payme', 'details': 'Оплата через Payme'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        account.refresh_from_db()
+        self.assertEqual(account.name, 'Payme')
+
+    def test_admin_chooses_company_of_new_records(self):
+        api = self.make_admin()
+        response = api.post('/api/finances/payment-types/', {'name': 'Для А', 'company': self.company.id},
+                            format='json')
+        self.assertEqual(PaymentType.objects.get(pk=response.data['id']).company, self.company)
+        response = api.post('/api/finances/payment-types/', {'name': 'Для всех', 'company': None}, format='json')
+        self.assertIsNone(PaymentType.objects.get(pk=response.data['id']).company)
+        response = api.post('/api/finances/beneficiary-accounts/',
+                            {'name': 'Счёт А', 'details': '-', 'company': self.company.id}, format='json')
+        self.assertEqual(BeneficiaryAccount.objects.get(pk=response.data['id']).company, self.company)
+        # Обычный пользователь компанию не выбирает
+        response = self.post_type(name='Чужой', company=self.other.id)
+        self.assertEqual(PaymentType.objects.get(pk=response.data['id']).company, self.company)
 
 
 @LOCAL_CACHE

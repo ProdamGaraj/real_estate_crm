@@ -968,7 +968,23 @@
         "entered_by": "Entered by",
         "confirm_delete": "Delete the manual rate? The CBU rate will apply on this date again."
       },
-      "installments_tab": "Installments"
+      "finance_refs": {
+        "shared": "Shared by all companies",
+        "plan": "Payment plan",
+        "plan_none": "No plan",
+        "plan_FULL": "100% at once",
+        "plan_INSTALLMENT": "Down payment + monthly payments",
+        "plan_DEFERRED": "Down payment + one remaining payment",
+        "months": "Term, mo.",
+        "months_installment": "Monthly payments",
+        "months_deferred": "Remainder after, mo.",
+        "discount": "Discount, %",
+        "down_payment": "Min. down payment, %",
+        "types_hint": "A payment type is the name that schedule payments get. Give a type a plan and it becomes a variant in the Installments calculator, so a deal schedule can be built from it in one click: \"100% at once\" — the full amount in one payment; \"Down payment + monthly payments\" — a down payment and equal monthly payments; \"Down payment + one remaining payment\" — a down payment and the rest after the given number of months (mortgage).",
+        "edit_hint": "Double-click a cell to edit it. A type that payments already use cannot be deleted — rename it instead. Shared records can be changed only by the system administrator.",
+        "accounts_hint": "Double-click a cell to change the name or details. An account that payments use cannot be deleted — rename it instead (for example, \"123\" → \"Payme\"). Shared accounts can be changed only by the system administrator.",
+        "confirm_delete": "Delete \"{{name}}\"?"
+      }
     },
     "api_keys": {
       "title": "Partner API Keys",
@@ -1468,10 +1484,7 @@
     "applied_discounts": "Discounts already applied to the deal: {{percent}}% — added to the term discount.",
     "converted_note": "Price list price {{catalog}}, converted at the rate {{rate}}.",
     "no_rate": "No rate for {{currency}} — calculated in the price list currency.",
-    "no_terms": "Installment terms are not set up. Management sets them in Settings → Installments.",
     "compare_title": "Terms compared",
-    "full_payment": "100% payment",
-    "months": "{{months}} mo.",
     "row_discount_percent": "Discount",
     "row_discount_amount": "Discount amount",
     "row_price": "Price after discount",
@@ -1494,28 +1507,22 @@
     "print_title": "Payment options",
     "popup_blocked": "The browser blocked the print window — allow pop-ups for this site.",
     "disclaimer": "Preliminary calculation, not an offer. Rate and terms as of {{date}}.",
-    "down_type": "Down payment type",
-    "monthly_type": "Monthly payment type",
     "create_schedule": "Create schedule",
     "creating": "Creating…",
     "create_confirm": "The contract price will become {{price}}; the schedule will have {{count}} payments. Continue?",
     "created": "Schedule created. Contract price: {{price}}. You can still edit it manually.",
     "schedule_exists": "The deal already has a schedule — edit it on the Payment schedule step.",
     "deal_read_only": "The deal is closed for changes — a schedule cannot be created.",
-    "settings": {
-      "title": "Installment terms",
-      "hint": "For each term: a discount and a minimum down payment. Managers use them to show payment options to clients and to create a deal schedule in one click. Term 0 means paying the full amount at once.",
-      "term": "Term",
-      "months": "Term, months",
-      "months_hint": "0 — paid at once",
-      "discount": "Discount, %",
-      "down_payment": "Min. down payment, %",
-      "active": "Active",
-      "confirm_delete": "Delete the \"{{term}}\" term?"
-    },
-    "no_types": "The company has no payment types or beneficiary accounts — a schedule cannot be created. Contact the administrator.",
     "zero_price": "The price after discounts is zero — check the deal discounts.",
     "no_rights": "No rights to edit the deal or create payments — the deal manager or head can create the schedule.",
-    "create_confirm_replace": "The contract price will become {{price}} (now {{current}}); the schedule will have {{count}} payments. Continue?"
+    "create_confirm_replace": "The contract price will become {{price}} (now {{current}}); the schedule will have {{count}} payments. Continue?",
+    "no_plans": "Payment plans are not set up. Management sets them in Settings → Finances → a payment type with a plan.",
+    "no_types_access": "No access to payment types — payment plans cannot be loaded. Contact the administrator.",
+    "no_accounts": "The company has no beneficiary accounts — a schedule cannot be created. Contact the administrator.",
+    "row_rest": "Remaining payments",
+    "monthly_times": "{{count}} × {{amount}}",
+    "rest_after": "{{amount}} after {{months}} mo.",
+    "rest_now": "{{amount}} at once",
+    "kind_rest": "Remainder"
   }
 }

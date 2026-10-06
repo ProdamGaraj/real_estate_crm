@@ -16,6 +16,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { getPayments, type Payment, type PaymentFilters } from '../api/finances';
 import FinanceSummary from '../components/finances/FinanceSummary';
 import { LocalizedDateField } from '../components/common/LocalizedDateField';
+import { formatMoney } from '../utils/currency';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -50,7 +51,7 @@ const getStatusChipColor = (status: Payment['status']) => {
     }
 }
 
-const getColumns = (t: (key: string) => string): GridColDef<Payment>[] => [
+const getColumns = (t: (key: string) => string, language: string): GridColDef<Payment>[] => [
     {
         field: 'id',
         headerName: t('table.id'),
@@ -82,7 +83,11 @@ const getColumns = (t: (key: string) => string): GridColDef<Payment>[] => [
             </MuiLink>
         ) : 'N/A'
     },
-    { field: 'amount', headerName: t('table.amount'), flex: 1, valueFormatter: (value: number) => value ? value.toLocaleString() : '' },
+    {
+        field: 'amount', headerName: t('table.amount'), flex: 1,
+        // Сумма приходит строкой «100000000.00» — показываем с разрядами и валютой
+        valueFormatter: (value: string, row: Payment) => formatMoney(value, row.currency, language),
+    },
     { field: 'due_date', headerName: t('table.due_date'), type: 'date', width: 120, valueGetter: (value) => new Date(value) },
     {
         field: 'status', headerName: t('table.status'), width: 150,
@@ -93,11 +98,11 @@ const getColumns = (t: (key: string) => string): GridColDef<Payment>[] => [
 
 
 export default function FinancesPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const theme = useTheme();
     const location = useLocation();
     const [tabValue, setTabValue] = useState(location.state?.tab || 0);
-    const columns = getColumns(t);
+    const columns = getColumns(t, i18n.language);
     const [filters, setFilters] = useState<PaymentFilters>(location.state?.filters || {});
     const { control, watch, reset } = useForm<PaymentFilters>({
         defaultValues: filters

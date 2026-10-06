@@ -97,9 +97,8 @@
           <tr><td><span class="ui">Foydalanuvchilar</span></td><td>Xodimlarning hisoblari</td><td class="num">03</td></tr>
           <tr><td><span class="ui">Arizalar</span></td><td>Ariza holatlari, rad etish sabablari</td><td class="num">09</td></tr>
           <tr><td><span class="ui">Ko&lsquo;chmas mulk</span></td><td>Bino turlari</td><td class="num">09</td></tr>
-          <tr><td><span class="ui">Moliya</span></td><td>To&lsquo;lov turlari, oluvchi hisobvaraqlari</td><td class="num">09</td></tr>
+          <tr><td><span class="ui">Moliya</span></td><td>To&lsquo;lov turlari va to&lsquo;lov rejalari, oluvchi hisobvaraqlari</td><td class="num">09</td></tr>
           <tr><td><span class="ui">Valyutalar</span></td><td>Bitimlar valyutasi, qo&lsquo;llab-quvvatlanadigan valyutalar, kurslar</td><td class="num">09</td></tr>
-          <tr><td><span class="ui">Bo&lsquo;lib to&lsquo;lash</span></td><td>Bo&lsquo;lib to&lsquo;lash shartlari: muddat, muddat chegirmasi, eng kam to&lsquo;lov</td><td class="num">09</td></tr>
           <tr><td><span class="ui">Shablonlar</span></td><td>Shartnoma yaratish uchun .docx fayllar</td><td class="num">10</td></tr>
           <tr><td><span class="ui">API-kalitlar</span></td><td>Hamkor va saytning ma&lsquo;lumotga kirishi</td><td class="num">11</td></tr>
         </tbody>
@@ -491,7 +490,7 @@
       <table>
         <thead><tr><th>Ma&lsquo;lumotnoma</th><th>Nima uchun</th></tr></thead>
         <tbody>
-          <tr><td><span class="ui">To&lsquo;lov turlari</span></td><td>Boshlang&lsquo;ich to&lsquo;lov, bo&lsquo;lib to&lsquo;lash va hokazo. To&lsquo;lov jadvalida tanlanadi</td></tr>
+          <tr><td><span class="ui">To&lsquo;lov turlari</span></td><td>Jadvaldagi to&lsquo;lov nomi. Tur to&lsquo;lov rejasi bo&lsquo;lishi mumkin — unda u bo&lsquo;yicha «Bo&lsquo;lib to&lsquo;lash» kalkulyatorida variant hisoblanadi</td></tr>
           <tr><td><span class="ui">Oluvchi hisobvaraqlari</span></td><td>Pul qabul qilinadigan kompaniya bank rekvizitlari</td></tr>
         </tbody>
       </table>
@@ -501,8 +500,23 @@
       <p><b>Kamida bitta to&lsquo;lov turi va bitta oluvchi hisobvarag&lsquo;i bo&lsquo;lmasa, menejer to&lsquo;lov jadvalini saqlay olmaydi</b> — bitim uchinchi bosqichda to&lsquo;xtab qoladi. Bu ikki ma&lsquo;lumotnomani sotuv boshlanishidan oldin to&lsquo;ldiring.</p>
     </div>
 
-    <h4>&laquo;Bo&lsquo;lib to&lsquo;lash&raquo; yorlig&lsquo;i</h4>
-    <p>Kompaniyaning to&lsquo;lov shartlari: <span class="ui">Muddat, oy</span> (0 — to&lsquo;liq to&lsquo;lov), <span class="ui">Chegirma, %</span>, <span class="ui">Eng kam boshlang&lsquo;ich to&lsquo;lov, %</span> va <span class="ui">Amalda</span> belgisi. Chegirma, to&lsquo;lov va belgini to&lsquo;g&lsquo;ridan-to&lsquo;g&lsquo;ri jadvalda tuzatish mumkin. Yorliq va tahrirlashni <span class="ui">Chegirmalar</span> resursiga huquqlar ochadi: muddat chegirmasi — o&lsquo;sha chegirma, uni rahbariyat yuritadi. Bu shartlar bo&lsquo;yicha menejerlar to&lsquo;lov variantlarini hisoblaydi va bitim jadvalini bitta tugma bilan yaratadi. Tizim administratori kompaniyani jadval ustidagi ro&lsquo;yxatdan tanlaydi.</p>
+    <h4>To&lsquo;lov rejalari</h4>
+    <p>To&lsquo;lov rejasi — shartlari belgilangan to&lsquo;lov turi. <span class="ui">To&lsquo;lov turlari</span> jadvalida <span class="ui">To&lsquo;lov rejasi</span> ni tanlang:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>To&lsquo;lov rejasi</th><th>Jadval qanday tuziladi</th><th>Misol</th></tr></thead>
+        <tbody>
+          <tr><td><span class="ui">100% darhol</span></td><td>Butun summa bitta to&lsquo;lovda</td><td>«100% to&lsquo;lov», chegirma 10 %</td></tr>
+          <tr><td><span class="ui">Boshlang&lsquo;ich va oylik to&lsquo;lovlar</span></td><td>Boshlang&lsquo;ich to&lsquo;lov, so&lsquo;ng har oy teng to&lsquo;lovlar; muddat — to&lsquo;lovlar soni</td><td>«12 oylik bo&lsquo;lib to&lsquo;lash»: muddat 12, chegirma 5 %, eng kam boshlang&lsquo;ich 30 %</td></tr>
+          <tr><td><span class="ui">Boshlang&lsquo;ich va qoldiq bitta to&lsquo;lovda</span></td><td>Boshlang&lsquo;ich to&lsquo;lov, qoldiq ko&lsquo;rsatilgan oylardan keyin bitta to&lsquo;lovda</td><td>«Ipoteka»: qoldiq 3 oydan keyin, eng kam boshlang&lsquo;ich 30 %</td></tr>
+          <tr><td><span class="ui">Rejasiz</span></td><td>Faqat qo&lsquo;lda tuziladigan jadval uchun tur</td><td>«Qo&lsquo;shimcha to&lsquo;lov»</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Rejalar <span class="ui">Bo&lsquo;lib to&lsquo;lash</span> kalkulyatorida variant bo&lsquo;lib chiqadi, tanlangan reja bo&lsquo;yicha menejer bitim jadvalini bitta tugma bilan yaratadi — barcha to&lsquo;lovlar reja turini oladi. Shartlar katakchani ikki marta bosib tuzatiladi.</p>
+    <div class="note">
+      <p><b>Ishlatilgan tur va hisob o&lsquo;chirilmaydi.</b> Tizim sababini tushuntiradi; yozuvni qayta nomlang (masalan, «123» hisobini «Payme» ga). Umumiy yozuvlarni (<span class="ui">Kompaniya</span> ustunida — «Barcha kompaniyalar uchun umumiy») faqat tizim administratori o&lsquo;zgartiradi. Yozuv qo&lsquo;shishda tizim administratori uning kompaniyasini tanlaydi yoki uni umumiy qiladi — aks holda yozuv uning xizmat kompaniyasida qolib, xodimlarga ko&lsquo;rinmas edi.</p>
+    </div>
 
     <h4>&laquo;Valyutalar&raquo; yorlig&lsquo;i</h4>
     <ol class="steps">

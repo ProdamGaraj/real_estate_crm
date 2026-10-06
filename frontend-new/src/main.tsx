@@ -3,6 +3,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
+import { installNumberCopyHandler } from './utils/currency';
 import './index.css';
 import './styles/colors.css'; // <-- Подключаем палитру цветов
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -36,6 +37,9 @@ function ThemedApp() {
     </ThemeProvider>
   );
 }
+
+// Копирование суммы вида «151 164 678 UZS» отдаёт «151164678»
+installNumberCopyHandler();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

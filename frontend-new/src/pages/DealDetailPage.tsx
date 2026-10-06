@@ -22,7 +22,6 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { extractApiError } from '../utils/apiError';
 import { formatMoney, formatRate } from '../utils/currency';
 import InstallmentCalculator from '../components/installments/InstallmentCalculator';
-import { paymentTypeFor } from '../components/installments/InstallmentCalculator';
 import type { ScheduleOptions } from '../components/installments/InstallmentCalculator';
 import { useAuthStore } from '../store/authStore';
 import { hasPermission } from '../utils/permissions';
@@ -143,7 +142,8 @@ export default function DealDetailPage() {
           payments: variant.rows.map(row => ({
             amount: row.amount,
             due_date: row.date,
-            payment_type_id: paymentTypeFor(row.kind, options),
+            // Все платежи графика — с типом выбранного плана («Рассрочка на 12 месяцев»)
+            payment_type_id: variant.plan.id,
             beneficiary_account_id: options.accountId,
             currency: deal!.currency,
             method: 'CASHLESS' as const,
