@@ -228,6 +228,22 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
                 <Typography><b>{t('pages.properties.finishing')}:</b> {property.has_finishing ? t('common.yes') : t('common.no')}</Typography>
               </Stack>
 
+              {/* Занят, а живой сделки нет: ждёт возврата платежей или статус разошёлся со сделками */}
+              {['BOOKING', 'IN_DEAL', 'SOLD'].includes(property.status) && !property.active_deal_id && (
+                <Alert
+                  severity="warning"
+                  sx={{ mt: 2 }}
+                  action={property.pending_refund_deal_id ? (
+                    <Button color="inherit" size="small" component={RouterLink} to={`/deals/${property.pending_refund_deal_id}`}>
+                      {t('pages.properties.open_deal')}
+                    </Button>
+                  ) : undefined}
+                >
+                  {property.pending_refund_deal_id
+                    ? t('pages.properties.held_by_refund', { id: property.pending_refund_deal_id })
+                    : t('pages.properties.status_mismatch')}
+                </Alert>
+              )}
               {property.status === 'RESERVE' && !property.active_deal_id && (
                 <Alert severity="info" sx={{ mt: 2 }}>
                   {canManageReserve ? t('pages.properties.reserved_notice_manager') : t('pages.properties.reserved_notice')}

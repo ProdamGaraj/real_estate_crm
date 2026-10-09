@@ -170,7 +170,7 @@ class DealListView(generics.ListCreateAPIView):
         except PropertyUnavailable as error:
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
-        response_serializer = DealDetailSerializer(serializer.instance)
+        response_serializer = DealDetailSerializer(serializer.instance, context=self.get_serializer_context())
         headers = self.get_success_headers(response_serializer.data)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -316,7 +316,7 @@ class DealCancelOrTerminateView(APIView):
 
             self._reopen_related_application(deal, request.user)
 
-        return Response(DealDetailSerializer(deal).data, status=status.HTTP_200_OK)
+        return Response(DealDetailSerializer(deal, context={'request': request}).data, status=status.HTTP_200_OK)
 
     @staticmethod
     def _reopen_related_application(deal, user):

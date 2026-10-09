@@ -33,6 +33,8 @@ export interface Property {
   layout: LayoutMini | null;
   description: string | null;
   active_deal_id: number | null;
+  /** Расторгнутая сделка с невозвращёнными платежами, которая держит объект занятым */
+  pending_refund_deal_id?: number | null;
 }
 
 /**

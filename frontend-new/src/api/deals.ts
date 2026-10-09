@@ -34,6 +34,8 @@ export interface Deal {
   /** План оплаты сделки (тип платежа с планом); от него зависят доступные скидки */
   payment_plan: number | null;
   payment_plan_name: string | null;
+  /** Может ли текущий пользователь менять и отменять сделку (null — сервер не сообщил) */
+  can_edit?: boolean | null;
   contract_number?: string;
   contract_date?: string | null;
   notes: string;

@@ -102,6 +102,11 @@ class DealDetailSerializer(serializers.ModelSerializer):
     # ИСПРАВЛЕНИЕ: Заменяем прямое поле на SerializerMethodField
     payments = serializers.SerializerMethodField()
     logs = serializers.SerializerMethodField()
+    # Может ли текущий пользователь изменять и отменять эту сделку. Карточку
+    # видят шире, чем могут менять (например, сделки коллег по отделу), и без
+    # признака кнопки «Отменить / Расторгнуть», «Применить скидки» отвечали
+    # непонятным отказом сервера
+    can_edit = serializers.SerializerMethodField()
     logs_total = serializers.SerializerMethodField()
 
     def get_logs(self, obj):
@@ -223,7 +228,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'payments', 'contract_number', 'contract_date', 'application', 'logs_total',
             'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
             'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
-            'payment_plan', 'payment_plan_name',
+            'payment_plan', 'payment_plan_name', 'can_edit',
         ]
         # Валюта сделки задаётся настройкой компании при брони и дальше не меняется:
         # весь график платежей хранится в ней
@@ -232,6 +237,13 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
             'currency', 'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
         ]
+
+    def get_can_edit(self, obj):
+        request = self.context.get('request')
+        if request is None:
+            return None
+        from permissions.backends import can_user_perform_action
+        return can_user_perform_action(request.user, 'EDIT', 'DEAL', obj=obj)
 
     # ИСПРАВЛЕНИЕ: Добавляем метод для сериализации платежей
     def get_payments(self, obj):

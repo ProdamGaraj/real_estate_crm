@@ -106,6 +106,8 @@ class BuildingLogSerializer(serializers.ModelSerializer):
 class PropertyListSerializer(serializers.ModelSerializer):
     layout = LayoutMiniSerializer(read_only=True)
     active_deal_id = serializers.SerializerMethodField()
+    # Расторгнутая сделка с невозвращёнными платежами, которая держит объект занятым
+    pending_refund_deal_id = serializers.SerializerMethodField()
     # Цена объекта задана в валюте прайса его проекта
     price_currency = serializers.CharField(source='building.project.price_currency', read_only=True)
 
@@ -113,7 +115,8 @@ class PropertyListSerializer(serializers.ModelSerializer):
         model = Property
         fields = [
             'id', 'unit_number', 'property_type', 'status', 'area', 'price', 'price_currency',
-            'floor', 'entrance', 'riser', 'has_finishing', 'layout', 'description', 'active_deal_id'
+            'floor', 'entrance', 'riser', 'has_finishing', 'layout', 'description', 'active_deal_id',
+            'pending_refund_deal_id',
         ]
 
     def get_active_deal_id(self, obj):
@@ -129,6 +132,18 @@ class PropertyListSerializer(serializers.ModelSerializer):
         # Используем related_name 'deals', который мы задали в модели
         active_deal = obj.deals.filter(status__in=active_statuses).first()
         return active_deal.id if active_deal else None
+
+    def get_pending_refund_deal_id(self, obj):
+        """
+        Занятый объект без живой сделки: после расторжения он ждёт возврата
+        платежей. Карточка показывает, какая сделка его держит, — иначе в ней не
+        было ни брони, ни перехода в сделку, и казалось, что бронь «не снимается».
+        """
+        if obj.status not in ('BOOKING', 'IN_DEAL', 'SOLD') or self.get_active_deal_id(obj):
+            return None
+        from apps.deals.occupancy import pending_refund_deal
+        holder = pending_refund_deal(obj)
+        return holder.id if holder else None
 
 
 class PropertyDetailSerializer(serializers.ModelSerializer):

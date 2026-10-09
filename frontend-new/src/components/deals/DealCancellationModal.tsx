@@ -8,6 +8,7 @@ import {
   Stack, Alert
 } from '@mui/material';
 import LocalizedDateField from '../common/LocalizedDateField';
+import { extractApiError } from '../../utils/apiError';
 
 interface Props {
   open: boolean;
@@ -49,8 +50,6 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
       if (fileList && fileList.length > 0) {
         payload.termination_document_scan = fileList[0];
       }
-      // Отладка - проверим что данные есть
-      console.log('Termination payload:', { date: payload.termination_date, hasFile: !!payload.termination_document_scan });
     } else {
       payload.cancellation_reason = data.reason;
     }
@@ -84,7 +83,12 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
                   required
                   InputLabelProps={{ shrink: true }}
                   {...register('document', { required: true })}
+                  error={!!errors.document}
                 />
+                {/* Без даты или документа кнопка раньше молча не срабатывала */}
+                {(errors.date || errors.document) && (
+                  <Alert severity="warning">{t('deal_cancellation.termination_required')}</Alert>
+                )}
               </>
             ) : (
               <>
@@ -101,7 +105,8 @@ export default function DealCancellationModal({ open, onClose, onSuccess, deal }
                 />
               </>
             )}
-             {mutation.isError && <Alert severity="error">{(mutation.error as Error).message}</Alert>}
+             {/* Причина отказа от сервера, а не «Request failed with status code 403» */}
+             {mutation.isError && <Alert severity="error">{extractApiError(mutation.error, t('errors.error_occurred'))}</Alert>}
           </Stack>
         </DialogContent>
         <DialogActions>

@@ -209,19 +209,24 @@ export default function DealDetailPage() {
   if (isLoading) return <CircularProgress />;
   if (isError || !deal) return <Alert severity="error">{t('errors.load_deal')}</Alert>;
 
-  const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status);
+  // Карточку видят шире, чем могут менять: сделку коллеги по отделу можно открыть,
+  // а изменить или отменить — нет. Без этого кнопки отвечали отказом сервера
+  const canEditDeal = deal.can_edit !== false;
+  const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status) || !canEditDeal;
   const isDealTerminated = deal.status === 'TERMINATED';
   const plans = (paymentTypes ?? [])
     .filter(isPlan)
     .filter(plan => plan.company === null || !deal.company || plan.company === deal.company)
     .sort(comparePlans);
   const canBuildSchedule = hasPermission(user, 'EDIT', 'DEAL') && hasPermission(user, 'ADD', 'PAYMENT');
-  const installmentBlockReason = isDealReadOnly
+  const installmentBlockReason = !canEditDeal
+    ? t('installments.no_rights')
+    : isDealReadOnly
     ? t('installments.deal_read_only')
     : (deal.payments?.length ?? 0) > 0 ? t('installments.schedule_exists')
       : !canBuildSchedule ? t('installments.no_rights') : null;
   // Кнопка расторжения доступна для сделок в работе и успешно закрытых (но не для уже отменённых/расторгнутых)
-  const canTerminateDeal = !['CANCELLED', 'TERMINATED'].includes(deal.status);
+  const canTerminateDeal = !['CANCELLED', 'TERMINATED'].includes(deal.status) && canEditDeal;
 
   return (
     <>
@@ -246,6 +251,11 @@ export default function DealDetailPage() {
             </Button>
         )}
       </Stack>
+      {!canEditDeal && !['CANCELLED', 'TERMINATED'].includes(deal.status) && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {t('pages.deals.view_only', { author: deal.created_by || '—' })}
+        </Alert>
+      )}
       {/* --- НОВЫЙ БЛОК ИНФОРМАЦИИ --- */}
             {(deal.status === 'CANCELLED' || deal.status === 'TERMINATED') && (
                 <Alert severity="error" sx={{ mb: 2 }}>

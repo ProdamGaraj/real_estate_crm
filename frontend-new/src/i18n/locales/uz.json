@@ -476,7 +476,8 @@
       "catalog_conversion": "Prays bo'yicha narx {{catalog}} bitim valyutasiga {{rate}} kurs bo'yicha qayta hisoblandi: {{price}}.",
       "payment_plan": "To'lov rejasi",
       "payment_plan_hint": "Qaysi chegirmalar amal qilishi rejaga bog'liq; chegirmali narx reja bo'yicha to'lovlarga bo'linadi.",
-      "no_plan": "Tanlanmagan"
+      "no_plan": "Tanlanmagan",
+      "view_only": "Siz bitimni ko'rishingiz mumkin, lekin uni o'zgartira yoki bekor qila olmaysiz: uni boshqa xodim ({{author}}) yaratgan. Bitimni yoki bronni uning muallifi yoki bo'lim yoki kompaniya bitimlarini o'zgartirish huquqi bor rahbar o'zgartira oladi."
     },
     "projects": {
       "title": "Loyihalar",
@@ -603,7 +604,10 @@
       "save_comment": "Izohni saqlash",
       "book_property": "Ob'ekt №{{number}} ni bron qilish",
       "reserved_notice": "Obyekt rezervda: uni bron qilish va sotish mumkin emas. Rezervni faqat obyektlarni o'zgartirish huquqi bor xodim bekor qiladi — rahbarga murojaat qiling.",
-      "reserved_notice_manager": "Obyekt rezervda: uni bron qilish va sotish mumkin emas. Sotish mumkin bo'lishi uchun «Rezervni bekor qilish» ni bosing."
+      "reserved_notice_manager": "Obyekt rezervda: uni bron qilish va sotish mumkin emas. Sotish mumkin bo'lishi uchun «Rezervni bekor qilish» ni bosing.",
+      "open_deal": "Bitimni ochish",
+      "held_by_refund": "Obyekt bekor qilingan №{{id}} bitim bilan band: mijozga barcha to'lovlar qaytarilgach (bitim jadvalidagi «Qaytarish» tugmasi) u bo'shaydi.",
+      "status_mismatch": "Obyekt holati bitimlarga mos emas: u bo'yicha faol bitim yo'q. Administratorga murojaat qiling — u obyektni sotuvga qaytaradi."
     },
     "finances": {
       "title": "Moliya",
@@ -1421,7 +1425,8 @@
     "document_scan": "Asos hujjatining skanerlangan nusxasi",
     "cancellation_reason": "Bekor qilish sababi",
     "terminate": "Shartnomani buzish",
-    "cancel_deal": "Bitimni bekor qilish"
+    "cancel_deal": "Bitimni bekor qilish",
+    "termination_required": "Bekor qilish uchun sanani ko'rsating va asos hujjatning skanini biriktiring."
   },
   "logs": {
     "fields": {

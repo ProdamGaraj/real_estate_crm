@@ -476,7 +476,8 @@
       "catalog_conversion": "The catalog price {{catalog}} was converted to the deal currency at the rate {{rate}}: {{price}}.",
       "payment_plan": "Payment plan",
       "payment_plan_hint": "The plan decides which discounts apply; the discounted price is split into payments by the plan.",
-      "no_plan": "Not selected"
+      "no_plan": "Not selected",
+      "view_only": "You can view this deal but not change or cancel it: it was created by another employee ({{author}}). Its author or a manager with rights to edit department or company deals can change it or remove the booking."
     },
     "projects": {
       "title": "Projects",
@@ -603,7 +604,10 @@
       "save_comment": "Save Comment",
       "book_property": "Book Property #{{number}}",
       "reserved_notice": "This unit is reserved: it cannot be booked or sold. Only an employee who can edit units can remove the reserve — contact your manager.",
-      "reserved_notice_manager": "This unit is reserved: it cannot be booked or sold. To make it available for sale, click \"Remove Reserve\"."
+      "reserved_notice_manager": "This unit is reserved: it cannot be booked or sold. To make it available for sale, click \"Remove Reserve\".",
+      "open_deal": "Open deal",
+      "held_by_refund": "The unit is held by terminated deal #{{id}}: it will be released once all payments are returned to the client (\"Return\" button in the deal schedule).",
+      "status_mismatch": "The unit status does not match its deals: there is no active deal. Contact the administrator to return it to sale."
     },
     "finances": {
       "title": "Finances",
@@ -1497,7 +1501,8 @@
     "document_scan": "Supporting Document Scan",
     "cancellation_reason": "Cancellation Reason",
     "terminate": "Terminate",
-    "cancel_deal": "Cancel Deal"
+    "cancel_deal": "Cancel Deal",
+    "termination_required": "To terminate, set the date and attach the scan of the supporting document."
   },
   "months": {
     "1": "January",
