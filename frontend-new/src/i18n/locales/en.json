@@ -1430,7 +1430,9 @@
     "no_rate_short": "No rate",
     "no_rate_for": "No rate for {{currencies}}. Refresh CBU rates or enter a rate manually in Settings (Currencies).",
     "converted_note": "Rows in other currencies are converted to {{currency}} at today's rate on saving.",
-    "rounding_gap": "The {{amount}} difference is rounding from the rate conversion; it will be added to the last payment in another currency."
+    "rounding_gap": "The {{amount}} difference is rounding from the rate conversion; it will be added to the last payment in another currency.",
+    "confirm_mark_paid": "Mark the payment of {{amount}} due {{date}} as paid today?",
+    "confirm_undo_payment": "Undo the payment of {{amount}} due {{date}}? It will become unpaid again."
   },
   "buildings": {
     "chessboard": {

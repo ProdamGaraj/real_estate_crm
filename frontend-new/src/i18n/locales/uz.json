@@ -1390,7 +1390,9 @@
     "no_rate_short": "Kurs yo'q",
     "no_rate_for": "{{currencies}} kursi yo'q. MB kurslarini yangilang yoki kursni sozlamalarda («Valyutalar») qo'lda kiriting.",
     "converted_note": "Boshqa valyutalardagi qatorlar saqlashda bugungi kurs bo'yicha {{currency}}ga qayta hisoblanadi.",
-    "rounding_gap": "{{amount}} farq — kurs bo'yicha qayta hisoblashdagi yaxlitlash; u boshqa valyutadagi oxirgi to'lovga qo'shiladi."
+    "rounding_gap": "{{amount}} farq — kurs bo'yicha qayta hisoblashdagi yaxlitlash; u boshqa valyutadagi oxirgi to'lovga qo'shiladi.",
+    "confirm_mark_paid": "{{date}} muddatli {{amount}} to'lov bugungi sana bilan to'langan deb belgilansinmi?",
+    "confirm_undo_payment": "{{date}} muddatli {{amount}} to'lov bekor qilinsinmi? To'lov yana to'lanmagan bo'ladi."
   },
   "buildings": {
     "chessboard": {

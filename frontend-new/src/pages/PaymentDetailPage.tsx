@@ -50,12 +50,29 @@ export default function PaymentDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payment', paymentId] })
   });
 
+  // Подтверждение — как в графике сделки: одним щелчком платёж становился «Оплачен»
+  const confirmText = (key: string) => (payment
+    ? t(key, {
+        amount: formatMoney(payment.amount, payment.currency, i18n.language),
+        date: new Date(payment.due_date).toLocaleDateString(),
+      })
+    : '');
+
   const handleMarkAsPaid = () => {
-    const today = new Date().toISOString().split('T')[0];
+    if (!window.confirm(confirmText('finances.confirm_mark_paid'))) return;
+    // Локальная дата, а не UTC: toISOString() до 05:00 по Ташкенту
+    // проставлял вчерашний день
+    const now = new Date();
+    const today = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('-');
     updatePaymentMutation.mutate({ id: Number(paymentId), payload: { payment_date: today } });
   };
 
   const handleCancelPayment = () => {
+    if (!window.confirm(confirmText('finances.confirm_undo_payment'))) return;
     updatePaymentMutation.mutate({ id: Number(paymentId), payload: { payment_date: null } });
   };
 

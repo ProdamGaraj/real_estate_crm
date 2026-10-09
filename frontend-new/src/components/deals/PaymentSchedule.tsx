@@ -246,7 +246,15 @@ export default function PaymentSchedule({
   });
 
 
-  const handleMarkAsPaid = (paymentId: number) => {
+  // Отметка оплаты — с подтверждением: одним случайным щелчком платёж
+  // становился «Оплачен» с сегодняшней датой
+  const paymentLabel = (payment: Payment) => ({
+    amount: money(payment.amount, payment.currency),
+    date: new Date(payment.due_date).toLocaleDateString(),
+  });
+
+  const handleMarkAsPaid = (payment: Payment) => {
+    if (!window.confirm(t('finances.confirm_mark_paid', paymentLabel(payment)))) return;
     // Локальная дата, а не UTC: toISOString() до 05:00 по Ташкенту
     // проставлял вчерашний день
     const now = new Date();
@@ -255,11 +263,12 @@ export default function PaymentSchedule({
       String(now.getMonth() + 1).padStart(2, '0'),
       String(now.getDate()).padStart(2, '0'),
     ].join('-');
-    updatePaymentMutation.mutate({ id: paymentId, payload: { payment_date: today } });
+    updatePaymentMutation.mutate({ id: payment.id, payload: { payment_date: today } });
   };
 
-  const handleCancelPayment = (paymentId: number) => {
-    updatePaymentMutation.mutate({ id: paymentId, payload: { payment_date: null } });
+  const handleCancelPayment = (payment: Payment) => {
+    if (!window.confirm(t('finances.confirm_undo_payment', paymentLabel(payment)))) return;
+    updatePaymentMutation.mutate({ id: payment.id, payload: { payment_date: null } });
   };
 
   /** «Введено: 7 000 USD по курсу 12 000» — для строк, пересчитанных из другой валюты */
@@ -307,10 +316,10 @@ export default function PaymentSchedule({
                   <TableCell>{payment.payment_type}</TableCell>
                   <TableCell align="right">
                     {!isDealTerminated && payment.status !== 'PAID' && (
-                      <Button startIcon={<CheckCircleOutlineIcon />} size="small" onClick={() => handleMarkAsPaid(payment.id)} disabled={updatePaymentMutation.isPending}>{t('finances.paid')}</Button>
+                      <Button startIcon={<CheckCircleOutlineIcon />} size="small" onClick={() => handleMarkAsPaid(payment)} disabled={updatePaymentMutation.isPending}>{t('pages.payments.mark_as_paid')}</Button>
                     )}
                     {!isDealTerminated && payment.status === 'PAID' && (
-                      <Button startIcon={<CloseIcon />} size="small" color="secondary" onClick={() => handleCancelPayment(payment.id)} disabled={updatePaymentMutation.isPending}>{t('common.cancel')}</Button>
+                      <Button startIcon={<CloseIcon />} size="small" color="secondary" onClick={() => handleCancelPayment(payment)} disabled={updatePaymentMutation.isPending}>{t('pages.payments.cancel_payment')}</Button>
                     )}
                     {isDealTerminated && payment.status === 'TO_BE_RETURNED' && (
                       <Button startIcon={<UndoIcon />} size="small" color="warning" onClick={() => returnPaymentMutation.mutate(payment.id)} disabled={returnPaymentMutation.isPending}>{t('finances.return')}</Button>

@@ -162,6 +162,19 @@ class MultiCurrencyDealTests(TestCase):
         # Строка, введённая сразу в сумах, исходного ввода не хранит
         self.assertIsNone(payments[2].entered_amount)
 
+    def test_new_schedule_is_unpaid(self, _):
+        # Как график из калькулятора плана: первый взнос сегодня, дальше по месяцам,
+        # статус не передаётся — платежи «К оплате», ничего не «Оплачен»
+        deal = self.book()
+        deal.contract_price = Decimal('252000000.00')
+        deal.save()
+        response = self.api.post(f'/api/deals/{deal.id}/payment-schedule/', [
+            self.row('84000000', 'UZS', 0), self.row('84000000', 'UZS', 30), self.row('84000000', 'UZS', 60),
+        ], format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(set(deal.payments.values_list('status', flat=True)), {Payment.PaymentStatus.PENDING})
+        self.assertFalse(deal.payments.filter(payment_date__isnull=False).exists())
+
     def test_rounding_tail_goes_to_last_converted_row(self, _):
         ExchangeRate.objects.filter(currency='USD').update(rate=Decimal('11772.95'))
         deal = self.book()
