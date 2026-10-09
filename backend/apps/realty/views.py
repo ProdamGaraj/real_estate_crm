@@ -17,6 +17,7 @@ from permissions.permissions import (
     BuildingTypePermission, PropertyPermission, LayoutPermission,
     HasPartnerViewProjectsScope, HasPartnerViewBuildingsScope, HasPartnerViewLayoutsScope
 )
+from permissions.backends import can_user_perform_action
 from .serializers import (
     PublicProjectListSerializer, PublicProjectDetailSerializer, PublicBuildingDetailSerializer
 )
@@ -405,12 +406,17 @@ class PropertyUploadView(APIView):
                         f"Строка {index + 2}: неизвестный тип «{raw_type}» — записан как «Квартира»"
                     )
                 raw_status = row.get('Статус')
-                if pd.notna(raw_status) and str(raw_status).strip() and str(raw_status).strip() not in valid_statuses:
+                status_cell = str(raw_status).strip() if pd.notna(raw_status) else ''
+                if status_cell and status_cell not in valid_statuses:
                     errors_list.append(
-                        f"Строка {index + 2}: неизвестный статус «{raw_status}» — записан как «Подбор»"
+                        f"Строка {index + 2}: неизвестный статус «{raw_status}» — не учтён"
                     )
 
-                status_from_file = valid_statuses.get(row.get('Статус'), Property.PropertyStatus.SELECTION)
+                # Пустая или неизвестная ячейка — статус не задан: существующий
+                # объект его сохраняет, новый получает «Подбор». Раньше пустая
+                # ячейка означала «Подбор», и загрузка прайса без столбца
+                # статусов молча снимала резерв со всех объектов
+                status_from_file = valid_statuses.get(status_cell)
                 
                 try:
                     # Ищем по building + unit_number: этаж и подъезд у объекта
@@ -434,13 +440,29 @@ class PropertyUploadView(APIView):
                         for key, value in property_data.items():
                             if value is not None:
                                 setattr(existing_property, key, value)
-                        if status_from_file in allowed_statuses_from_excel:
-                            existing_property.status = status_from_file
+                        if (status_from_file in allowed_statuses_from_excel
+                                and status_from_file != existing_property.status):
+                            # Ставит и снимает резерв только тот, кто может изменять
+                            # объект, — как кнопками в карточке объекта
+                            if can_user_perform_action(request.user, 'EDIT', 'PROPERTY', obj=existing_property):
+                                existing_property.status = status_from_file
+                            else:
+                                errors_list.append(
+                                    f"Строка {index + 2}: нет права ставить и снимать резерв — "
+                                    f"статус объекта {unit_number} не изменён"
+                                )
                         existing_property.updated_by = request.user
                         existing_property.save()
                         updated_count += 1
                     else:
                         if status_from_file not in allowed_statuses_from_excel:
+                            status_from_file = Property.PropertyStatus.SELECTION
+                        if (status_from_file == Property.PropertyStatus.RESERVE
+                                and not can_user_perform_action(request.user, 'EDIT', 'PROPERTY')):
+                            errors_list.append(
+                                f"Строка {index + 2}: нет права ставить резерв — "
+                                f"объект {unit_number} создан в статусе «Подбор»"
+                            )
                             status_from_file = Property.PropertyStatus.SELECTION
                         property_data['status'] = status_from_file
                         Property.objects.create(

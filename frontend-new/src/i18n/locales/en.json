@@ -601,7 +601,9 @@
       "remove_reserve": "Remove Reserve",
       "book": "Book",
       "save_comment": "Save Comment",
-      "book_property": "Book Property #{{number}}"
+      "book_property": "Book Property #{{number}}",
+      "reserved_notice": "This unit is reserved: it cannot be booked or sold. Only an employee who can edit units can remove the reserve — contact your manager.",
+      "reserved_notice_manager": "This unit is reserved: it cannot be booked or sold. To make it available for sale, click \"Remove Reserve\"."
     },
     "finances": {
       "title": "Finances",

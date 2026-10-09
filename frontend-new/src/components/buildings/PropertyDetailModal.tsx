@@ -4,7 +4,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogTitle, DialogContent, Typography, Box, TextField, Button,
-  Stack, CircularProgress, MobileStepper, Paper, Grid, Divider
+  Stack, CircularProgress, MobileStepper, Paper, Grid, Divider, Alert
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import type { Property } from '../../api/buildings';
@@ -18,6 +18,9 @@ import { getMediaUrl } from '../../utils/media';
 import { convertAmount, formatMoney, formatRate, crossRate } from '../../utils/currency';
 import { getCurrencySettings, getCurrentRates } from '../../api/currency';
 import InstallmentCalculator from '../installments/InstallmentCalculator';
+import { useAuthStore } from '../../store/authStore';
+import { hasPermission } from '../../utils/permissions';
+import { extractApiError } from '../../utils/apiError';
 
 interface ModalProps {
   property: Property | null;
@@ -101,6 +104,8 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
       queryClient.invalidateQueries({ queryKey: ['building', String(buildingId)] });
       onClose();
     },
+    // Например, нет права ставить и снимать резерв — раньше кнопка молчала
+    onError: (error: unknown) => alert(extractApiError(error, t('errors.update_error'))),
   });
 
   const createDealMutation = useMutation({
@@ -110,8 +115,17 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
           setBookingModalOpen(false);
           onClose();
           navigate(`/deals/${data.id}`);
-      }
+      },
+      // Объект успели забронировать или поставить в резерв, нет курса валюты и т.п.
+      onError: (error: unknown) => {
+          queryClient.invalidateQueries({ queryKey: ['building', String(buildingId)] });
+          alert(extractApiError(error, t('errors.error_occurred')));
+      },
   });
+
+  // Резерв ставит и снимает только тот, кто может изменять объекты
+  const { user } = useAuthStore();
+  const canManageReserve = hasPermission(user, 'EDIT', 'PROPERTY');
 
   const handleStatusChange = (status: 'SELECTION' | 'RESERVE') => {
     if (!property) return;
@@ -214,6 +228,11 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
                 <Typography><b>{t('pages.properties.finishing')}:</b> {property.has_finishing ? t('common.yes') : t('common.no')}</Typography>
               </Stack>
 
+              {property.status === 'RESERVE' && !property.active_deal_id && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  {canManageReserve ? t('pages.properties.reserved_notice_manager') : t('pages.properties.reserved_notice')}
+                </Alert>
+              )}
               <Stack direction="row" spacing={2} useFlexGap sx={{ mt: 2, mb: 2, flexWrap: 'wrap' }}>
                 {property.active_deal_id ? (
                   <Button
@@ -225,11 +244,12 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
                   </Button>
                 ) : (
                   <>
-                    {property.status === 'SELECTION' &&
+                    {property.status === 'SELECTION' && canManageReserve &&
                       <Button variant="contained" onClick={() => handleStatusChange('RESERVE')} disabled={updatePropMutation.isPending}>{t('pages.properties.reserve')}</Button>}
-                    {property.status === 'RESERVE' &&
+                    {property.status === 'RESERVE' && canManageReserve &&
                       <Button variant="outlined" onClick={() => handleStatusChange('SELECTION')} disabled={updatePropMutation.isPending}>{t('pages.properties.remove_reserve')}</Button>}
-                    {(property.status === 'SELECTION' || property.status === 'RESERVE') &&
+                    {/* Объект в резерве не бронирует никто, пока резерв не снят */}
+                    {property.status === 'SELECTION' &&
                       <Button variant="contained" color="secondary" onClick={() => setBookingModalOpen(true)}>{t('pages.properties.book')}</Button>}
                   </>
                 )}

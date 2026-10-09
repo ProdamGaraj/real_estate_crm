@@ -601,7 +601,9 @@
       "remove_reserve": "Rezervni bekor qilish",
       "book": "Bron qilish",
       "save_comment": "Izohni saqlash",
-      "book_property": "Ob'ekt №{{number}} ni bron qilish"
+      "book_property": "Ob'ekt №{{number}} ni bron qilish",
+      "reserved_notice": "Obyekt rezervda: uni bron qilish va sotish mumkin emas. Rezervni faqat obyektlarni o'zgartirish huquqi bor xodim bekor qiladi — rahbarga murojaat qiling.",
+      "reserved_notice_manager": "Obyekt rezervda: uni bron qilish va sotish mumkin emas. Sotish mumkin bo'lishi uchun «Rezervni bekor qilish» ni bosing."
     },
     "finances": {
       "title": "Moliya",

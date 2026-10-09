@@ -130,10 +130,11 @@ class DealListView(generics.ListCreateAPIView):
         Deal.DealStatus.IN_PROGRESS,
         Deal.DealStatus.CLOSED_WON,
     )
-    # Статусы объекта, из которых допустимо начинать новую сделку
+    # Статусы объекта, из которых допустимо начинать новую сделку. «Резерв»
+    # сюда не входит: объект в резерве не бронирует и не продаёт никто, пока
+    # сотрудник с правом изменения объектов не снимет резерв
     AVAILABLE_PROPERTY_STATUSES = (
         Property.PropertyStatus.SELECTION,
-        Property.PropertyStatus.RESERVE,
     )
 
     def create(self, request, *args, **kwargs):
@@ -154,6 +155,11 @@ class DealListView(generics.ListCreateAPIView):
                 ).exists():
                     raise PropertyUnavailable("Этот объект уже находится в другой активной сделке.")
 
+                if property_instance.status == Property.PropertyStatus.RESERVE:
+                    raise PropertyUnavailable(
+                        "Объект в резерве — бронировать и продавать его нельзя. "
+                        "Снять резерв может сотрудник с правом изменения объектов."
+                    )
                 if property_instance.status not in self.AVAILABLE_PROPERTY_STATUSES:
                     raise PropertyUnavailable(
                         f"Объект недоступен для брони: текущий статус — "
