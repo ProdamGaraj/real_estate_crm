@@ -7,6 +7,7 @@ import { Button, CircularProgress, Alert, List, ListItem, ListItemText, ListItem
 import DescriptionIcon from '@mui/icons-material/Description';
 import apiClient from '../../api/axios';
 import type { Deal } from '../../api/deals';
+import { extractApiError } from '../../utils/apiError';
 
 interface DocumentGenerationProps {
   deal: Deal;
@@ -33,8 +34,18 @@ export default function DocumentGeneration({ deal }: DocumentGenerationProps) {
         link.click();
         document.body.removeChild(link);
     } catch (error) {
-        alert(t('documents.generation_failed'));
-        console.error(error);
+        // Ответ запрашивался как файл, поэтому причина отказа (ошибка в метках
+        // шаблона, отменённая сделка) приходит Blob-ом — читаем её как JSON
+        let reason: unknown = error;
+        const data = (error as { response?: { data?: unknown } })?.response?.data;
+        if (data instanceof Blob) {
+          try {
+            reason = { response: { data: JSON.parse(await data.text()) } };
+          } catch {
+            // Не JSON — остаётся общее сообщение
+          }
+        }
+        alert(extractApiError(reason, t('documents.generation_failed')));
     }
   };
 

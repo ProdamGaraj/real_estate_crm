@@ -39,6 +39,7 @@ import PropertyDetailModal from '../components/buildings/PropertyDetailModal';
 import HumanizedLog from '../components/logs/HumanizedLog';
 import { useAuthStore } from '../store/authStore';
 import { hasPermission } from '../utils/permissions';
+import { extractApiError } from '../utils/apiError';
 
 // Вспомогательный компонент для панели вкладок
 interface TabPanelProps {
@@ -82,7 +83,10 @@ export default function BuildingDetailPage() {
   const { user } = useAuthStore();
   const canEditBuilding = hasPermission(user, 'EDIT', 'BUILDING');
   const canDeleteBuilding = hasPermission(user, 'DELETE', 'BUILDING');
-  const canEditProperty = hasPermission(user, 'EDIT', 'PROPERTY');
+  // Загрузка объектов из Excel — право «Добавление» на объекты, как проверяет сервер.
+  // Раньше кнопки показывались по праву «Редактирование»: роль с одним «Добавлением»
+  // их не видела, а с одним «Редактированием» получала отказ сервера
+  const canUploadProperties = hasPermission(user, 'ADD', 'PROPERTY');
   const [propertyFilters, setPropertyFilters] = useState({ unit_number: '', status: '' });
 
   const getDateLocale = () => {
@@ -127,8 +131,9 @@ export default function BuildingDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['building', buildingId] });
       alert(data.status);
     },
-    onError: (error) => {
-      alert(`${t('pages.buildings.upload_error')}: ${error.message}`);
+    onError: (error: unknown) => {
+      // Причина от сервера (нет прав, неверный файл), а не «Request failed with status code 403»
+      alert(`${t('pages.buildings.upload_error')}: ${extractApiError(error, t('errors.error_occurred'))}`);
     }
   });
 
@@ -389,13 +394,13 @@ export default function BuildingDetailPage() {
           </Stack>
 
           <Stack direction="row" spacing={2}>
-            {canEditProperty && (
+            {canUploadProperties && (
               <Button variant="outlined" onClick={handleDownload}>
                 {t('pages.buildings.download_template')}
               </Button>
             )}
             {/* === ОБНОВЛЕННАЯ КНОПКА ЗАГРУЗКИ === */}
-            {canEditProperty && (
+            {canUploadProperties && (
               <Button
                 component="label"
                 role={undefined}

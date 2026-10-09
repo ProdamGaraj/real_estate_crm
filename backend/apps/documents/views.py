@@ -6,10 +6,12 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from docxtpl import DocxTemplate
-from jinja2.sandbox import SandboxedEnvironment
+from jinja2 import TemplateError
+from django.utils import timezone
 import io
 
 from apps.deals.models import Deal
+from .formatting import template_environment
 from .models import Template
 from .serializers import TemplateSerializer
 from permissions.permissions import TemplatePermission
@@ -137,6 +139,12 @@ class GenerateDocumentView(APIView):
         phone = (client.phone_numbers.filter(is_primary=True).order_by('id').first()
                  or client.phone_numbers.order_by('id').first())
         client.phone_number = phone.phone_number if phone else ''
+        # Все номера через « / », основной первым: в договоре часто два телефона
+        numbers = [phone.phone_number] if phone else []
+        numbers += [n for n in client.phone_numbers.order_by('id').values_list('phone_number', flat=True)
+                    if n not in numbers]
+        client.all_phones = ' / '.join(numbers)
+        payments = list(deal.payments.select_related('payment_type').order_by('due_date', 'id'))
         context = {
             'deal': deal,
             'client': client,
@@ -144,9 +152,23 @@ class GenerateDocumentView(APIView):
             'building': deal.property.building,
             'project': deal.property.building.project,
             'manager': deal.created_by,
+            # График для таблицы в договоре: {%tr for p in payments %} … {%tr endfor %}
+            'payments': payments,
+            # Первый платёж графика — например, закалат (задаток) в договоре брони
+            'first_payment': payments[0] if payments else None,
+            'today': timezone.localdate(),
         }
-        # Используем SandboxedEnvironment для защиты от SSTI/RCE
-        doc.render(context, jinja_env=SandboxedEnvironment())
+        # Песочница защищает от выполнения кода из шаблона (SSTI/RCE); фильтры —
+        # суммы прописью, разряды и даты. Валюта прописи по умолчанию — валюта сделки
+        try:
+            doc.render(context, jinja_env=template_environment(deal.currency))
+        except TemplateError as error:
+            # Опечатка в метке давала ошибку сервера без объяснения
+            return Response(
+                {"error": f"Ошибка в метках шаблона «{template.name}»: {str(error).rstrip('.')}. "
+                          f"Проверьте написание меток и фигурные скобки."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         file_stream = io.BytesIO()
         doc.save(file_stream)
