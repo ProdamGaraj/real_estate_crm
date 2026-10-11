@@ -8,15 +8,16 @@
  * ещё можно вводить суммы графика: при сохранении они пересчитываются в
  * валюту сделки по курсу на день сохранения.
  *
- * Курсы ЦБ загружаются автоматически каждый час и по кнопке. Ручной курс
- * действует только внутри своей компании и перекрывает курс ЦБ на свою дату.
+ * Источник курсов выбирает компания: ЦБ (загружаются автоматически каждый
+ * час и по кнопке) или только её ручные курсы — последний действует, пока не
+ * введён новый. Источники не смешиваются.
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert, Box, Button, Chip, FormControl, Grid, InputLabel, MenuItem, OutlinedInput,
-  Paper, Select, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TextField, Typography,
+  Alert, Box, Button, Chip, FormControl, FormControlLabel, FormLabel, Grid, InputLabel, MenuItem,
+  OutlinedInput, Paper, Radio, RadioGroup, Select, Stack, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
 import { GridActionsCellItem } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -31,7 +32,7 @@ import {
   createManualRate, deleteManualRate, getCurrencySettings, getCurrentRates, getRateHistory,
   refreshCbuRates, updateCurrencySettings,
 } from '../../api/currency';
-import type { ExchangeRate } from '../../api/currency';
+import type { ExchangeRate, RateSource } from '../../api/currency';
 import { getCompanies } from '../../api/permissions';
 import { useAuthStore } from '../../store/authStore';
 import { hasPermission, isSystemAdmin } from '../../utils/permissions';
@@ -69,10 +70,12 @@ export default function CurrencySettingsManager() {
 
   const [dealCurrency, setDealCurrency] = useState('');
   const [supported, setSupported] = useState<string[]>([]);
+  const [rateSource, setRateSource] = useState<RateSource>('CBU');
   useEffect(() => {
     if (settings) {
       setDealCurrency(settings.deal_currency);
       setSupported(settings.supported_currencies);
+      setRateSource(settings.rate_source ?? 'CBU');
     }
   }, [settings]);
 
@@ -135,6 +138,7 @@ export default function CurrencySettingsManager() {
   const baseCurrency = settings?.base_currency ?? 'UZS';
   const dirty = !!settings && (
     dealCurrency !== settings.deal_currency
+    || rateSource !== settings.rate_source
     || [...supported].sort().join() !== [...settings.supported_currencies].sort().join()
   );
 
@@ -266,12 +270,43 @@ export default function CurrencySettingsManager() {
         {settings && dealCurrency !== settings.deal_currency && (
           <Alert severity="warning" sx={{ mt: 2 }}>{t('pages.settings.currencies.deal_currency_change_warning')}</Alert>
         )}
+
+        {/* Источник курса: ЦБ или только ручные курсы компании */}
+        <FormControl sx={{ mt: 3, display: 'block' }} disabled={!canEdit}>
+          <FormLabel>{t('pages.settings.currencies.rate_source_title')}</FormLabel>
+          <RadioGroup value={rateSource} onChange={(e) => setRateSource(e.target.value as RateSource)}>
+            <FormControlLabel
+              value="CBU"
+              sx={{ alignItems: 'flex-start', mb: 1 }}
+              control={<Radio sx={{ pt: 0.25 }} />}
+              label={(
+                <Box>
+                  <Typography variant="body2">{t('pages.settings.currencies.source_cbu')}</Typography>
+                  <Typography variant="caption" color="text.secondary">{t('pages.settings.currencies.rate_source_cbu_hint')}</Typography>
+                </Box>
+              )}
+            />
+            <FormControlLabel
+              value="MANUAL"
+              sx={{ alignItems: 'flex-start', mb: 1 }}
+              control={<Radio sx={{ pt: 0.25 }} />}
+              label={(
+                <Box>
+                  <Typography variant="body2">{t('pages.settings.currencies.source_manual')}</Typography>
+                  <Typography variant="caption" color="text.secondary">{t('pages.settings.currencies.rate_source_manual_hint')}</Typography>
+                </Box>
+              )}
+            />
+          </RadioGroup>
+        </FormControl>
         {canEdit && (
           <Button
             variant="contained"
             sx={{ mt: 2 }}
             disabled={!dirty || saveSettings.isPending}
-            onClick={() => saveSettings.mutate({ deal_currency: dealCurrency, supported_currencies: supported, company: companyId })}
+            onClick={() => saveSettings.mutate({
+              deal_currency: dealCurrency, supported_currencies: supported, rate_source: rateSource, company: companyId,
+            })}
           >
             {saveSettings.isPending ? t('common.saving') : t('common.save')}
           </Button>
@@ -289,11 +324,15 @@ export default function CurrencySettingsManager() {
           )}
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {t('pages.settings.currencies.rates_hint', { base: baseCurrency })}
+          {settings?.rate_source === 'MANUAL'
+            ? t('pages.settings.currencies.rates_hint_manual', { base: baseCurrency })
+            : t('pages.settings.currencies.rates_hint', { base: baseCurrency })}
         </Typography>
         {missing.length > 0 && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {t('pages.settings.currencies.missing_rates', { currencies: missing.join(', ') })}
+            {settings?.rate_source === 'MANUAL'
+              ? t('pages.settings.currencies.missing_manual_rates', { currencies: missing.join(', ') })
+              : t('pages.settings.currencies.missing_rates', { currencies: missing.join(', ') })}
           </Alert>
         )}
         <TableContainer component={Paper} variant="outlined">

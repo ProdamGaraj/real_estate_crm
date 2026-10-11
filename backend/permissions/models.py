@@ -27,6 +27,17 @@ class Company(models.Model):
     supported_currencies = models.JSONField(default=default_supported_currencies,
                                             verbose_name="Поддерживаемые валюты")
 
+    class RateSource(models.TextChoices):
+        CBU = 'CBU', 'Курс ЦБ Узбекистана'
+        MANUAL = 'MANUAL', 'Ручной курс компании'
+
+    # Какими курсами пересчитываются суммы: только ЦБ (загружаются раз в час)
+    # или только курсами, введёнными компанией, — последний действует, пока не
+    # введён новый. Раньше источники смешивались: ручной курс перекрывал ЦБ лишь
+    # на свою дату, и уже на следующий день его вытеснял свежий курс ЦБ
+    rate_source = models.CharField(max_length=10, choices=RateSource.choices, default=RateSource.CBU,
+                                   verbose_name="Источник курса")
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 

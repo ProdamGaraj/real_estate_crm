@@ -299,3 +299,69 @@ class InitPermissionsTypicalRolesTests(TestCase):
         call_command('setup_admin_permissions', username='boss', stdout=_io.StringIO())
 
         self.assertTrue(UserProfile.objects.get(user__username='boss').is_system_admin)
+
+
+@override_settings(
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+)
+class UserProfileEditTests(TestCase):
+    """
+    Правка сотрудника. Имя, фамилия и e-mail молча не сохранялись (поле user было
+    только для чтения), а администратору компании отказывало в любой правке:
+    форма всегда присылала флаг системного администратора.
+    """
+
+    def setUp(self):
+        call_command('init_permissions', stdout=_io.StringIO())
+        self.company = Company.objects.create(name='Андижан', code='AND')
+        self.root = self._user('root', system_admin=True)
+        company_admin_role = Role.objects.create(name='Админ компании', code='CA_TEST')
+        company_admin_role.permissions.set(Permission.objects.filter(resource='USER', scope='COMPANY'))
+        self.admin = self._user('boss', roles=[company_admin_role])
+        self.employee = self._user('mpp')
+
+    def _user(self, username, system_admin=False, roles=()):
+        user = User.objects.create_user(username, password='pass-for-tests', first_name='Старое', last_name='Имя')
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company = self.company
+        profile.is_system_admin = system_admin
+        profile.save()
+        profile.roles.set(roles)
+        return User.objects.get(pk=user.pk)
+
+    def patch(self, actor, target, data):
+        api = APIClient()
+        api.force_authenticate(actor)
+        return api.patch(f'/api/permissions/user-profiles/{target.profile.id}/', data, format='json')
+
+    def test_system_admin_changes_name_and_email(self):
+        response = self.patch(self.root, self.employee, {
+            'first_name': ' Шохиста ', 'last_name': 'Арипджанова', 'email': 'sh@example.com',
+            'is_system_admin': False, 'role_ids': [],
+        })
+        self.assertEqual(response.status_code, 200, response.data)
+        self.employee.refresh_from_db()
+        self.assertEqual((self.employee.first_name, self.employee.last_name, self.employee.email),
+                         ('Шохиста', 'Арипджанова', 'sh@example.com'))
+
+    def test_company_admin_edits_employee_with_unchanged_flag(self):
+        # Форма присылает is_system_admin=false — это не попытка его менять
+        response = self.patch(self.admin, self.employee, {
+            'phone': '+998901112233', 'last_name': 'Новая', 'is_system_admin': False, 'role_ids': [],
+        })
+        self.assertEqual(response.status_code, 200, response.data)
+        self.employee.refresh_from_db()
+        self.assertEqual(self.employee.last_name, 'Новая')
+        self.assertEqual(self.employee.profile.phone, '+998901112233')
+
+    def test_company_admin_cannot_grant_system_admin(self):
+        response = self.patch(self.admin, self.employee, {'is_system_admin': True, 'role_ids': []})
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(UserProfile.objects.get(user=self.employee).is_system_admin)
+
+    def test_system_admin_grants_flag_but_not_removes_own(self):
+        self.assertEqual(self.patch(self.root, self.employee, {'is_system_admin': True, 'role_ids': []}).status_code, 200)
+        self.assertTrue(UserProfile.objects.get(user=self.employee).is_system_admin)
+        response = self.patch(self.root, self.root, {'is_system_admin': False, 'role_ids': []})
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(UserProfile.objects.get(user=self.root).is_system_admin)

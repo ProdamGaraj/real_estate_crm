@@ -255,7 +255,7 @@ export default function UsersPage() {
       sortable: false,
       filterable: false,
       renderCell: (params: any) => {
-        const isSelf = params.row.user === user?.id;
+        const isSelf = params.row.id === user?.id; // id профиля: row.user — объект учётной записи
         if (isSelf) return null;
         return (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -436,7 +436,8 @@ export default function UsersPage() {
             }}
           />
           {/* Кнопки бан/удаление в модалке (только при редактировании + если есть права) */}
-          {selectedUser && canDelete && selectedUser.user !== user?.id && (
+          {/* Себя не блокируют и не удаляют: сравниваем профили (поле user — объект учётной записи, сравнение с id было всегда «не равно») */}
+          {selectedUser && canDelete && selectedUser.id !== user?.id && (
             <>
               <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>

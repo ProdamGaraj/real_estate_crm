@@ -8380,6 +8380,35 @@
     "default": "default_supported_currencies"
    },
    {
+    "name": "rate_source",
+    "column": "rate_source",
+    "type": "CharField",
+    "verbose": "Источник курса",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 10,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "CBU",
+      "Курс ЦБ Узбекистана"
+     ],
+     [
+      "MANUAL",
+      "Ручной курс компании"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "Company.RateSource.CBU"
+   },
+   {
     "name": "created_at",
     "column": "created_at",
     "type": "DateTimeField",

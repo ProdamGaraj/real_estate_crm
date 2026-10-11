@@ -978,10 +978,15 @@
         "source_base": "Base currency",
         "no_rate": "No rate",
         "manual_title": "Manual rate",
-        "manual_hint": "Applies only within your company and replaces the CBU rate on the given date. Use it when the CBU is unavailable or settlements use an internal rate.",
+        "manual_hint": "Company rate from the given date. Used when the rate source is \"Company manual rate\": it applies until a new one is entered.",
         "history_title": "Rate history",
         "entered_by": "Entered by",
-        "confirm_delete": "Delete the manual rate? The CBU rate will apply on this date again."
+        "confirm_delete": "Delete the manual rate? The CBU rate will apply on this date again.",
+        "rate_source_title": "Rate source",
+        "rate_source_cbu_hint": "CBU rates are loaded automatically every hour; manual rates are not used.",
+        "rate_source_manual_hint": "Only rates entered by the company below are used: the latest one applies until a new one is entered. CBU rates are not used — enter a rate for each currency before switching.",
+        "rates_hint_manual": "Company manual rates are used: for each currency the latest entered rate applies. A rate is how many {{base}} per 1 unit of currency.",
+        "missing_manual_rates": "No manual rate for: {{currencies}}. Bookings priced in these currencies and schedule rows in them cannot be saved — enter a rate below or switch the source to the CBU."
       },
       "finance_refs": {
         "shared": "Shared by all companies",

@@ -289,11 +289,20 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
     )
     
     all_permissions = serializers.SerializerMethodField()
-    
+
+    # Имя, фамилия и e-mail хранятся в учётной записи (User), а не в профиле.
+    # Раньше поле user было только для чтения: форма правки их не отправляла,
+    # а сервер молча игнорировал — изменить ФИО сотрудника было нельзя
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, write_only=True)
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, write_only=True)
+    email = serializers.EmailField(required=False, allow_blank=True, write_only=True)
+
+    USER_FIELDS = ('first_name', 'last_name', 'email')
+
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'user', 'company', 'company_id',
+            'id', 'user', 'first_name', 'last_name', 'email', 'company', 'company_id',
             'department', 'department_id',
             'roles', 'role_ids',
             'position', 'phone', 'avatar',
@@ -301,11 +310,24 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
             'all_permissions',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['is_system_admin', 'is_active', 'is_deleted', 'created_at', 'updated_at']
+        # is_system_admin меняется правкой — смену разрешает только системному
+        # администратору UserProfileViewSet.perform_update (раньше флажок в форме
+        # молча игнорировался). is_active — только через ban/unban: там же
+        # блокируется учётная запись и пишется журнал
+        read_only_fields = ['is_active', 'is_deleted', 'created_at', 'updated_at']
     
     def get_all_permissions(self, obj):
         permissions = obj.get_all_permissions()
         return PermissionSerializer(permissions, many=True).data
+
+    def update(self, instance, validated_data):
+        account = {field: validated_data.pop(field) for field in self.USER_FIELDS if field in validated_data}
+        profile = super().update(instance, validated_data)
+        if account:
+            for field, value in account.items():
+                setattr(profile.user, field, value.strip())
+            profile.user.save(update_fields=list(account))
+        return profile
     
     def validate_company_id(self, value):
         # Перенос профиля в компанию, к которой нет доступа, — эскалация

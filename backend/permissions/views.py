@@ -500,12 +500,23 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         request = self.request
         is_admin = _is_request_user_system_admin(request)
         
-        # Только system admin может изменять поле is_system_admin (и назначать, и снимать)
-        if 'is_system_admin' in request.data and not is_admin:
+        # Только system admin может изменять поле is_system_admin (и назначать, и снимать).
+        # Отказ — только при смене значения: форма всегда присылает флаг, и любая
+        # правка сотрудника администратором компании (даже телефона) отклонялась
+        requested_flag = request.data.get('is_system_admin')
+        changes_flag = (
+            requested_flag is not None
+            and (str(requested_flag).lower() in ('true', '1')) != serializer.instance.is_system_admin
+        )
+        if changes_flag and not is_admin:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied(
                 'Только системный администратор может изменять флаг системного администратора'
             )
+        if changes_flag and serializer.instance.user_id == request.user.id:
+            # Иначе можно случайно лишить систему последнего администратора
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Нельзя снять флаг системного администратора с самого себя')
         
         # Валидация scope назначаемых ролей
         role_ids = request.data.get('role_ids', [])

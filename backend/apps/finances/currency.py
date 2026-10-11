@@ -25,7 +25,7 @@ from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import Q
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -120,16 +120,33 @@ def fetch_cbu_rates(on_date=None, timeout=10):
 
 # --- Курс на дату -------------------------------------------------------------
 
+RATE_SOURCE_CBU = 'CBU'
+RATE_SOURCE_MANUAL = 'MANUAL'
+
+
+def rate_source(company):
+    """Источник курсов компании: ЦБ (по умолчанию) или её ручные курсы."""
+    return getattr(company, 'rate_source', None) or RATE_SOURCE_CBU
+
+
+def uses_manual_rates(company):
+    return company is not None and rate_source(company) == RATE_SOURCE_MANUAL
+
+
 def _lookup(currency, on_date, company):
+    """
+    Последний курс не позже даты из источника, выбранного компанией.
+
+    Источники не смешиваются: при «ЦБ» ручные курсы не используются, при
+    «Ручной курс» — курсы ЦБ. Раньше ручной курс перекрывал ЦБ лишь на свою
+    дату, и уже на следующий день его вытеснял свежий курс ЦБ.
+    """
     from .models import ExchangeRate
 
-    scope = Q(company__isnull=True)
-    if company is not None:
-        scope |= Q(company=company)
+    scope = Q(company=company) if uses_manual_rates(company) else Q(company__isnull=True)
     return (ExchangeRate.objects
             .filter(scope, currency=currency, date__lte=on_date)
-            # На одну дату ручной курс компании важнее курса ЦБ
-            .order_by('-date', F('company').desc(nulls_last=True))
+            .order_by('-date')
             .first())
 
 
@@ -166,13 +183,21 @@ def get_rate(currency, on_date=None, company=None, fetch=True):
         return Decimal(1)
     on_date = on_date or timezone.localdate()
     record = _lookup(currency, on_date, company)
+    if uses_manual_rates(company):
+        # Ручной курс действует, пока компания не введёт новый; к ЦБ не обращаемся
+        if record is None:
+            raise RateUnavailable(
+                f'Нет ручного курса {currency} на {on_date:%d.%m.%Y} или раньше. '
+                f'Введите курс в настройках («Валюты») или переключите источник курса на ЦБ.'
+            )
+        return record.rate
     if fetch and (record is None or (on_date - record.date).days > STALE_DAYS):
         if try_fetch_cbu_rates(on_date):
             record = _lookup(currency, on_date, company)
     if record is None:
         raise RateUnavailable(
             f'Нет курса {currency} на {on_date:%d.%m.%Y}. '
-            f'Обновите курсы ЦБ или введите курс вручную в настройках («Валюты»).'
+            f'Обновите курсы ЦБ или переключите источник курса на ручной в настройках («Валюты»).'
         )
     return record.rate
 

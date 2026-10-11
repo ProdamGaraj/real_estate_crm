@@ -56,9 +56,19 @@ export interface Role {
   updated_at: string;
 }
 
+/** Учётная запись сотрудника: имя, фамилия и e-mail хранятся здесь, а не в профиле */
+export interface UserAccount {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  full_name?: string;
+}
+
 export interface UserProfile {
   id: number;
-  user: number;
+  user: number | UserAccount;
   user_username?: string;
   user_full_name?: string;
   company?: number;
@@ -282,6 +292,9 @@ export const createUserProfile = async (data: {
 export const updateUserProfile = async (
   id: number,
   data: Partial<{
+    first_name?: string;
+    last_name?: string;
+    email?: string;
     company_id?: number;
     department_id?: number;
     role_ids?: number[];

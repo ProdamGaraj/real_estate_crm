@@ -50,12 +50,32 @@ class RateLookupTests(TestCase):
         self.assertEqual(get_rate('USD', self.day + timedelta(days=1), fetch=False), Decimal('12000'))
         self.assertEqual(get_rate('USD', self.day + timedelta(days=5), fetch=False), Decimal('12100'))
 
-    def test_manual_rate_overrides_cbu_only_inside_its_company(self, _):
+    def test_rate_source_switch(self, fetch):
         ExchangeRate.objects.create(currency='USD', date=self.day, rate=Decimal('12500'),
                                     source=ExchangeRate.Source.MANUAL, company=self.a)
+        # Источник «ЦБ» (по умолчанию): ручной курс не используется
+        self.assertEqual(get_rate('USD', self.day, self.a, fetch=False), Decimal('12000'))
+
+        self.a.rate_source = Company.RateSource.MANUAL
+        self.a.save()
         self.assertEqual(get_rate('USD', self.day, self.a, fetch=False), Decimal('12500'))
         # Ручной курс компании А не влияет на расчёты компании Б
         self.assertEqual(get_rate('USD', self.day, self.b, fetch=False), Decimal('12000'))
+
+        # Свежий курс ЦБ не вытесняет ручной: он действует, пока не введён новый,
+        # и к ЦБ за ним не обращаются даже через месяц
+        cbu('USD', self.day + timedelta(days=2), '12100')
+        later = self.day + timedelta(days=30)
+        self.assertEqual(get_rate('USD', later, self.a), Decimal('12500'))
+        self.assertEqual(get_rate('USD', self.day + timedelta(days=5), self.b, fetch=False), Decimal('12100'))
+        fetch.assert_not_called()
+
+    def test_manual_source_without_rate_is_reported(self, fetch):
+        self.a.rate_source = Company.RateSource.MANUAL
+        self.a.save()
+        with self.assertRaisesMessage(RateUnavailable, 'Нет ручного курса EUR'):
+            get_rate('EUR', self.day, self.a)
+        fetch.assert_not_called()
 
     def test_conversion_goes_through_sum(self, _):
         cbu('EUR', self.day, '13200')
@@ -270,7 +290,30 @@ class MultiCurrencyDealTests(TestCase):
         self.assertEqual(response.status_code, 201, response.data)
         record = ExchangeRate.objects.get(pk=response.data['id'])
         self.assertEqual(record.company, self.company)
+        # Пока источник — ЦБ, ручной курс сохранён, но не используется
+        self.assertEqual(get_rate('USD', self.today, self.company, fetch=False), Decimal('12000'))
+        self.company.rate_source = Company.RateSource.MANUAL
+        self.company.save()
         self.assertEqual(get_rate('USD', self.today, self.company, fetch=False), Decimal('12345.67'))
+
+    def test_switch_to_manual_rates_applies_to_booking(self, _):
+        role = self.user.profile.roles.first()
+        role.permissions.add(*Permission.objects.filter(resource='EXCHANGE_RATE', action__in=['ADD', 'EDIT'],
+                                                        scope='COMPANY'))
+        self.api.post('/api/finances/exchange-rates/', {
+            'currency': 'USD', 'date': (self.today - timedelta(days=20)).isoformat(), 'rate': '12500'},
+            format='json')
+        response = self.api.patch('/api/finances/currency-settings/', {'rate_source': 'MANUAL'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data['rate_source'], 'MANUAL')
+        self.assertEqual(self.api.patch('/api/finances/currency-settings/', {'rate_source': 'XYZ'},
+                                        format='json').status_code, 400)
+        # Ручной курс 20-дневной давности действует, хотя у ЦБ есть сегодняшний (12 000)
+        deal = self.book()
+        self.assertEqual(deal.catalog_rate, Decimal('12500'))
+        self.assertEqual(deal.initial_price, Decimal('262500000.00'))
+        rates = self.api.get('/api/finances/exchange-rates/').data
+        self.assertEqual((rates['rate_source'], rates['rates']['USD']['rate']), ('MANUAL', '12500.00000000'))
 
     def test_dashboard_sales_are_converted_to_deal_currency(self, _):
         role = self.user.profile.roles.first()

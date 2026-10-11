@@ -24,7 +24,8 @@ from permissions.reference_scope import is_admin
 
 from .currency import (
     CURRENCIES, CURRENCY_CODES, BASE_CURRENCY, _lookup,
-    company_base_currency, fetch_cbu_rates, supported_currencies, try_fetch_cbu_rates, user_company,
+    company_base_currency, fetch_cbu_rates, rate_source, supported_currencies, try_fetch_cbu_rates,
+    uses_manual_rates, user_company,
 )
 from .models import ExchangeRate
 
@@ -66,6 +67,9 @@ class CurrencySettingsView(APIView):
             'company_name': getattr(company, 'name', None),
             'deal_currency': company_base_currency(company),
             'supported_currencies': supported_currencies(company),
+            # Источник курсов: ЦБ или ручные курсы компании
+            'rate_source': rate_source(company),
+            'rate_sources': [{'code': code, 'name': name} for code, name in Company.RateSource.choices],
             'available_currencies': [{'code': code, 'name': name} for code, name in CURRENCIES],
             'base_currency': BASE_CURRENCY,
         }
@@ -93,10 +97,15 @@ class CurrencySettingsView(APIView):
         # Валюта сделок всегда входит в поддерживаемые
         if deal_currency not in supported:
             supported.insert(0, deal_currency)
+        source = str(request.data.get('rate_source', company.rate_source)).upper()
+        if source not in Company.RateSource.values:
+            return Response({'error': 'Источник курса — ЦБ или ручной курс компании.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         company.deal_currency = deal_currency
         company.supported_currencies = [code for code in CURRENCY_CODES if code in supported]
-        company.save(update_fields=['deal_currency', 'supported_currencies', 'updated_at'])
+        company.rate_source = source
+        company.save(update_fields=['deal_currency', 'supported_currencies', 'rate_source', 'updated_at'])
         return Response(self._payload(company))
 
 
@@ -137,7 +146,8 @@ class ExchangeRateListView(APIView):
                 rates[code] = {'currency': code, 'rate': '1', 'date': on_date.isoformat(), 'source': 'BASE'}
                 continue
             record = _lookup(code, on_date, company)
-            if record is None and not attempted:
+            # При ручных курсах ЦБ не загружаем: они не используются
+            if record is None and not attempted and not uses_manual_rates(company):
                 # Курса ещё нет — пробуем загрузить с ЦБ, один раз на запрос:
                 # загрузка приносит сразу все валюты
                 attempted = True
@@ -147,6 +157,7 @@ class ExchangeRateListView(APIView):
         return Response({
             'date': on_date.isoformat(),
             'deal_currency': company_base_currency(company),
+            'rate_source': rate_source(company),
             'rates': rates,
         })
 

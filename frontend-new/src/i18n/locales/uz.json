@@ -978,10 +978,15 @@
         "source_base": "Asosiy valyuta",
         "no_rate": "Kurs yo'q",
         "manual_title": "Qo'lda kiritilgan kurs",
-        "manual_hint": "Faqat sizning kompaniyangizda amal qiladi va ko'rsatilgan sanada MB kursi o'rnini bosadi. MB mavjud bo'lmaganda yoki hisob-kitoblar ichki kurs bo'yicha yuritilganda kerak.",
+        "manual_hint": "Ko'rsatilgan sanadan boshlab kompaniya kursi. Kurs manbai «Kompaniyaning qo'lda kiritilgan kursi» bo'lganda ishlatiladi: yangisi kiritilmaguncha amal qiladi.",
         "history_title": "Kurslar tarixi",
         "entered_by": "Kim kiritgan",
-        "confirm_delete": "Qo'lda kiritilgan kurs o'chirilsinmi? Bu sanada yana MB kursi amal qiladi."
+        "confirm_delete": "Qo'lda kiritilgan kurs o'chirilsinmi? Bu sanada yana MB kursi amal qiladi.",
+        "rate_source_title": "Kurs manbai",
+        "rate_source_cbu_hint": "MB kurslari har soatda avtomatik yuklanadi; qo'lda kiritilgan kurslar ishlatilmaydi.",
+        "rate_source_manual_hint": "Faqat kompaniya quyida kiritgan kurslar ishlatiladi: yangisi kiritilmaguncha oxirgisi amal qiladi. MB kurslari ishlatilmaydi — o'tishdan oldin har bir valyuta kursini kiriting.",
+        "rates_hint_manual": "Kompaniyaning qo'lda kiritilgan kurslari ishlatiladi: har bir valyuta uchun oxirgi kiritilgani amal qiladi. Kurs — valyutaning 1 birligi uchun necha {{base}}.",
+        "missing_manual_rates": "Qo'lda kiritilgan kurs yo'q: {{currencies}}. Bu valyutalardagi prays bo'yicha bron va jadval qatorlari saqlanmaydi — kursni quyida kiriting yoki manbani MB ga o'tkazing."
       },
       "finance_refs": {
         "shared": "Barcha kompaniyalar uchun umumiy",

@@ -22,11 +22,15 @@ import {
   updateUserProfile,
   createUserProfile,
   changeUserPassword,
+  banUser,
+  unbanUser,
   getCompanies, 
   getDepartments, 
   getRoles,
   type UserProfile 
 } from '../../api/permissions';
+import { useAuthStore } from '../../store/authStore';
+import { isSystemAdmin } from '../../utils/permissions';
 
 interface UserFormProps {
   userProfile?: UserProfile | null;
@@ -35,6 +39,10 @@ interface UserFormProps {
 }
 
 export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormProps) {
+  // Флаг системного администратора меняет только системный администратор
+  const { user: currentUser } = useAuthStore();
+  const canSetSystemAdmin = isSystemAdmin(currentUser);
+  const account = userProfile && typeof userProfile.user === 'object' ? userProfile.user : null;
   const { t } = useTranslation();
   const isCreating = !userProfile;
   
@@ -42,9 +50,11 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
     // Поля для создания пользователя
     username: '',
     password: '',
-    email: '',
-    first_name: '',
-    last_name: '',
+    // При правке — текущие значения учётной записи: раньше поля были только
+    // при создании, и изменить ФИО или e-mail сотрудника было нельзя
+    email: account?.email || '',
+    first_name: account?.first_name || '',
+    last_name: account?.last_name || '',
     // Поля профиля
     company: userProfile?.company || null,
     department: userProfile?.department || null,
@@ -150,27 +160,35 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
           throw new Error(t('errors.user_not_found'));
         }
         
+        // Имя, фамилия, e-mail, должность и телефон отправляются всегда — их можно
+        // и очистить. Флаг администратора — только если его меняли: сервер
+        // отказывал администратору компании в любой правке, видя этот флаг
         const payload: any = {
           role_ids: data.roles || [],
-          is_system_admin: data.is_system_admin,
-          is_active: data.is_active,
+          first_name: data.first_name.trim(),
+          last_name: data.last_name.trim(),
+          email: data.email.trim(),
+          position: data.position.trim(),
+          phone: data.phone.trim(),
         };
-        
-        // Добавляем опциональные поля только если они заполнены
+        if (data.is_system_admin !== userProfile.is_system_admin) {
+          payload.is_system_admin = data.is_system_admin;
+        }
         if (data.company) {
           payload.company_id = Number(data.company);
         }
         if (data.department) {
           payload.department_id = Number(data.department);
         }
-        if (data.position?.trim()) {
-          payload.position = data.position.trim();
-        }
-        if (data.phone?.trim()) {
-          payload.phone = data.phone.trim();
-        }
-        
-        return updateUserProfile(userProfile.id, payload);
+
+        const profileId = userProfile.id;
+        return updateUserProfile(profileId, payload).then(async (updated) => {
+          // Блокировка — отдельным действием: оно отключает и вход в систему
+          if (data.is_active !== userProfile.is_active) {
+            await (data.is_active ? unbanUser(profileId) : banUser(profileId));
+          }
+          return updated;
+        });
       }
     },
     onSuccess: () => {
@@ -299,12 +317,27 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
                 {t('pages.settings.permissions.user')}
               </Typography>
               <Typography variant="h6">{userProfile?.user_username}</Typography>
-              {userProfile?.user_full_name && (
-                <Typography variant="body2" color="text.secondary">
-                  {userProfile.user_full_name}
-                </Typography>
-              )}
             </Box>
+
+            <TextField
+              label={t('pages.settings.permissions.last_name')}
+              value={formData.last_name}
+              onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label={t('pages.settings.permissions.first_name')}
+              value={formData.first_name}
+              onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label={t('forms.email')}
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              fullWidth
+            />
 
             <Divider />
 
@@ -455,13 +488,13 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           fullWidth
-          placeholder="+7 (___) ___-__-__"
+          placeholder="+998 __ ___ __ __"
         />
 
         <Divider />
 
         {/* Флаги */}
-        <Box>
+        {canSetSystemAdmin && <Box>
           <FormControlLabel
             control={
               <Checkbox
@@ -478,7 +511,7 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
               </Box>
             }
           />
-        </Box>
+        </Box>}
 
         <Box>
           <FormControlLabel

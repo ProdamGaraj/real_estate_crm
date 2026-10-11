@@ -17,6 +17,8 @@ export interface CurrencyOption {
   name: string;
 }
 
+export type RateSource = 'CBU' | 'MANUAL';
+
 export interface CurrencySettings {
   company: number | null;
   company_name: string | null;
@@ -24,6 +26,9 @@ export interface CurrencySettings {
   deal_currency: string;
   /** В каких валютах можно вводить суммы графика. Валюта сделок входит всегда */
   supported_currencies: string[];
+  /** Источник курсов: ЦБ или только ручные курсы компании */
+  rate_source: RateSource;
+  rate_sources: CurrencyOption[];
   available_currencies: CurrencyOption[];
   /** Валюта, к которой привязаны курсы (сум) */
   base_currency: string;
@@ -44,6 +49,7 @@ export interface ExchangeRate {
 export interface CurrentRates {
   date: string;
   deal_currency: string;
+  rate_source?: RateSource;
   rates: Record<string, ExchangeRate>;
 }
 
@@ -54,7 +60,7 @@ export const getCurrencySettings = async (company?: number | null): Promise<Curr
 };
 
 export const updateCurrencySettings = async (
-  payload: { deal_currency: string; supported_currencies: string[]; company?: number | null }
+  payload: { deal_currency: string; supported_currencies: string[]; rate_source?: RateSource; company?: number | null }
 ): Promise<CurrencySettings> => {
   const { company, ...data } = payload;
   return (await apiClient.patch('/finances/currency-settings/', data, { params: companyParams(company) })).data;
