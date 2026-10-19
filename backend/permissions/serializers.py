@@ -639,6 +639,20 @@ class ChangePasswordSerializer(serializers.Serializer):
         return data
 
 
+class OwnPasswordChangeSerializer(ChangePasswordSerializer):
+    """
+    Смена собственного пароля. Нужен текущий пароль: иначе любой, кто сел за
+    оставленный открытым компьютер, сменил бы пароль и забрал учётную запись.
+    Пользователь передаётся в context['user'].
+    """
+    current_password = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value):
+        if not self.context['user'].check_password(value):
+            raise serializers.ValidationError('Текущий пароль указан неверно')
+        return value
+
+
 class PartnerAPIKeyCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания API-ключа (ключ генерируется автоматически)"""
     key = serializers.SerializerMethodField(help_text="Расшифрованный API-ключ (доступен после создания)")

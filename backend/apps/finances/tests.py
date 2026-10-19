@@ -16,6 +16,9 @@ from permissions.models import Company
 
 User = get_user_model()
 
+PASSPORT = dict(passport_series='AA', passport_number='1234567', passport_issued_by='ИИБ Андижан',
+                passport_issued_date=date(2020, 1, 15), pinfl='12345678901234')
+
 # В тестах не поднимаем Redis: throttling DRF ходит в кеш
 LOCAL_CACHE = override_settings(
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
@@ -37,7 +40,8 @@ class PaymentScheduleTests(APITestCase):
         profile.save()
 
         self.company = Company.objects.create(name='Компания', code='CO')
-        self.client_obj = Client.objects.create(full_name='Иванов Иван', company=self.company)
+        # С паспортом: без него первый график не переводит бронь в работу
+        self.client_obj = Client.objects.create(full_name='Иванов Иван', company=self.company, **PASSPORT)
 
         project = Project.objects.create(name='ЖК', address='ул. Тестовая, 1', company=self.company)
         building = Building.objects.create(project=project, name='Корпус 1', floors_count=9)

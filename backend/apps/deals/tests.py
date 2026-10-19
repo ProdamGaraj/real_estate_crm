@@ -10,7 +10,7 @@ check_property_statuses.
 """
 
 import io
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -171,3 +171,144 @@ class CheckPropertyStatusesTests(TestCase):
         data = PropertyListSerializer(prop).data
         self.assertIsNone(data['active_deal_id'])
         self.assertEqual(data['pending_refund_deal_id'], terminated.id)
+
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class DealContractNumberSearchTests(TestCase):
+    """Поиск сделки по номеру договора в списке «Сделки» — по части номера и только среди доступных."""
+
+    def setUp(self):
+        call_command('init_permissions', stdout=io.StringIO())
+        self.company = Company.objects.create(name='Продажи', code='SALES')
+        self.other = Company.objects.create(name='Соседи', code='OTHER')
+        dept = Department.objects.create(company=self.company, name='Отдел', code='D1')
+        role, _ = Role.objects.get_or_create(name='Руководитель продаж', code='SALES_HEAD')
+        role.permissions.set(Permission.objects.filter(resource='DEAL', action='VIEW', scope='COMPANY'))
+        self.user = User.objects.create_user('head', password='pass-for-tests')
+        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        profile.company, profile.department = self.company, dept
+        profile.save()
+        profile.roles.set([role])
+        self.api = APIClient()
+        self.api.force_authenticate(User.objects.get(pk=self.user.pk))
+
+    def deal(self, company, contract_number, unit_number):
+        project = Project.objects.create(name=f'ЖК {unit_number}', address='А', company=company)
+        building = Building.objects.create(project=project, name='1', floors_count=9)
+        unit = Property.objects.create(building=building, property_type='APARTMENT', unit_number=unit_number,
+                                       floor=1, area=Decimal('40'), price=Decimal('100'),
+                                       status=Property.PropertyStatus.IN_DEAL)
+        client = Client.objects.create(full_name='Клиент', company=company)
+        return Deal.objects.create(company=company, client=client, property=unit,
+                                   status=Deal.DealStatus.IN_PROGRESS, contract_number=contract_number,
+                                   booking_end_date=timezone.now() + timedelta(days=3),
+                                   initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2.5'),
+                                   created_by=self.user)
+
+    def search(self, text):
+        response = self.api.get('/api/deals/', {'contract_number': text})
+        self.assertEqual(response.status_code, 200, response.data)
+        return response.data
+
+    def test_finds_by_part_of_number_ignoring_case(self):
+        wanted = self.deal(self.company, 'DV-015/2026', '1')
+        self.deal(self.company, 'DV-200/2026', '2')
+        found = self.search('dv-015')
+        self.assertEqual([row['id'] for row in found], [wanted.id])
+        # Номер виден в строке списка — по нему сотрудник узнаёт найденную сделку
+        self.assertEqual(found[0]['contract_number'], 'DV-015/2026')
+        self.assertEqual([row['id'] for row in self.search('015')], [wanted.id])
+
+    def test_does_not_find_deal_of_another_company(self):
+        self.deal(self.other, 'DV-015/2026', '3')
+        self.assertEqual(self.search('DV-015'), [])
+
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class DealPassportRequirementTests(TestCase):
+    """
+    Паспортные данные клиента идут в договор: без них бронь не переходит
+    в работу (первый график платежей), а сделка не закрывается (даты подписания).
+    """
+
+    def setUp(self):
+        user = User.objects.create_user('admin', password='pass-for-tests')
+        profile = user.profile
+        profile.is_system_admin = True
+        profile.save()
+        self.user = User.objects.get(pk=user.pk)
+        self.company = Company.objects.create(name='К', code='K')
+        # Серия и номер есть, остального нет — как у большинства клиентов, заведённых из заявки
+        self.client_obj = Client.objects.create(full_name='Иванов Иван', company=self.company,
+                                                passport_series='AA', passport_number='1234567')
+        project = Project.objects.create(name='ЖК', address='А', company=self.company)
+        building = Building.objects.create(project=project, name='1', floors_count=9)
+        unit = Property.objects.create(building=building, property_type='APARTMENT', unit_number='7', floor=2,
+                                       area=Decimal('50'), price=Decimal('1000'),
+                                       status=Property.PropertyStatus.BOOKING)
+        self.deal = Deal.objects.create(company=self.company, client=self.client_obj, property=unit,
+                                        booking_end_date=timezone.now() + timedelta(days=5),
+                                        initial_price=Decimal('1000'), initial_price_per_sqm=Decimal('20'),
+                                        contract_price=Decimal('1000'), created_by=self.user)
+        self.ptype = PaymentType.objects.create(name='Взнос', company=self.company)
+        self.account = BeneficiaryAccount.objects.create(name='Счёт', details='-', company=self.company)
+        self.api = APIClient()
+        self.api.force_authenticate(self.user)
+
+    def fill_passport(self):
+        Client.objects.filter(pk=self.client_obj.pk).update(
+            passport_issued_by='ИИБ Андижан', passport_issued_date=date(2020, 1, 15), pinfl='12345678901234')
+
+    def card(self):
+        return self.api.get(f'/api/deals/{self.deal.id}/').data
+
+    def save_schedule(self):
+        return self.api.post(f'/api/deals/{self.deal.id}/payment-schedule/', [{
+            'amount': '1000.00', 'due_date': (timezone.localdate() + timedelta(days=10)).isoformat(),
+            'payment_type_id': self.ptype.id, 'beneficiary_account_id': self.account.id,
+            'currency': 'UZS', 'method': 'CASHLESS',
+        }], format='json')
+
+    def sign(self, **dates):
+        return self.api.patch(f'/api/deals/{self.deal.id}/', dates, format='json')
+
+    def test_card_lists_missing_passport_fields(self):
+        self.assertEqual(self.card()['client_missing_passport_fields'],
+                         ['passport_issued_by', 'passport_issued_date', 'pinfl'])
+
+    def test_booking_does_not_go_to_work_without_passport(self):
+        response = self.save_schedule()
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Кем выдан паспорт', response.data['error'])
+        self.assertIn('ПИНФЛ', response.data['error'])
+        self.assertNotIn('Серия паспорта', response.data['error'])
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.status, Deal.DealStatus.BOOKING)
+        self.assertFalse(self.deal.payments.exists())
+
+    def test_booking_goes_to_work_with_passport(self):
+        self.fill_passport()
+        self.assertEqual(self.save_schedule().status_code, 201)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.status, Deal.DealStatus.IN_PROGRESS)
+        self.assertEqual(self.card()['client_missing_passport_fields'], [])
+
+    def test_deal_in_work_without_passport_is_editable_but_does_not_close(self):
+        # Сделка ушла в работу до того, как паспорт стал обязательным
+        Deal.objects.filter(pk=self.deal.pk).update(status=Deal.DealStatus.IN_PROGRESS)
+        self.assertEqual(self.save_schedule().status_code, 201)
+        today = timezone.localdate().isoformat()
+        # Одна дата подписания сделку не закрывает — её сохранить можно
+        self.assertEqual(self.sign(client_signature_date=today).status_code, 200)
+
+        response = self.sign(company_signature_date=today)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('закрыть сделку', str(response.data))
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.status, Deal.DealStatus.IN_PROGRESS)
+        self.assertIsNone(self.deal.company_signature_date)
+
+        self.fill_passport()
+        self.assertEqual(self.sign(company_signature_date=today).status_code, 200)
+        self.deal.refresh_from_db()
+        self.assertEqual(self.deal.status, Deal.DealStatus.CLOSED_WON)

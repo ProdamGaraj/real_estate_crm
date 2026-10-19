@@ -33,6 +33,7 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useAuthStore } from '../../store/authStore';
 import { hasPermission } from '../../utils/permissions';
+import { extractApiError } from '../../utils/apiError';
 
 // Вспомогательная функция для форматирования ФИО в формат "Фамилия И. О."
 function formatUserFullName(fullName: string | null): string {
@@ -119,6 +120,8 @@ export default function UsersPage() {
       queryClient.invalidateQueries({ queryKey: ['user-profiles'] });
       setTimeout(() => setActionSuccess(null), 4000);
     },
+    // Отказ сервера (например, блокировка системного администратора) раньше проходил молча
+    onError: (error) => alert(extractApiError(error, t('errors.unknown_error'))),
   });
 
   const unbanMutation = useMutation({
@@ -140,7 +143,14 @@ export default function UsersPage() {
     },
   });
 
+  // Блокировка сразу выбивает сотрудника из системы, а значок в строке
+  // легко задеть случайно — поэтому с подтверждением
+  const confirmBan = (userRow: any) => window.confirm(t('pages.settings.permissions.confirm_ban', {
+    name: userRow.user_full_name || userRow.user_username || '',
+  }));
+
   const handleBan = (userRow: any) => {
+    if (!confirmBan(userRow)) return;
     banMutation.mutate(userRow.id);
   };
 
@@ -450,6 +460,7 @@ export default function UsersPage() {
                       color="warning"
                       startIcon={<BlockIcon />}
                       onClick={() => {
+                        if (!confirmBan(selectedUser)) return;
                         banMutation.mutate(selectedUser.id);
                         setIsModalOpen(false);
                         setSelectedUser(null);

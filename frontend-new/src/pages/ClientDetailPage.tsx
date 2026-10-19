@@ -176,7 +176,9 @@ export default function ClientDetailPage() {
                       <LocalizedDateField
                         label={t('pages.clients.date_of_birth')}
                         value={field.value || null}
-                        onChange={(date) => field.onChange(date || '')}
+                        // null, а не '': пустую строку сервер не принимает как дату,
+                        // и очищенная дата не давала сохранить карточку
+                        onChange={(date) => field.onChange(date || null)}
                         fullWidth
                       />
                     )}/>
@@ -233,14 +235,30 @@ export default function ClientDetailPage() {
             </Card>
 
             <Card variant="outlined">
-                <CardHeader avatar={<ArticleIcon />} title={t('pages.clients.passport_and_address')} titleTypographyProps={{ variant: isMobile ? 'subtitle1' : 'h6' }} />
+                <CardHeader
+                    avatar={<ArticleIcon />}
+                    title={t('pages.clients.passport_and_address')}
+                    titleTypographyProps={{ variant: isMobile ? 'subtitle1' : 'h6' }}
+                    subheader={t('pages.clients.passport_required_hint')}
+                />
                 <CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
                     <Grid container spacing={isMobile ? 1 : 2}>
                         <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.passport_series')} {...register('passport_series')} /></Grid>
                         <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.passport_number')} {...register('passport_number')} /></Grid>
                         <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.passport_issued_by')} {...register('passport_issued_by')} /></Grid>
-                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.inn')} {...register('inn')} /></Grid>
-                        <Grid size={{ xs: 6, md: 3 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.pinfl')} {...register('pinfl')} /></Grid>
+                        {/* Дата выдачи нужна для договора, но поля в карточке не было — заполнить её было негде */}
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <Controller name="passport_issued_date" control={control} render={({ field }) => (
+                            <LocalizedDateField
+                              label={t('pages.clients.passport_issued_date')}
+                              value={field.value || null}
+                              onChange={(date) => field.onChange(date || null)}
+                              fullWidth
+                            />
+                          )}/>
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 4 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.inn')} {...register('inn')} /></Grid>
+                        <Grid size={{ xs: 6, md: 4 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.pinfl')} {...register('pinfl')} /></Grid>
                         <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.registration_address')} {...register('registration_address')} /></Grid>
                         <Grid size={{ xs: 12, md: 6 }}><TextField fullWidth size={isMobile ? 'small' : 'medium'} label={t('pages.clients.billing_address')} {...register('billing_address')} /></Grid>
                     </Grid>

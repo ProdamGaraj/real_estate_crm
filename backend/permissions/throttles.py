@@ -49,6 +49,15 @@ class SustainedRateThrottle(UserRateThrottle):
     scope = 'sustained'
 
 
+class PasswordChangeRateThrottle(UserRateThrottle):
+    """
+    Попытки сменить собственный пароль. Без отдельного лимита из открытой
+    сессии можно было бы перебирать текущий пароль. Ставка — scope
+    'password_change' в настройках.
+    """
+    scope = 'password_change'
+
+
 # --- Account Lockout ---
 LOCKOUT_MAX_ATTEMPTS = getattr(settings, 'LOCKOUT_MAX_ATTEMPTS', 10)
 LOCKOUT_DURATION = getattr(settings, 'LOCKOUT_DURATION', 300)  # секунды

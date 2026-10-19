@@ -344,6 +344,25 @@ export const getCurrentUserProfile = async (): Promise<UserProfile> => {
   return response.data;
 };
 
+/** Сотрудник сам меняет имя и фамилию. E-mail, роли и компанию меняет только администратор */
+export const updateMyName = async (data: { first_name: string; last_name: string }): Promise<UserProfile> => {
+  const response = await apiClient.patch(`/permissions/me/`, data);
+  return response.data;
+};
+
+/**
+ * Смена собственного пароля. Другие устройства выходят из системы, текущий
+ * сеанс получает новый access-токен (новый refresh приходит в cookie)
+ */
+export const changeMyPassword = async (data: {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}): Promise<{ success: boolean; message: string; access: string }> => {
+  const response = await apiClient.post(`/permissions/me/change-password/`, data);
+  return response.data;
+};
+
 export const getUserPermissions = async (profileId: number): Promise<Permission[]> => {
   const response = await apiClient.get(`/permissions/user-profiles/${profileId}/permissions/`);
   return response.data;

@@ -65,6 +65,7 @@ export default function DealsPage() {
             flex: 1,
             valueGetter: (value: string) => t(`statuses.deal.${value}`, value)
         },
+        { field: 'contract_number', headerName: t('pages.deals.contract_number'), flex: 1 },
         { field: 'client', headerName: t('table.client'), flex: 1 },
         { field: 'property', headerName: t('table.property'), flex: 1 },
         {
@@ -108,6 +109,11 @@ export default function DealsPage() {
                 }
             },
             render: (value: string) => t(`statuses.deal.${value}`, value),
+        },
+        {
+            key: 'contract_number',
+            label: 'pages.deals.contract_number',
+            render: (value: string | null) => value || '-',
         },
         {
             key: 'contract_price',
@@ -192,6 +198,11 @@ export default function DealsPage() {
                                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                     <Controller name="client_name" control={control} render={({ field }) => (
                                         <TextField {...field} label={t('pages.deals.client_filter')} fullWidth size="small" />
+                                    )} />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                    <Controller name="contract_number" control={control} render={({ field }) => (
+                                        <TextField {...field} value={field.value || ''} label={t('pages.deals.contract_number')} fullWidth size="small" />
                                     )} />
                                 </Grid>
                                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>

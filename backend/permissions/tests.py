@@ -365,3 +365,157 @@ class UserProfileEditTests(TestCase):
         response = self.patch(self.root, self.root, {'is_system_admin': False, 'role_ids': []})
         self.assertEqual(response.status_code, 403)
         self.assertTrue(UserProfile.objects.get(user=self.root).is_system_admin)
+
+
+from django.core.cache import cache as _cache
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from .models import PermissionLog
+
+
+@override_settings(
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+)
+class SelfServiceProfileTests(TestCase):
+    """
+    Сотрудник сам меняет имя и пароль из меню профиля. Роли, компанию, флаги
+    и e-mail так не поменять; смена пароля выбивает другие устройства.
+    """
+
+    def setUp(self):
+        _cache.clear()  # счётчики лимита запросов живут в кеше
+        self.company = Company.objects.create(name='Андижан', code='AND')
+        self.other_company = Company.objects.create(name='Ташкент', code='TAS')
+        self.user = User.objects.create_user('mpp', password='Old-pass-2026', first_name='Старое',
+                                             last_name='Имя', email='mpp@example.com')
+        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        profile.company = self.company
+        profile.save()
+        # Заново из базы: у созданного объекта закеширован профиль из сигнала,
+        # ещё без компании (в работе пользователь загружается на каждый запрос)
+        self.user = User.objects.get(pk=self.user.pk)
+        self.api = APIClient()
+        self.api.force_authenticate(self.user)
+
+    def change_password(self, current, new, confirm=None):
+        return self.api.post('/api/permissions/me/change-password/', {
+            'current_password': current, 'new_password': new, 'confirm_password': confirm or new,
+        }, format='json')
+
+    def test_user_changes_own_name(self):
+        response = self.api.patch('/api/permissions/me/', {'first_name': ' Шохиста ', 'last_name': 'Арипджанова'},
+                                  format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.user.refresh_from_db()
+        self.assertEqual((self.user.first_name, self.user.last_name), ('Шохиста', 'Арипджанова'))
+        log = PermissionLog.objects.get(action='PROFILE_UPDATE')
+        self.assertEqual((log.details['old_name'], log.details['new_name']), ('Имя Старое', 'Арипджанова Шохиста'))
+
+    def test_blank_name_is_rejected(self):
+        response = self.api.patch('/api/permissions/me/', {'first_name': '  '}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('first_name', response.data)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, 'Старое')
+
+    def test_cannot_change_email_roles_company_or_flags(self):
+        role = Role.objects.create(name='Админ', code='ADM_TEST')
+        response = self.api.patch('/api/permissions/me/', {
+            'email': 'new@example.com', 'is_system_admin': True, 'role_ids': [role.id],
+            'company_id': self.other_company.id, 'is_active': False,
+        }, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        profile = UserProfile.objects.get(user=self.user)
+        self.assertEqual(profile.user.email, 'mpp@example.com')
+        self.assertFalse(profile.is_system_admin)
+        self.assertEqual(profile.company, self.company)
+        self.assertFalse(profile.roles.exists())
+        self.assertTrue(profile.is_active)
+
+    def test_password_change_keeps_this_session_and_logs_out_other_devices(self):
+        other_device = RefreshToken.for_user(self.user)
+        response = self.change_password('Old-pass-2026', 'Novyi-parol-2026')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('Novyi-parol-2026'))
+        self.assertTrue(PermissionLog.objects.filter(action='PASSWORD_CHANGE', user=self.user).exists())
+
+        # Текущий сеанс получил новый access-токен и новый refresh в cookie
+        self.assertIn('access', response.data)
+        this_device = APIClient()
+        this_device.cookies['crm_refresh'] = response.cookies['crm_refresh'].value
+        self.assertEqual(this_device.post('/api/token/refresh/', {}, format='json').status_code, 200)
+
+        # Другое устройство со старым refresh-токеном выходит из системы
+        stale = APIClient().post('/api/token/refresh/', {'refresh': str(other_device)}, format='json')
+        self.assertEqual(stale.status_code, 401)
+
+    def test_wrong_current_password_is_rejected(self):
+        response = self.change_password('not-my-password', 'Novyi-parol-2026')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('current_password', response.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('Old-pass-2026'))
+
+    def test_weak_or_mismatched_password_is_rejected(self):
+        weak = self.change_password('Old-pass-2026', '12345678')
+        self.assertEqual(weak.status_code, 400)
+        self.assertIn('new_password', weak.data)
+        mismatch = self.change_password('Old-pass-2026', 'Novyi-parol-2026', 'Drugoi-parol-2026')
+        self.assertEqual(mismatch.status_code, 400)
+        self.assertIn('confirm_password', mismatch.data)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('Old-pass-2026'))
+
+    def test_guessing_current_password_is_throttled(self):
+        for _ in range(5):
+            self.assertEqual(self.change_password('guess', 'Novyi-parol-2026').status_code, 400)
+        self.assertEqual(self.change_password('Old-pass-2026', 'Novyi-parol-2026').status_code, 429)
+
+
+@override_settings(
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+)
+class AdminBlockAndPasswordTests(TestCase):
+    """
+    Блокировка и смена пароля администратором выбивают сотрудника:
+    блокировка — сразу, смена пароля — со всех устройств.
+    """
+
+    def setUp(self):
+        _cache.clear()
+        call_command('init_permissions', stdout=_io.StringIO())
+        self.company = Company.objects.create(name='Андижан', code='AND')
+        role = Role.objects.create(name='Админ компании', code='CA_TEST')
+        role.permissions.set(Permission.objects.filter(resource='USER', scope='COMPANY'))
+        self.admin = self._user('boss', roles=[role])
+        self.employee = self._user('mpp')
+        self.admin_api = APIClient()
+        self.admin_api.force_authenticate(self.admin)
+
+    def _user(self, username, roles=()):
+        user = User.objects.create_user(username, password='Old-pass-2026')
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company = self.company
+        profile.save()
+        profile.roles.set(roles)
+        return User.objects.get(pk=user.pk)
+
+    def test_blocked_user_is_logged_out_at_once(self):
+        access = str(RefreshToken.for_user(self.employee).access_token)
+        employee_api = APIClient(HTTP_AUTHORIZATION=f'Bearer {access}')
+        self.assertEqual(employee_api.get('/api/permissions/me/').status_code, 200)
+
+        response = self.admin_api.post(f'/api/permissions/user-profiles/{self.employee.profile.id}/ban/')
+        self.assertEqual(response.status_code, 200, response.data)
+        # Access-токен ещё не истёк, но заблокированного он больше не пускает
+        self.assertEqual(employee_api.get('/api/permissions/me/').status_code, 401)
+
+    def test_admin_password_change_logs_user_out_everywhere(self):
+        session = RefreshToken.for_user(self.employee)
+        response = self.admin_api.post(
+            f'/api/permissions/user-profiles/{self.employee.profile.id}/change_password/',
+            {'new_password': 'Novyi-parol-2026', 'confirm_password': 'Novyi-parol-2026'}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        stale = APIClient().post('/api/token/refresh/', {'refresh': str(session)}, format='json')
+        self.assertEqual(stale.status_code, 401)

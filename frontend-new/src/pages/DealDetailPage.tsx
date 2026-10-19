@@ -214,7 +214,8 @@ export default function DealDetailPage() {
   const canEditDeal = deal.can_edit !== false;
   const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status) || !canEditDeal;
   const isDealTerminated = deal.status === 'TERMINATED';
-  const plans = (paymentTypes ?? [])
+  const missingPassport = deal.client_missing_passport_fields ?? [];
+  const plans =(paymentTypes ?? [])
     .filter(isPlan)
     .filter(plan => plan.company === null || !deal.company || plan.company === deal.company)
     .sort(comparePlans);
@@ -254,6 +255,23 @@ export default function DealDetailPage() {
       {!canEditDeal && !['CANCELLED', 'TERMINATED'].includes(deal.status) && (
         <Alert severity="info" sx={{ mb: 2 }}>
           {t('pages.deals.view_only', { author: deal.created_by || '—' })}
+        </Alert>
+      )}
+      {/* Паспорт клиента идёт в договор: без него бронь не уходит в работу,
+          а сделка не закрывается. Предупреждаем заранее, а не отказом сервера */}
+      {['BOOKING', 'IN_PROGRESS'].includes(deal.status) && missingPassport.length > 0 && (
+        <Alert
+          severity="warning"
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" component={RouterLink} to={`/clients/${deal.client.id}`}>
+              {t('pages.deals.open_client')}
+            </Button>
+          }
+        >
+          {t(deal.status === 'BOOKING' ? 'pages.deals.passport_needed_booking' : 'pages.deals.passport_needed_in_progress', {
+            fields: missingPassport.map(field => t(`pages.clients.${field}`)).join(', '),
+          })}
         </Alert>
       )}
       {/* --- НОВЫЙ БЛОК ИНФОРМАЦИИ --- */}

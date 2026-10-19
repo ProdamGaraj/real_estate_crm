@@ -279,6 +279,8 @@ REST_FRAMEWORK = {
         'sustained': config('THROTTLE_SUSTAINED', default='6000/hour'),
         # Попытки входа по IP — отдельный жёсткий предел
         'login': config('THROTTLE_LOGIN', default='5/min'),
+        # Смена собственного пароля (проверка текущего) — от одного пользователя
+        'password_change': config('THROTTLE_PASSWORD_CHANGE', default='5/min'),
     }
 }
 

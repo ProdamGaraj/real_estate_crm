@@ -4,6 +4,8 @@ from .models import Deal
 
 class DealFilter(filters.FilterSet):
     client_name = filters.CharFilter(field_name='client__full_name', lookup_expr='icontains')
+    # Номер ищется по части: «015» находит «А-015/2026»
+    contract_number = filters.CharFilter(field_name='contract_number', lookup_expr='icontains')
     property_id = filters.NumberFilter(field_name='property__id')
     created_by_id = filters.NumberFilter(field_name='created_by__id')
     status = filters.ChoiceFilter(choices=Deal.DealStatus.choices)
@@ -14,6 +16,7 @@ class DealFilter(filters.FilterSet):
         model = Deal
         fields = [
             'client_name',
+            'contract_number',
             'property_id',
             'created_by_id',
             'status',

@@ -7,7 +7,7 @@ from .views import (
     CompanyViewSet, DepartmentViewSet,
     PermissionViewSet, RoleViewSet,
     UserProfileViewSet, PermissionLogViewSet,
-    CurrentUserProfileView, PermissionStatsView,
+    CurrentUserProfileView, CurrentUserPasswordView, PermissionStatsView,
     PartnerAPIKeyViewSet
 )
 from .auth_views import (
@@ -39,5 +39,6 @@ urlpatterns = [
     
     # Дополнительные endpoints
     path('me/', CurrentUserProfileView.as_view(), name='current-user-profile'),
+    path('me/change-password/', CurrentUserPasswordView.as_view(), name='current-user-password'),
     path('stats/', PermissionStatsView.as_view(), name='permission-stats'),
 ]

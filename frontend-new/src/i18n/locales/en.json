@@ -101,7 +101,17 @@
     "company_label": "Company:",
     "department_label": "Department:",
     "no_email": "No email",
-    "more": "More"
+    "more": "More",
+    "my_profile": "My profile"
+  },
+  "profile": {
+    "personal_data": "Personal details",
+    "email_hint": "Your login and e-mail are changed by an administrator",
+    "name_required": "Enter your first and last name",
+    "name_saved": "Name saved",
+    "current_password": "Current password",
+    "other_devices_hint": "After the change you will need to sign in again on your other devices",
+    "save_error": "Could not save"
   },
   "auth": {
     "login_title": "Login",
@@ -178,6 +188,8 @@
       "passport_series": "Passport Series",
       "passport_number": "Passport Number",
       "passport_issued_by": "Passport Issued By",
+      "passport_issued_date": "Passport Issue Date",
+      "passport_required_hint": "Passport series, number, issuing authority, issue date and PINFL are required to move a deal to work and to close it",
       "inn": "Tax ID (INN)",
       "pinfl": "Personal ID (PINFL)",
       "registration_address": "Registration Address",
@@ -454,6 +466,9 @@
       "initial_price_per_sqm": "Price per sqm (initial)",
       "save_and_schedule": "Save and Go to Schedule",
       "save_price_first": "First save \"Contract Price\" on the previous step.",
+      "passport_needed_booking": "To save the payment schedule and move the deal to work, fill in the client's passport details: {{fields}}.",
+      "passport_needed_in_progress": "To close the deal (both signature dates), fill in the client's passport details: {{fields}}.",
+      "open_client": "Open client",
       "signed_uploaded": "Signed document uploaded.",
       "group_by": "Group By",
       "group_by_manager": "By Manager",
@@ -948,6 +963,7 @@
         "confirm_delete_user": "Are you sure you want to delete user \"{{name}}\"? The user will be deactivated and hidden from all lists.",
         "user_banned": "User blocked",
         "user_unbanned": "User unblocked",
+        "confirm_ban": "Block {{name}}? Access to the system will be closed immediately.",
         "user_deleted": "User deleted",
         "actions": "Actions",
         "employees": "Employees",

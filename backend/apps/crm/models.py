@@ -339,6 +339,27 @@ class Client(models.Model):
     def __str__(self):
         return self.full_name
 
+    # Паспортные данные идут в договор. Без них сделку нельзя перевести
+    # в работу (сохранить первый график платежей) и закрыть
+    PASSPORT_REQUIRED_FIELDS = (
+        'passport_series', 'passport_number', 'passport_issued_by', 'passport_issued_date', 'pinfl',
+    )
+
+    def missing_passport_fields(self):
+        """Коды незаполненных обязательных паспортных полей; пустой список — всё заполнено."""
+        return [name for name in self.PASSPORT_REQUIRED_FIELDS if not str(getattr(self, name) or '').strip()]
+
+    def passport_required_error(self, purpose):
+        """
+        Текст отказа для сделки: «Чтобы <purpose>, заполните паспортные данные
+        клиента …» с перечнем пустых полей, или None, если всё заполнено.
+        """
+        missing = self.missing_passport_fields()
+        if not missing:
+            return None
+        names = ', '.join(str(self._meta.get_field(name).verbose_name) for name in missing)
+        return f'Чтобы {purpose}, заполните паспортные данные клиента «{self.full_name}»: {names}.'
+
 
 class ClientFile(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='files', verbose_name="Клиент")

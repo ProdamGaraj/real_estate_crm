@@ -36,6 +36,11 @@ export interface Deal {
   payment_plan_name: string | null;
   /** Может ли текущий пользователь менять и отменять сделку (null — сервер не сообщил) */
   can_edit?: boolean | null;
+  /**
+   * Незаполненные паспортные данные клиента (коды полей). Без них бронь не
+   * переходит в работу, а сделка не закрывается
+   */
+  client_missing_passport_fields?: string[];
   contract_number?: string;
   contract_date?: string | null;
   notes: string;
@@ -56,6 +61,7 @@ export interface Deal {
 export interface DealListItem {
     id: number;
     status: string;
+    contract_number: string | null;
     client: string;
     property: string;
     contract_price: string | null;
@@ -66,6 +72,7 @@ export interface DealListItem {
 
 export interface DealFilters {
     client_name?: string;
+    contract_number?: string;
     property_id?: number | null;
     created_by_id?: number | null;
     status?: string;

@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -22,7 +23,7 @@ from .serializers import (
     PermissionLogSerializer, UserPermissionCheckSerializer,
     BulkPermissionAssignSerializer, PartnerAPIKeySerializer, 
     PartnerAPIKeyCreateSerializer, PartnerAPIKeyUpdateSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer, OwnPasswordChangeSerializer
 )
 from .permissions import (
     IsSystemAdmin, IsCompanyAdmin, IsDepartmentManager,
@@ -30,6 +31,8 @@ from .permissions import (
     UserPermission, PartnerAPIKeyPermission
 )
 from .token_serializers import revoke_refresh_tokens
+from .token_cookies import set_refresh_cookie
+from .throttles import PasswordChangeRateThrottle
 from .backends import get_filtered_queryset, can_user_perform_action
 
 logger = logging.getLogger(__name__)
@@ -845,23 +848,95 @@ class CurrentUserProfileView(APIView):
         """
         try:
             profile = request.user.profile
-            
-            # Пользователь может обновить только свои данные, но не роли
-            allowed_fields = ['position', 'phone', 'avatar']
+
+            # Пользователь может обновить только свои данные, но не роли.
+            # E-mail меняет только администратор: на него приходит ссылка
+            # для восстановления пароля
+            allowed_fields = ['position', 'phone', 'avatar', 'first_name', 'last_name']
             data = {k: v for k, v in request.data.items() if k in allowed_fields}
-            
+
+            # Пустое имя превратило бы сотрудника в логин в отчётах и списках
+            empty = [field for field in ('first_name', 'last_name')
+                     if field in data and not str(data[field] or '').strip()]
+            if empty:
+                return Response(
+                    {field: ['Поле не может быть пустым'] for field in empty},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            old_name = (profile.user.last_name, profile.user.first_name)
             serializer = UserProfileDetailSerializer(
                 profile, data=data, partial=True
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            
+
+            profile.user.refresh_from_db(fields=['first_name', 'last_name'])
+            new_name = (profile.user.last_name, profile.user.first_name)
+            if new_name != old_name:
+                PermissionLog.objects.create(
+                    user=request.user,
+                    action='PROFILE_UPDATE',
+                    entity_type='UserProfile',
+                    entity_id=profile.id,
+                    details={
+                        'username': request.user.username,
+                        'old_name': ' '.join(part for part in old_name if part),
+                        'new_name': ' '.join(part for part in new_name if part),
+                    },
+                    ip_address=request.META.get('REMOTE_ADDR')
+                )
+
             return Response(serializer.data)
         except UserProfile.DoesNotExist:
             return Response(
                 {'error': 'Профиль пользователя не найден'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+
+class CurrentUserPasswordView(APIView):
+    """
+    Смена собственного пароля.
+
+    Остальные устройства пользователя выходят из системы (их refresh-токены
+    отзываются), а текущий сеанс продолжается с новой парой токенов.
+    """
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [PasswordChangeRateThrottle]
+
+    def post(self, request):
+        user = request.user
+        serializer = OwnPasswordChangeSerializer(data=request.data, context={'user': user})
+        serializer.is_valid(raise_exception=True)
+
+        new_password = serializer.validated_data['new_password']
+        try:
+            validate_password(new_password, user=user)
+        except DjangoValidationError as e:
+            return Response({'new_password': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        revoke_refresh_tokens(user)
+
+        profile = getattr(user, 'profile', None)
+        PermissionLog.objects.create(
+            user=user,
+            action='PASSWORD_CHANGE',
+            entity_type='UserProfile' if profile else 'User',
+            entity_id=profile.id if profile else user.id,
+            details={'username': user.username, 'changed_by': user.username},
+            ip_address=request.META.get('REMOTE_ADDR')
+        )
+
+        refresh = RefreshToken.for_user(user)
+        response = Response({
+            'success': True,
+            'message': 'Пароль изменён',
+            'access': str(refresh.access_token),
+        })
+        return set_refresh_cookie(response, refresh)
 
 
 class PermissionLogViewSet(viewsets.ReadOnlyModelViewSet):

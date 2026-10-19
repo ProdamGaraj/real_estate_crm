@@ -38,7 +38,9 @@ import PaymentsIcon from '@mui/icons-material/Payments';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import { useAuthStore } from '../store/authStore';
+import MyProfileDialog from '../components/permissions/MyProfileDialog';
 import { hasAnyViewPermission, isSystemAdmin } from '../utils/permissions';
 import { canAccessSettings } from '../utils/settingsTabs';
 import type { ResourceType } from '../utils/permissions';
@@ -82,6 +84,7 @@ export default function RootLayout() {
   const { user, logout } = useAuthStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // Фильтруем пункты меню на основе прав доступа
@@ -317,11 +320,16 @@ export default function RootLayout() {
               </>
             )}
             <Divider />
+            <MenuItem onClick={() => { handleMenuClose(); setProfileOpen(true); }}>
+              <ManageAccountsIcon sx={{ mr: 1 }} />
+              {t('nav.my_profile')}
+            </MenuItem>
             <MenuItem onClick={handleLogout}>
               <LogoutIcon sx={{ mr: 1 }} />
               {t('nav.logout')}
             </MenuItem>
           </Menu>
+          <MyProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
         </Toolbar>
       </AppBar>
 

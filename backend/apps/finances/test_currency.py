@@ -26,7 +26,10 @@ from permissions.models import Company, Department, Permission, Role, UserProfil
 
 User = get_user_model()
 
-NO_NETWORK = mock.patch('apps.finances.currency.fetch_cbu_rates', side_effect=OSError('нет сети'))
+PASSPORT = dict(passport_series='AA', passport_number='1234567', passport_issued_by='ИИБ Андижан',
+                passport_issued_date=date(2020, 1, 15), pinfl='12345678901234')
+
+NO_NETWORK =mock.patch('apps.finances.currency.fetch_cbu_rates', side_effect=OSError('нет сети'))
 LOCAL_CACHE = override_settings(
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
 )
@@ -131,7 +134,9 @@ class MultiCurrencyDealTests(TestCase):
             building=building, property_type='APARTMENT', unit_number='12', floor=3,
             area=Decimal('50.00'), price=Decimal('21000.00'),
         )
-        self.client_obj = Client.objects.create(full_name='Клиент', company=self.company, created_by=self.user)
+        # С паспортом: без него первый график не переводит бронь в работу
+        self.client_obj = Client.objects.create(full_name='Клиент', company=self.company, created_by=self.user,
+                                                **PASSPORT)
         self.ptype = PaymentType.objects.create(name='Рассрочка', company=self.company)
         self.account = BeneficiaryAccount.objects.create(name='Счёт', details='-', company=self.company)
 

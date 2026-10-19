@@ -85,7 +85,8 @@ class DealListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Deal
-        fields = ['id', 'status', 'client', 'property', 'contract_price', 'currency', 'created_by', 'created_at']
+        fields = ['id', 'status', 'contract_number', 'client', 'property', 'contract_price', 'currency',
+                  'created_by', 'created_at']
         read_only_fields = ['created_at']
 
 
@@ -108,6 +109,12 @@ class DealDetailSerializer(serializers.ModelSerializer):
     # непонятным отказом сервера
     can_edit = serializers.SerializerMethodField()
     logs_total = serializers.SerializerMethodField()
+    # Незаполненные паспортные данные клиента: карточка сделки предупреждает
+    # заранее, а не отказом при сохранении графика или подписании
+    client_missing_passport_fields = serializers.SerializerMethodField()
+
+    def get_client_missing_passport_fields(self, obj):
+        return obj.client.missing_passport_fields()
 
     def get_logs(self, obj):
         recent = obj.logs.all()[:LOG_PAGE_SIZE]
@@ -202,6 +209,16 @@ class DealDetailSerializer(serializers.ModelSerializer):
                         )
                     })
 
+        # Сделка в работе закрывается, как только заполнены обе даты подписания
+        # (DealDetailView.perform_update). Договор без паспортных данных клиента
+        # не подписать, поэтому закрытие без них не пропускаем
+        client_signed = data.get('client_signature_date', instance.client_signature_date)
+        company_signed = data.get('company_signature_date', instance.company_signature_date)
+        if instance.status == Deal.DealStatus.IN_PROGRESS and client_signed and company_signed:
+            passport_error = instance.client.passport_required_error('закрыть сделку')
+            if passport_error:
+                raise serializers.ValidationError(passport_error)
+
         return data
 
     def validate_applied_discounts_ids(self, value):
@@ -228,7 +245,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'payments', 'contract_number', 'contract_date', 'application', 'logs_total',
             'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
             'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
-            'payment_plan', 'payment_plan_name', 'can_edit',
+            'payment_plan', 'payment_plan_name', 'can_edit', 'client_missing_passport_fields',
         ]
         # Валюта сделки задаётся настройкой компании при брони и дальше не меняется:
         # весь график платежей хранится в ней

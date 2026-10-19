@@ -325,6 +325,16 @@ class DealPaymentScheduleCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Первый график переводит бронь в работу, а договор без паспортных
+        # данных клиента не составить. Правку графика сделки, которая уже
+        # в работе, не запрещаем: паспорт проверится при закрытии сделки
+        if deal.status == Deal.DealStatus.BOOKING:
+            passport_error = deal.client.passport_required_error(
+                'сохранить график платежей и перевести сделку в работу'
+            )
+            if passport_error:
+                return Response({"error": passport_error}, status=status.HTTP_400_BAD_REQUEST)
+
         if not deal.contract_price:
             return Response({"error": "Для создания графика необходимо указать 'Стоимость по договору' в сделке."},
                             status=status.HTTP_400_BAD_REQUEST)

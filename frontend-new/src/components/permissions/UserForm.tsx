@@ -31,6 +31,7 @@ import {
 } from '../../api/permissions';
 import { useAuthStore } from '../../store/authStore';
 import { isSystemAdmin } from '../../utils/permissions';
+import { extractApiError } from '../../utils/apiError';
 
 interface UserFormProps {
   userProfile?: UserProfile | null;
@@ -122,12 +123,9 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
     },
     onError: (err: any) => {
       console.error('Password change error:', err.response?.data);
-      const errorMessage = err.response?.data?.confirm_password?.[0] 
-        || err.response?.data?.new_password?.[0]
-        || err.response?.data?.detail
-        || err.message
-        || t('errors.password_change_error');
-      setError(errorMessage);
+      // Отказ валидаторов сервер присылает в поле error («слишком простой
+      // пароль») — раньше вместо него показывалось «Request failed with status code 400»
+      setError(extractApiError(err, t('errors.password_change_error')));
     },
   });
 

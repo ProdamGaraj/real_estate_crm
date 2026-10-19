@@ -101,7 +101,17 @@
     "company_label": "Kompaniya:",
     "department_label": "Bo'lim:",
     "no_email": "Email yo'q",
-    "more": "Boshqa"
+    "more": "Boshqa",
+    "my_profile": "Mening profilim"
+  },
+  "profile": {
+    "personal_data": "Shaxsiy ma'lumotlar",
+    "email_hint": "Login va e-mailni administrator o'zgartiradi",
+    "name_required": "Ism va familiyani kiriting",
+    "name_saved": "Ism saqlandi",
+    "current_password": "Joriy parol",
+    "other_devices_hint": "Parol o'zgargach, boshqa qurilmalarda qaytadan kirish kerak bo'ladi",
+    "save_error": "Saqlab bo'lmadi"
   },
   "auth": {
     "login_title": "Tizimga kirish",
@@ -178,6 +188,8 @@
       "passport_series": "Pasport seriyasi",
       "passport_number": "Pasport raqami",
       "passport_issued_by": "Pasport kim tomonidan berilgan",
+      "passport_issued_date": "Pasport berilgan sana",
+      "passport_required_hint": "Bitimni ishga o'tkazish va yopish uchun pasport seriyasi, raqami, kim tomonidan va qachon berilgani hamda PINFL kerak",
       "inn": "INN",
       "pinfl": "PINFL",
       "registration_address": "Ro'yxatdan o'tish manzili",
@@ -470,6 +482,9 @@
       "initial_price_per_sqm": "1 m² narxi (boshlang'ich)",
       "save_and_schedule": "Saqlash va jadvalga o'tish",
       "save_price_first": "Avval oldingi bosqichda \"Shartnoma narxi\" ni saqlang.",
+      "passport_needed_booking": "To'lov jadvalini saqlash va bitimni ishga o'tkazish uchun mijozning pasport ma'lumotlarini to'ldiring: {{fields}}.",
+      "passport_needed_in_progress": "Bitimni yopish (ikkala imzolash sanasi) uchun mijozning pasport ma'lumotlarini to'ldiring: {{fields}}.",
+      "open_client": "Mijozni ochish",
       "signed_uploaded": "Imzolangan hujjat yuklandi.",
       "application_optional": "Ariza (ixtiyoriy)",
       "currency_fixed_hint": "Bron paytida kompaniya sozlamasi bilan belgilanadi",
@@ -948,6 +963,7 @@
         "confirm_delete_user": "\"{{name}}\" foydalanuvchisini o'chirishga ishonchingiz komilmi? Foydalanuvchi o'chiriladi va ro'yxatlardan yashiriladi.",
         "user_banned": "Foydalanuvchi bloklandi",
         "user_unbanned": "Foydalanuvchi blokdan chiqarildi",
+        "confirm_ban": "{{name}} bloklansinmi? Tizimga kirish darhol yopiladi.",
         "user_deleted": "Foydalanuvchi o'chirildi",
         "actions": "Amallar",
         "employees": "Xodimlar",
