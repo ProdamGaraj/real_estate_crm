@@ -19,6 +19,8 @@ import pandas as pd
 from django.http import HttpResponse
 from decimal import Decimal
 
+import os
+
 from django.db import transaction
 from django.utils import timezone
 from apps.realty.views import _filter_by_company_scope
@@ -347,6 +349,71 @@ class DealCancelOrTerminateView(APIView):
         )
 
 
+class DealScanView(APIView):
+    """
+    Замена скана подписанного договора или документа о расторжении.
+
+    Закрытая и расторгнутая сделка доступна только для чтения, и ошибочно
+    загруженный или нечитаемый скан заменить было нельзя. Здесь меняется
+    только файл: условия, статус и даты сделки не затрагиваются. Прежний
+    файл остаётся на диске, замена записывается в журнал сделки.
+    """
+    permission_classes = [IsAuthenticated, DealCancelOrTerminatePermission]
+    parser_classes = [MultiPartParser]
+
+    # вид скана в адресе → поле сделки, статусы, в которых его меняют, название для журнала
+    SCANS = {
+        'signed': (
+            'signed_document_scan',
+            (Deal.DealStatus.IN_PROGRESS, Deal.DealStatus.CLOSED_WON, Deal.DealStatus.TERMINATED),
+            'скан подписанного документа',
+        ),
+        'termination': (
+            'termination_document_scan',
+            (Deal.DealStatus.TERMINATED,),
+            'скан документа о расторжении',
+        ),
+    }
+
+    def post(self, request, deal_pk, kind, *args, **kwargs):
+        if kind not in self.SCANS:
+            return Response({"error": "Неизвестный вид документа."}, status=status.HTTP_404_NOT_FOUND)
+        field, statuses, label = self.SCANS[kind]
+
+        try:
+            deal = Deal.objects.get(pk=deal_pk)
+        except Deal.DoesNotExist:
+            return Response({"error": "Сделка не найдена."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not can_user_perform_action(request.user, 'EDIT', 'DEAL', obj=deal):
+            return Response({"error": "У вас нет доступа к этой сделке."}, status=status.HTTP_403_FORBIDDEN)
+
+        if deal.status not in statuses:
+            allowed = ', '.join(f"«{Deal.DealStatus(s).label}»" for s in statuses)
+            word = 'статусе' if len(statuses) == 1 else 'статусах'
+            return Response(
+                {"error": f"{label.capitalize()} меняется только у сделки в {word} {allowed}."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        upload = request.FILES.get('file')
+        if not upload or not upload.size:
+            return Response({"error": "Выберите файл скана."}, status=status.HTTP_400_BAD_REQUEST)
+
+        scan = getattr(deal, field)
+        old_name = os.path.basename(scan.name) if scan else None
+        # Прежний файл не удаляется: если заменили не тот, его можно вернуть с диска
+        scan.save(upload.name, upload, save=False)
+        deal.save(update_fields=[field, 'updated_at'])
+
+        new_name = os.path.basename(getattr(deal, field).name)
+        action = (f"Заменён {label}: «{old_name}» → «{new_name}»." if old_name
+                  else f"Загружен {label}: «{new_name}».")
+        DealLog.objects.create(deal=deal, user=request.user, action=action)
+
+        return Response(DealDetailSerializer(deal, context={'request': request}).data)
+
+
 class DealDetailView(generics.RetrieveUpdateAPIView):
     queryset = Deal.objects.select_related('client', 'property', 'created_by').prefetch_related('applied_discounts',
                                                                                                 'logs')
@@ -385,7 +452,12 @@ class DealDetailView(generics.RetrieveUpdateAPIView):
                 f"Скидки изменены с '[{', '.join(old_discounts) or 'пусто'}]' на '[{', '.join(new_discounts) or 'пусто'}]'")
 
         if old_instance.signed_document_scan != instance.signed_document_scan and instance.signed_document_scan:
-            changes.append("Загружен скан подписанного документа.")
+            new_name = os.path.basename(instance.signed_document_scan.name)
+            if old_instance.signed_document_scan:
+                old_name = os.path.basename(old_instance.signed_document_scan.name)
+                changes.append(f"Заменён скан подписанного документа: «{old_name}» → «{new_name}».")
+            else:
+                changes.append(f"Загружен скан подписанного документа: «{new_name}».")
 
         if changes:
             action_text = "Данные сделки обновлены. " + "; ".join(changes)

@@ -7,6 +7,7 @@ import { getDealById, updateDeal, updateDealTerms } from '../api/deals';
 import type { DealUpdatePayload, Deal } from '../api/deals';
 import DiscountsModal from '../components/deals/DiscountsModal';
 import PaymentSchedule from '../components/deals/PaymentSchedule';
+import ScanReplaceButton from '../components/deals/ScanReplaceButton';
 import DocumentGeneration from '../components/deals/DocumentGeneration';
 import HumanizedLog from '../components/logs/HumanizedLog';
 import DealCancellationModal from '../components/deals/DealCancellationModal';
@@ -215,6 +216,8 @@ export default function DealDetailPage() {
   const isDealReadOnly = ['CLOSED_WON', 'CANCELLED', 'TERMINATED'].includes(deal.status) || !canEditDeal;
   const isDealTerminated = deal.status === 'TERMINATED';
   const missingPassport = deal.client_missing_passport_fields ?? [];
+  // Скан договора меняется отдельно от остальной сделки — и у закрытой, и у расторгнутой
+  const canReplaceSignedScan = canEditDeal && ['IN_PROGRESS', 'CLOSED_WON', 'TERMINATED'].includes(deal.status);
   const plans =(paymentTypes ?? [])
     .filter(isPlan)
     .filter(plan => plan.company === null || !deal.company || plan.company === deal.company)
@@ -282,11 +285,16 @@ export default function DealDetailPage() {
                     {deal.status === 'TERMINATED' && (
                         <>
                             <Typography variant={isMobile ? 'body2' : 'body1'}>{t('pages.deals.termination_date')}: {deal.termination_date}</Typography>
-                            {deal.termination_document_scan && (
-                                <Typography variant={isMobile ? 'body2' : 'body1'}>
-                                    {t('pages.deals.termination_document')}: <MuiLink href={deal.termination_document_scan} target="_blank" rel="noopener noreferrer">{t('common.view')}</MuiLink>
-                                </Typography>
-                            )}
+                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                                {deal.termination_document_scan && (
+                                    <Typography variant={isMobile ? 'body2' : 'body1'}>
+                                        {t('pages.deals.termination_document')}: <MuiLink href={deal.termination_document_scan} target="_blank" rel="noopener noreferrer">{t('common.view')}</MuiLink>
+                                    </Typography>
+                                )}
+                                {canEditDeal && (
+                                    <ScanReplaceButton dealId={deal.id} kind="termination" hasScan={!!deal.termination_document_scan} />
+                                )}
+                            </Stack>
                         </>
                     )}
                 </Alert>
@@ -444,7 +452,25 @@ export default function DealDetailPage() {
                               <>
                                   <Divider sx={{my: 3}}/>
                                   <Typography variant="h6" gutterBottom>{t('pages.deals.signed_documents')}</Typography>
-                                  {deal.signed_document_scan && (<Alert severity="success" sx={{mb: 2}}>{t('pages.deals.signed_uploaded')} <MuiLink href={deal.signed_document_scan} target="_blank" rel="noopener noreferrer">{t('common.view')}</MuiLink></Alert>)}
+                                  {deal.signed_document_scan && (
+                                    <Alert
+                                      severity="success"
+                                      sx={{mb: 2}}
+                                      action={canReplaceSignedScan && <ScanReplaceButton dealId={deal.id} kind="signed" hasScan />}
+                                    >
+                                      {t('pages.deals.signed_uploaded')} <MuiLink href={deal.signed_document_scan} target="_blank" rel="noopener noreferrer">{t('common.view')}</MuiLink>
+                                    </Alert>
+                                  )}
+                                  {/* У закрытой сделки поле загрузки ниже недоступно — скан догружают отсюда */}
+                                  {!deal.signed_document_scan && isDealReadOnly && canReplaceSignedScan && (
+                                    <Alert
+                                      severity="info"
+                                      sx={{mb: 2}}
+                                      action={<ScanReplaceButton dealId={deal.id} kind="signed" hasScan={false} />}
+                                    >
+                                      {t('pages.deals.no_scan')}
+                                    </Alert>
+                                  )}
                                   <Grid container spacing={2} sx={{mb: 2}}>
                                       <Grid size={{ xs: 12, md: 4 }}><TextField fullWidth label={t('pages.deals.upload_scan')} type="file" InputLabelProps={{ shrink: true }} {...register('signed_document_scan')} disabled={isDealReadOnly} /></Grid>
                                       <Grid size={{ xs: 12, md: 4 }}>

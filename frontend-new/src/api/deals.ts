@@ -105,6 +105,23 @@ export const cancelOrTerminateDeal = async ({ dealId, payload }: { dealId: numbe
   });
   return response.data;
 };
+
+/**
+ * Замена скана подписанного договора (signed) или документа о расторжении
+ * (termination). Меняется только файл — работает и у закрытой сделки
+ */
+export const replaceDealScan = async ({ dealId, kind, file }: {
+  dealId: number;
+  kind: 'signed' | 'termination';
+  file: File;
+}): Promise<Deal> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await apiClient.post(`/deals/${dealId}/scans/${kind}/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
 /**
  * Тип для данных при создании сделки (бронировании).
  */

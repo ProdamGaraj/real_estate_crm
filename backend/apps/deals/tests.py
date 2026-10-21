@@ -10,10 +10,14 @@ check_property_statuses.
 """
 
 import io
+import os
+import shutil
+import tempfile
 from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -24,7 +28,7 @@ from apps.finances.models import BeneficiaryAccount, Payment, PaymentType
 from apps.realty.models import Building, Project, Property
 from permissions.models import Company, Department, Permission, Role, UserProfile
 
-from .models import Deal
+from .models import Deal, DealLog
 
 User = get_user_model()
 
@@ -312,3 +316,103 @@ class DealPassportRequirementTests(TestCase):
         self.assertEqual(self.sign(company_signature_date=today).status_code, 200)
         self.deal.refresh_from_db()
         self.assertEqual(self.deal.status, Deal.DealStatus.CLOSED_WON)
+
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class DealScanTests(TestCase):
+    """
+    Скан подписанного договора и документ о расторжении можно заменить и
+    у закрытой или расторгнутой сделки: меняется только файл, прежний
+    остаётся на диске, замена записывается в журнал сделки.
+    """
+
+    def setUp(self):
+        media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, media, ignore_errors=True)
+        media_settings = override_settings(MEDIA_ROOT=media)
+        media_settings.enable()
+        self.addCleanup(media_settings.disable)
+
+        call_command('init_permissions', stdout=io.StringIO())
+        self.company = Company.objects.create(name='К', code='K')
+        admin = User.objects.create_user('admin', password='pass-for-tests')
+        admin.profile.is_system_admin = True
+        admin.profile.save()
+        self.admin = User.objects.get(pk=admin.pk)
+        # Видит сделки компании, но менять их не может
+        role, _ = Role.objects.get_or_create(name='Наблюдатель', code='VIEWER_TEST')
+        role.permissions.set(Permission.objects.filter(resource='DEAL', action='VIEW', scope='COMPANY'))
+        viewer = User.objects.create_user('viewer', password='pass-for-tests')
+        viewer.profile.company = self.company
+        viewer.profile.save()
+        viewer.profile.roles.set([role])
+        self.viewer = User.objects.get(pk=viewer.pk)
+
+        project = Project.objects.create(name='ЖК', address='А', company=self.company)
+        self.building = Building.objects.create(project=project, name='1', floors_count=9)
+        self.client_obj = Client.objects.create(full_name='Иванов Иван', company=self.company)
+
+    def deal(self, status, number='1'):
+        unit = Property.objects.create(building=self.building, property_type='APARTMENT', unit_number=number,
+                                       floor=1, area=Decimal('40'), price=Decimal('100'),
+                                       status=Property.PropertyStatus.SOLD)
+        return Deal.objects.create(company=self.company, client=self.client_obj, property=unit, status=status,
+                                   booking_end_date=timezone.now() + timedelta(days=3),
+                                   initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2.5'),
+                                   contract_price=Decimal('100'), created_by=self.admin)
+
+    def upload(self, deal, kind, name='new.pdf', user=None):
+        api = APIClient()
+        api.force_authenticate(user or self.admin)
+        data = {'file': SimpleUploadedFile(name, b'%PDF-1.4 scan', content_type='application/pdf')} if name else {}
+        return api.post(f'/api/deals/{deal.id}/scans/{kind}/', data, format='multipart')
+
+    def test_replaces_signed_scan_of_closed_deal(self):
+        deal = self.deal(Deal.DealStatus.CLOSED_WON)
+        deal.signed_document_scan.save('old.pdf', SimpleUploadedFile('old.pdf', b'old'), save=True)
+        old_path = deal.signed_document_scan.path
+
+        response = self.upload(deal, 'signed')
+        self.assertEqual(response.status_code, 200, response.data)
+        deal.refresh_from_db()
+        self.assertTrue(deal.signed_document_scan.name.endswith('new.pdf'))
+        self.assertEqual(deal.status, Deal.DealStatus.CLOSED_WON)
+        # Прежний файл не удалён — если заменили не тот, его можно вернуть
+        self.assertTrue(os.path.exists(old_path))
+        self.assertTrue(DealLog.objects.filter(
+            deal=deal, action='Заменён скан подписанного документа: «old.pdf» → «new.pdf».').exists())
+
+    def test_uploads_scan_to_closed_deal_without_one(self):
+        deal = self.deal(Deal.DealStatus.CLOSED_WON)
+        self.assertEqual(self.upload(deal, 'signed').status_code, 200)
+        self.assertTrue(DealLog.objects.filter(
+            deal=deal, action='Загружен скан подписанного документа: «new.pdf».').exists())
+
+    def test_termination_document_changes_only_for_terminated_deal(self):
+        terminated = self.deal(Deal.DealStatus.TERMINATED, '1')
+        terminated.termination_document_scan.save('act.pdf', SimpleUploadedFile('act.pdf', b'act'), save=True)
+        self.assertEqual(self.upload(terminated, 'termination', 'act-signed.pdf').status_code, 200)
+        terminated.refresh_from_db()
+        self.assertTrue(terminated.termination_document_scan.name.endswith('act-signed.pdf'))
+
+        closed = self.deal(Deal.DealStatus.CLOSED_WON, '2')
+        response = self.upload(closed, 'termination')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Расторгнута', response.data['error'])
+
+    def test_booking_has_no_contract_scan_yet(self):
+        response = self.upload(self.deal(Deal.DealStatus.BOOKING), 'signed')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('В работе', response.data['error'])
+
+    def test_user_without_edit_rights_is_refused(self):
+        deal = self.deal(Deal.DealStatus.CLOSED_WON)
+        response = self.upload(deal, 'signed', user=self.viewer)
+        self.assertEqual(response.status_code, 403)
+        deal.refresh_from_db()
+        self.assertFalse(deal.signed_document_scan)
+
+    def test_file_is_required(self):
+        response = self.upload(self.deal(Deal.DealStatus.CLOSED_WON), 'signed', name=None)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('файл', response.data['error'])
