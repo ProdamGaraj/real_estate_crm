@@ -97,7 +97,9 @@ class ApplicationSummaryView(APIView):
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'created_by')
-        export_format = request.query_params.get('format')
+        # Не «format»: этот параметр DRF забирает себе для выбора рендерера,
+        # и ?format=excel отвечал 404 — выгрузка в Excel не работала
+        export_format = request.query_params.get('export')
         days_since_update = request.query_params.get('days_since_update', 7)
         created_at_after = request.query_params.get('created_at_after')
         created_at_before = request.query_params.get('created_at_before')
@@ -176,7 +178,9 @@ class MeetingSummaryView(APIView):
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'executor')
-        export_format = request.query_params.get('format')
+        # Не «format»: этот параметр DRF забирает себе для выбора рендерера,
+        # и ?format=excel отвечал 404 — выгрузка в Excel не работала
+        export_format = request.query_params.get('export')
 
         # Get date filters from query params
         planned_date_after = request.query_params.get('planned_date_after')

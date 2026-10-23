@@ -38,7 +38,9 @@ class DealSummaryView(APIView):
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'created_by')
-        export_format = request.query_params.get('format')
+        # Не «format»: этот параметр DRF забирает себе для выбора рендерера,
+        # и ?format=excel отвечал 404 — выгрузка в Excel не работала
+        export_format = request.query_params.get('export')
         created_at_after = request.query_params.get('created_at_after')
         created_at_before = request.query_params.get('created_at_before')
 

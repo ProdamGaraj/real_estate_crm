@@ -155,7 +155,8 @@ export const getApplicationSummary = async (filters: ApplicationSummaryFilters):
 
 export const downloadApplicationSummary = async (filters: ApplicationSummaryFilters) => {
     const response = await apiClient.get('/applications/summary/', {
-        params: { ...filters, format: 'excel' },
+        // «export», а не «format»: format DRF принимает за выбор рендерера и отвечает 404
+        params: { ...filters, export: 'excel' },
         responseType: 'blob',
     });
     const url = window.URL.createObjectURL(new Blob([response.data]));

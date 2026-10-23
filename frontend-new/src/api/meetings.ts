@@ -94,7 +94,8 @@ export const getMeetingSummary = async (filters: MeetingSummaryFilters): Promise
 
 export const downloadMeetingSummary = async (filters: MeetingSummaryFilters) => {
     const response = await apiClient.get('/meetings/summary/', {
-        params: { ...filters, format: 'excel' },
+        // «export», а не «format»: format DRF принимает за выбор рендерера и отвечает 404
+        params: { ...filters, export: 'excel' },
         responseType: 'blob',
     });
     const url = window.URL.createObjectURL(new Blob([response.data]));

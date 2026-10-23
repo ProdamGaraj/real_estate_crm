@@ -83,7 +83,9 @@ class FinanceSummaryView(APIView):
 
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'status')
-        export_format = request.query_params.get('format')
+        # Не «format»: этот параметр DRF забирает себе для выбора рендерера,
+        # и ?format=excel отвечал 404 — выгрузка в Excel не работала
+        export_format = request.query_params.get('export')
 
         # Date filters
         due_date_after = request.query_params.get('due_date_after')

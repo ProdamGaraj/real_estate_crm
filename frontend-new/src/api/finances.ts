@@ -146,7 +146,8 @@ export const getFinanceSummary = async (filters: FinanceSummaryFilters): Promise
 
 export const downloadFinanceSummary = async (filters: FinanceSummaryFilters) => {
     const response = await apiClient.get('/finances/summary/', {
-        params: { ...filters, format: 'excel' },
+        // «export», а не «format»: format DRF принимает за выбор рендерера и отвечает 404
+        params: { ...filters, export: 'excel' },
         responseType: 'blob',
     });
     const url = window.URL.createObjectURL(new Blob([response.data]));

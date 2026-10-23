@@ -416,3 +416,37 @@ class DealScanTests(TestCase):
         response = self.upload(self.deal(Deal.DealStatus.CLOSED_WON), 'signed', name=None)
         self.assertEqual(response.status_code, 400)
         self.assertIn('файл', response.data['error'])
+
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class SummaryExcelExportTests(TestCase):
+    """
+    Выгрузки сводных таблиц в Excel. Параметр назывался format, его DRF забирал
+    себе для выбора рендерера, и ?format=excel отвечал 404 — файл не скачивался.
+    """
+
+    URLS = ('/api/deals/summary/', '/api/applications/summary/',
+            '/api/meetings/summary/', '/api/finances/summary/')
+
+    def setUp(self):
+        user = User.objects.create_user('admin', password='pass-for-tests')
+        user.profile.is_system_admin = True
+        user.profile.save()
+        self.api = APIClient()
+        self.api.force_authenticate(User.objects.get(pk=user.pk))
+
+    def test_every_summary_downloads_as_xlsx(self):
+        for url in self.URLS:
+            with self.subTest(url=url):
+                response = self.api.get(url, {'export': 'excel'})
+                self.assertEqual(response.status_code, 200, url)
+                self.assertIn('spreadsheetml', response['Content-Type'])
+                self.assertTrue(response.content.startswith(b'PK'))  # xlsx — это zip
+
+    def test_deal_summary_export_keeps_filters(self):
+        response = self.api.get('/api/deals/summary/', {
+            'export': 'excel', 'group_by': 'project',
+            'created_at_after': '2026-10-01', 'created_at_before': '2026-10-31',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('deal_summary_project.xlsx', response['Content-Disposition'])
