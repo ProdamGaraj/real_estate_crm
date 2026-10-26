@@ -352,8 +352,9 @@ export default function UserForm({ userProfile, onSuccess, onCancel }: UserFormP
                   : t('pages.settings.permissions.change_password')}
               </Button>
 
+              {/* action.hover — лёгкая подложка в обеих темах; grey.50 в тёмной давал почти белый блок с белым текстом */}
               {showPasswordSection && (
-                <Stack spacing={2} sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Stack spacing={2} sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     {t('pages.settings.permissions.new_password_section')}
                   </Typography>

@@ -14,7 +14,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { createAppTheme } from './theme';
 import { useTranslation } from 'react-i18next';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { RootState } from './store/store';
 
 // i18n initialization - must be imported before App
@@ -29,7 +29,15 @@ function ThemedApp() {
   
   // Recreate theme when language or mode changes
   const theme = useMemo(() => createAppTheme(themeMode), [i18n.language, themeMode]);
-  
+
+  // CSS-переменные из styles/colors.css и нативные элементы браузера (полосы
+  // прокрутки, поля дат) следуют теме MUI. Без атрибута они всегда оставались
+  // светлыми: в тёмной теме строка «Итого» в отчётах была белой с белым текстом
+  useEffect(() => {
+    document.documentElement.dataset.theme = themeMode;
+    document.documentElement.style.colorScheme = themeMode;
+  }, [themeMode]);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

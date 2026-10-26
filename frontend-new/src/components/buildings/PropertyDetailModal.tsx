@@ -14,6 +14,7 @@ import type { DealPayload } from '../../api/deals';
 import BookingForm from '../deals/BookingForm';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
+import ImageNotSupportedOutlinedIcon from '@mui/icons-material/ImageNotSupportedOutlined';
 import { getMediaUrl } from '../../utils/media';
 import { convertAmount, formatMoney, formatRate, crossRate } from '../../utils/currency';
 import { getCurrencySettings, getCurrentRates } from '../../api/currency';
@@ -196,22 +197,25 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
                         />
                     </Box>
                 ) : (
+                     // Заглушка цветами темы. Раньше здесь была светлая картинка с placehold.co
+                     // на светло-сером фоне: в тёмной теме — яркое пятно, без интернета — пусто
                      <Box
-                        component="img"
                         sx={{
                             height: 400,
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            gap: 1,
                             width: '100%',
-                            objectFit: 'contain',
-                            overflow: 'hidden',
                             borderRadius: 2,
-                            bgcolor: 'grey.200'
+                            bgcolor: 'action.hover',
+                            color: 'text.secondary',
                         }}
-                        src={'https://placehold.co/600x400/eee/ccc?text=No+Image'}
-                        alt={t('pages.properties.no_image')}
-                    />
+                    >
+                        <ImageNotSupportedOutlinedIcon sx={{ fontSize: 48 }} />
+                        <Typography variant="body2">{t('pages.properties.no_image')}</Typography>
+                    </Box>
                 )}
             </Grid>
 

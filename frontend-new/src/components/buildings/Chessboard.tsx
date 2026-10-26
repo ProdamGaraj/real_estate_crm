@@ -1,4 +1,4 @@
-import { Box, Paper, Tooltip, Typography, useTheme, alpha } from '@mui/material';
+import { Box, Paper, Tooltip, Typography, useTheme, alpha, type Theme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { Property } from '../../api/buildings'; // Убедитесь, что этот тип экспортируется из api/buildings.ts
 import { translatePropertyStatus } from '../../utils/translations';
@@ -25,15 +25,15 @@ const groupProperties = (properties: Property[]) => {
   }, {} as Record<string, Record<number, Property[]>>);
 };
 
-// Определяем цвет ячейки в зависимости от статуса
-const getStatusColor = (status: string) => {
+// Цвет ячейки в зависимости от статуса — светлые оттенки палитры темы
+const getStatusColor = (theme: Theme, status: string) => {
   switch (status) {
-    case 'SELECTION': return 'success.light';
-    case 'RESERVE': return 'info.light';
-    case 'BOOKING': return 'warning.light';
-    case 'IN_DEAL': return 'secondary.light';
-    case 'SOLD': return 'error.light';
-    default: return 'grey.300';
+    case 'SELECTION': return theme.palette.success.light;
+    case 'RESERVE': return theme.palette.info.light;
+    case 'BOOKING': return theme.palette.warning.light;
+    case 'IN_DEAL': return theme.palette.secondary.light;
+    case 'SOLD': return theme.palette.error.light;
+    default: return theme.palette.grey[300];
   }
 };
 
@@ -83,7 +83,10 @@ export default function Chessboard({ properties, onCellClick }: ChessboardProps)
                               sx={{
                                 width: 80,
                                 height: 60,
-                                bgcolor: getStatusColor(prop.status),
+                                bgcolor: getStatusColor(theme, prop.status),
+                                // Текст под цвет ячейки: в тёмной теме он наследовал белый
+                                // и терялся на светло-зелёном и оранжевом
+                                color: theme.palette.getContrastText(getStatusColor(theme, prop.status)),
                                 borderRadius: 1,
                                 display: 'flex',
                                 flexDirection: 'column',

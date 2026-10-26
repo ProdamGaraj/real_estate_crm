@@ -7,6 +7,7 @@ import { getEmployeePlanFactReport, downloadEmployeePlanTemplate, uploadEmployee
 import { useIsMobile } from '../../hooks/useMobile';
 import { extractApiError } from '../../utils/apiError';
 import { formatNumber } from '../../utils/currency';
+import { separatorSx, stickyColumnSx, totalRowSx } from './tableStyles';
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
@@ -88,16 +89,9 @@ export default function EmployeeReport() {
         }
     };
 
-    const separatorStyle = { borderRight: '1px solid var(--color-border-default)' };
-    
-    // Sticky first column style for mobile horizontal scroll
-    const stickyColumnStyle = isMobile ? {
-        position: 'sticky' as const,
-        left: 0,
-        background: 'var(--color-background-paper, #fff)',
-        zIndex: 1,
-        minWidth: 120,
-    } : {};
+    const separatorStyle = separatorSx;
+    // Первая колонка закрепляется при горизонтальной прокрутке на телефоне
+    const stickyColumnStyle = stickyColumnSx(isMobile);
 
     return (
         <Stack spacing={isMobile ? 2 : 3}>
@@ -187,8 +181,8 @@ export default function EmployeeReport() {
                         </TableHead>
                         <TableBody>
                             {reportData.map((employee) => (
-                                <TableRow key={employee.employee_id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, ...(employee.employee_id === 'total' && {backgroundColor: 'var(--color-background-total)'}) }}>
-                                    <TableCell component="th" scope="row" sx={{...separatorStyle, ...stickyColumnStyle, ...(employee.employee_id === 'total' && {backgroundColor: 'var(--color-background-total)'})}}>
+                                <TableRow key={employee.employee_id} sx={{ '&:last-child td, &:last-child th': { border: 0 }, ...totalRowSx(employee.employee_id === 'total') }}>
+                                    <TableCell component="th" scope="row" sx={{...separatorStyle, ...stickyColumnStyle, ...totalRowSx(employee.employee_id === 'total')}}>
                                         <Typography variant={isMobile ? 'body2' : 'body1'} sx={{fontWeight: employee.employee_id === 'total' ? 'bold' : 'normal'}}>
                                             {employee.employee_name}
                                         </Typography>

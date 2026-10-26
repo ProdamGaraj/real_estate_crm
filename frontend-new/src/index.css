@@ -6,7 +6,8 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light; /* Оставляем только светлую тему для консистентности */
+  /* color-scheme задаётся из темы (main.tsx): жёсткое «light» оставляло
+     светлыми полосы прокрутки и поля дат в тёмной теме */
   color: var(--color-text-dark);
   background-color: var(--color-background-default);
 

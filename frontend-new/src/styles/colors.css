@@ -84,10 +84,17 @@
 /* Применяется через data-theme атрибут или класс на html/body */
 [data-theme="dark"],
 .dark-theme {
-  --color-background-default: var(--color-dark-background);
-  --color-background-paper: var(--color-dark-background-alt);
-  --color-text-primary: var(--color-dark-text);
+  /* Те же значения, что в тёмной палитре MUI (src/theme.ts); атрибут ставит main.tsx.
+     Здесь должны быть все переменные со светлым значением фона или тёмным текстом,
+     иначе в тёмной теме они остаются светлыми */
+  --color-background-default: #121212;
+  --color-background-paper: #1e1e1e;
+  --color-background-total: #424242;
+  --color-text-primary: rgba(255, 255, 255, 0.95);
   --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-dark: rgba(255, 255, 255, 0.95);
+  --color-text-muted: rgba(255, 255, 255, 0.5);
   --color-border-light: rgba(255, 255, 255, 0.12);
   --color-border-default: rgba(255, 255, 255, 0.12);
+  --color-border-dark: rgba(255, 255, 255, 0.2);
 }
