@@ -334,7 +334,7 @@ class MultiCurrencyDealTests(TestCase):
         response = self.api.get('/api/dashboard/analytics/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['kpi']['currency'], 'UZS')
-        self.assertEqual(Decimal(response.data['kpi']['monthlySales']), Decimal('17000000.00'))
+        self.assertEqual(Decimal(response.data['kpi']['monthlyContracting']), Decimal('17000000.00'))
 
 
 class LegacyDealsMixin:

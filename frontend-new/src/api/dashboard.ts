@@ -5,7 +5,12 @@ import apiClient from './axios';
 export interface KpiData {
     newClientsToday: number;
     newApplicationsToday: number;
-    monthlySales: number;
+    /** Клиенты, у которых сейчас есть сделка «В работе» */
+    clientsInProgress: number;
+    /** Контрактация за месяц: сделки «В работе» и «Успешно закрыта» по дате договора */
+    monthlyContracting: number;
+    /** Поступления за месяц: оплаченные платежи по дате оплаты */
+    monthlyReceipts: number;
     overduePayments: number;
     /** Валюта сумм: валюта сделок компании */
     currency?: string;

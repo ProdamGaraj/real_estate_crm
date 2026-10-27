@@ -14,6 +14,7 @@ import calendar
 from decimal import Decimal
 
 from .models import Plan, EmployeePlan
+from apps.deals.contracting import contracted_deals, contracting_amounts
 from apps.deals.models import Deal
 from apps.finances.models import Payment
 from apps.realty.models import Project
@@ -121,14 +122,10 @@ class PlanFactReportView(APIView):
                 revenue=Sum('revenue_money_plan')
             )
 
-            # Дата договора необязательна, поэтому при её отсутствии берём
-            # дату закрытия сделки: иначе закрытые сделки выпадали из факта
-            deals_qs = Deal.objects.filter(
-                Q(contract_date__range=[start_date, end_date])
-                | Q(contract_date__isnull=True, closed_at__date__range=[start_date, end_date]),
-                status=Deal.DealStatus.CLOSED_WON,
-                property__building__project=project,
-            )
+            # Контрактация — сделки «В работе» и «Успешно закрыта» по дате договора
+            # (правило — в apps/deals/contracting.py)
+            deals_qs = contracted_deals(Deal.objects.filter(property__building__project=project),
+                                        start_date, end_date)
             # Фильтруем сделки по разрешениям
             deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL', max_scope=report_scope)
             payments_qs = Payment.objects.filter(payment_date__range=[start_date, end_date],
@@ -138,11 +135,7 @@ class PlanFactReportView(APIView):
             payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT', max_scope=report_scope)
 
             fact_units = deals_qs.count()
-            fact_money = to_base.total(
-                (price, currency, contract_date or closed_at)
-                for price, currency, contract_date, closed_at in deals_qs.values_list(
-                    'contract_price', 'currency', 'contract_date', 'closed_at')
-            )
+            fact_money = to_base.total(contracting_amounts(deals_qs))
             fact_revenue = to_base.total(payments_qs.values_list('amount', 'currency', 'payment_date'))
 
             # Accumulate totals
@@ -309,13 +302,10 @@ class EmployeePlanFactReportView(APIView):
                 revenue=Sum('revenue_money_plan')
             )
 
-            # Дата договора необязательна — при её отсутствии берём дату закрытия
-            deals_qs = Deal.objects.filter(
-                Q(contract_date__range=[start_date, end_date])
-                | Q(contract_date__isnull=True, closed_at__date__range=[start_date, end_date]),
-                status=Deal.DealStatus.CLOSED_WON,
-                created_by=emp,
-            )
+            # Контрактация — сделки «В работе» и «Успешно закрыта» по дате договора:
+            # раньше учитывались только закрытые, и менеджер с оформленными, но ещё
+            # не подписанными договорами выпадал из отчёта
+            deals_qs = contracted_deals(Deal.objects.filter(created_by=emp), start_date, end_date)
             # Фильтруем сделки по разрешениям
             deals_qs = get_filtered_queryset(request.user, deals_qs, 'DEAL', max_scope=report_scope)
             payments_qs = Payment.objects.filter(payment_date__range=[start_date, end_date],
@@ -324,11 +314,7 @@ class EmployeePlanFactReportView(APIView):
             payments_qs = get_filtered_queryset(request.user, payments_qs, 'PAYMENT', max_scope=report_scope)
 
             fact_units = deals_qs.count()
-            fact_money = to_base.total(
-                (price, currency, contract_date or closed_at)
-                for price, currency, contract_date, closed_at in deals_qs.values_list(
-                    'contract_price', 'currency', 'contract_date', 'closed_at')
-            )
+            fact_money = to_base.total(contracting_amounts(deals_qs))
             fact_revenue = to_base.total(payments_qs.values_list('amount', 'currency', 'payment_date'))
 
             # Skip employee if they have no plan and no fact

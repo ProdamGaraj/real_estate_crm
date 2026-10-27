@@ -50,6 +50,9 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from datetime import date, timedelta
 from django.db.models import Count, Sum, F, Q
+import calendar
+
+from apps.deals.contracting import contracted_deals
 from apps.deals.models import Deal
 from apps.finances.models import Payment
 from apps.finances.services import refresh_overdue_payments_throttled
@@ -310,25 +313,37 @@ class DashboardAnalyticsView(APIView):
         
         new_clients_today = clients_qs.filter(created_at__date=today).count()
         new_applications_today = apps_qs.filter(created_at__date=today).count()
-        # Считаем по дате закрытия сделки: по updated_at любая правка старой
-        # сделки переносила её сумму в текущий месяц
-        closed_this_month = deals_qs.filter(
-            status=Deal.DealStatus.CLOSED_WON,
-            closed_at__gte=start_of_month
-        )
+        end_of_month = start_of_month.replace(day=calendar.monthrange(today.year, today.month)[1])
+
+        # Клиенты, у которых сейчас есть сделка «В работе», — та же работа, что
+        # отчёт по сотрудникам показывает в контрактации
+        clients_in_progress = deals_qs.filter(
+            status=Deal.DealStatus.IN_PROGRESS
+        ).order_by().values('client').distinct().count()
+
+        # Контрактация за месяц — сколько клиенты согласились заплатить: сделки
+        # «В работе» и «Успешно закрыта» по дате договора (то же правило, что в
+        # отчётах план-факт). Раньше здесь были только закрытые сделки («Продажи
+        # за месяц»), и договоры без внесённых подписей в цифру не попадали
+        contracted_this_month = contracted_deals(deals_qs, start_of_month, end_of_month)
         # Суммы сделок и платежей могут быть в разных валютах: приводим их к
         # валюте сделок компании по курсу на дату события (договора, платежа).
         # Раньше числа в сумах и долларах складывались в одно и подписывались «у.е.»
         company = user_company(request.user)
         to_base = Converter(company_base_currency(company), company)
-        sales_rows = list(closed_this_month.values_list(
-            'contract_price', 'currency', 'contract_date', 'closed_at',
+        contracting_rows = list(contracted_this_month.values_list(
+            'contract_price', 'currency', 'contracted_on',
             'created_by', 'created_by__first_name', 'created_by__last_name',
         ))
-        monthly_sales = to_base.total(
-            (price, currency, contract_date or closed_at)
-            for price, currency, contract_date, closed_at, *_ in sales_rows
+        monthly_contracting = to_base.total(
+            (price, currency, contracted_on) for price, currency, contracted_on, *_ in contracting_rows
         )
+        # Поступления за месяц — сколько клиенты реально заплатили (оплаченные
+        # платежи по дате оплаты), как «Поступления» в отчётах
+        monthly_receipts = to_base.total(payments_qs.filter(
+            status=Payment.PaymentStatus.PAID,
+            payment_date__range=[start_of_month, end_of_month],
+        ).values_list('amount', 'currency', 'payment_date'))
         # Актуализируем просрочку, иначе цифра зависит от того, открывал ли
         # кто-то сегодня раздел «Финансы»
         refresh_overdue_payments_throttled(payments_qs)
@@ -358,15 +373,15 @@ class DashboardAnalyticsView(APIView):
             for offset in range(7)
         ]
 
-        # Рейтинг менеджеров — по тем же сделкам, суммы приведены к одной валюте
+        # Рейтинг менеджеров — по контрактации месяца, суммы приведены к одной валюте
         by_manager = {}
-        for price, currency, contract_date, closed_at, user_id, first_name, last_name in sales_rows:
+        for price, currency, contracted_on, user_id, first_name, last_name in contracting_rows:
             if not user_id:
                 continue
             entry = by_manager.setdefault(user_id, {
                 'first_name': first_name or '', 'last_name': last_name or '', 'total_sales': 0,
             })
-            entry['total_sales'] += to_base(price, currency, contract_date or closed_at)
+            entry['total_sales'] += to_base(price, currency, contracted_on)
         top_managers = sorted(by_manager.values(), key=lambda e: e['total_sales'], reverse=True)[:5]
         for entry in top_managers:
             entry['total_sales'] = money(entry['total_sales'])
@@ -381,7 +396,9 @@ class DashboardAnalyticsView(APIView):
             'kpi': {
                 'newClientsToday': new_clients_today,
                 'newApplicationsToday': new_applications_today,
-                'monthlySales': monthly_sales,
+                'clientsInProgress': clients_in_progress,
+                'monthlyContracting': monthly_contracting,
+                'monthlyReceipts': monthly_receipts,
                 'overduePayments': overdue_payments,
                 # Валюта, в которой даны суммы, и валюты без курса (их суммы не учтены)
                 'currency': to_base.target,

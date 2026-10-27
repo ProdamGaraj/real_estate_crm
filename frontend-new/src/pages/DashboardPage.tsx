@@ -3,6 +3,8 @@ import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
+import HandshakeIcon from '@mui/icons-material/Handshake';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import EventIcon from '@mui/icons-material/Event';
 import { useQuery } from '@tanstack/react-query';
@@ -20,9 +22,10 @@ const KpiCard = ({ title, value, icon, color = 'primary.main', compact = false }
     <Card variant="outlined">
         <CardContent sx={{ p: compact ? 1.5 : 2 }}>
             <Stack direction="row" spacing={compact ? 1 : 2} alignItems="center">
-                <Avatar sx={{ bgcolor: color, width: compact ? 40 : 56, height: compact ? 40 : 56 }}>{icon}</Avatar>
-                <Box>
-                    <Typography variant={compact ? 'h6' : 'h5'} fontWeight="bold">{value}</Typography>
+                <Avatar sx={{ bgcolor: color, width: compact ? 40 : 56, height: compact ? 40 : 56, flexShrink: 0 }}>{icon}</Avatar>
+                {/* minWidth и перенос: суммы в миллиарды обрезались краем карточки */}
+                <Box sx={{ minWidth: 0 }}>
+                    <Typography variant={compact ? 'h6' : 'h5'} fontWeight="bold" sx={{ overflowWrap: 'anywhere' }}>{value}</Typography>
                     <Typography color="text.secondary" variant={compact ? 'body2' : 'body1'}>{title}</Typography>
                 </Box>
             </Stack>
@@ -104,12 +107,16 @@ export default function DashboardPage() {
             </Alert>
         )}
 
-        {/* Блок KPI - 2 columns on mobile */}
+        {/* Блок KPI: по 2 карточки на телефоне, по 3 в ряд на компьютере.
+            Контрактация — сделки «В работе» и «Успешно закрыта» по дате договора (что клиенты
+            согласились заплатить), поступления — что реально оплачено в этом месяце */}
         <Grid container spacing={isMobile ? 1.5 : 3} sx={{ mb: isMobile ? 2 : 3 }}>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_clients_today')} value={String(kpi.newClientsToday)} icon={<PeopleIcon />} compact={isMobile} /></Grid>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.new_applications_today')} value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" compact={isMobile} /></Grid>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.monthly_sales')} value={formatMoney(kpi.monthlySales, moneyLabel, i18n.language)} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
-            <Grid size={{ xs: 6, sm: 6, md: 3 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={formatMoney(kpi.overduePayments, moneyLabel, i18n.language)} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.new_clients_today')} value={String(kpi.newClientsToday)} icon={<PeopleIcon />} compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.new_applications_today')} value={String(kpi.newApplicationsToday)} icon={<AssignmentIcon />} color="success.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.clients_in_progress')} value={String(kpi.clientsInProgress)} icon={<HandshakeIcon />} color="warning.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.monthly_contracting')} value={formatMoney(kpi.monthlyContracting, moneyLabel, i18n.language)} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.monthly_receipts')} value={formatMoney(kpi.monthlyReceipts, moneyLabel, i18n.language)} icon={<AccountBalanceWalletIcon />} color="secondary.main" compact={isMobile} /></Grid>
+            <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={formatMoney(kpi.overduePayments, moneyLabel, i18n.language)} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
         </Grid>
 
         {/* Блок воронок и графиков */}

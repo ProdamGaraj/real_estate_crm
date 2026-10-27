@@ -154,6 +154,9 @@ export default function ProjectReport() {
                 <Alert severity="warning">{t('pages.reports.missing_rates', { currencies: reportMissingRates.join(', ') })}</Alert>
             )}
             {reportData && (
+                <Typography variant="body2" color="text.secondary">{t('pages.reports.contracting_hint')}</Typography>
+            )}
+            {reportData && (
                 <TableContainer component={Paper} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
                     <Table stickyHeader size={isMobile ? 'small' : 'medium'}>
                         <TableHead>
