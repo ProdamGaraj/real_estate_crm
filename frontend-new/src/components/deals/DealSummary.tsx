@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getDealSummary, downloadDealSummary, type DealSummaryFilters } from '../../api/deals';
+import { getDealSummary, downloadDealSummary, type DealSummaryFilters, type DealSummaryRow } from '../../api/deals';
 import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -38,7 +38,7 @@ const KpiCard = ({ title, value, color = 'text.primary', linkTo }: { title: stri
 );
 
 export default function DealSummary() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [filters, setFilters] = useState<DealSummaryFilters>({ group_by: 'created_by' });
 
     const { control, watch } = useForm<DealSummaryFilters>({
@@ -67,13 +67,31 @@ export default function DealSummary() {
         queryFn: () => getDealSummary(filters),
     });
 
+    // Сделки группы по статусам. Раньше была одна колонка «Всего сделок» вместе
+    // с отменёнными и расторгнутыми, и число выглядело завышенным.
+    // «Итого» — все, кроме отменённых
+    const statusColumn = (field: keyof DealSummaryRow, status: string): GridColDef => ({
+        field, headerName: t(`statuses.deal.${status}`), type: 'number', flex: 1, minWidth: 110,
+    });
     const columns: GridColDef[] = [
-        { field: Object.keys(data?.summary[0] || {})[0], headerName: t('pages.deals.summary_group'), flex: 1 },
-        { field: 'Total Deals', headerName: t('pages.deals.total_deals'), flex: 1 },
+        {
+            field: 'group', headerName: t('pages.deals.summary_group'), flex: 1.5, minWidth: 180,
+            // При группировке по статусу в строке приходит код статуса
+            valueFormatter: (value: string) => filters.group_by === 'status' ? t(`statuses.deal.${value}`, value) : value,
+        },
+        statusColumn('booking', 'BOOKING'),
+        statusColumn('in_progress', 'IN_PROGRESS'),
+        statusColumn('closed_won', 'CLOSED_WON'),
+        statusColumn('terminated', 'TERMINATED'),
+        statusColumn('cancelled', 'CANCELLED'),
+        {
+            field: 'total', headerName: t('pages.deals.summary_total'), type: 'number', flex: 1, minWidth: 150,
+            renderCell: (params) => <Typography component="span" fontWeight="bold">{params.value}</Typography>,
+        },
     ];
 
     const handleDownload = () => {
-        downloadDealSummary(filters);
+        downloadDealSummary(filters, i18n.language);
     };
 
     if (isLoading) return <CircularProgress />;

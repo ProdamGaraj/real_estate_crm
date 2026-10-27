@@ -463,6 +463,7 @@
       "export_excel": "Excel ga eksport",
       "summary_group": "Guruh",
       "total_deals": "Jami bitimlar",
+      "summary_total": "Jami (bekor qilinganlarsiz)",
       "status_booking": "Bron",
       "status_in_progress": "Jarayonda",
       "status_completed": "Yakunlangan",

@@ -236,8 +236,22 @@ export interface DealSummaryFilters {
     created_at_before?: string;
 }
 
+/**
+ * Строка сводной таблицы сделок: группа (менеджер, проект или код статуса)
+ * и число сделок по каждому статусу. total — все, кроме отменённых
+ */
+export interface DealSummaryRow {
+    group: string;
+    booking: number;
+    in_progress: number;
+    closed_won: number;
+    terminated: number;
+    cancelled: number;
+    total: number;
+}
+
 export interface DealSummaryResponse {
-    summary: any[];
+    summary: DealSummaryRow[];
     widgets: {
         booking_count: number;
         in_progress_count: number;
@@ -252,10 +266,11 @@ export const getDealSummary = async (filters: DealSummaryFilters): Promise<DealS
     return response.data;
 };
 
-export const downloadDealSummary = async (filters: DealSummaryFilters) => {
+export const downloadDealSummary = async (filters: DealSummaryFilters, lang?: string) => {
     const response = await apiClient.get('/deals/summary/', {
-        // «export», а не «format»: format DRF принимает за выбор рендерера и отвечает 404
-        params: { ...filters, export: 'excel' },
+        // «export», а не «format»: format DRF принимает за выбор рендерера и отвечает 404.
+        // lang — язык заголовков в файле
+        params: { ...filters, export: 'excel', lang },
         responseType: 'blob',
     });
     const url = window.URL.createObjectURL(new Blob([response.data]));

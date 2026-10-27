@@ -486,6 +486,7 @@
       "export_excel": "Выгрузить в Excel",
       "summary_group": "Группа",
       "total_deals": "Всего сделок",
+      "summary_total": "Итого (без отменённых)",
       "status_booking": "Бронь",
       "status_in_progress": "В работе",
       "status_completed": "Завершенные",

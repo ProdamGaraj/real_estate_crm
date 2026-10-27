@@ -486,6 +486,7 @@
       "export_excel": "Export to Excel",
       "summary_group": "Group",
       "total_deals": "Total Deals",
+      "summary_total": "Total (excl. cancelled)",
       "status_booking": "Booking",
       "status_in_progress": "In Progress",
       "status_completed": "Completed",

@@ -36,6 +36,53 @@ class PropertyUnavailable(Exception):
 class DealSummaryView(APIView):
     permission_classes = [IsAuthenticated, ReportPermission]
 
+    # Колонки сводной таблицы: ключ в ответе API → статус сделки
+    STATUS_COLUMNS = (
+        ('booking', Deal.DealStatus.BOOKING),
+        ('in_progress', Deal.DealStatus.IN_PROGRESS),
+        ('closed_won', Deal.DealStatus.CLOSED_WON),
+        ('terminated', Deal.DealStatus.TERMINATED),
+        ('cancelled', Deal.DealStatus.CANCELLED),
+    )
+
+    # Заголовки и названия статусов в Excel — на языке интерфейса (?lang=ru|en|uz)
+    EXCEL_TEXT = {
+        'ru': {
+            'group': {'created_by': 'Менеджер', 'project': 'Проект', 'status': 'Статус'},
+            'booking': 'Бронь', 'in_progress': 'В работе', 'closed_won': 'Успешно закрыта',
+            'terminated': 'Расторгнута', 'cancelled': 'Отменена', 'total': 'Итого (без отменённых)',
+        },
+        'en': {
+            'group': {'created_by': 'Manager', 'project': 'Project', 'status': 'Status'},
+            'booking': 'Booking', 'in_progress': 'In progress', 'closed_won': 'Closed won',
+            'terminated': 'Terminated', 'cancelled': 'Cancelled', 'total': 'Total (excl. cancelled)',
+        },
+        'uz': {
+            'group': {'created_by': 'Menejer', 'project': 'Loyiha', 'status': 'Holat'},
+            'booking': 'Bron', 'in_progress': 'Jarayonda', 'closed_won': 'Muvaffaqiyatli yopilgan',
+            'terminated': 'Shartnoma buzilgan', 'cancelled': 'Bekor qilingan',
+            'total': 'Jami (bekor qilinganlarsiz)',
+        },
+    }
+
+    def _excel(self, rows, group_by, lang):
+        """Сводная таблица в Excel с теми же колонками, что на экране."""
+        text = self.EXCEL_TEXT.get(lang, self.EXCEL_TEXT['ru'])
+        columns = ['group'] + [key for key, _ in self.STATUS_COLUMNS] + ['total']
+        headers = [text['group'][group_by]] + [text[key] for key in columns[1:]]
+        table = []
+        for row in rows:
+            values = [row[key] for key in columns]
+            if group_by == 'status':
+                # В строке — код статуса (BOOKING); в файле — его название
+                key = {code.value: name for name, code in self.STATUS_COLUMNS}.get(row['group'])
+                values[0] = text.get(key, row['group'])
+            table.append(values)
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename=deal_summary_{group_by}.xlsx'
+        pd.DataFrame(table, columns=headers).to_excel(response, index=False)
+        return response
+
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'created_by')
         # Не «format»: этот параметр DRF забирает себе для выбора рендерера,
@@ -62,41 +109,39 @@ class DealSummaryView(APIView):
             cancelled_count=Count('id', filter=Q(status=Deal.DealStatus.CANCELLED)),
         )
 
-        if group_by == 'created_by':
-            summary = queryset.values(
-                'created_by__first_name', 'created_by__last_name', 'created_by__username'
-            ).annotate(
-                total_deals=Count('id')
-            ).order_by('-total_deals')
-
-            data_for_df = []
-            for item in summary:
-                full_name = f"{item['created_by__first_name']} {item['created_by__last_name']}".strip()
-                data_for_df.append({
-                    'Manager': full_name or item['created_by__username'] or "System",
-                    'Total Deals': item['total_deals'],
-                })
-
-        elif group_by == 'project':
-            summary = queryset.values('property__building__project__name').annotate(total_deals=Count('id')).order_by(
-                '-total_deals')
-            data_for_df = [
-                {'Project': item['property__building__project__name'] or "N/A", 'Total Deals': item['total_deals']} for
-                item in summary]
-
-        elif group_by == 'status':
-            summary = queryset.values('status').annotate(total_deals=Count('id')).order_by('-total_deals')
-            data_for_df = [{'Status': item['status'], 'Total Deals': item['total_deals']} for item in summary]
-
-        else:
+        # Сделки группы раскладываются по статусам. Раньше была одна колонка
+        # «Всего сделок», и в неё входили отменённые и расторгнутые: у менеджера
+        # с 81 закрытой сделкой стояло 255. «Итого» считается без отменённых
+        group_fields = {
+            'created_by': ('created_by__first_name', 'created_by__last_name', 'created_by__username'),
+            'project': ('property__building__project__name',),
+            'status': ('status',),
+        }
+        if group_by not in group_fields:
             return Response({"error": "Invalid group_by parameter"}, status=status.HTTP_400_BAD_REQUEST)
 
+        per_status = {key: Count('id', filter=Q(status=deal_status)) for key, deal_status in self.STATUS_COLUMNS}
+        summary = queryset.values(*group_fields[group_by]).annotate(
+            **per_status,
+            total=Count('id', filter=~Q(status=Deal.DealStatus.CANCELLED)),
+        ).order_by('-total', *group_fields[group_by])
+
+        data_for_df = []
+        for item in summary:
+            if group_by == 'created_by':
+                full_name = f"{item['created_by__first_name'] or ''} {item['created_by__last_name'] or ''}".strip()
+                group = full_name or item['created_by__username'] or '—'
+            elif group_by == 'project':
+                group = item['property__building__project__name'] or '—'
+            else:
+                group = item['status']
+            row = {'group': group}
+            row.update({key: item[key] for key, _ in self.STATUS_COLUMNS})
+            row['total'] = item['total']
+            data_for_df.append(row)
+
         if export_format == 'excel':
-            df = pd.DataFrame(data_for_df)
-            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            response['Content-Disposition'] = f'attachment; filename=deal_summary_{group_by}.xlsx'
-            df.to_excel(response, index=False)
-            return response
+            return self._excel(data_for_df, group_by, request.query_params.get('lang', 'ru'))
 
         response_data = {
             'summary': data_for_df,

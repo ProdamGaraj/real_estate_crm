@@ -450,3 +450,50 @@ class SummaryExcelExportTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn('deal_summary_project.xlsx', response['Content-Disposition'])
+
+
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
+class DealSummaryByStatusTests(TestCase):
+    """
+    Сводная таблица сделок раскладывает сделки группы по статусам. Раньше была
+    одна колонка «Всего сделок» вместе с отменёнными и расторгнутыми, и число
+    выглядело завышенным. «Итого» считается без отменённых.
+    """
+
+    def setUp(self):
+        admin = User.objects.create_user('admin', password='pass-for-tests')
+        admin.profile.is_system_admin = True
+        admin.profile.save()
+        self.api = APIClient()
+        self.api.force_authenticate(User.objects.get(pk=admin.pk))
+        self.manager = User.objects.create_user('mpp_1', password='pass-for-tests',
+                                                first_name='Xojimurod', last_name='Ortiqov')
+        self.company = Company.objects.create(name='К', code='K')
+        project = Project.objects.create(name='ЖК', address='А', company=self.company)
+        self.building = Building.objects.create(project=project, name='1', floors_count=9)
+        self.client_obj = Client.objects.create(full_name='Клиент', company=self.company)
+        statuses = ([Deal.DealStatus.BOOKING] * 2 + [Deal.DealStatus.CLOSED_WON] * 3
+                    + [Deal.DealStatus.TERMINATED] * 4 + [Deal.DealStatus.CANCELLED] * 5)
+        for number, deal_status in enumerate(statuses):
+            unit = Property.objects.create(building=self.building, property_type='APARTMENT',
+                                           unit_number=str(number), floor=1, area=Decimal('40'), price=Decimal('1'))
+            Deal.objects.create(company=self.company, client=self.client_obj, property=unit, status=deal_status,
+                                created_by=self.manager, booking_end_date=timezone.now() + timedelta(days=3),
+                                initial_price=Decimal('1'), initial_price_per_sqm=Decimal('1'))
+
+    def test_manager_row_is_split_by_status_and_total_skips_cancelled(self):
+        rows = self.api.get('/api/deals/summary/', {'group_by': 'created_by'}).data['summary']
+        self.assertEqual(rows, [{
+            'group': 'Xojimurod Ortiqov', 'booking': 2, 'in_progress': 0, 'closed_won': 3,
+            'terminated': 4, 'cancelled': 5, 'total': 9,
+        }])
+
+    def test_excel_has_status_columns_in_interface_language(self):
+        import pandas as pd
+        response = self.api.get('/api/deals/summary/', {'group_by': 'status', 'export': 'excel', 'lang': 'ru'})
+        self.assertEqual(response.status_code, 200)
+        table = pd.read_excel(io.BytesIO(response.content))
+        self.assertEqual(list(table.columns), ['Статус', 'Бронь', 'В работе', 'Успешно закрыта', 'Расторгнута',
+                                               'Отменена', 'Итого (без отменённых)'])
+        cancelled = table[table['Статус'] == 'Отменена'].iloc[0]
+        self.assertEqual((cancelled['Отменена'], cancelled['Итого (без отменённых)']), (5, 0))
