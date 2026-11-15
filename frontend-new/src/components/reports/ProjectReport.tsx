@@ -15,6 +15,10 @@ const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 export default function ProjectReport() {
     const { t, i18n } = useTranslation();
     const num = (value: number) => formatNumber(value, i18n.language);
+    // Процент без плана не определён: «0 %» рядом с прогнозом читался как
+    // невыполненный план, хотя план просто не загружен
+    const pct = (value: number | null | undefined) =>
+        value === null || value === undefined ? '—' : `${num(value)}%`;
     const isMobile = useIsMobile();
     const [filters, setFilters] = useState<ReportFilters | null>(null);
     const queryClient = useQueryClient();
@@ -191,16 +195,16 @@ export default function ProjectReport() {
                                     </TableCell>
                                     <TableCell align="right">{num(project.contracting_units.plan)}</TableCell>
                                     <TableCell align="right">{num(project.contracting_units.fact)}</TableCell>
-                                    <TableCell align="right">{project.contracting_units.percentage}%</TableCell>
-                                    <TableCell align="right" sx={separatorStyle}>{num(project.contracting_units.forecast)} ({project.contracting_units.forecast_percentage}%)</TableCell>
+                                    <TableCell align="right">{pct(project.contracting_units.percentage)}</TableCell>
+                                    <TableCell align="right" sx={separatorStyle}>{num(project.contracting_units.forecast)} ({pct(project.contracting_units.forecast_percentage)})</TableCell>
                                     <TableCell align="right">{num(project.contracting_money.plan)}</TableCell>
                                     <TableCell align="right">{num(project.contracting_money.fact)}</TableCell>
-                                    <TableCell align="right">{project.contracting_money.percentage}%</TableCell>
-                                    <TableCell align="right" sx={separatorStyle}>{num(project.contracting_money.forecast)} ({project.contracting_money.forecast_percentage}%)</TableCell>
+                                    <TableCell align="right">{pct(project.contracting_money.percentage)}</TableCell>
+                                    <TableCell align="right" sx={separatorStyle}>{num(project.contracting_money.forecast)} ({pct(project.contracting_money.forecast_percentage)})</TableCell>
                                     <TableCell align="right">{num(project.revenue_money.plan)}</TableCell>
                                     <TableCell align="right">{num(project.revenue_money.fact)}</TableCell>
-                                    <TableCell align="right">{project.revenue_money.percentage}%</TableCell>
-                                    <TableCell align="right">{num(project.revenue_money.forecast)} ({project.revenue_money.forecast_percentage}%)</TableCell>
+                                    <TableCell align="right">{pct(project.revenue_money.percentage)}</TableCell>
+                                    <TableCell align="right">{num(project.revenue_money.forecast)} ({pct(project.revenue_money.forecast_percentage)})</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

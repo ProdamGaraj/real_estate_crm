@@ -47,9 +47,10 @@ const getStatusChipColor = (status: Payment['status']) => {
   }
 }
 
-// Платежи, по которым уже прошли деньги: их нельзя удалить из графика
-// и нельзя переписать сумму или срок при правке
-const PROTECTED_STATUSES: Payment['status'][] = ['PAID', 'TO_BE_RETURNED', 'RETURNED'];
+// Платежи, по которым уже прошли деньги, и отменённые (сделка отменена
+// или расторгнута): их нельзя удалить из графика и нельзя переписать
+// сумму или срок при правке
+const PROTECTED_STATUSES: Payment['status'][] = ['PAID', 'TO_BE_RETURNED', 'RETURNED', 'CANCELLED'];
 
 
 export default function PaymentSchedule({
@@ -315,7 +316,8 @@ export default function PaymentSchedule({
                   </TableCell>
                   <TableCell>{payment.payment_type}</TableCell>
                   <TableCell align="right">
-                    {!isDealTerminated && payment.status !== 'PAID' && (
+                    {/* По отменённому платежу денег не ждут — отмечать оплату нечем */}
+                    {!isDealTerminated && payment.status !== 'PAID' && payment.status !== 'CANCELLED' && (
                       <Button startIcon={<CheckCircleOutlineIcon />} size="small" onClick={() => handleMarkAsPaid(payment)} disabled={updatePaymentMutation.isPending}>{t('pages.payments.mark_as_paid')}</Button>
                     )}
                     {!isDealTerminated && payment.status === 'PAID' && (

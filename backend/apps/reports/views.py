@@ -40,11 +40,20 @@ def active_crm_employees():
 
 
 # --- Helper Function ---
-def calculate_metrics(plan, fact, start_date, end_date):
+def calculate_metrics(plan, fact, start_date, end_date, whole_units=False):
+    """
+    План, факт, прогноз и проценты выполнения по одной строке отчёта.
+
+    :param whole_units: величина измеряется в штуках (договоры). Прогноз
+        тогда округляется до целого: «245,45 договора» читать нельзя.
+
+    Проценты без плана — None, а не 0: пустой план означает «не задан»,
+    а «0 %» рядом с прогнозом 245,45 выглядел как ошибка расчёта.
+    """
     plan = plan or Decimal(0)
     fact = fact or Decimal(0)
 
-    percentage = (fact / plan * 100) if plan > 0 else 0
+    percentage = round(fact / plan * 100, 2) if plan > 0 else None
 
     today = datetime.now().date()
     forecast_value = fact
@@ -54,14 +63,15 @@ def calculate_metrics(plan, fact, start_date, end_date):
         if days_passed > 0:
             forecast_value = (fact / Decimal(days_passed)) * Decimal(days_in_period)
 
-    forecast_percentage = (forecast_value / plan * 100) if plan > 0 else 0
+    forecast_percentage = round(forecast_value / plan * 100, 2) if plan > 0 else None
 
+    forecast = int(round(forecast_value)) if whole_units else round(forecast_value, 2)
     return {
         "plan": plan,
         "fact": fact,
-        "percentage": round(percentage, 2),
-        "forecast": round(forecast_value, 2),
-        "forecast_percentage": round(forecast_percentage, 2)
+        "percentage": percentage,
+        "forecast": forecast,
+        "forecast_percentage": forecast_percentage
     }
 
 
@@ -148,7 +158,8 @@ class PlanFactReportView(APIView):
 
             report_data.append({
                 "project_id": project.id, "project_name": project.name,
-                "contracting_units": calculate_metrics(plan_data['units'], fact_units, start_date, end_date),
+                "contracting_units": calculate_metrics(plan_data['units'], fact_units, start_date, end_date,
+                                                       whole_units=True),
                 "contracting_money": calculate_metrics(plan_data['money'], fact_money, start_date, end_date),
                 "revenue_money": calculate_metrics(plan_data['revenue'], fact_revenue, start_date, end_date),
             })
@@ -156,7 +167,7 @@ class PlanFactReportView(APIView):
         report_data.append({
             "project_id": "total", "project_name": "Итого",
             "contracting_units": calculate_metrics(total_metrics['plan_units'], total_metrics['fact_units'], start_date,
-                                                   end_date),
+                                                   end_date, whole_units=True),
             "contracting_money": calculate_metrics(total_metrics['plan_money'], total_metrics['fact_money'], start_date,
                                                    end_date),
             "revenue_money": calculate_metrics(total_metrics['plan_revenue'], total_metrics['fact_revenue'], start_date,
@@ -333,7 +344,8 @@ class EmployeePlanFactReportView(APIView):
             report_data.append({
                 "employee_id": emp.id,
                 "employee_name": f"{emp.first_name} {emp.last_name}".strip() or emp.username,
-                "contracting_units": calculate_metrics(plan_data['units'], fact_units, start_date, end_date),
+                "contracting_units": calculate_metrics(plan_data['units'], fact_units, start_date, end_date,
+                                                       whole_units=True),
                 "contracting_money": calculate_metrics(plan_data['money'], fact_money, start_date, end_date),
                 "revenue_money": calculate_metrics(plan_data['revenue'], fact_revenue, start_date, end_date),
             })
@@ -341,7 +353,7 @@ class EmployeePlanFactReportView(APIView):
         report_data.append({
             "employee_id": "total", "employee_name": "Итого",
             "contracting_units": calculate_metrics(total_metrics['plan_units'], total_metrics['fact_units'], start_date,
-                                                   end_date),
+                                                   end_date, whole_units=True),
             "contracting_money": calculate_metrics(total_metrics['plan_money'], total_metrics['fact_money'], start_date,
                                                    end_date),
             "revenue_money": calculate_metrics(total_metrics['plan_revenue'], total_metrics['fact_revenue'], start_date,

@@ -340,6 +340,7 @@ export default function ApplicationsPage() {
           {viewMode === 'table' && !isMobile ? (
             <Box sx={{ flex: 1, width: '100%', minHeight: 0 }}>
               <ResponsiveDataView
+                tableKey="applications"
                 data={data || []}
                 columns={columns}
                 mobileFields={mobileFields}

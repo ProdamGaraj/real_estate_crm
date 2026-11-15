@@ -208,7 +208,10 @@
       "applications": "Arizalar",
       "deals": "Bitimlar",
       "date_from": "Yaratilgan sanadan",
-      "date_to": "Yaratilgan sanagacha"
+      "date_to": "Yaratilgan sanagacha",
+      "duplicate_title": "Bunday mijoz allaqachon mavjud bo'lishi mumkin",
+      "duplicate_create_anyway": "Baribir yaratish",
+      "duplicate_save_anyway": "Baribir saqlash"
     },
     "applications": {
       "title": "Arizalar",
@@ -500,7 +503,9 @@
       "payment_plan": "To'lov rejasi",
       "payment_plan_hint": "Qaysi chegirmalar amal qilishi rejaga bog'liq; chegirmali narx reja bo'yicha to'lovlarga bo'linadi.",
       "no_plan": "Tanlanmagan",
-      "view_only": "Siz bitimni ko'rishingiz mumkin, lekin uni o'zgartira yoki bekor qila olmaysiz: uni boshqa xodim ({{author}}) yaratgan. Bitimni yoki bronni uning muallifi yoki bo'lim yoki kompaniya bitimlarini o'zgartirish huquqi bor rahbar o'zgartira oladi."
+      "view_only": "Siz bitimni ko'rishingiz mumkin, lekin uni o'zgartira yoki bekor qila olmaysiz: uni boshqa xodim ({{author}}) yaratgan. Bitimni yoki bronni uning muallifi yoki bo'lim yoki kompaniya bitimlarini o'zgartirish huquqi bor rahbar o'zgartira oladi.",
+      "actual_terms": "Shartnoma jadvalida {{count}} ta to'lov bor, {{paid}} tasi to'langan. Muddatlar: {{first}} dan {{last}} gacha.",
+      "terms_mismatch": "«{{plan}}» rejasiga ({{expected}} ta to'lov) to'g'ri kelmaydi — shartnoma shartlarini tekshiring."
     },
     "projects": {
       "title": "Loyihalar",
@@ -733,7 +738,9 @@
       "payment_plans_short": "To'lov rejalari",
       "any_plan": "Istalgan reja",
       "only_for_plans": "faqat rejalar uchun: {{plans}}",
-      "choose_plan_first": "bitimda mos to'lov rejasini tanlang"
+      "choose_plan_first": "bitimda mos to'lov rejasini tanlang",
+      "created_by": "Kim kiritgan",
+      "updated_by": "Kim o'zgartirgan"
     },
     "permissions": {
       "permissions_matrix": "Ruxsatlar matritsasi"
@@ -1186,7 +1193,9 @@
       "paid": "To'langan",
       "overdue": "Muddati o'tgan",
       "to_be_returned": "Qaytarilishi kerak",
-      "returned": "Qaytarilgan"
+      "returned": "Qaytarilgan",
+      "CANCELLED": "Bekor qilingan",
+      "cancelled": "bekor qilingan"
     },
     "building": {
       "UNDER_REVIEW": "Tekshiruvda",

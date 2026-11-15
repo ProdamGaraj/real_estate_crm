@@ -225,14 +225,15 @@ const TaskListView: React.FC<TaskListViewProps> = ({ tasks, loading, onEdit }) =
   return (
     <Box sx={{ width: '100%' }}>
       <ResponsiveDataView
+        tableKey="tasks"
         data={tasks}
         columns={columns}
         mobileFields={mobileFields}
         isLoading={loading}
         onRowClick={handleTaskClick}
         dataGridProps={{
-          pageSizeOptions: [10, 25, 50, 100],
           initialState: {
+            // Размер страницы по умолчанию; дальше запоминается выбор пользователя
             pagination: { paginationModel: { pageSize: 25 } },
           },
           disableRowSelectionOnClick: true,

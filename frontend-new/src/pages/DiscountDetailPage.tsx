@@ -240,6 +240,19 @@ export default function DiscountDetailPage() {
                       value={discount.comment || t('pages.discounts.no_comment')}
                     />
                   </Grid>
+                  {/* Кто дал скидку: раньше это было видно только в журнале */}
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <InfoField
+                      label={t('pages.discounts.created_by')}
+                      value={discount.created_by_name || t('common.system')}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <InfoField
+                      label={t('pages.discounts.updated_by')}
+                      value={discount.updated_by_name || '—'}
+                    />
+                  </Grid>
                 </Grid>
               </CardContent>
             </Card>

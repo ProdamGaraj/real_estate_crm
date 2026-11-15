@@ -3,9 +3,11 @@ import apiClient from './axios';
 export interface PlanFactData {
     plan: number;
     fact: number;
-    percentage: number;
+    /** null — план не задан: процент выполнения не определён (раньше приходил 0) */
+    percentage: number | null;
     forecast: number;
-    forecast_percentage: number;
+    /** null — план не задан */
+    forecast_percentage: number | null;
 }
 
 /** Денежный факт приведён к валюте сделок компании по курсу на дату события */

@@ -264,6 +264,7 @@ export default function DealsPage() {
 
                     <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         <ResponsiveDataView
+                            tableKey="deals"
                             data={deals || []}
                             columns={columns}
                             mobileFields={mobileFields}

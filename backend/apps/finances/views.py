@@ -12,6 +12,7 @@ from apps.deals.models import Deal, DealLog
 from apps.realty.models import Property
 from .serializers import PaymentSerializer, PaymentTypeSerializer, BeneficiaryAccountSerializer, PaymentDetailSerializer
 from .services import (
+    exclude_dead_deals,
     refresh_overdue_payments_throttled,
     resolve_unpaid_status,
 )
@@ -114,9 +115,14 @@ class FinanceSummaryView(APIView):
         if payment_date_before:
             queryset = queryset.filter(payment_date__lte=payment_date_before)
 
+        # Просрочка считается только по действующим договорам: неоплаченный
+        # остаток отменённой или расторгнутой сделки деньгами не станет,
+        # а в витрине выглядел как долг клиента
+        live = exclude_dead_deals(queryset)
+
         # Витрины считаются в разрезе валют: суммировать сумы с долларами
         # в одно число нельзя — цифра получалась бессмысленной
-        widgets_rows = queryset.values('currency').annotate(
+        widgets_rows = live.values('currency').annotate(
             overdue_sum=Sum('amount', filter=Q(status=Payment.PaymentStatus.OVERDUE)),
             paid_sum=Sum('amount', filter=Q(status=Payment.PaymentStatus.PAID)),
         ).order_by('currency')
@@ -136,9 +142,9 @@ class FinanceSummaryView(APIView):
         to_base = Converter(company_base_currency(company), company)
         widgets_data['in_base'] = {
             'currency': to_base.target,
-            'overdue_sum': to_base.total(queryset.filter(status=Payment.PaymentStatus.OVERDUE)
+            'overdue_sum': to_base.total(live.filter(status=Payment.PaymentStatus.OVERDUE)
                                          .values_list('amount', 'currency', 'due_date')),
-            'paid_sum': to_base.total(queryset.filter(status=Payment.PaymentStatus.PAID)
+            'paid_sum': to_base.total(live.filter(status=Payment.PaymentStatus.PAID)
                                       .values_list('amount', 'currency', 'payment_date')),
         }
         widgets_data['in_base']['missing_rates'] = sorted(to_base.missing)
@@ -200,7 +206,14 @@ class PaymentListView(generics.ListAPIView):
             get_filtered_queryset(self.request.user, Payment.objects.all(), 'PAYMENT')
         )
 
-        queryset = Payment.objects.select_related('client', 'deal', 'payment_type').all()
+        # В строке платежа отдаются клиент, сделка (с её клиентом, объектом
+        # и менеджером), тип, счёт и сотрудники. Без этих связей список из
+        # 774 платежей делал несколько тысяч запросов к базе и открывался
+        # секундами
+        queryset = Payment.objects.select_related(
+            'client', 'payment_type', 'beneficiary_account', 'created_by', 'responsible_employee',
+            'deal', 'deal__client', 'deal__property', 'deal__created_by',
+        ).prefetch_related('client__phone_numbers').all()
         # Фильтруем по разрешениям пользователя
         return get_filtered_queryset(self.request.user, queryset, 'PAYMENT')
 

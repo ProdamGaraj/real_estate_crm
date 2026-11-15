@@ -6,6 +6,7 @@ from .models import (
     ApplicationStatus
 )
 from apps.realty.serializers import BuildingMiniSerializer
+from apps.common import EmployeeNameField
 
 # Сколько записей журнала отдавать в карточке.
 # Карточка возвращала всю историю целиком: у долгоживущей записи это сотни
@@ -45,7 +46,7 @@ class ApplicationStatusSerializer(serializers.ModelSerializer):
 # --- Сериализаторы для Клиентов ---
 
 class ClientFileSerializer(serializers.ModelSerializer):
-    uploaded_by = serializers.StringRelatedField()
+    uploaded_by = EmployeeNameField()
 
     class Meta:
         model = ClientFile
@@ -81,24 +82,49 @@ class ClientPhoneNumberSerializer(serializers.ModelSerializer):
         fields = ['id', 'phone_number', 'is_primary']
 
 class ClientLogSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = EmployeeNameField()
     class Meta:
         model = ClientLog
         fields = ['id', 'user', 'action', 'created_at']
         read_only_fields = ['created_at']
 
+class ApplicationAuthorField(EmployeeNameField):
+    """
+    Кто завёл заявку: ФИО менеджера или пометка о внешнем источнике.
+
+    Заявки с сайта и от партнёров создаёт не сотрудник, и поле
+    «Кем создана» оставалось пустым — такая заявка выглядела как
+    потерянные данные. Ответственного за неё менеджера назначают
+    отдельно, а источник виден сразу.
+    """
+
+    EXTERNAL = 'Заявка с сайта'
+
+    def get_attribute(self, instance):
+        # Поле отдаёт пометку и тогда, когда сотрудника нет: без этого
+        # DRF подставил бы None, не вызывая to_representation
+        return getattr(instance, 'created_by', None) or self.EXTERNAL
+
+    def to_representation(self, value):
+        if isinstance(value, str):
+            return value
+        return super().to_representation(value)
+
+
 # --- Сериализаторы для Заявок ---
 class ApplicationListSerializer(serializers.ModelSerializer):
     client = serializers.StringRelatedField()
     precise_source = serializers.StringRelatedField()
-    created_by = serializers.StringRelatedField()
+    # Заявка с сайта приходит без сотрудника: в списке поле «Кем создана»
+    # оставалось пустым, и такие заявки выглядели как потерянные данные
+    created_by = ApplicationAuthorField()
     class Meta:
         model = Application
         fields = ['id', 'status', 'source', 'client', 'precise_source', 'created_by', 'created_at']
         read_only_fields = ['created_at']
 
 class ApplicationLogSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = EmployeeNameField()
     class Meta:
         model = ApplicationLog
         fields = ['id', 'user', 'action', 'created_at']
@@ -115,7 +141,7 @@ class RejectionReasonSerializer(serializers.ModelSerializer):
 # --- Сериализаторы для Встреч ---
 
 class MeetingLogSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = EmployeeNameField()
     class Meta:
         model = MeetingLog
         fields = ['id', 'user', 'action', 'created_at']
@@ -125,8 +151,8 @@ class MeetingSerializer(serializers.ModelSerializer):
     client = ClientListSerializer(read_only=True)
     client_id = serializers.IntegerField(write_only=True)
     application_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
-    creator = serializers.StringRelatedField(read_only=True)
-    executor = serializers.StringRelatedField(read_only=True)
+    creator = EmployeeNameField()
+    executor = EmployeeNameField()
     executor_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), source='executor')
     interested_building = BuildingMiniSerializer(read_only=True)
     interested_building_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
@@ -311,6 +337,9 @@ class ClientDetailSerializer(serializers.ModelSerializer):
     files = ClientFileSerializer(many=True, read_only=True)
 
     phone_number = serializers.CharField(write_only=True, required=False)
+    # Подтверждение, что клиент-дубликат заводится осознанно: без него
+    # совпадение по телефону, ПИНФЛ или паспорту отклоняется
+    confirm_duplicate = serializers.BooleanField(write_only=True, required=False, default=False)
 
     class Meta:
         model = Client
@@ -320,11 +349,120 @@ class ClientDetailSerializer(serializers.ModelSerializer):
             'passport_issued_date', 'inn', 'pinfl', 'registration_address', 'billing_address',
             'comment', 'relatives', 'created_at', 'updated_at',
             'created_by', 'applications', 'logs', 'logs_total', 'phone_numbers',
-            'phone_number', 'meetings', 'files'
+            'phone_number', 'meetings', 'files', 'confirm_duplicate'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
 
+    # Поля, по совпадению которых клиент считается тем же человеком
+    DUPLICATE_LABELS = {
+        'phone': 'номеру телефона',
+        'pinfl': 'ПИНФЛ',
+        'passport': 'серии и номеру паспорта',
+    }
+
+    def _company_id(self):
+        """Компания карточки: у существующей — своя, у новой — компания сотрудника."""
+        company_id = getattr(self.instance, 'company_id', None)
+        if company_id is not None:
+            return company_id
+        request = self.context.get('request')
+        profile = getattr(getattr(request, 'user', None), 'profile', None)
+        return getattr(profile, 'company_id', None)
+
+    def _submitted_phones(self, data):
+        """Телефоны из запроса в том виде, в котором они хранятся."""
+        from .phones import normalize_phone
+
+        numbers = []
+        single = data.get('phone_number')
+        if single:
+            numbers.append(single)
+        for item in data.get('phone_numbers') or []:
+            number = item.get('phone_number') if isinstance(item, dict) else None
+            if number:
+                numbers.append(number)
+        return [normalize_phone(number) for number in numbers]
+
+    def _find_duplicates(self, data):
+        """
+        Клиенты той же компании, похожие на вводимого.
+
+        Один и тот же человек заводился дважды: карточки «Кодиров Кобилжон
+        Кахрамон» с одним и тем же телефоном отличались только ID. Сравниваем
+        по телефону, ПИНФЛ и паспорту — тому, что принадлежит человеку, а не
+        написанию имени.
+        """
+        from django.db.models import Q
+
+        company_id = self._company_id()
+        queryset = Client.objects.filter(company_id=company_id)
+        if self.instance is not None:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        def current(field):
+            """
+            Значение поля, которое нужно проверить.
+
+            У существующей карточки проверяем только то, что сейчас меняют:
+            иначе правка клиента, у которого дубль уже есть в базе, упиралась
+            бы в предупреждение при каждом сохранении.
+            """
+            if field not in data:
+                return ''
+            value = str(data.get(field) or '').strip()
+            if self.instance is not None and value == str(getattr(self.instance, field, '') or '').strip():
+                return ''
+            return value
+
+        matches = {}
+
+        phones = [number for number in self._submitted_phones(data) if number]
+        if phones and self.instance is not None:
+            # Номера, которые у карточки уже были, заново не проверяем
+            known = set(self.instance.phone_numbers.values_list('phone_number', flat=True))
+            phones = [number for number in phones if number not in known]
+        if phones:
+            for client in queryset.filter(phone_numbers__phone_number__in=phones).distinct():
+                matches.setdefault(client.pk, (client, 'phone'))
+
+        pinfl = current('pinfl')
+        if pinfl:
+            for client in queryset.filter(pinfl=pinfl):
+                matches.setdefault(client.pk, (client, 'pinfl'))
+
+        series, number = current('passport_series'), current('passport_number')
+        if series and number:
+            for client in queryset.filter(
+                Q(passport_series__iexact=series) & Q(passport_number=number)
+            ):
+                matches.setdefault(client.pk, (client, 'passport'))
+
+        return list(matches.values())
+
+    def validate(self, data):
+        data = super().validate(data)
+        # Флаг служебный: в модели такого поля нет
+        confirmed = data.pop('confirm_duplicate', False)
+        duplicates = self._find_duplicates(data)
+        if duplicates and not confirmed:
+            listed = "; ".join(
+                f"«{client.full_name}» (ID {client.pk}) — по {self.DUPLICATE_LABELS[reason]}"
+                for client, reason in duplicates[:5]
+            )
+            raise serializers.ValidationError({
+                'duplicate_client': [
+                    f'Такой клиент уже есть: {listed}. Откройте карточку или '
+                    f'подтвердите создание, если это другой человек.'
+                ],
+                'duplicates': [
+                    {'id': client.pk, 'full_name': client.full_name, 'match': reason}
+                    for client, reason in duplicates[:5]
+                ],
+            })
+        return data
+
     def create(self, validated_data):
+        validated_data.pop('confirm_duplicate', None)
         phone_numbers_data = validated_data.pop('phone_numbers', [])
         initial_phone = validated_data.pop('phone_number', None)
         client = Client.objects.create(**validated_data)
@@ -336,6 +474,7 @@ class ClientDetailSerializer(serializers.ModelSerializer):
         return client
 
     def update(self, instance, validated_data):
+        validated_data.pop('confirm_duplicate', None)
         phone_numbers_data = validated_data.pop('phone_numbers', None)
         instance = super().update(instance, validated_data)
 
@@ -346,7 +485,7 @@ class ClientDetailSerializer(serializers.ModelSerializer):
         return instance
 
 class ApplicationDetailSerializer(serializers.ModelSerializer):
-    created_by = serializers.StringRelatedField(read_only=True)
+    created_by = ApplicationAuthorField()
     client = ClientDetailSerializer(read_only=True)
     client_id = serializers.IntegerField(write_only=True)
     logs = serializers.SerializerMethodField()

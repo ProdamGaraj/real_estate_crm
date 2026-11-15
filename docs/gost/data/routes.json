@@ -400,6 +400,14 @@
   "doc": "View для отмены или расторжения сделки."
  },
  {
+  "path": "/api/deals/<int:deal_pk>/scans/<str:kind>/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.deals.views.DealScanView",
+  "doc": "Замена скана подписанного договора или документа о расторжении."
+ },
+ {
   "path": "/api/deals/summary/",
   "methods": [
    "GET"
@@ -1075,6 +1083,14 @@
   ],
   "view": "permissions.views.CurrentUserProfileView",
   "doc": "Получение профиля текущего пользователя"
+ },
+ {
+  "path": "/api/permissions/me/change-password/",
+  "methods": [
+   "POST"
+  ],
+  "view": "permissions.views.CurrentUserPasswordView",
+  "doc": "Смена собственного пароля."
  },
  {
   "path": "/api/permissions/stats/",

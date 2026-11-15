@@ -1,8 +1,10 @@
 """
-Изоляция компаний при регистрации клиента.
+Регистрация клиента: компания карточки и отсутствие автовстречи.
 
-При создании клиента система заводит завершённую встречу. Раньше она
-сохранялась без компании и выпадала из выборок по компании.
+Раньше при создании клиента система заводила завершённую встречу
+«Системой» с плановой датой, равной моменту создания. Такие записи
+копились сотнями, искажали счётчики и отчёт по встречам, поэтому
+автосоздание убрано.
 """
 
 from django.contrib.auth import get_user_model
@@ -17,7 +19,7 @@ User = get_user_model()
 
 
 @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
-class AutoMeetingCompanyTests(TestCase):
+class ClientRegistrationTests(TestCase):
     def setUp(self):
         self.company = Company.objects.create(name='Компания', code='CRM')
         self.user = User.objects.create_superuser('manager', 'manager@example.com', 'pass-for-tests')
@@ -31,12 +33,17 @@ class AutoMeetingCompanyTests(TestCase):
         self.api = APIClient()
         self.api.force_authenticate(self.user)
 
-    def test_auto_meeting_belongs_to_client_company(self):
+    def test_client_created_in_user_company(self):
         response = self.api.post('/api/clients/', {'full_name': 'Петров Пётр'}, format='json')
         self.assertEqual(response.status_code, 201, response.data)
 
         client = Client.objects.get(pk=response.data['id'])
         self.assertEqual(client.company, self.company)
 
-        meeting = Meeting.objects.get(client=client, is_auto_created=True)
-        self.assertEqual(meeting.company, self.company)
+    def test_registration_does_not_create_meeting(self):
+        """Регистрация карточки — не встреча: автовстреча больше не заводится."""
+        response = self.api.post('/api/clients/', {'full_name': 'Сидоров Сидор'}, format='json')
+        self.assertEqual(response.status_code, 201, response.data)
+
+        client = Client.objects.get(pk=response.data['id'])
+        self.assertFalse(Meeting.objects.filter(client=client).exists())

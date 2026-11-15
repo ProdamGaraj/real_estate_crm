@@ -17,6 +17,7 @@ import { getPayments, type Payment, type PaymentFilters } from '../api/finances'
 import FinanceSummary from '../components/finances/FinanceSummary';
 import { LocalizedDateField } from '../components/common/LocalizedDateField';
 import { formatMoney } from '../utils/currency';
+import { useGridPageSize } from '../hooks/useGridPageSize';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -104,6 +105,10 @@ export default function FinancesPage() {
     const [tabValue, setTabValue] = useState(location.state?.tab || 0);
     const columns = getColumns(t, i18n.language);
     const [filters, setFilters] = useState<PaymentFilters>(location.state?.filters || {});
+    // Число строк на странице запоминается: в списке платежей их сотни,
+    // и выбор «50» сбрасывался при каждом возврате в раздел
+    const { pageSize, setPageSize } = useGridPageSize('payments');
+    const [page, setPage] = useState(0);
     const { control, watch, reset } = useForm<PaymentFilters>({
         defaultValues: filters
     });
@@ -197,6 +202,8 @@ export default function FinancesPage() {
                                             <MenuItem value="OVERDUE">{t('statuses.payment.overdue')}</MenuItem>
                                             <MenuItem value="TO_BE_RETURNED">{t('statuses.payment.to_be_returned')}</MenuItem>
                                             <MenuItem value="RETURNED">{t('statuses.payment.returned')}</MenuItem>
+                                            {/* Отменённые — платежи недействующих договоров: в просрочку не входят */}
+                                            <MenuItem value="CANCELLED">{t('statuses.payment.cancelled')}</MenuItem>
                                         </Select>
                                     </FormControl>
                                 )} />
@@ -248,6 +255,18 @@ export default function FinancesPage() {
                             columns={columns}
                             loading={isLoading}
                             getRowClassName={getRowClassName}
+                            paginationModel={{
+                                // Страница за пределами выдачи после смены фильтра
+                                page: Math.min(page, Math.max(0, Math.ceil((payments?.length || 0) / pageSize) - 1)),
+                                pageSize,
+                            }}
+                            onPaginationModelChange={(model) => {
+                                setPage(model.page);
+                                if (model.pageSize !== pageSize) {
+                                    setPageSize(model.pageSize);
+                                }
+                            }}
+                            pageSizeOptions={[10, 25, 50, 100]}
                         />
                     </Box>
                 </Box>

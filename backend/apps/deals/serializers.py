@@ -1,6 +1,8 @@
 from decimal import Decimal, ROUND_HALF_UP
 
-from apps.finances.models import Payment
+from apps.common import EmployeeNameField
+
+from apps.finances.models import Payment, PaymentType
 
 # Сколько записей журнала отдавать в карточке.
 # Карточка возвращала всю историю целиком: у долгоживущей записи это сотни
@@ -71,7 +73,7 @@ class DealCreateSerializer(serializers.ModelSerializer):
         return value
 
 class DealLogSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = EmployeeNameField()
 
     class Meta:
         model = DealLog
@@ -81,7 +83,7 @@ class DealLogSerializer(serializers.ModelSerializer):
 class DealListSerializer(serializers.ModelSerializer):
     client = serializers.StringRelatedField()
     property = serializers.StringRelatedField()
-    created_by = serializers.StringRelatedField()
+    created_by = EmployeeNameField()
 
     class Meta:
         model = Deal
@@ -99,7 +101,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
     property = PropertyListSerializer(read_only=True)
     # Используем DiscountListSerializer для отображения краткой информации о скидках
     applied_discounts = DiscountListSerializer(many=True, read_only=True)
-    created_by = serializers.StringRelatedField(read_only=True)
+    created_by = EmployeeNameField()
     # ИСПРАВЛЕНИЕ: Заменяем прямое поле на SerializerMethodField
     payments = serializers.SerializerMethodField()
     logs = serializers.SerializerMethodField()
@@ -131,6 +133,48 @@ class DealDetailSerializer(serializers.ModelSerializer):
         source='applied_discounts'
     )
     payment_plan_name = serializers.CharField(source='payment_plan.name', read_only=True, default=None)
+    # Фактические условия оплаты — из графика, а не из названия плана.
+    # В карточке стояло «Рассрочка на 18 месяцев», а в графике было два
+    # платежа: название плана с договором не сверялось ничем
+    payment_terms = serializers.SerializerMethodField()
+
+    def get_payment_terms(self, obj):
+        """
+        Что реально записано в графике платежей сделки.
+
+        ``plan_months`` — срок выбранного плана, ``scheduled_payments`` —
+        сколько платежей в графике на самом деле, ``matches_plan`` — сходятся
+        ли они. Карточка показывает фактические условия и предупреждает,
+        когда они расходятся с названием плана.
+        """
+        payments = [p for p in obj.payments.all()
+                    if p.status != Payment.PaymentStatus.CANCELLED]
+        scheduled = len(payments)
+        plan = obj.payment_plan
+        plan_kind = plan.plan_kind if plan else ''
+        plan_months = plan.plan_months if plan else 0
+
+        expected = None
+        if plan_kind == PaymentType.PlanKind.FULL:
+            expected = 1
+        elif plan_kind == PaymentType.PlanKind.DEFERRED:
+            # Взнос и остаток одним платежом
+            expected = 2
+        elif plan_kind == PaymentType.PlanKind.INSTALLMENT and plan_months:
+            # Первоначальный взнос и ежемесячные платежи
+            expected = plan_months + 1
+
+        return {
+            'plan_kind': plan_kind,
+            'plan_months': plan_months,
+            'expected_payments': expected,
+            'scheduled_payments': scheduled,
+            'paid_payments': sum(1 for p in payments if p.status == Payment.PaymentStatus.PAID),
+            'first_due_date': min((p.due_date for p in payments), default=None),
+            'last_due_date': max((p.due_date for p in payments), default=None),
+            # None — плана нет или по нему нельзя посчитать число платежей
+            'matches_plan': None if (expected is None or not scheduled) else expected == scheduled,
+        }
 
     def validate_payment_plan(self, value):
         """План — тип платежа с видом плана, своей компании или общий."""
@@ -245,7 +289,8 @@ class DealDetailSerializer(serializers.ModelSerializer):
             'payments', 'contract_number', 'contract_date', 'application', 'logs_total',
             'signed_document_scan', 'client_signature_date', 'company_signature_date','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
             'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
-            'payment_plan', 'payment_plan_name', 'can_edit', 'client_missing_passport_fields',
+            'payment_plan', 'payment_plan_name', 'payment_terms', 'can_edit',
+            'client_missing_passport_fields',
         ]
         # Валюта сделки задаётся настройкой компании при брони и дальше не меняется:
         # весь график платежей хранится в ней
@@ -265,7 +310,13 @@ class DealDetailSerializer(serializers.ModelSerializer):
     # ИСПРАВЛЕНИЕ: Добавляем метод для сериализации платежей
     def get_payments(self, obj):
         from apps.finances.serializers import PaymentSerializer
-        payments = obj.payments.all()
+
+        # В каждой строке графика сериализуются тип, счёт, сотрудники и сама
+        # сделка: без связей карточка сделки делала по пять запросов на платёж
+        payments = obj.payments.select_related(
+            'payment_type', 'beneficiary_account', 'created_by', 'responsible_employee',
+            'client', 'deal__client', 'deal__property', 'deal__created_by',
+        ).prefetch_related('client__phone_numbers')
         return PaymentSerializer(payments, many=True).data
 
     def validate_contract_number(self, value):

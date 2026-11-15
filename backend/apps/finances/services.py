@@ -13,16 +13,54 @@ from django.utils import timezone
 from .models import Payment
 
 
+def dead_deal_statuses():
+    """Статусы сделок, по которым денег уже не ждут: отменена и расторгнута."""
+    from apps.deals.models import Deal
+
+    return (Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED)
+
+
+def exclude_dead_deals(queryset):
+    """
+    Убирает из выборки платежи отменённых и расторгнутых сделок.
+
+    Нужна там, где считаются ожидаемые деньги (просрочка, «к оплате»,
+    остаток). Платежи расторгнутых договоров переводятся в «Отменён»
+    при расторжении, но в базе остаются строки, созданные до появления
+    этого статуса, поэтому витрины фильтруют и по статусу сделки.
+    Платежи без сделки остаются: сделка — необязательная связь.
+    """
+    return queryset.exclude(deal__status__in=dead_deal_statuses())
+
+
+def cancel_unpaid_payments(deal):
+    """
+    Переводит неоплаченные платежи сделки в статус «Отменён».
+
+    Вызывается при отмене и расторжении сделки: по такому договору
+    остаток уже не ждут, и держать его в «Просрочен»/«К оплате» значит
+    показывать руководству несуществующий долг.
+
+    :return: количество обновлённых платежей.
+    """
+    return deal.payments.filter(
+        status__in=Payment.UNPAID_STATUSES
+    ).update(status=Payment.PaymentStatus.CANCELLED)
+
+
 def refresh_overdue_payments(queryset=None):
     """
     Переводит неоплаченные платежи с истёкшим сроком в статус «Просрочен».
+
+    Платежи отменённых и расторгнутых сделок не трогаются: по ним денег
+    не ждут, и просроченными они быть не могут.
 
     :param queryset: ограничение выборки (например, по правам пользователя).
                      None — обработать все платежи в системе.
     :return: количество обновлённых платежей.
     """
     payments = Payment.objects.all() if queryset is None else queryset
-    return payments.filter(
+    return exclude_dead_deals(payments).filter(
         due_date__lt=timezone.now().date(),
         status=Payment.PaymentStatus.PENDING,
     ).update(status=Payment.PaymentStatus.OVERDUE)

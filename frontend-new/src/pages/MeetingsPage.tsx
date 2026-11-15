@@ -257,6 +257,7 @@ export default function MeetingsPage() {
 
                     <Box sx={{ width: '100%' }}>
                         <ResponsiveDataView
+                            tableKey="meetings"
                             data={sortedMeetings}
                             columns={columns}
                             mobileFields={mobileFields}

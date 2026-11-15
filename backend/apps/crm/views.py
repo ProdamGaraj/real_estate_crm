@@ -13,38 +13,9 @@ from .serializers import (
     ApplicationStatusSerializer
 )
 from .filters import ClientFilter, ApplicationFilter, MeetingFilter
+# Формулировка записи журнала — общая для всех разделов
+from apps.common import format_field_change as _format_change
 from django.contrib.auth.models import User
-
-
-def _get_field_display_name(model, field_name):
-    """Получить человекочитаемое название поля из verbose_name модели."""
-    try:
-        return str(model._meta.get_field(field_name).verbose_name)
-    except Exception:
-        return field_name
-
-
-def _get_choice_display(model, field_name, value):
-    """Получить человекочитаемое значение для choices-поля."""
-    if value is None or value == '':
-        return 'пусто'
-    try:
-        field = model._meta.get_field(field_name)
-        if hasattr(field, 'choices') and field.choices:
-            choices_dict = dict(field.choices)
-            if value in choices_dict:
-                return str(choices_dict[value])
-    except Exception:
-        pass
-    return str(value) or 'пусто'
-
-
-def _format_change(model, key, old_value, new_value):
-    """Сформировать строку изменения с человекочитаемыми названиями."""
-    field_label = _get_field_display_name(model, key)
-    old_display = _get_choice_display(model, key, old_value)
-    new_display = _get_choice_display(model, key, new_value)
-    return f"'{field_label}' изменено с '{old_display}' на '{new_display}'"
 from .serializers import UserSerializer
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
@@ -55,7 +26,7 @@ import calendar
 from apps.deals.contracting import contracted_deals
 from apps.deals.models import Deal
 from apps.finances.models import Payment
-from apps.finances.services import refresh_overdue_payments_throttled
+from apps.finances.services import exclude_dead_deals, refresh_overdue_payments_throttled
 import pandas as pd
 from django.http import HttpResponse
 from permissions.permissions import (
@@ -348,8 +319,11 @@ class DashboardAnalyticsView(APIView):
         # кто-то сегодня раздел «Финансы»
         refresh_overdue_payments_throttled(payments_qs)
         # Берём тот же признак, что и витрина «Финансы»: раньше дашборд
-        # добавлял сюда ещё и PENDING, и две цифры просрочки не сходились
-        overdue_payments = to_base.total(payments_qs.filter(
+        # добавлял сюда ещё и PENDING, и две цифры просрочки не сходились.
+        # Платежи отменённых и расторгнутых сделок в просрочку не входят:
+        # по расторгнутому договору денег не ждут, а его неоплаченный
+        # остаток раздувал цифру просрочки на дашборде
+        overdue_payments = to_base.total(exclude_dead_deals(payments_qs).filter(
             status=Payment.PaymentStatus.OVERDUE
         ).values_list('amount', 'currency', 'due_date'))
 
@@ -386,9 +360,13 @@ class DashboardAnalyticsView(APIView):
         for entry in top_managers:
             entry['total_sales'] = money(entry['total_sales'])
 
-        # Upcoming Meetings - используем отфильтрованный queryset
+        # Ближайшие встречи: назначенные на сегодня и дальше.
+        # Сравнение поля с датой (`planned_date__gte=today`) Django считал
+        # за наивное время и предупреждал: встречи раннего утра попадали
+        # в выборку не по местному времени. `__date` сравнивает календарные
+        # даты в часовом поясе компании.
         upcoming_meetings = meetings_qs.filter(
-            planned_date__gte=today,
+            planned_date__date__gte=today,
             status=Meeting.MeetingStatus.NEW
         ).select_related('client').order_by('planned_date')[:5]
 
@@ -462,7 +440,9 @@ class RejectionReasonListView(CompanyScopedReferenceMixin, generics.ListCreateAP
 
 class ClientListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated, ClientPermission]
-    queryset = Client.objects.all()
+    # Основной телефон берётся из связанных номеров: без prefetch список
+    # клиентов делал отдельный запрос на каждую строку
+    queryset = Client.objects.prefetch_related('phone_numbers').all()
     filterset_class = ClientFilter
 
     def get_queryset(self):
@@ -484,20 +464,12 @@ class ClientListView(generics.ListCreateAPIView):
             company = self.request.user.profile.company
         client_instance = serializer.save(created_by=self.request.user, company=company)
 
-        today = timezone.now()
-        Meeting.objects.create(
-            # Компания обязательна для изоляции: встреча без неё выпадала из
-            # выборок по компании и нарушала правило «каждая запись — своей компании»
-            company=company,
-            client=client_instance,
-            creator=None,
-            executor=self.request.user,
-            status=Meeting.MeetingStatus.COMPLETED,
-            planned_date=today,
-            actual_date=today,
-            comment="Автоматически созданная встреча при регистрации клиента.",
-            is_auto_created=True
-        )
+        # Встреча при регистрации клиента больше не создаётся.
+        # Регистрация карточки — не встреча: такие записи («Системой», с
+        # плановой датой, равной моменту создания) копились сотнями,
+        # искажали счётчик встреч и отчёт по встречам, а в «Ближайших
+        # встречах» не показывались, потому что их дата всегда в прошлом.
+        # Встречу назначает менеджер сам, в разделе «Встречи».
 
         ClientLog.objects.create(
             client=client_instance,
@@ -799,9 +771,11 @@ class MeetingListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         client_id = self.request.query_params.get('client_id')
+        # Телефон клиента в карточке встречи — тоже связанные номера,
+        # поэтому они забираются одним запросом вместе со списком
         queryset = Meeting.objects.all().select_related(
             'client', 'creator', 'executor', 'interested_building'
-        )
+        ).prefetch_related('client__phone_numbers')
         if client_id:
             queryset = queryset.filter(client_id=client_id)
         # Удалённые встречи в списке не показываем

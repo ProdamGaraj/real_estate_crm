@@ -15,6 +15,7 @@ from rest_framework import serializers
 from .filters import DealFilter
 from apps.finances.models import Payment
 from apps.finances.currency import RateUnavailable, company_base_currency, cross_rate, money, stored_rate
+from apps.finances.services import cancel_unpaid_payments
 import pandas as pd
 from django.http import HttpResponse
 from decimal import Decimal
@@ -340,6 +341,14 @@ class DealCancelOrTerminateView(APIView):
                 pending_refund = refunds > 0
                 if pending_refund:
                     action_log += f" Платежей к возврату: {refunds}."
+
+                # Неоплаченные части расторгнутого договора больше не ждут:
+                # без этого они оставались «К оплате»/«Просрочен», и
+                # расторгнутый договор продолжал числиться в просрочке
+                # на дашборде и в витринах «Финансов»
+                cancelled = cancel_unpaid_payments(deal)
+                if cancelled:
+                    action_log += f" Неоплаченных платежей отменено: {cancelled}."
             else:
                 # --- ЛОГИКА ОТМЕНЫ ---
                 reason = request.data.get('cancellation_reason')
@@ -349,6 +358,10 @@ class DealCancelOrTerminateView(APIView):
                 deal.status = Deal.DealStatus.CANCELLED
                 deal.cancellation_reason = reason
                 action_log = f"Сделка отменена. Причина: {reason}."
+                # График отменённой брони денег уже не ждёт
+                cancelled = cancel_unpaid_payments(deal)
+                if cancelled:
+                    action_log += f" Платежей отменено: {cancelled}."
 
             # Обновляем статус объекта недвижимости
             if pending_refund:
@@ -471,12 +484,20 @@ class DealDetailView(generics.RetrieveUpdateAPIView):
         queryset = super().get_queryset()
         return get_filtered_queryset(self.request.user, queryset, 'DEAL')
 
+    @staticmethod
+    def _discount_labels(deal):
+        """Скидки сделки как «Название (5 %)»: в журнале должен быть виден размер."""
+        return sorted(
+            f"{name} ({percentage:g} %)"
+            for name, percentage in deal.applied_discounts.values_list('name', 'percentage_value')
+        )
+
     def perform_update(self, serializer):
         old_instance = self.get_object()
-        old_discounts = set(old_instance.applied_discounts.values_list('name', flat=True))
+        old_discounts = self._discount_labels(old_instance)
 
         instance = serializer.save()
-        new_discounts = set(instance.applied_discounts.values_list('name', flat=True))
+        new_discounts = self._discount_labels(instance)
 
         changes = []
         fields_to_check = {
@@ -486,6 +507,12 @@ class DealDetailView(generics.RetrieveUpdateAPIView):
             'contract_date': 'Дата договора',
             'client_signature_date': 'Дата подписания клиентом',
             'company_signature_date': 'Дата подписания компанией',
+            # Смена плана оплаты и типа оплаты не попадала в журнал: по сделке
+            # было видно «Рассрочка на 18 месяцев», но не то, кто и когда
+            # это поставил
+            'payment_plan': 'План оплаты',
+            'payment_type': 'Тип оплаты',
+            'purchase_purpose': 'Цель приобретения',
         }
 
         for field, name in fields_to_check.items():

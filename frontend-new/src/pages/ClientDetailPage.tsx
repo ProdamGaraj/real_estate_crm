@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getClientById, updateClient, type ClientDetail } from '../api/clients';
+import { getClientById, updateClient, duplicateClientError, type ClientDetail } from '../api/clients';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
-    Typography, CircularProgress, Alert, Paper, Grid, Box, Button, TextField,
+    Typography, CircularProgress, Alert, AlertTitle, Paper, Grid, Box, Button, TextField,
     IconButton, Stack, FormControl, InputLabel, Select, MenuItem, Tabs, Tab, Link as MuiLink,
     Dialog, DialogTitle, DialogContent, Card, CardHeader, CardContent, Avatar
 } from '@mui/material';
@@ -101,7 +101,7 @@ export default function ClientDetailPage() {
     enabled: !!clientId,
   });
 
-  const { register, control, handleSubmit, reset } = useForm<ClientDetail>();
+  const { register, control, handleSubmit, reset, getValues } = useForm<ClientDetail>();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -114,19 +114,39 @@ export default function ClientDetailPage() {
     }
   }, [client, reset]);
 
+  // Правка задела другого клиента: совпали телефон, ПИНФЛ или паспорт
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+
   const updateClientMutation = useMutation({
     mutationFn: updateClient,
     onSuccess: () => {
+      setDuplicateWarning(null);
       queryClient.invalidateQueries({ queryKey: ['client', clientId] });
       alert(t('pages.clients.data_updated'));
     },
     onError: (err: unknown) => {
+      const duplicate = duplicateClientError(err);
+      if (duplicate) {
+        // Предупреждение остаётся на странице: по ссылке в тексте видно,
+        // с какой карточкой совпали данные
+        setDuplicateWarning(duplicate.message);
+        return;
+      }
       alert(extractApiError(err, t('common.error')));
     }
   });
 
   const onSubmit = (data: ClientDetail) => {
+    setDuplicateWarning(null);
     updateClientMutation.mutate({ id: Number(clientId), payload: data });
+  };
+
+  const saveAnyway = () => {
+    setDuplicateWarning(null);
+    updateClientMutation.mutate({
+      id: Number(clientId),
+      payload: { ...getValues(), confirm_duplicate: true },
+    });
   };
 
   if (isLoading) return <CircularProgress />;
@@ -265,6 +285,20 @@ export default function ClientDetailPage() {
                 </CardContent>
             </Card>
 
+            {duplicateWarning && (
+                <Alert
+                    severity="warning"
+                    action={
+                        <Button color="warning" size="small" onClick={saveAnyway} disabled={updateClientMutation.isPending}>
+                            {t('pages.clients.duplicate_save_anyway')}
+                        </Button>
+                    }
+                >
+                    <AlertTitle>{t('pages.clients.duplicate_title')}</AlertTitle>
+                    {duplicateWarning}
+                </Alert>
+            )}
+
             <Box>
                 <Button type="submit" variant="contained" disabled={updateClientMutation.isPending} size={isMobile ? 'small' : 'medium'} fullWidth={isMobile}>
                     {updateClientMutation.isPending ? t('common.saving') : t('pages.clients.save_changes')}
@@ -277,6 +311,7 @@ export default function ClientDetailPage() {
       <TabPanel value={tabValue} index={1} isMobile={isMobile}>
         <Box sx={{ width: '100%' }}>
           <ResponsiveDataView
+            tableKey="client-applications"
             data={client?.applications || []}
             columns={getApplicationColumns(t)}
             mobileFields={getApplicationMobileFields()}
@@ -290,6 +325,7 @@ export default function ClientDetailPage() {
         </Button>
         <Box sx={{ width: '100%' }}>
           <ResponsiveDataView
+            tableKey="client-meetings"
             data={client?.meetings || []}
             columns={getMeetingColumns(t)}
             mobileFields={getMeetingMobileFields()}

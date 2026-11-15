@@ -23,6 +23,7 @@ from .serializers import (
 )
 from permissions.reference_scope import CompanyScopedReferenceMixin
 from .filters import ProjectFilter, BuildingFilter
+from apps.common import format_field_change
 from .models import (
     Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog, ProjectImage, BuildingImage
 )
@@ -868,11 +869,14 @@ class DiscountDetailView(generics.RetrieveUpdateDestroyAPIView):
         new_data = self.get_serializer(instance).data
 
         changes = []
-        # Сравниваем старые и новые данные
+        # Сравниваем старые и новые данные. Названия полей берём из модели:
+        # в журнале стояло «Поле 'percentage_value'», и прочитать, что именно
+        # поменяли в скидке, было нельзя
+        skip_keys = {'updated_at', 'logs', 'created_at', 'updated_by',
+                     'buildings_info', 'payment_plans_info'}
         for key in old_data:
-            if old_data[key] != new_data[key]:
-                if key not in ['updated_at', 'logs', 'created_at', 'buildings_info']:
-                    changes.append(f"Поле '{key}' изменено с '{old_data[key]}' на '{new_data[key]}'")
+            if key not in skip_keys and old_data[key] != new_data[key]:
+                changes.append(format_field_change(Discount, key, old_data[key], new_data[key]))
 
         if changes:
             action_text = "Скидка обновлена. " + "; ".join(changes)

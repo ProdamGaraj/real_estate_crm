@@ -28,8 +28,11 @@ class Command(BaseCommand):
         if options['dry_run']:
             from django.utils import timezone
             from apps.finances.models import Payment
+            from apps.finances.services import exclude_dead_deals
 
-            count = Payment.objects.filter(
+            # Те же условия, что и в самом пересчёте: платежи отменённых
+            # и расторгнутых сделок просроченными не становятся
+            count = exclude_dead_deals(Payment.objects.all()).filter(
                 due_date__lt=timezone.now().date(),
                 status=Payment.PaymentStatus.PENDING,
             ).count()

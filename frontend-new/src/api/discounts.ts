@@ -21,9 +21,12 @@ export interface Discount {
   payment_plans: number[];
   payment_plans_info: string[];
   logs?: DiscountLog[];
+  /** Кто завёл скидку и кто менял её условия (ФИО сотрудника) */
+  created_by_name?: string | null;
+  updated_by_name?: string | null;
 }
 
-export type DiscountPayload = Omit<Discount, 'id' | 'buildings_info' | 'payment_plans_info' | 'logs'>;
+export type DiscountPayload = Omit<Discount, 'id' | 'buildings_info' | 'payment_plans_info' | 'logs' | 'created_by_name' | 'updated_by_name'>;
 
 /** Скидки, которые можно применить к объекту сегодня (для калькулятора в карточке объекта) */
 export const getPropertyAvailableDiscounts = async (propertyId: number): Promise<Discount[]> => {

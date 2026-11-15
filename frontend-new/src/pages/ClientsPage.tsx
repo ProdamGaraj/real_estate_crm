@@ -26,7 +26,9 @@ const getColumns = (t: (key: string) => string): GridColDef[] => [
   {
     field: 'full_name',
     headerName: t('pages.clients.full_name'),
-    width: 250,
+    // Длинные ФИО обрезались фиксированной шириной столбца
+    flex: 1,
+    minWidth: 260,
     renderCell: (params) => (
       <MuiLink component={RouterLink} to={`/clients/${params.id}`} underline="hover">
         {params.value}
@@ -226,6 +228,7 @@ export default function ClientsPage() {
       {/* Data View */}
       <Box sx={{ flex: 1, width: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <ResponsiveDataView
+          tableKey="clients"
           data={data || []}
           columns={getColumns(t)}
           mobileFields={getMobileFields(t)}
@@ -234,7 +237,6 @@ export default function ClientsPage() {
           onRowClick={handleClientClick}
           dataGridProps={{
             initialState: {
-              pagination: { paginationModel: { pageSize: 10 } },
               sorting: { sortModel: [{ field: 'id', sort: 'desc' }] },
             },
           }}

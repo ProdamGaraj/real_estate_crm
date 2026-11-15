@@ -385,6 +385,30 @@ export default function DealDetailPage() {
                               )}
                             </TextField>
                           </Grid>
+                          {/* Фактические условия оплаты: название плана могло
+                              обещать 18 месяцев, а в графике стоять два платежа */}
+                          {deal.payment_terms && deal.payment_terms.scheduled_payments > 0 && (
+                            <Grid size={{ xs: 12 }}>
+                              <Alert severity={deal.payment_terms.matches_plan === false ? 'warning' : 'info'}>
+                                {t('pages.deals.actual_terms', {
+                                  count: deal.payment_terms.scheduled_payments,
+                                  paid: deal.payment_terms.paid_payments,
+                                  first: deal.payment_terms.first_due_date
+                                    ? new Date(deal.payment_terms.first_due_date).toLocaleDateString()
+                                    : '—',
+                                  last: deal.payment_terms.last_due_date
+                                    ? new Date(deal.payment_terms.last_due_date).toLocaleDateString()
+                                    : '—',
+                                })}
+                                {deal.payment_terms.matches_plan === false && (
+                                  <> {t('pages.deals.terms_mismatch', {
+                                    plan: deal.payment_plan_name || '',
+                                    expected: deal.payment_terms.expected_payments ?? 0,
+                                  })}</>
+                                )}
+                              </Alert>
+                            </Grid>
+                          )}
                           <Grid size={{ xs: 12 }}><Button variant="outlined" sx={{mb: 1}} onClick={() => setDiscountModalOpen(true)} disabled={isDealReadOnly}>{t('pages.deals.apply_discounts')}</Button> <Button variant="outlined" sx={{mb: 1}} onClick={() => setInstallmentOpen(true)}>{t('installments.open_button')}</Button> <Typography component="span">{t('pages.deals.applied')} {deal.applied_discounts.map(d => `${d.name} (${d.percentage_value}%)`).join(', ') || t('common.none')}</Typography></Grid>
                           <Grid size={{ xs: 12 }}><TextField label={t('pages.deals.deal_notes')} multiline rows={4} fullWidth {...register('notes')} disabled={isDealReadOnly} /></Grid>
                         </Grid>

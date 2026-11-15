@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.common import EmployeeNameField
 from django.conf import settings
 from .models import (
     Project, Building, BuildingType, Property, Layout, Discount, DiscountLog,
@@ -84,7 +85,7 @@ class LayoutSerializer(serializers.ModelSerializer):
 
 
 class DiscountLogSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = EmployeeNameField()
 
     class Meta:
         model = DiscountLog
@@ -93,7 +94,7 @@ class DiscountLogSerializer(serializers.ModelSerializer):
 
 
 class BuildingLogSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField()
+    user = EmployeeNameField()
 
     class Meta:
         model = BuildingLog
@@ -263,6 +264,10 @@ class DiscountDetailSerializer(DiscountBuildingsScopeMixin, serializers.ModelSer
     buildings_info = serializers.StringRelatedField(source='buildings', many=True, read_only=True)
     payment_plans_info = serializers.StringRelatedField(source='payment_plans', many=True, read_only=True)
     logs = DiscountLogSerializer(many=True, read_only=True)
+    # Кто завёл и кто менял условия: в карточке были только идентификаторы,
+    # и на вопрос «кто дал эту скидку» ответа не было
+    created_by_name = EmployeeNameField(source='created_by')
+    updated_by_name = EmployeeNameField(source='updated_by')
 
     class Meta:
         model = Discount

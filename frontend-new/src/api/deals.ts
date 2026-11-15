@@ -7,6 +7,26 @@ import type { Payment } from './finances';
 /**
  * Расширенный тип для сделки, включающий вложенные объекты.
  */
+/**
+ * Что действительно записано в графике платежей сделки.
+ *
+ * В карточке стояло «Рассрочка на 18 месяцев», а платежей в графике было
+ * два: название плана ни с чем не сверялось. Здесь — число платежей,
+ * сроки и признак расхождения с выбранным планом.
+ */
+export interface PaymentTerms {
+  plan_kind: '' | 'FULL' | 'INSTALLMENT' | 'DEFERRED';
+  plan_months: number;
+  /** Сколько платежей должно быть по плану; null — по плану не определить */
+  expected_payments: number | null;
+  scheduled_payments: number;
+  paid_payments: number;
+  first_due_date: string | null;
+  last_due_date: string | null;
+  /** null — проверять нечего (плана нет или график пуст) */
+  matches_plan: boolean | null;
+}
+
 export interface Deal {
   id: number;
   status: 'BOOKING' | 'IN_PROGRESS' | 'CLOSED_WON' | 'CANCELLED'| 'TERMINATED';
@@ -34,6 +54,8 @@ export interface Deal {
   /** План оплаты сделки (тип платежа с планом); от него зависят доступные скидки */
   payment_plan: number | null;
   payment_plan_name: string | null;
+  /** Фактические условия оплаты — из графика платежей, а не из названия плана */
+  payment_terms?: PaymentTerms;
   /** Может ли текущий пользователь менять и отменять сделку (null — сервер не сообщил) */
   can_edit?: boolean | null;
   /**

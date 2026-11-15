@@ -1,0 +1,1873 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM застройщика — прототип по ТЗ</title>
+<style>
+:root{
+  --primary:#126E63; --primary-light:#2E9487; --primary-dark:#0B4F47; --on-primary:#fff;
+  --secondary:#243B53;
+  --bg:#f4f6f8; --paper:#ffffff; --paper-2:#fafafa;
+  --text:#212121; --text-2:#6b7280; --line:rgba(0,0,0,.12); --hover:rgba(0,0,0,.04);
+  --shadow:0 4px 12px rgba(0,0,0,.05);
+  --success:#2e7d32; --success-bg:#e8f5e9;
+  --warning:#ed6c02; --warning-bg:#fff4e5;
+  --error:#c62828;   --error-bg:#fdecea;
+  --info:#0277bd;    --info-bg:#e5f3fb;
+  --neutral:#546e7a; --neutral-bg:#eceff1;
+  --st-free:#43a047; --st-book:#fb8c00; --st-proc:#1e88e5; --st-sold:#5e35b1; --st-res:#8d6e63; --st-off:#90a4ae;
+  --drawer:264px; --bar:64px;
+}
+html[data-theme="dark"]{
+  --primary:#4FB3A4; --primary-light:#6FC7BA; --primary-dark:#2E9487; --on-primary:#06231f;
+  --secondary:#8fa9c0;
+  --bg:#121212; --paper:#1e1e1e; --paper-2:#252525;
+  --text:rgba(255,255,255,.95); --text-2:rgba(255,255,255,.65); --line:rgba(255,255,255,.12); --hover:rgba(255,255,255,.06);
+  --shadow:0 4px 12px rgba(0,0,0,.3);
+  --success:#81c784; --success-bg:#1e3327;
+  --warning:#ffb74d; --warning-bg:#3a2f1a;
+  --error:#ef9a9a;   --error-bg:#3a2122;
+  --info:#64b5f6;    --info-bg:#16293a;
+  --neutral:#b0bec5; --neutral-bg:#2a3136;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:14px/1.55 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+
+/* ---------- shell ---------- */
+.bar{position:fixed;inset:0 0 auto 0;height:var(--bar);background:var(--primary);color:var(--on-primary);
+  display:flex;align-items:center;gap:14px;padding:0 18px;z-index:30;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.bar .burger{display:none;background:none;border:0;cursor:pointer;padding:6px;border-radius:8px}
+.bar .burger:hover{background:rgba(255,255,255,.14)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand .mark{width:36px;height:36px;flex:0 0 36px;border-radius:9px;background:rgba(255,255,255,.17);
+  display:grid;place-items:center}
+.brand b{font-size:16px;font-weight:700;letter-spacing:.2px;display:block;line-height:1.15}
+.brand span{font-size:11px;opacity:.82;display:block;line-height:1.2}
+.bar .spacer{flex:1}
+.bar .tools{display:flex;align-items:center;gap:6px}
+.iconbtn{background:none;border:0;cursor:pointer;width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.bar .iconbtn:hover{background:rgba(255,255,255,.14)}
+.langsw{display:flex;border:1px solid rgba(255,255,255,.4);border-radius:8px;overflow:hidden}
+.langsw button{background:none;border:0;cursor:pointer;padding:5px 10px;font-size:12px;font-weight:600;opacity:.75}
+.langsw button.on{background:rgba(255,255,255,.22);opacity:1}
+.who{display:flex;align-items:center;gap:9px;padding-left:8px;border-left:1px solid rgba(255,255,255,.28);margin-left:4px}
+.who .av{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;font-weight:700;font-size:13px}
+.who .n{font-size:13px;font-weight:600;line-height:1.2}
+.who .r{font-size:11px;opacity:.82;line-height:1.2}
+
+.drawer{position:fixed;top:var(--bar);bottom:0;left:0;width:var(--drawer);background:var(--paper);
+  border-right:1px solid var(--line);overflow-y:auto;padding:10px 0 28px;z-index:20}
+.navgroup{padding:16px 20px 6px;font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--text-2)}
+.navitem{display:flex;align-items:center;gap:13px;padding:9px 18px;margin:1px 8px;border-radius:8px;cursor:pointer;
+  border:0;background:none;width:calc(100% - 16px);text-align:left;color:var(--text)}
+.navitem:hover{background:var(--hover)}
+.navitem.on{background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary);font-weight:600}
+.navitem .ic{width:20px;height:20px;flex:0 0 20px;opacity:.8}
+.navitem.on .ic{opacity:1}
+.navitem .tx{flex:1;font-size:14px}
+.navitem .code{font-size:10px;font-family:ui-monospace,Consolas,monospace;color:var(--text-2);opacity:.85}
+
+main{margin:var(--bar) 0 0 var(--drawer);padding:22px 26px 70px;min-height:calc(100vh - var(--bar))}
+.scrim{display:none;position:fixed;inset:var(--bar) 0 0 0;background:rgba(0,0,0,.45);z-index:19}
+@media(max-width:1000px){
+  .bar .burger{display:grid;place-items:center}
+  .drawer{transform:translateX(-100%);transition:transform .22s;box-shadow:var(--shadow)}
+  body.nav-open .drawer{transform:none}
+  body.nav-open .scrim{display:block}
+  main{margin-left:0;padding:16px 14px 70px}
+  .who .n,.who .r{display:none}
+}
+
+/* ---------- page head ---------- */
+.head{margin-bottom:18px}
+.head .crumb{font-size:12px;color:var(--text-2);margin-bottom:5px}
+.head h1{font-size:23px;font-weight:700;margin:0 0 6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.head p{margin:0;color:var(--text-2);font-size:13px;max-width:900px}
+.reqs{display:flex;gap:5px;flex-wrap:wrap}
+.req{font-family:ui-monospace,Consolas,monospace;font-size:11px;padding:2px 7px;border-radius:5px;
+  background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);font-weight:600;white-space:nowrap}
+
+/* ---------- surfaces ---------- */
+.paper{background:var(--paper);border-radius:8px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.sect{padding:16px 18px}
+.sect>h3{margin:0 0 2px;font-size:15px;font-weight:600}
+.sect>h3+.hint{margin:0 0 14px}
+.hint{font-size:12px;color:var(--text-2);margin:0 0 10px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g-2-1{grid-template-columns:2fr 1fr}
+.g-1-2-1{grid-template-columns:minmax(0,260px) minmax(0,1fr) minmax(0,260px)}
+@media(max-width:1200px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g-1-2-1{grid-template-columns:1fr}}
+@media(max-width:900px){.g2,.g3,.g-2-1{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mb{margin-bottom:16px}
+
+/* ---------- kpi ---------- */
+.kpi{padding:15px 16px;display:flex;flex-direction:column;gap:3px;cursor:pointer;position:relative}
+.kpi:hover{border-color:var(--primary)}
+.kpi .t{font-size:12px;color:var(--text-2);line-height:1.35}
+.kpi .v{font-size:22px;font-weight:700;letter-spacing:-.4px}
+.kpi .s{font-size:12px;color:var(--text-2)}
+.kpi .d{font-size:12px;font-weight:600}
+.kpi .d.up{color:var(--success)} .kpi .d.down{color:var(--error)}
+.kpi .go{position:absolute;top:12px;right:12px;font-size:11px;color:var(--primary);opacity:0;font-weight:600}
+.kpi:hover .go{opacity:1}
+
+/* ---------- chips / tags ---------- */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.success{background:var(--success-bg);color:var(--success)}
+.chip.warning{background:var(--warning-bg);color:var(--warning)}
+.chip.error{background:var(--error-bg);color:var(--error)}
+.chip.info{background:var(--info-bg);color:var(--info)}
+.chip.neutral{background:var(--neutral-bg);color:var(--neutral)}
+.chip.primary{background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ---------- table ---------- */
+.tw{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+table.t th{background:var(--paper-2);font-weight:600;font-size:12px;color:var(--text-2);text-align:left;
+  padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.t tbody tr:hover{background:var(--hover)}
+table.t tr.total td{font-weight:700;background:var(--paper-2)}
+table.t tr.group td{font-weight:600}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sub td:first-child{padding-left:30px;color:var(--text-2)}
+.link{color:var(--primary);font-weight:600;cursor:pointer;text-decoration:none}
+.link:hover{text-decoration:underline}
+.muted{color:var(--text-2)}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+
+/* ---------- controls ---------- */
+.bar2{display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.fld{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;padding:7px 11px;
+  font-size:13px;background:var(--paper);cursor:pointer;color:var(--text)}
+.fld .lb{color:var(--text-2);font-size:12px}
+.fld b{font-weight:600}
+.fld.on{border-color:var(--primary);color:var(--primary)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:8px;padding:8px 15px;font-size:13px;
+  font-weight:600;cursor:pointer;background:var(--primary);color:var(--on-primary)}
+.btn.ghost{background:transparent;color:var(--primary);border:1px solid color-mix(in srgb,var(--primary) 45%,transparent)}
+.btn.plain{background:var(--paper);color:var(--text);border:1px solid var(--line)}
+.segs{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.segs button{background:var(--paper);border:0;padding:7px 13px;font-size:13px;cursor:pointer;border-right:1px solid var(--line)}
+.segs button:last-child{border-right:0}
+.segs button.on{background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary);font-weight:600}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);padding:0 14px;overflow-x:auto}
+.tabs button{background:none;border:0;padding:12px 14px;font-size:13px;font-weight:500;cursor:pointer;
+  border-bottom:2px solid transparent;color:var(--text-2);white-space:nowrap}
+.tabs button.on{color:var(--primary);border-bottom-color:var(--primary);font-weight:600}
+
+/* ---------- misc blocks ---------- */
+.kv{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;font-size:13px;align-items:baseline}
+.kv dt{color:var(--text-2)} .kv dd{margin:0;font-weight:500}
+.feed{position:relative;padding-left:26px}
+.feed:before{content:"";position:absolute;left:7px;top:5px;bottom:5px;width:2px;background:var(--line)}
+.ev{position:relative;padding:0 0 17px}
+.ev:before{content:"";position:absolute;left:-23px;top:4px;width:10px;height:10px;border-radius:50%;
+  background:var(--paper);border:2px solid var(--primary)}
+.ev .m{font-size:11px;color:var(--text-2)}
+.ev .x{font-size:13px}
+.steps{display:flex;gap:0;flex-wrap:wrap}
+.step{flex:1;min-width:112px;padding:9px 11px;border:1px solid var(--line);border-right:0;font-size:12px;position:relative}
+.step:last-child{border-right:1px solid var(--line);border-radius:0 8px 8px 0}
+.step:first-child{border-radius:8px 0 0 8px}
+.step .n{font-weight:600;font-size:12px}
+.step .w{font-size:11px;color:var(--text-2)}
+.step.done{background:var(--success-bg)} .step.done .n{color:var(--success)}
+.step.now{background:color-mix(in srgb,var(--primary) 13%,transparent);border-color:var(--primary)} .step.now .n{color:var(--primary)}
+.alert{display:flex;gap:11px;padding:12px 14px;border-radius:8px;font-size:13px;align-items:flex-start}
+.alert.info{background:var(--info-bg);color:var(--info)}
+.alert.warn{background:var(--warning-bg);color:var(--warning)}
+.alert.ok{background:var(--success-bg);color:var(--success)}
+.alert b{font-weight:700}
+.bars{display:flex;flex-direction:column;gap:10px}
+.brow{display:grid;grid-template-columns:148px 1fr 78px;gap:11px;align-items:center;font-size:13px}
+.track{height:9px;background:var(--line);border-radius:5px;overflow:hidden}
+.fill{height:100%;background:var(--primary);border-radius:5px}
+.fill.w{background:var(--warning)} .fill.e{background:var(--error)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-2);align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+/* chessboard */
+.cb{overflow-x:auto;padding:4px 2px 10px}
+.cbrow{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.cbfl{width:40px;flex:0 0 40px;font-size:11px;color:var(--text-2);text-align:right;padding-right:4px}
+.cell{width:84px;flex:0 0 84px;height:52px;border-radius:7px;padding:5px 7px;color:#fff;cursor:pointer;
+  display:flex;flex-direction:column;justify-content:space-between;position:relative;border:2px solid transparent}
+.cell:hover{outline:2px solid var(--text);outline-offset:1px}
+.cell .u{font-size:12px;font-weight:700;line-height:1}
+.cell .a{font-size:10px;opacity:.92;line-height:1}
+.cell .p{font-size:10px;opacity:.92;line-height:1;font-variant-numeric:tabular-nums}
+.cell.sel{border-color:var(--text)}
+
+/* kanban */
+.kan{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{flex:0 0 212px;background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:9px}
+.col h4{margin:0 0 2px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;gap:6px}
+.col .cnt{color:var(--text-2);font-weight:600}
+.col .own{font-size:10px;color:var(--text-2);margin-bottom:8px}
+.dcard{background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:9px;margin-bottom:7px;cursor:pointer;font-size:12px}
+.dcard:hover{border-color:var(--primary)}
+.dcard .nm{font-weight:600;margin-bottom:2px}
+.dcard .mt{color:var(--text-2);font-size:11px}
+.dcard .tg{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap}
+
+/* matrix */
+.mx{overflow-x:auto}
+table.mx-t{border-collapse:collapse;font-size:12px;width:100%;min-width:900px}
+table.mx-t th{background:var(--paper-2);padding:8px 6px;border:1px solid var(--line);font-size:11px;font-weight:700}
+table.mx-t th:first-child{text-align:left;min-width:250px;position:sticky;left:0;z-index:2}
+table.mx-t td{padding:6px;border:1px solid var(--line);text-align:center;font-size:11px}
+table.mx-t td:first-child{text-align:left;background:var(--paper);position:sticky;left:0;font-weight:500}
+table.mx-t tr.hdr td{background:var(--paper-2);font-weight:700;text-align:left}
+.v-yes{color:var(--success);font-weight:700}
+.v-no{color:var(--text-2);opacity:.5}
+.v-sc{color:var(--info);font-weight:600;font-size:10px}
+
+/* heatmap */
+.hm{display:grid;grid-template-columns:36px repeat(12,1fr);gap:3px;font-size:10px;min-width:560px}
+.hm .hl{color:var(--text-2);display:grid;place-items:center}
+.hm .hc{height:22px;border-radius:4px;display:grid;place-items:center;color:#fff;font-weight:600}
+
+/* roadmap */
+.rm{display:grid;gap:12px}
+.rmi{display:grid;grid-template-columns:96px 1fr;gap:14px;align-items:start}
+.rmi .ph{font-size:12px;font-weight:700;padding:5px 10px;border-radius:6px;text-align:center}
+.footnote{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:var(--text-2)}
+.demo-pill{position:fixed;right:16px;bottom:16px;background:var(--secondary);color:#fff;font-size:11px;font-weight:600;
+  padding:7px 13px;border-radius:20px;z-index:40;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:.92}
+html[data-theme="dark"] .demo-pill{background:var(--paper-2);color:var(--text);border:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <button class="burger" onclick="document.body.classList.toggle('nav-open')" aria-label="Меню">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+  </button>
+  <div class="brand">
+    <div class="mark">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M3 21V11l5-3v13H3zm6 0V6l6-3.5V21H9zm7 0V9l5 3v9h-5z" opacity=".95"/>
+      </svg>
+    </div>
+    <div><b id="brandName">CRM Застройщика</b><span id="brandSub">прототип по техническому заданию</span></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="tools">
+    <div class="langsw">
+      <button id="lng-uz" onclick="setLang('uz')">UZ</button>
+      <button id="lng-ru" class="on" onclick="setLang('ru')">RU</button>
+    </div>
+    <button class="iconbtn" onclick="toggleTheme()" title="Тема" aria-label="Тема">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 18a6 6 0 1 1 0-12v12z"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+    </button>
+    <button class="iconbtn" title="Уведомления" aria-label="Уведомления">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm7-6v-5a7 7 0 0 0-5.5-6.8V3a1.5 1.5 0 0 0-3 0v1.2A7 7 0 0 0 5 11v5l-1.5 2v1h17v-1L19 16z"/></svg>
+    </button>
+    <div class="who">
+      <div class="av">ТА</div>
+      <div><div class="n">Тимур Азизов</div><div class="r" id="roleLabel">Директор</div></div>
+    </div>
+  </div>
+</div>
+
+<nav class="drawer" id="drawer"></nav>
+<div class="scrim" onclick="document.body.classList.remove('nav-open')"></div>
+<main id="main"></main>
+<div class="demo-pill" id="demoPill">Демо-данные · прототип</div>
+
+<script>
+/* =====================================================================
+   Прототип CRM застройщика по ТЗ от 06.11.2026.
+   Данные демонстрационные; числа взяты из примеров самого ТЗ, чтобы
+   заказчик узнавал свой документ. Логика не реализована — это макет.
+   Бренд и цвет меняются в BRAND и в переменных :root выше.
+   ===================================================================== */
+
+const BRAND = { name:'CRM Застройщика', sub:'прототип по техническому заданию' };
+
+/* ---------- словарь для переключателя языка (АД-02) ---------- */
+const UZ = {
+  'Дашборд':'Boshqaruv paneli','Шахматка':'Shaxmatka','Карточка помещения':'Xona kartasi',
+  'Остатки':'Qoldiqlar','Воронка сделок':'Bitimlar varonkasi','Карточка сделки':'Bitim kartasi',
+  'Обращения':'Murojaatlar','Бронь и скидки':'Band qilish va chegirmalar','Договоры':'Shartnomalar',
+  'Калькулятор оплаты':'Toʻlov kalkulyatori','График платежей':'Toʻlov jadvali','Дебиторка':'Debitorlik',
+  'Ипотека':'Ipoteka','Взыскание долга':'Qarz undirish','Звонки и Telegram':'Qoʻngʻiroq va Telegram',
+  'Отчёты':'Hisobotlar','Права и роли':'Huquq va rollar','Настраиваемые поля':'Sozlanadigan maydonlar',
+  'Журнал действий':'Harakatlar jurnali','Этапы 2 и 3':'2 va 3-bosqich','О прототипе':'Prototip haqida',
+  'Объекты':'Obyektlar','Лиды и воронка':'Lidlar va varonka','Финансы сделки':'Bitim moliyasi',
+  'Коммуникации':'Kommunikatsiya','Администрирование':'Administratsiya','Обзор':'Umumiy',
+  'Директор':'Direktor'
+};
+let LANG='ru';
+const T = s => (LANG==='uz' && UZ[s]) ? UZ[s] : s;
+
+/* ---------- хелперы разметки ---------- */
+const money = n => n.toLocaleString('ru-RU');
+const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const chip  = (t,k='neutral') => `<span class="chip ${k}">${t}</span>`;
+const reqs  = a => `<span class="reqs">${a.map(r=>`<span class="req">${r}</span>`).join('')}</span>`;
+const head  = (crumb,title,codes,desc) => `<div class="head">
+    <div class="crumb">${esc(crumb)}</div>
+    <h1>${esc(T(title))} ${codes?reqs(codes):''}</h1>
+    ${desc?`<p>${desc}</p>`:''}</div>`;
+const kpi = (t,v,s,d,dir) => `<div class="paper kpi"><span class="go">раскрыть →</span>
+    <div class="t">${t}</div><div class="v">${v}</div>
+    ${s?`<div class="s">${s}</div>`:''}${d?`<div class="d ${dir||'up'}">${d}</div>`:''}</div>`;
+const sect = (title,hint,body,cls='') => `<div class="paper ${cls}"><div class="sect">
+    ${title?`<h3>${title}</h3>`:''}${hint?`<p class="hint">${hint}</p>`:''}${body}</div></div>`;
+const table = (cols,rows) => `<div class="tw"><table class="t"><thead><tr>${
+    cols.map(c=>`<th class="${c.n?'num':''}">${c.t}</th>`).join('')}</tr></thead><tbody>${
+    rows.map(r=>`<tr class="${r.cls||''}">${r.c.map((v,i)=>
+      `<td class="${cols[i]&&cols[i].n?'num':''}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+const filters = items => `<div class="bar2">${items.map(f=>typeof f==='string'?f:
+    `<span class="fld ${f.on?'on':''}"><span class="lb">${f.l}</span><b>${f.v}</b>
+     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></span>`).join('')}</div>`;
+const brow = (l,pct,val,cls='') => `<div class="brow"><div>${l}</div>
+    <div class="track"><div class="fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
+    <div class="num">${val}</div></div>`;
+
+/* ---------- навигация ---------- */
+const NAV = [
+  { g:'Обзор', items:[
+    { id:'about',     t:'О прототипе', ic:'info' },
+    { id:'dashboard', t:'Дашборд',     ic:'dash', code:'ОТ-07' }]},
+  { g:'Объекты', items:[
+    { id:'chess',   t:'Шахматка',            ic:'grid', code:'ОБ-11' },
+    { id:'unit',    t:'Карточка помещения',  ic:'door', code:'ОБ-13' },
+    { id:'stock',   t:'Остатки',             ic:'box',  code:'ОБ-14' }]},
+  { g:'Лиды и воронка', items:[
+    { id:'funnel',  t:'Воронка сделок',   ic:'funnel', code:'ЛД-12' },
+    { id:'deal',    t:'Карточка сделки',  ic:'card',   code:'ЛД-23' },
+    { id:'leads',   t:'Обращения',        ic:'inbox',  code:'ЛД-04' }]},
+  { g:'Сделка', items:[
+    { id:'booking', t:'Бронь и скидки', ic:'tag',  code:'БР-11' },
+    { id:'contracts', t:'Договоры',     ic:'doc',  code:'ДГ-07' }]},
+  { g:'Финансы сделки', items:[
+    { id:'calc',    t:'Калькулятор оплаты', ic:'calc', code:'ЦН-06' },
+    { id:'schedule',t:'График платежей',    ic:'cal',  code:'ГП-04' },
+    { id:'debt',    t:'Дебиторка',          ic:'warn', code:'ФН-16' },
+    { id:'mortgage',t:'Ипотека',            ic:'bank', code:'ИП-04' },
+    { id:'collect', t:'Взыскание долга',    ic:'gavel',code:'ВЗ-02' }]},
+  { g:'Коммуникации', items:[
+    { id:'comms',   t:'Звонки и Telegram', ic:'phone', code:'КМ-02' }]},
+  { g:'Отчёты', items:[
+    { id:'reports', t:'Отчёты', ic:'chart', code:'ОТ-01' }]},
+  { g:'Администрирование', items:[
+    { id:'roles',   t:'Права и роли',        ic:'lock',  code:'АД-01' },
+    { id:'fields',  t:'Настраиваемые поля',  ic:'sliders',code:'ЛД-17' },
+    { id:'journal', t:'Журнал действий',     ic:'list',  code:'АД-04' },
+    { id:'roadmap', t:'Этапы 2 и 3',         ic:'flag' }]}
+];
+
+const ICONS = {
+  info:'M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2zm0-8h-2V7h2z',
+  dash:'M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z',
+  grid:'M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z',
+  door:'M5 2h14v20h-3V4H8v18H5zm9 9h2v2h-2z',
+  box:'M12 2l9 5v10l-9 5-9-5V7zm0 2.3L5.5 8 12 11.7 18.5 8z',
+  funnel:'M3 4h18l-7 8v8l-4-2v-6z',
+  card:'M3 5h18v4H3zm0 6h18v8H3zm2 2v4h7v-4z',
+  inbox:'M4 4h16v10h-5a3 3 0 01-6 0H4zm0 12h5a5 5 0 006 0h5v4H4z',
+  tag:'M12 2l10 10-10 10L2 12zm-2 7a2 2 0 100 4 2 2 0 000-4z',
+  doc:'M6 2h8l6 6v14H6zm7 1.5V9h5.5zM8 12h8v2H8zm0 4h8v2H8z',
+  calc:'M5 2h14v20H5zm2 3v4h10V5zm0 6h3v3H7zm5 0h3v3h-3zM7 16h3v3H7zm5 0h3v3h-3z',
+  cal:'M4 4h16v18H4zm2 6v10h12V10zM7 2h2v3H7zm8 0h2v3h-2zM8 12h3v3H8zm5 0h3v3h-3z',
+  warn:'M12 2l10 18H2zm-1 7v5h2V9zm0 7v2h2v-2z',
+  bank:'M12 2l10 5v2H2V7zm-8 9h3v7H4zm6.5 0h3v7h-3zM17 11h3v7h-3zM2 20h20v2H2z',
+  gavel:'M3 20h12v2H3zm2.3-6.3l5.7-5.7 1.4 1.4-5.7 5.7zM12 2l6 6-2 2-6-6zm4 8l5 5-2 2-5-5z',
+  phone:'M6.6 10.8a15 15 0 006.6 6.6l2.2-2.2a1 1 0 011-.2 11 11 0 003.5.6 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1 11 11 0 00.6 3.5 1 1 0 01-.3 1z',
+  chart:'M4 20h16v2H4zM6 10h3v8H6zm5-6h3v14h-3zm5 4h3v10h-3z',
+  lock:'M12 2a5 5 0 015 5v2h2v13H5V9h2V7a5 5 0 015-5zm0 2a3 3 0 00-3 3v2h6V7a3 3 0 00-3-3zm0 9a2 2 0 100 4 2 2 0 000-4z',
+  sliders:'M4 6h10v2H4zm12 0h4v2h-4zM4 11h4v2H4zm6 0h10v2H10zM4 16h12v2H4zm14 0h2v2h-2z',
+  list:'M4 5h2v2H4zm4 0h12v2H8zM4 11h2v2H4zm4 0h12v2H8zM4 17h2v2H4zm4 0h12v2H8z',
+  flag:'M5 2h2v20H5zm3 1h11l-2.5 4L19 11H8z'
+};
+const ic = n => `<svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="${ICONS[n]||ICONS.info}"/></svg>`;
+
+let ROUTE = (location.hash||'#about').slice(1);
+
+function drawNav(){
+  document.getElementById('drawer').innerHTML = NAV.map(g=>
+    `<div class="navgroup">${esc(T(g.g))}</div>` + g.items.map(i=>
+      `<button class="navitem ${i.id===ROUTE?'on':''}" onclick="go('${i.id}')">
+         ${ic(i.ic)}<span class="tx">${esc(T(i.t))}</span>
+         ${i.code?`<span class="code">${i.code}</span>`:''}</button>`).join('')).join('');
+}
+function go(id){ location.hash='#'+id; }
+function setLang(l){
+  LANG=l;
+  document.getElementById('lng-ru').classList.toggle('on',l==='ru');
+  document.getElementById('lng-uz').classList.toggle('on',l==='uz');
+  document.getElementById('roleLabel').textContent=T('Директор');
+  document.documentElement.lang = l==='uz'?'uz':'ru';
+  render();
+}
+function toggleTheme(){
+  const h=document.documentElement;
+  h.dataset.theme = h.dataset.theme==='dark'?'light':'dark';
+}
+function render(){
+  drawNav();
+  const s = SCREENS[ROUTE] || SCREENS.about;
+  document.getElementById('main').innerHTML = s();
+  document.body.classList.remove('nav-open');
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',()=>{ ROUTE=location.hash.slice(1)||'about'; render(); });
+
+const SCREENS = {};
+</script>
+
+<!-- ======================= Экраны: часть 1 ======================= -->
+<script>
+SCREENS.about = () => head('Прототип','О прототипе',null,
+  'Кликабельный макет CRM по техническому заданию от 6 ноября 2026 года. Все цифры — демонстрационные; там, где это возможно, взяты примеры из самого ТЗ. Логика не реализована: это согласование состава экранов, а не работающая система.')
++ `<div class="grid g4 mb">
+    ${kpi('Блоков ТЗ в прототипе','8','все блоки MVP')}
+    ${kpi('Экранов','19','основные рабочие места')}
+    ${kpi('Ролей в матрице прав','10','ОКЦ … АДМ')}
+    ${kpi('Языка интерфейса','2','узбекский и русский')}
+  </div>
+  <div class="grid g-2-1">
+    ${sect('Как смотреть прототип',null,
+      `<p class="hint">У каждого экрана в заголовке стоит код требования из ТЗ — например <span class="req">ОБ-11</span> для шахматки.
+       По коду экран сверяется с нужным пунктом документа.</p>
+       <dl class="kv">
+         <dt>Слева</dt><dd>разделы в том же порядке, в котором блоки идут в ТЗ</dd>
+         <dt>UZ / RU</dt><dd>переключатель языка интерфейса (АД-02). В прототипе переведены меню и заголовки</dd>
+         <dt>Тема</dt><dd>светлая и тёмная — обе предусмотрены</dd>
+         <dt>Цифры в отчётах</dt><dd>по ТЗ каждая раскрывается до списка записей (ОТ-01); в макете показано как ссылка</dd>
+       </dl>`)}
+    ${sect('Что в прототип не вошло',null,
+      `<p class="hint">Сознательно: по ТЗ это этапы 2 и 3.</p>
+       <dl class="kv">
+         <dt>Этап 2</dt><dd>кабинет агента и комиссии, учёт расходов на рекламу, динамический коллтрекинг, E-IMZO</dd>
+         <dt>Этап 3</dt><dd>постпродажа, кабинет покупателя в Telegram, распознавание речи</dd>
+       </dl>
+       <div class="alert info" style="margin-top:14px">
+         <span>Раздел «Этапы 2 и 3» в меню показывает полный список отложенного.</span></div>`)}
+  </div>
+  <div class="footnote">Прототип · ${new Date().toLocaleDateString('ru-RU')} · бренд и фирменный цвет в макете условные и меняются в одном месте.</div>`;
+
+SCREENS.dashboard = () => head('Отчёты','Дашборд',['ОТ-07','ОТ-02'],
+  'Период и проект задаются сверху. Каждая плитка ведёт в свой отчёт, каждая цифра раскрывается до записей. Сравнение — с предыдущим периодом.')
++ `<div class="paper mb">${filters([
+    {l:'Период',v:'Октябрь 2026',on:true},{l:'Проект',v:'Все проекты'},{l:'Сравнить с',v:'Сентябрь 2026'},
+    '<span class="btn ghost">Выгрузить PDF</span>'])}</div>
+  <div class="grid g4 mb">
+    ${kpi('Обращения','1 180','целевые — 821 (70%)','+12% к сентябрю','up')}
+    ${kpi('Визиты в офис','327','конверсия из целевых 40%','+8%','up')}
+    ${kpi('Брони','95','активных сейчас — 23','−4%','down')}
+    ${kpi('Договоры','66','4 982 м² · 61,4 млрд сум','+19%','up')}
+    ${kpi('Поступления','18,3 млрд','собираемость 93%','+6%','up')}
+    ${kpi('Просроченная дебиторка','1,24 млрд','47 договоров','+0,21 млрд','down')}
+    ${kpi('Остатки','412 шт','31 240 м² · срок 14 мес.','−66 шт','up')}
+    ${kpi('Выполнение плана','94%','план 70 договоров','−6 п.п.','down')}
+  </div>
+  <div class="grid g-2-1 mb">
+    ${sect('Мини-воронка за период','Конверсия указана в следующий этап. Клик по этапу открывает список сделок.',
+      `<div class="bars">
+        ${brow('Обращения',100,'1 180')}
+        ${brow('Целевые',70,'821')}
+        ${brow('Визит назначен',36,'421')}
+        ${brow('Визит состоялся',28,'327')}
+        ${brow('Бронь',8,'95','w')}
+        ${brow('Договор',6,'66')}
+      </div>
+      <div class="legend" style="margin-top:14px">
+        <span>Сквозная конверсия обращение → договор <b>5,6%</b></span>
+        <span>Цикл сделки — медиана <b>38 дней</b></span>
+      </div>`)}
+    ${sect('План / факт по менеджерам',null,
+      `<div class="bars">
+        ${brow('Азизова Д.',118,'118%')}
+        ${brow('Каримов Ш.',104,'104%')}
+        ${brow('Юсупова М.',92,'92%','w')}
+        ${brow('Рахимов О.',76,'76%','w')}
+        ${brow('Садыков И.',48,'48%','e')}
+      </div>`)}
+  </div>
+  <div class="grid g2">
+    ${sect('Источники обращений','Атрибуция — первое касание. Переключается в фильтрах отчёта.',
+      table([{t:'Источник'},{t:'Обращения',n:1},{t:'Договоры',n:1},{t:'Конверсия',n:1}],[
+        {c:['Digital','910','31','3,4%']},
+        {c:['Офлайн-реклама','95','6','6,3%']},
+        {c:['Визит в офис','70','11','15,7%']},
+        {c:['Агенты','60','10','16,7%']},
+        {c:['Рекомендации','45','8','17,8%']},
+        {cls:'total',c:['Итого','1 180','66','5,6%']}]))}
+    ${sect('Требует внимания','Плитки-уведомления служебного бота (КМ-10).',
+      `<div class="alert warn" style="margin-bottom:10px"><b>7</b><span>броней истекают в течение 24 часов — БР-05</span></div>
+       <div class="alert warn" style="margin-bottom:10px"><b>3</b><span>запроса на индивидуальную скидку ждут вашего решения — БР-11</span></div>
+       <div class="alert info" style="margin-bottom:10px"><b>12</b><span>сделок без запланированной задачи — ЛД-15</span></div>
+       <div class="alert info"><b>5</b><span>платежей в очереди «Неразобранные» — ФН-08</span></div>`)}
+  </div>`;
+</script>
+
+<!-- ======================= Блок 1. Объекты ======================= -->
+<script>
+const ST = {
+  free:{n:'Свободно',    c:'var(--st-free)'},
+  book:{n:'Бронь',       c:'var(--st-book)'},
+  proc:{n:'На оформлении',c:'var(--st-proc)'},
+  sold:{n:'Продано',     c:'var(--st-sold)'},
+  res :{n:'Резерв руководства',c:'var(--st-res)'},
+  off :{n:'Не в продаже',c:'var(--st-off)'}
+};
+/* детерминированная раскладка дома: 16 этажей × 6 помещений */
+function houseGrid(){
+  const rows=[]; let seed=7;
+  const rnd=()=> (seed=(seed*1103515245+12345)&0x7fffffff)/0x7fffffff;
+  for(let f=16;f>=1;f--){
+    const cells=[];
+    for(let u=1;u<=6;u++){
+      const r=rnd(); let s;
+      if(f<=3) s = r<.82?'sold':(r<.92?'proc':'off');
+      else if(f<=8) s = r<.5?'sold':(r<.63?'proc':(r<.72?'book':'free'));
+      else if(f>=15) s = r<.18?'res':(r<.3?'book':'free');
+      else s = r<.26?'sold':(r<.37?'book':(r<.44?'proc':'free'));
+      const rooms=[1,2,2,3,3,4][u-1];
+      const area=[38.6,54.2,58.4,78.4,82.1,104.5][u-1];
+      cells.push({f,u,n:f*10+u,s,rooms,area,price:Math.round(area*12.56)});
+    }
+    rows.push(cells);
+  }
+  return rows;
+}
+const HOUSE = houseGrid();
+const CHESS_STATS = (()=>{ const o={}; Object.keys(ST).forEach(k=>o[k]=0);
+  HOUSE.flat().forEach(c=>o[c.s]++); return o; })();
+
+SCREENS.chess = () => head('Объекты · ЖК «Янги Шахар» · Дом 3','Шахматка',['ОБ-11','ОБ-05','ОБ-06'],
+  'Сетка «этажи × помещения», цвет по статусу, фильтры по комнатности, площади, цене, статусу и отделке. При наведении — краткая карточка, по клику открывается карточка помещения.')
++ `<div class="paper mb">${filters([
+    {l:'Проект',v:'Янги Шахар',on:true},{l:'Очередь',v:'2-я очередь'},{l:'Дом',v:'Дом 3',on:true},
+    {l:'Комнатность',v:'любая'},{l:'Площадь, м²',v:'от 30 до 120'},{l:'Цена',v:'любая'},
+    {l:'Статус',v:'все'},{l:'Отделка',v:'любая'},
+    '<span class="btn plain">Список помещений</span>','<span class="btn ghost">Excel</span>'])}
+  <div class="sect">
+    <div class="legend" style="margin-bottom:14px">
+      ${Object.entries(ST).map(([k,v])=>
+        `<span><i class="dot" style="background:${v.c}"></i>${v.n} — <b>${CHESS_STATS[k]}</b></span>`).join('')}
+    </div>
+    <div class="cb">
+      ${HOUSE.map(row=>`<div class="cbrow"><div class="cbfl">${row[0].f} эт.</div>
+        ${row.map(c=>`<div class="cell" style="background:${ST[c.s].c}"
+            title="№${c.n} · ${c.rooms}-комн. · ${c.area} м² · ${money(c.price)} тыс. сум · ${ST[c.s].n}"
+            onclick="go('unit')">
+            <div class="u">№${c.n}</div>
+            <div class="a">${c.rooms}к · ${c.area} м²</div>
+            <div class="p">${money(c.price)}</div></div>`).join('')}
+        </div>`).join('')}
+    </div>
+    <p class="hint" style="margin:10px 0 0">Цена в клетке — в тысячах сум, по базовому прайсу на 01.10.2026. Статус меняется автоматически от событий сделки; вручную доступны только «резерв руководства» и «не в продаже», и только директору (ОБ-06).</p>
+  </div></div>`;
+
+SCREENS.unit = () => head('Объекты · Янги Шахар · Дом 3 · №94','Карточка помещения',['ОБ-13','ОБ-03','ОБ-07','ОБ-08'],
+  'Параметры, планировка, цены по всем формам оплаты, история статусов и цен, связанные обращения, брони, сделка, договор и платежи — со ссылками.')
++ `<div class="grid g-2-1 mb">
+    <div>
+      ${sect(`Помещение №94 ${chip('Свободно','success')}`,null,
+        `<div class="grid g2">
+          <dl class="kv">
+            <dt>Номер строительный</dt><dd>3-94</dd>
+            <dt>Номер постоянный</dt><dd>—<span class="muted"> (после кадастра)</span></dd>
+            <dt>Тип</dt><dd>Квартира</dd>
+            <dt>Комнатность</dt><dd>3 комнаты</dd>
+            <dt>Этаж</dt><dd>9 из 16</dd>
+            <dt>Подъезд</dt><dd>2</dd>
+          </dl>
+          <dl class="kv">
+            <dt>Площадь общая</dt><dd><b>78,4 м²</b></dd>
+            <dt>Площадь жилая</dt><dd>44,1 м²</dd>
+            <dt>Балконы и лоджии</dt><dd>5,8 м²</dd>
+            <dt>Ориентация</dt><dd>Юго-запад</dd>
+            <dt>Отделка</dt><dd>Предчистовая</dd>
+            <dt>Высота потолков</dt><dd>3,0 м</dd>
+          </dl>
+        </div>
+        <p class="hint" style="margin:14px 0 0">Перерасчёт стоимости по обмеру не применяется (ОБ-03).</p>`,'mb')}
+      ${sect('Цены по формам оплаты · прайс от 01.10.2026',
+        'Базовая цена — при 100% оплате. Цены рассрочки и ипотеки берутся из своего прайса или считаются от базовой (ЦН-01…04).',
+        table([{t:'Форма оплаты'},{t:'Источник цены'},{t:'Цена, млн сум',n:1},{t:'Цена за м², тыс.',n:1}],[
+          {c:['100% оплата','Базовый прайс','<b>985,0</b>','12 564']},
+          {c:['Рассрочка 24 мес. · метод А','Наценка 8%','1 063,8','13 569']},
+          {c:['Рассрочка 24 мес. · метод Б','12% на остаток','1 071,2','13 663']},
+          {c:['Ипотека','Базовая × (1 + K), K = 0','985,0','12 564']},
+          {c:['Рассрочка ПВ + ипотека','Базовая × (1 + K)','985,0','12 564']}]) +
+        `<div style="margin-top:14px;display:flex;gap:9px;flex-wrap:wrap">
+          <span class="btn" onclick="go('calc')">Калькулятор и КП</span>
+          <span class="btn ghost" onclick="go('booking')">Оформить бронь</span>
+        </div>`,'mb')}
+      ${sect('История статусов и цен','Кто, когда и по какой сделке (ОБ-07).',
+        table([{t:'Дата'},{t:'Событие'},{t:'Было → стало'},{t:'Автор'},{t:'Сделка'}],[
+          {c:['14.10.2026 11:20','Снятие брони — истёк срок','Бронь → Свободно','Система','<span class="link">Сделка №1842</span>']},
+          {c:['11.10.2026 16:05','Бронь бесплатная, 3 дня','Свободно → Бронь','Азизова Д.','<span class="link">Сделка №1842</span>']},
+          {c:['01.10.2026 09:00','Новая версия прайса','962,0 → 985,0 млн','Азизов Т. (директор)','—']},
+          {c:['12.08.2026 10:30','Массовое изменение цен +4%','925,0 → 962,0 млн','Азизов Т. (директор)','—']},
+          {c:['03.06.2026 12:00','Создано импортом из Excel','— → Свободно','Администратор','—']}]))}
+    </div>
+    <div>
+      ${sect('Планировка',null,
+        `<div style="aspect-ratio:1/1;border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;color:var(--text-2);font-size:12px;text-align:center;padding:16px">
+          Изображение планировки<br>+ расположение на этаже
+        </div>`,'mb')}
+      ${sect('Связанные записи',null,
+        `<dl class="kv">
+          <dt>Обращения</dt><dd><span class="link">4</span></dd>
+          <dt>Брони</dt><dd><span class="link">2</span>, активных нет</dd>
+          <dt>Сделки</dt><dd><span class="link">2</span></dd>
+          <dt>Договор</dt><dd>—</dd>
+          <dt>Платежи</dt><dd>—</dd>
+        </dl>`,'mb')}
+      ${sect('Интерес к помещению',null,
+        `<div class="feed">
+          <div class="ev"><div class="m">Сегодня, 10:12</div><div class="x">Юсупова М. открыла карточку из шахматки</div></div>
+          <div class="ev"><div class="m">14.10.2026</div><div class="x">КП отправлено клиенту Р. Турсунов</div></div>
+          <div class="ev"><div class="m">11.10.2026</div><div class="x">Бронь оформлена и истекла</div></div>
+        </div>`)}
+    </div>
+  </div>`;
+
+SCREENS.stock = () => head('Объекты','Остатки',['ОБ-14','ОТ-01'],
+  'Количество и площадь по статусам в разрезе проекта, дома и комнатности. Темп продаж и срок реализации считаются как среднее за 3 месяца.')
++ `<div class="paper mb">${filters([
+    {l:'Проект',v:'Все проекты',on:true},{l:'Разрез',v:'Дом × комнатность'},{l:'На дату',v:'09.11.2026'},
+    '<span class="btn ghost">Excel</span>'])}</div>
+  <div class="grid g4 mb">
+    ${kpi('Свободно','412 шт','31 240 м²')}
+    ${kpi('Темп продаж','29 шт/мес','2 190 м²/мес · среднее за 3 мес.')}
+    ${kpi('Срок реализации','14,2 мес.','остаток ÷ темп продаж')}
+    ${kpi('Резерв и не в продаже','38 шт','2 870 м²')}
+  </div>
+  ${sect('Остатки по домам','Клик по цифре открывает список помещений (ОТ-01).',
+    table([{t:'Проект / дом'},{t:'Свободно, шт',n:1},{t:'Площадь, м²',n:1},{t:'Бронь',n:1},
+           {t:'На оформлении',n:1},{t:'Продано',n:1},{t:'Резерв',n:1},{t:'Темп, шт/мес',n:1},{t:'Срок, мес.',n:1}],[
+      {cls:'group',c:['Янги Шахар','248','<span class="link">18 940</span>','14','9','196','21','18','13,8']},
+      {cls:'sub',c:['— Дом 1 (сдан)','22','1 510','1','2','164','3','4','5,5']},
+      {cls:'sub',c:['— Дом 2','71','5 260','6','4','32','8','6','11,8']},
+      {cls:'sub',c:['— Дом 3','155','12 170','7','3','—','10','8','19,4']},
+      {cls:'group',c:['Чинор Парк','164','<span class="link">12 300</span>','9','6','88','17','11','14,9']},
+      {cls:'sub',c:['— Блок А','88','6 420','5','4','61','9','7','12,6']},
+      {cls:'sub',c:['— Блок Б','76','5 880','4','2','27','8','4','19,0']},
+      {cls:'total',c:['Итого','412','31 240','23','15','284','38','29','14,2']}]),'mb')}
+  <div class="grid g2">
+    ${sect('По комнатности',null,
+      table([{t:'Комнатность'},{t:'Свободно, шт',n:1},{t:'Площадь, м²',n:1},{t:'Доля остатка',n:1}],[
+        {c:['1 комната','64','2 470','16%']},
+        {c:['2 комнаты','148','8 030','36%']},
+        {c:['3 комнаты','139','10 900','34%']},
+        {c:['4 комнаты и более','41','4 280','10%']},
+        {c:['Коммерция и паркинг','20','5 560','5%']},
+        {cls:'total',c:['Итого','412','31 240','100%']}]))}
+    ${sect('Структура остатка по статусам',null,
+      `<div class="bars">
+        ${brow('Свободно',100,'412')}
+        ${brow('Резерв руководства',6,'26','w')}
+        ${brow('Бронь',6,'23','w')}
+        ${brow('На оформлении',4,'15','w')}
+        ${brow('Не в продаже',3,'12','e')}
+      </div>
+      <p class="hint" style="margin-top:14px">Продано за всё время — 284 помещения; в остаток не входят.</p>`)}
+  </div>`;
+</script>
+
+<!-- ======================= Блок 2. Лиды и воронка ======================= -->
+<script>
+const STAGES = [
+  {n:'Новая',          own:'Колл-центр',       cnt:38},
+  {n:'В работе',       own:'Колл-центр',       cnt:64},
+  {n:'Целевая',        own:'Передача в продажи',cnt:52},
+  {n:'Визит назначен', own:'Продажи',          cnt:41},
+  {n:'Визит состоялся',own:'Продажи',          cnt:29},
+  {n:'Бронь',          own:'Продажи',          cnt:23},
+  {n:'Договор',        own:'Продажи',          cnt:15},
+  {n:'Продано',        own:'Продажи',          cnt:66},
+  {n:'Отказ',          own:'Любой этап',       cnt:214}
+];
+const DEALS = [
+  ['Р. Турсунов','3к · Дом 3 · рассрочка','985 млн','Instagram',0],
+  ['М. Облокулова','2к · Дом 2 · 100%','612 млн','Telegram',0],
+  ['Ж. Эргашев','3к · Дом 3 · ипотека','1,02 млрд','Сайт',1],
+  ['Д. Хакимов','1к · Дом 2 · рассрочка','398 млн','Агенты',1],
+  ['С. Абдуллаева','4к · Блок А · 100%','1,31 млрд','Рекомендации',2],
+  ['Н. Юлдашев','2к · Блок Б · рассрочка','648 млн','Instagram',2],
+  ['О. Камилов','3к · Дом 3 · ипотека','1,07 млрд','Визит в офис',3],
+  ['Г. Саидова','2к · Дом 2 · рассрочка','655 млн','Офлайн',4],
+  ['Ш. Назаров','3к · Блок А · 100%','1,12 млрд','Telegram',5],
+  ['А. Ибрагимов','2к · Дом 3 · ипотека','702 млн','Сайт',6]
+];
+const SLA_TAGS = [chip('SLA 12 мин','success'),chip('SLA 21 мин','error'),chip('Задача на сегодня','info'),
+  chip('Без задачи','warning'),chip('Бронь до 16.11','warning'),chip('Юрист согласовал','success'),chip('','neutral')];
+
+SCREENS.funnel = () => head('Лиды и воронка','Воронка сделок',['ЛД-12','ЛД-11','ЛД-15','ЛД-09'],
+  'Девять этапов из ТЗ. Точка передачи «колл-центр → продажи» — этап «Целевая». Каждый переход пишется в историю: этап, дата, автор. На ней строятся конверсии и время на этапе.')
++ `<div class="paper mb">${filters([
+    {l:'Период',v:'Октябрь 2026',on:true},{l:'Отдел',v:'Все'},{l:'Сотрудник',v:'Все'},
+    {l:'Источник',v:'Все'},{l:'Проект',v:'Все'},{l:'Задачи',v:'Все сделки'},
+    '<span class="btn plain">Таблицей</span>','<span class="btn ghost">Отчёт по воронке</span>'])}</div>
+  <div class="grid g4 mb">
+    ${kpi('Открытых сделок','247','из них 12 без задачи — ЛД-15')}
+    ${kpi('Среднее время до первого контакта','9 мин','SLA 15 минут соблюдён в 92%')}
+    ${kpi('Передано в продажи','52','за период, этап «Целевая»')}
+    ${kpi('Отказы','214','причина обязательна из справочника')}
+  </div>
+  ${sect(null,null,
+    `<div class="kan">${STAGES.map((s,si)=>`
+      <div class="col">
+        <h4><span>${esc(s.n)}</span><span class="cnt">${s.cnt}</span></h4>
+        <div class="own">${esc(s.own)}</div>
+        ${DEALS.filter(d=>d[4]===si).map(d=>`
+          <div class="dcard" onclick="go('deal')">
+            <div class="nm">${esc(d[0])}</div>
+            <div class="mt">${esc(d[1])}</div>
+            <div class="mt">${esc(d[2])} · ${esc(d[3])}</div>
+            <div class="tg">${SLA_TAGS[si%SLA_TAGS.length]}</div>
+          </div>`).join('')
+          || `<div class="mt muted" style="font-size:11px;padding:6px 2px">${s.cnt>0?'+ '+s.cnt+' сделок':'нет сделок'}</div>`}
+      </div>`).join('')}</div>`,'mb')}
+  <div class="grid g2">
+    ${sect('Конверсия по этапам','Пропуск этапов разрешён, но пропущенные проставляются в истории той же датой — иначе конверсии превысят 100% (ЛД-13).',
+      table([{t:'Этап'},{t:'Вошло',n:1},{t:'В следующий',n:1},{t:'От первого',n:1},{t:'Медиана, дн.',n:1}],[
+        {c:['Новая','1 180','95%','100%','0,2']},
+        {c:['В работе','1 121','73%','95%','1,4']},
+        {c:['Целевая','821','51%','70%','2,1']},
+        {c:['Визит назначен','421','78%','36%','3,6']},
+        {c:['Визит состоялся','327','29%','28%','9,8']},
+        {c:['Бронь','95','69%','8,1%','4,2']},
+        {c:['Договор','66','—','5,6%','16,4']}]))}
+    ${sect('Потери и причины отказа',null,
+      `<div class="bars">
+        ${brow('Нет бюджета',34,'73','e')}
+        ${brow('Выбрал другой ЖК',26,'56','e')}
+        ${brow('Отложил покупку',18,'38','w')}
+        ${brow('Не устроил срок рассрочки',12,'26','w')}
+        ${brow('Банк отказал по ипотеке',7,'15','w')}
+        ${brow('Расторжение договора',3,'6','e')}
+      </div>
+      <p class="hint" style="margin-top:14px">Сделку можно вернуть из «Отказа», причина остаётся в истории (ЛД-14).</p>`)}
+  </div>`;
+
+SCREENS.deal = () => head('Лиды и воронка · Сделка №2014','Карточка сделки',['ЛД-23','ЛД-24','ЛД-17','ЛД-02'],
+  'Шапка — этап и действия в одно нажатие. Левая колонка — поля, в том числе добавленные администратором. Центр — лента событий в хронологии с фильтром по типу.')
++ `${sect(null,null,
+    `<div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Р. Турсунов · Сделка №2014</div>
+        <div class="muted" style="font-size:12px">Янги Шахар · Дом 3 · помещение <span class="link" onclick="go('unit')">№94</span> · 3 комнаты · 78,4 м²</div>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <span class="btn">Позвонить</span>
+        <span class="btn plain">Telegram</span>
+        <span class="btn plain">SMS</span>
+        <span class="btn plain">Задача</span>
+        <span class="btn ghost">Перевести этап</span>
+      </div>
+    </div>
+    <div class="steps">
+      ${['Новая','В работе','Целевая','Визит назначен','Визит состоялся','Бронь','Договор','Продано'].map((s,i)=>
+        `<div class="step ${i<5?'done':(i===5?'now':'')}">
+           <div class="n">${s}</div>
+           <div class="w">${i<5?['02.10','02.10','04.10','06.10','09.10'][i]+'.2026':(i===5?'с 11.10.2026':'—')}</div>
+         </div>`).join('')}
+    </div>`,'mb')}
+  <div class="grid g-1-2-1">
+    <div>
+      ${sect('Параметры сделки',null,
+        `<dl class="kv">
+          <dt>Этап</dt><dd>${chip('Бронь','warning')}</dd>
+          <dt>Проект</dt><dd>Янги Шахар</dd>
+          <dt>Дом</dt><dd>Дом 3</dd>
+          <dt>Комнатность</dt><dd>3 комнаты</dd>
+          <dt>Бюджет</dt><dd>900 – 1 050 млн</dd>
+          <dt>Форма оплаты</dt><dd>Рассрочка 24 мес.</dd>
+          <dt>Цель покупки</dt><dd>Для себя</dd>
+          <dt>Визит</dt><dd>09.10.2026, офис продаж</dd>
+          <dt>Ответственный КЦ</dt><dd>Садыков И.</dd>
+          <dt>Ответственный продаж</dt><dd>Азизова Д.</dd>
+        </dl>`,'mb')}
+      ${sect('Источники','В сделке хранятся оба касания (ЛД-02).',
+        `<dl class="kv">
+          <dt>Первое касание</dt><dd>Digital → Instagram → <span class="muted">retarget_okt</span></dd>
+          <dt>Последнее касание</dt><dd>Digital → Сайт → <span class="muted">brand_search</span></dd>
+          <dt>UTM</dt><dd class="mono">utm_source=google<br>utm_medium=cpc<br>utm_campaign=brand</dd>
+        </dl>`,'mb')}
+      ${sect('Добавленные поля','Заведены администратором без разработчика (ЛД-17).',
+        `<dl class="kv">
+          <dt>Откуда узнал</dt><dd>От знакомого</dd>
+          <dt>Нужен паркинг</dt><dd>Да</dd>
+          <dt>Готов к сделке</dt><dd>В течение месяца</dd>
+        </dl>`)}
+    </div>
+    <div>
+      ${sect('Лента событий',null,
+        `<div class="bar2" style="margin:-16px -18px 14px;border-top:0">
+          <span class="fld on">Все события</span><span class="fld">Звонки</span><span class="fld">Переписка</span>
+          <span class="fld">Этапы</span><span class="fld">Изменения полей</span><span class="fld">Документы</span>
+        </div>
+        <div class="feed">
+          <div class="ev"><div class="m">Сегодня, 09:40 · Азизова Д.</div>
+            <div class="x"><b>Задача:</b> перезвонить и подтвердить готовность к договору. Срок — сегодня 18:00.</div></div>
+          <div class="ev"><div class="m">11.10.2026 16:05 · Азизова Д.</div>
+            <div class="x"><b>Бронь оформлена</b> — бесплатная, 3 дня, помещение №94. Цена по прайсу 985,0 млн, скидка 0.</div></div>
+          <div class="ev"><div class="m">11.10.2026 15:52 · Азизова Д.</div>
+            <div class="x"><b>Этап:</b> Визит состоялся → Бронь</div></div>
+          <div class="ev"><div class="m">10.10.2026 11:18 · Азизова Д.</div>
+            <div class="x"><b>Исходящий звонок</b> 6 мин 12 с — результативный. ${chip('Запись','info')}</div></div>
+          <div class="ev"><div class="m">09.10.2026 14:00 · Азизова Д.</div>
+            <div class="x"><b>Визит состоялся.</b> Смотрел №94 и №104, выбрал №94.</div></div>
+          <div class="ev"><div class="m">09.10.2026 13:10 · система</div>
+            <div class="x"><b>КП отправлено</b> в Telegram — PDF, русский язык, 3 варианта оплаты.</div></div>
+          <div class="ev"><div class="m">06.10.2026 10:22 · Азизова Д.</div>
+            <div class="x"><b>Изменение поля:</b> Форма оплаты — «100%» → «Рассрочка 24 мес.»</div></div>
+          <div class="ev"><div class="m">04.10.2026 09:35 · Садыков И.</div>
+            <div class="x"><b>Этап:</b> В работе → Целевая. Сделка передана в продажи, ответственный — Азизова Д.</div></div>
+          <div class="ev"><div class="m">02.10.2026 17:48 · Садыков И.</div>
+            <div class="x"><b>Первый контакт</b> через 12 минут после обращения. ${chip('SLA соблюдён','success')}</div></div>
+          <div class="ev"><div class="m">02.10.2026 17:36 · система</div>
+            <div class="x"><b>Обращение:</b> форма сайта, Digital → Instagram. Сделка создана, распределена по очереди.</div></div>
+        </div>`)}
+    </div>
+    <div>
+      ${sect('Клиент',null,
+        `<dl class="kv">
+          <dt>ФИО</dt><dd>Турсунов Р. А.</dd>
+          <dt>Телефон</dt><dd class="mono">+998 90 123 45 67</dd>
+          <dt>Язык</dt><dd>Русский</dd>
+          <dt>Telegram</dt><dd><span class="link">@r_tursunov</span></dd>
+          <dt>Тип</dt><dd>Физлицо</dd>
+          <dt>Согласие на ПДн</dt><dd>${chip('Есть, 02.10.2026','success')}</dd>
+          <dt>Паспорт, ПИНФЛ</dt><dd class="muted">скрыто по правам</dd>
+          <dt>Просрочки</dt><dd>${chip('Нет','success')}</dd>
+        </dl>`,'mb')}
+      ${sect('Бронь',null,
+        `<dl class="kv">
+          <dt>Тип</dt><dd>Бесплатная</dd>
+          <dt>Срок</dt><dd>до 16.11.2026</dd>
+          <dt>Цена по прайсу</dt><dd>985,0 млн</dd>
+          <dt>Скидка</dt><dd>—</dd>
+          <dt>Итоговая цена</dt><dd><b>985,0 млн</b></dd>
+        </dl>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px">
+          <span class="btn ghost" onclick="go('booking')">Запросить скидку</span>
+          <span class="btn" onclick="go('contracts')">Создать договор</span>
+        </div>`,'mb')}
+      ${sect('Другие сделки клиента',null,
+        `<div class="muted" style="font-size:12px">Сделка №1455 — Отказ, «отложил покупку», 03.2026</div>`)}
+    </div>
+  </div>`;
+
+SCREENS.leads = () => head('Лиды и воронка','Обращения',['ЛД-04','ЛД-05','ЛД-06','ЛД-08'],
+  'Каждое касание клиента — отдельное обращение с каналом, источником и датой. Источник определяется автоматически: по UTM для форм сайта, по номеру коллтрекинга для звонков, по боту для Telegram.')
++ `<div class="paper mb">${filters([
+    {l:'Период',v:'01.10 – 31.10.2026',on:true},{l:'Канал',v:'Все'},{l:'Тип источника',v:'Все'},
+    {l:'Квалификация',v:'Все'},{l:'Оператор',v:'Все'},
+    '<span class="btn">Новое обращение</span>','<span class="btn ghost">Excel</span>'])}</div>
+  <div class="grid g4 mb">
+    ${kpi('Обращений за период','1 180','уникальных клиентов 1 042')}
+    ${kpi('Целевых','821','69,6% от квалифицированных')}
+    ${kpi('Повторных','138','прикреплены к открытым сделкам')}
+    ${kpi('Нецелевых','359','спам, риелторы, другой регион')}
+  </div>
+  ${sect('Журнал обращений',null,
+    table([{t:'Дата и время'},{t:'Клиент'},{t:'Канал'},{t:'Тип → источник → кампания'},{t:'Проект'},
+           {t:'Квалификация'},{t:'Оператор'},{t:'Сделка'}],[
+      {c:['31.10 17:36','Р. Турсунов','Форма сайта','Digital → Instagram → retarget_okt','Янги Шахар',
+          chip('Целевая','success'),'Садыков И.','<span class="link" onclick="go(\'deal\')">№2014</span>']},
+      {c:['31.10 16:22','М. Облокулова','Telegram-бот','Digital → Telegram → okt_promo','Янги Шахар',
+          chip('Целевая','success'),'Садыков И.','<span class="link">№2013</span>']},
+      {c:['31.10 15:04','+998 93 ··· 21','Звонок','Офлайн → Билборд Чиланзар','—',
+          chip('Нецелевая · риелтор','neutral'),'Рахимов О.','—']},
+      {c:['31.10 14:48','Ж. Эргашев','Звонок','Digital → Сайт → brand_search','Чинор Парк',
+          chip('Целевая','success'),'Садыков И.','<span class="link">№2011</span>']},
+      {c:['31.10 12:30','Д. Хакимов','Telegram менеджера','Агенты → Агентство «Уй»','Янги Шахар',
+          chip('Целевая','success'),'Азизова Д.','<span class="link">№2009</span>']},
+      {c:['31.10 11:15','С. Абдуллаева','Визит','Визит в офис','Чинор Парк',
+          chip('Целевая','success'),'Юсупова М.','<span class="link">№2008</span>']},
+      {c:['31.10 10:02','+998 97 ··· 44','Звонок','Digital → Instagram → okt_promo','—',
+          chip('Нецелевая · нет бюджета','neutral'),'Садыков И.','—']},
+      {c:['30.10 18:40','Н. Юлдашев','Форма сайта','Digital → Сайт → brand_search','Чинор Парк',
+          chip('Повторное','info'),'— (к сделке)','<span class="link">№1987</span>']}]),'mb')}
+  <div class="grid g2">
+    ${sect('Справочник источников','Три уровня: тип → источник → кампания. Ручной ввод — только из справочника, без свободного текста (ЛД-05).',
+      table([{t:'Тип'},{t:'Источники'},{t:'Кампаний',n:1},{t:'Обращения',n:1}],[
+        {c:['Digital','Instagram, Telegram, Сайт','14','910']},
+        {c:['Офлайн-реклама','Билборды, радио, ТВ','6','95']},
+        {c:['Агенты','7 агентств','7','60']},
+        {c:['Рекомендации','Сарафан','1','45']},
+        {c:['Визит в офис','Офис продаж','1','70']},
+        {c:['Повторный клиент','—','1','—']}]))}
+    ${sect('Дедупликация','Проверка по нормализованному номеру +998… (ЛД-08).',
+      `<div class="alert info" style="margin-bottom:12px">
+        <span>У клиента <b>Н. Юлдашев</b> есть открытая сделка №1987. Обращение прикреплено к ней, новая сделка не создана, ответственный получил уведомление.</span></div>
+      <div class="alert warn">
+        <span>Найдено <b>2</b> возможных дубля по номеру телефона. Объединение переносит обращения, сделки и историю в основную карточку и пишется в журнал (ЛД-25).</span></div>
+      <div style="margin-top:12px"><span class="btn ghost">Показать дубли</span></div>`)}
+  </div>`;
+</script>
+
+<!-- ======================= Блоки 3 и 4. Бронь, скидки, договоры ======================= -->
+<script>
+SCREENS.booking = () => head('Сделка','Бронь и скидки',['БР-02','БР-03','БР-10','БР-11'],
+  'Бронь бывает бесплатной и платной с задатком. Акция применяется автоматически, если помещение подходит под условия. Индивидуальная скидка сверх акции согласуется только директором.')
++ `<div class="grid g-2-1 mb">
+    <div>
+      ${sect('Оформление брони · помещение №94',null,
+        `<div class="grid g2">
+          <div>
+            <p class="hint">Тип брони</p>
+            <div class="segs" style="margin-bottom:16px">
+              <button class="on">Бесплатная · 3 дня</button><button>Платная · 14 дней</button>
+            </div>
+            <dl class="kv">
+              <dt>Помещение</dt><dd>№94 · 3к · 78,4 м²</dd>
+              <dt>Форма оплаты</dt><dd>Рассрочка 24 мес. · метод А</dd>
+              <dt>Срок брони до</dt><dd><b>16.11.2026 16:05</b></dd>
+              <dt>Задаток</dt><dd class="muted">не требуется для бесплатной</dd>
+            </dl>
+          </div>
+          <div>
+            <p class="hint">Расчёт цены</p>
+            <dl class="kv">
+              <dt>Цена по прайсу</dt><dd>1 063,8 млн</dd>
+              <dt>Акция «Осень 2026»</dt><dd>−3% · −31,9 млн</dd>
+              <dt>Индивидуальная скидка</dt><dd>${chip('Запрошено 2% — ждёт директора','warning')}</dd>
+              <dt>Итоговая цена</dt><dd style="font-size:17px"><b>1 031,9 млн</b></dd>
+            </dl>
+            <div class="alert info" style="margin-top:14px">
+              <span>До согласования бронь создаётся по цене без индивидуальной скидки (БР-12).</span></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:9px;flex-wrap:wrap">
+          <span class="btn">Оформить бронь</span>
+          <span class="btn ghost">Запросить индивидуальную скидку</span>
+        </div>`,'mb')}
+      ${sect('Активные брони','За 24 часа до истечения менеджеру уходит уведомление; по истечении бронь снимается автоматически (БР-05).',
+        table([{t:'Помещение'},{t:'Клиент'},{t:'Тип'},{t:'Задаток'},{t:'Истекает'},{t:'Менеджер'},{t:''}],[
+          {c:['Дом 3 · №94','Р. Турсунов',chip('Бесплатная','info'),'—','16.11 16:05','Азизова Д.','<span class="link">Продлить</span>']},
+          {c:['Дом 2 · №58','М. Облокулова',chip('Платная','primary'),'18,4 млн ✓','22.11 10:30','Азизова Д.','<span class="link">Продлить</span>']},
+          {c:['Блок А · №112','С. Абдуллаева',chip('Платная','primary'),'26,2 млн ✓','19.11 09:00','Юсупова М.','<span class="link">Продлить</span>']},
+          {c:['Дом 3 · №71','О. Камилов',chip('Бесплатная','info'),'—',
+              '<span class="chip warning">через 9 ч</span>','Рахимов О.','<span class="link">Продлить</span>']},
+          {c:['Блок Б · №44','Н. Юлдашев',chip('Платная','primary'),'14,0 млн ⏳','25.11 14:20','Юсупова М.','<span class="link">Продлить</span>']}]) +
+        `<p class="hint" style="margin:12px 0 0">Бронь становится платной после подтверждения поступления бухгалтерией, срок пересчитывается (БР-03). ⏳ — задаток ждёт подтверждения.</p>`)}
+    </div>
+    <div>
+      ${sect('Запросы на индивидуальную скидку','Решение с комментарием пишется в историю сделки (БР-11).',
+        `<div style="display:flex;flex-direction:column;gap:12px">
+          <div style="border:1px solid var(--line);border-radius:8px;padding:12px">
+            <div style="font-weight:600;font-size:13px">Р. Турсунов · №94</div>
+            <div class="muted" style="font-size:12px;margin:3px 0 8px">Запрошено 2% сверх акции · Азизова Д. · 2 ч назад<br>«Клиент сравнивает с соседним ЖК»</div>
+            <div style="display:flex;gap:6px"><span class="btn" style="padding:5px 12px">Согласовать</span>
+              <span class="btn plain" style="padding:5px 12px">Отклонить</span></div>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:8px;padding:12px">
+            <div style="font-weight:600;font-size:13px">Ш. Назаров · №112</div>
+            <div class="muted" style="font-size:12px;margin:3px 0 8px">Запрошено 4% · Юсупова М. · вчера<br>«Покупает две квартиры»</div>
+            <div style="display:flex;gap:6px"><span class="btn" style="padding:5px 12px">Согласовать</span>
+              <span class="btn plain" style="padding:5px 12px">Отклонить</span></div>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:8px;padding:12px;opacity:.72">
+            <div style="font-weight:600;font-size:13px">Г. Саидова · №58</div>
+            <div class="muted" style="font-size:12px;margin:3px 0 0">Согласовано 1,5% · Азизов Т. · 07.11.2026</div>
+          </div>
+        </div>`,'mb')}
+      ${sect('Акции','Справочник: период, проекты, дома, типы помещений, форма оплаты, размер. Одновременно действует одна акция (БР-10).',
+        table([{t:'Акция'},{t:'Размер',n:1},{t:'До'}],[
+          {c:['Осень 2026 · Дом 3','−3%','30.11.2026']},
+          {c:['100% оплата','−5%','бессрочно']},
+          {c:['Паркинг в подарок','−12 млн','31.12.2026']},
+          {c:['Блок Б · старт продаж','−4%','15.12.2026']}]))}
+    </div>
+  </div>`;
+
+SCREENS.contracts = () => head('Сделка','Договоры',['ДГ-07','ДГ-08','ДГ-12','ДГ-10'],
+  'Договор собирается из данных брони по шаблону и всегда проходит согласование юриста. Клиент, помещение, цена, форма оплаты, скидка и график подтягиваются автоматически; ручная правка этих полей запрещена.')
++ `${sect('Договор K-2026/0147 · Р. Турсунов',null,
+    `<div class="steps" style="margin-bottom:16px">
+      <div class="step done"><div class="n">Черновик</div><div class="w">09.11 10:04 · Азизова Д.</div></div>
+      <div class="step now"><div class="n">На согласовании</div><div class="w">09.11 10:21 · у юриста</div></div>
+      <div class="step"><div class="n">Согласован</div><div class="w">только юрист</div></div>
+      <div class="step"><div class="n">Подписан</div><div class="w">нужен скан</div></div>
+      <div class="step"><div class="n">Расторгнут</div><div class="w">—</div></div>
+    </div>
+    <div class="grid g3">
+      <dl class="kv">
+        <dt>Номер</dt><dd class="mono">K-2026/0147</dd>
+        <dt>Тип</dt><dd>Долевого участия</dd>
+        <dt>Язык</dt><dd>Двуязычный (uz / ru)</dd>
+        <dt>Шаблон</dt><dd>ДДУ · Янги Шахар · рассрочка</dd>
+      </dl>
+      <dl class="kv">
+        <dt>Помещение</dt><dd><span class="link" onclick="go('unit')">№94</span> · 78,4 м²</dd>
+        <dt>Цена договора</dt><dd><b>1 031,9 млн сум</b></dd>
+        <dt>Форма оплаты</dt><dd>Рассрочка 24 мес.</dd>
+        <dt>График</dt><dd><span class="link" onclick="go('schedule')">25 платежей</span></dd>
+      </dl>
+      <dl class="kv">
+        <dt>Покупатель</dt><dd>Турсунов Р. А., физлицо, доля 100%</dd>
+        <dt>Паспорт и ПИНФЛ</dt><dd class="muted">скрыто по правам</dd>
+        <dt>Статус помещения</dt><dd>${chip('На оформлении','info')}</dd>
+        <dt>Скан подписанного</dt><dd class="muted">не приложен</dd>
+      </dl>
+    </div>
+    <div class="alert warn" style="margin-top:16px">
+      <span><b>Юрист:</b> «Пункт 4.2 — уточнить дату ввода дома, в карточке дома стоит 2-й квартал 2027.» Документ возвращён на правку 09.11 в 11:40. В «Согласован» переводит только юрист (ДГ-08).</span></div>
+    <div style="margin-top:16px;display:flex;gap:9px;flex-wrap:wrap">
+      <span class="btn">Скачать DOCX</span>
+      <span class="btn plain">Отправить юристу повторно</span>
+      <span class="btn plain">График приложением</span>
+      <span class="btn ghost">Допсоглашение</span>
+    </div>`,'mb')}
+  <div class="paper mb">${filters([
+    {l:'Период',v:'2026 год',on:true},{l:'Проект',v:'Все'},{l:'Менеджер',v:'Все'},{l:'Тип',v:'Все'},
+    {l:'Статус',v:'Все'},{l:'Форма оплаты',v:'Все'},{l:'Источник',v:'Первое касание'},
+    '<span class="btn ghost">Excel</span>','<span class="btn ghost">PDF</span>'])}
+    <div class="sect">
+      <h3>Реестр договоров</h3>
+      <p class="hint">Суммы в UZS, USD справочно. Клик открывает карточку. На реестре строится отчёт по заключённым договорам (ДГ-12).</p>
+      ${table([{t:'Номер'},{t:'Дата'},{t:'Клиент'},{t:'Помещение'},{t:'Тип'},{t:'Форма оплаты'},
+               {t:'Сумма, млн сум',n:1},{t:'Статус'},{t:'Менеджер'}],[
+        {c:['<span class="link">K-2026/0147</span>','09.11.2026','Р. Турсунов','Дом 3 · №94','ДДУ','Рассрочка 24 мес.','1 031,9',
+            chip('На согласовании','warning'),'Азизова Д.']},
+        {c:['<span class="link">K-2026/0146</span>','07.11.2026','Г. Саидова','Дом 2 · №58','ДДУ','Рассрочка 36 мес.','655,0',
+            chip('Подписан','success'),'Азизова Д.']},
+        {c:['<span class="link">K-2026/0145</span>','05.11.2026','Ш. Назаров','Блок А · №112','Купли-продажи','100%','1 120,0',
+            chip('Подписан','success'),'Юсупова М.']},
+        {c:['<span class="link">K-2026/0144</span>','03.11.2026','А. Ибрагимов','Дом 3 · №71','Ипотечный','Ипотека','702,0',
+            chip('Согласован','info'),'Рахимов О.']},
+        {c:['<span class="link">K-2026/0143</span>','29.10.2026','Д. Хакимов','Дом 2 · №24','ДДУ','Рассрочка 12 мес.','398,0',
+            chip('Подписан','success'),'Азизова Д.']},
+        {c:['<span class="link">K-2026/0139</span>','14.10.2026','Б. Мирзаев','Дом 1 · №17','ДДУ','Рассрочка 24 мес.','512,0',
+            chip('Расторгнут','error'),'Садыков И.']},
+        {cls:'total',c:['Итого за период','','','','','','61 420,0','66 договоров','']}])}
+    </div>
+  </div>
+  <div class="grid g3">
+    ${sect('Шаблоны документов','Разрез: тип × проект × форма оплаты × язык; ипотечные — также по банку. Юрист меняет DOCX без разработчика (ДГ-04).',
+      table([{t:'Шаблон'},{t:'Язык'}],[
+        {c:['ДДУ · Янги Шахар · рассрочка','uz / ru / двуязычный']},
+        {c:['ДДУ · Янги Шахар · 100%','uz / ru / двуязычный']},
+        {c:['КП · все проекты','uz / ru']},
+        {c:['Ипотечный · Нацбанк','uz / ru']},
+        {c:['Ипотечный · Ипотека-банк','uz / ru']},
+        {c:['Допсоглашение · смена графика','uz / ru']},
+        {c:['Уведомление о расторжении','uz / ru']}]))}
+    ${sect('Допсоглашения','Каждое создаёт новую версию условий, история сохраняется (ДГ-10).',
+      table([{t:'Договор'},{t:'Предмет'},{t:'Дата'}],[
+        {c:['K-2026/0143','Изменение графика','02.11.2026']},
+        {c:['K-2026/0121','Смена помещения','21.10.2026']},
+        {c:['K-2026/0098','Добавлен покупатель','15.09.2026']}]))}
+    ${sect('Расторжения','Учитываются в отчётах отдельно и не меняют продажи прошлых периодов (ДГ-11).',
+      table([{t:'Договор'},{t:'Причина'},{t:'К возврату',n:1}],[
+        {c:['K-2026/0139','Банк отказал','84,0 млн']},
+        {c:['K-2026/0102','Отказ клиента','52,6 млн']},
+        {c:['K-2026/0077','Просрочка 90+','18,2 млн']}]))}
+  </div>`;
+</script>
+
+<!-- ======================= Блок 5. Финансы: расчёт и график ======================= -->
+<script>
+SCREENS.calc = () => head('Финансы сделки · помещение №94','Калькулятор оплаты',['ЦН-06','ЦН-02','ЦН-04','ЦН-08'],
+  'Формы оплаты, схемы и программы банков показываются рядом: цена, первоначальный взнос, платёж, срок, переплата к 100% и предпросмотр графика. Пример из ТЗ: квартира 78,4 м², базовая цена 985 млн сум.')
++ `<div class="paper mb">${filters([
+    {l:'Помещение',v:'Дом 3 · №94 · 78,4 м²',on:true},{l:'Прайс',v:'от 01.10.2026'},
+    {l:'ПВ',v:'30%'},{l:'Срок',v:'24 мес.'},{l:'Акции',v:'учитывать'},
+    '<span class="btn">Сформировать КП (PDF)</span>','<span class="btn ghost">Отправить в Telegram</span>'])}
+  <div class="sect">
+    <h3>Сравнение вариантов оплаты</h3>
+    <p class="hint">Ставки и наценки условные, как в примере ТЗ. Базовая цена — цена при 100% оплате; цены рассрочки и ипотеки считаются от неё по методу схемы.</p>
+    ${table([{t:'Вариант оплаты'},{t:'Метод'},{t:'Цена, млн сум',n:1},{t:'ПВ, млн сум',n:1},
+             {t:'Платёж, млн сум',n:1},{t:'Срок'},{t:'Сверх 100% цены, млн сум',n:1}],[
+      {c:['<b>100% оплата</b>','—','<b>985,0</b>','985,0','—','—','—']},
+      {c:['Рассрочка · наценка 8%, ПВ 30%','А — фиксированная наценка','1 063,8','319,1','31,0 в месяц','24 мес.','+78,8']},
+      {c:['Рассрочка · 12% на остаток, ПВ 30%','Б — удорожание на остаток','1 071,2','295,5','от 35,6 до 29,0','24 мес.','+86,2']},
+      {c:['Рассрочка · аннуитет 12%, ПВ 30%','В — равные платежи','1 072,4','295,5','32,4 в месяц','24 мес.','+87,4']},
+      {c:['Ипотека · 20% годовых, ПВ 25%','Аннуитет банка','985,0','246,3','13,0 в месяц банку','180 мес.','+1 596,7 процентов банку']},
+      {c:['Рассрочка ПВ + ипотека','ПВ по схеме, остаток — банк','985,0','246,3 за 12 мес.','20,5 + 13,0','12 + 180 мес.','+1 596,7 банку']}])}
+    <div class="legend" style="margin-top:14px">
+      <span>Обозначения: P₀ — базовая цена, D — ПВ, S = P₀ − D, r — годовая ставка, i = r ÷ 12, n — срок, m — наценка схемы</span>
+    </div>
+  </div></div>
+  <div class="grid g-2-1 mb">
+    ${sect('Предпросмотр графика · рассрочка, метод А','Платежи округляются до 1 000 сум, разница уходит в последний платёж; сумма графика всегда равна цене договора (ГП-03).',
+      table([{t:'№',n:1},{t:'Дата'},{t:'Тип'},{t:'Плательщик'},{t:'Сумма, млн',n:1},{t:'Остаток, млн',n:1}],[
+        {c:['1','16.11.2026','Первоначальный взнос','Клиент','319,100','744,700']},
+        {c:['2','05.12.2026','Регулярный','Клиент','31,029','713,671']},
+        {c:['3','05.01.2027','Регулярный','Клиент','31,029','682,642']},
+        {c:['4','05.02.2027','Регулярный','Клиент','31,029','651,613']},
+        {c:['5','05.03.2027','Регулярный','Клиент','31,029','620,584']},
+        {cls:'sub',c:['…','','… 19 платежей …','','','']},
+        {c:['25','05.11.2028','Регулярный, последний','Клиент','31,013','0,000']},
+        {cls:'total',c:['','','Итого','','1 063,800','']}]))}
+    <div>
+      ${sect('Субсидия ставки','ЦН-04. Разница между кредитом и платежами по льготной ставке, дисконтированными по рыночной.',
+        `<dl class="kv">
+          <dt>Рыночная ставка</dt><dd>20% годовых</dd>
+          <dt>Льготная ставка</dt><dd>12% годовых</dd>
+          <dt>Срок</dt><dd>180 мес.</dd>
+          <dt>Стоимость субсидии</dt><dd style="font-size:17px"><b>233,9 млн</b></dd>
+          <dt>Доля от цены</dt><dd>24%</dd>
+        </dl>
+        <div class="alert warn" style="margin-top:14px">
+          <span>Снижение ставки с 20% до 12% на весь срок стоило бы застройщику 24% цены — поэтому стоимость считается до запуска программы.</span></div>`,'mb')}
+      ${sect('Ипотечный расчёт',null,
+        `<div class="alert info">
+          <span>Расчёт информационный: окончательные условия определяет банк (ЦН-07).</span></div>
+        <dl class="kv" style="margin-top:14px">
+          <dt>Банк</dt><dd>Нацбанк · «Янги уй»</dd>
+          <dt>Ставка</dt><dd>20% годовых</dd>
+          <dt>Мин. ПВ</dt><dd>25%</dd>
+          <dt>Макс. срок</dt><dd>180 мес.</dd>
+          <dt>Аккредитация</dt><dd>${chip('Проект аккредитован','success')}</dd>
+        </dl>`,'mb')}
+      ${sect('Коммерческое предложение',null,
+        `<p class="hint">PDF на узбекском или русском с планировкой, ценой и выбранными вариантами оплаты. Уходит клиенту в Telegram или SMS-ссылкой и пишется в ленту событий. КП действует, пока действует прайс (ЦН-08).</p>
+         <div style="display:flex;flex-direction:column;gap:7px">
+           <span class="btn">Собрать КП</span><span class="btn plain">История КП по сделке</span>
+         </div>`)}
+    </div>
+  </div>`;
+
+SCREENS.schedule = () => head('Финансы сделки · договор K-2026/0146','График платежей',['ГП-04','ФН-09','ФН-13','ФН-14'],
+  'Статусы строк: ожидается, оплачен, частично, просрочен. Платёж гасит ближайшие неоплаченные строки по порядку, переплата идёт авансом. Пени — отдельная строка задолженности.')
++ `<div class="grid g4 mb">
+    ${kpi('Сумма договора','655,0 млн','Г. Саидова · Дом 2 · №58')}
+    ${kpi('Оплачено','214,8 млн','32,8% · 6 из 37 строк')}
+    ${kpi('Просрочено','11,4 млн','2 строки · 23 дня')}
+    ${kpi('Пени начислено','0,42 млн','0,08% в день, предел 10%')}
+  </div>
+  <div class="paper mb">${filters([
+    {l:'Статус строк',v:'Все',on:true},{l:'Тип',v:'Все'},{l:'Плательщик',v:'Все'},
+    '<span class="btn">Внести платёж</span>','<span class="btn plain">Расчёт долга (PDF)</span>',
+    '<span class="btn ghost">График приложением к договору</span>'])}
+    <div class="sect">
+      ${table([{t:'№',n:1},{t:'Дата'},{t:'Тип'},{t:'Плательщик'},{t:'Сумма, млн',n:1},
+               {t:'Оплачено, млн',n:1},{t:'Статус'},{t:'Документ'}],[
+        {c:['1','22.06.2026','Задаток','Клиент','18,400','18,400',chip('Оплачен','success'),'ПКО-0412']},
+        {c:['2','05.07.2026','Первоначальный взнос','Клиент','178,100','178,100',chip('Оплачен','success'),'п/п 1188']},
+        {c:['3','05.08.2026','Регулярный','Клиент','13,070','13,070',chip('Оплачен','success'),'п/п 1241']},
+        {c:['4','05.09.2026','Регулярный','Клиент','13,070','13,070',chip('Оплачен','success'),'п/п 1302']},
+        {c:['5','05.10.2026','Регулярный','Клиент','13,070','5,200',chip('Частично','warning'),'п/п 1377']},
+        {c:['6','17.10.2026','Пени','Клиент','0,420','—',chip('Просрочен','error'),'начислено системой']},
+        {c:['7','05.11.2026','Регулярный','Клиент','13,070','—',chip('Просрочен','error'),'—']},
+        {c:['8','05.12.2026','Регулярный','Клиент','13,070','—',chip('Ожидается','neutral'),'—']},
+        {c:['9','при вводе дома','Дополнительный','Клиент','26,000','—',
+            chip('Ожидается · 2 кв. 2027','info'),'<span class="muted">дата из карточки дома</span>']},
+        {cls:'sub',c:['…','','… 28 платежей …','','','','','']},
+        {cls:'total',c:['','','Итого','','655,000','214,800','','']}])}
+      <p class="hint" style="margin:12px 0 0">Льготный период до просрочки — 3 дня (настройка). После подписания график меняется только допсоглашением; предыдущие версии сохраняются (ФН-04).</p>
+    </div>
+  </div>
+  <div class="grid g3">
+    ${sect('Поступления по каналам','Каналы: 1С, импорт выписки, касса (ФН-07).',
+      table([{t:'Канал'},{t:'Платежей',n:1},{t:'Сумма, млн',n:1}],[
+        {c:['Интеграция с 1С','4','204,240']},
+        {c:['Касса','1','5,200']},
+        {c:['Payme / Click / Uzum','1','5,360']},
+        {c:['Импорт выписки','—','—']},
+        {cls:'total',c:['Итого','6','214,800']}]))}
+    ${sect('Неразобранные','Платёж привязывается по номеру договора или ПИНФЛ в назначении; непривязанные попадают в очередь (ФН-08).',
+      `<div class="alert warn" style="margin-bottom:12px"><span><b>5</b> платежей на 42,8 млн сум ждут разбора</span></div>
+       ${table([{t:'Дата'},{t:'Сумма, млн',n:1},{t:''}],[
+         {c:['08.11.2026','13,070','<span class="link">Привязать</span>']},
+         {c:['07.11.2026','5,000','<span class="link">Привязать</span>']},
+         {c:['06.11.2026','18,400','<span class="link">Привязать</span>']},
+         {c:['05.11.2026','6,330','<span class="link">Привязать</span>']}])}`)}
+    ${sect('Напоминания','ФН-15: клиенту за N дней до платежа и при просрочке, ответственному — задача.',
+      `<div class="feed">
+        <div class="ev"><div class="m">08.11.2026</div><div class="x">SMS: просрочка 3 дня, 13,07 млн сум</div></div>
+        <div class="ev"><div class="m">02.11.2026</div><div class="x">Telegram: платёж 05.11, 13,07 млн сум</div></div>
+        <div class="ev"><div class="m">02.11.2026</div><div class="x">Задача менеджеру: связаться с клиентом</div></div>
+        <div class="ev"><div class="m">30.10.2026</div><div class="x">SMS: напоминание за 5 дней</div></div>
+      </div>`)}
+  </div>`;
+</script>
+
+<!-- ======================= Дебиторка, ипотека, взыскание ======================= -->
+<script>
+SCREENS.debt = () => head('Финансы сделки','Дебиторка',['ФН-16','ФН-13','ФН-14'],
+  'Реестр дебиторской задолженности по срокам просрочки в разрезе клиента, договора и проекта. Все цифры кликабельны.')
++ `<div class="paper mb">${filters([
+    {l:'На дату',v:'09.11.2026',on:true},{l:'Проект',v:'Все'},{l:'Корзина',v:'Все'},
+    {l:'Менеджер',v:'Все'},'<span class="btn ghost">Excel</span>','<span class="btn ghost">PDF</span>'])}</div>
+  <div class="grid g4 mb">
+    ${kpi('Просроченная задолженность','1,24 млрд','основной долг + пени')}
+    ${kpi('Договоров с просрочкой','47','из 284 действующих · 16,5%')}
+    ${kpi('Пени начислено','38,6 млн','списано за период 4,2 млн')}
+    ${kpi('Собираемость платежей','93%','поступило ÷ начислено за период')}
+  </div>
+  ${sect('По корзинам просрочки',null,
+    table([{t:'Корзина'},{t:'Договоров',n:1},{t:'Основной долг, млн',n:1},{t:'Пени, млн',n:1},
+           {t:'Итого, млн',n:1},{t:'Доля',n:1}],[
+      {c:['1 – 30 дней','<span class="link">24</span>','412,6','3,1','415,7','33%']},
+      {c:['31 – 60 дней','<span class="link">11</span>','286,4','7,8','294,2','24%']},
+      {c:['61 – 90 дней','<span class="link">6</span>','198,0','9,4','207,4','17%']},
+      {c:['90+ дней','<span class="link">6</span>','304,1','18,3','322,4','26%']},
+      {cls:'total',c:['Итого','47','1 201,1','38,6','1 239,7','100%']}]),'mb')}
+  <div class="grid g2">
+    ${sect('Крупнейшие должники',null,
+      table([{t:'Клиент'},{t:'Договор'},{t:'Просрочка'},{t:'Долг, млн',n:1},{t:'Стадия'}],[
+        {c:['Б. Мирзаев','K-2026/0121','142 дня','104,2',chip('Передано юристу','error')]},
+        {c:['К. Рустамов','K-2026/0088','98 дней','86,0',chip('Претензия','error')]},
+        {c:['Ф. Нурматова','K-2026/0104','71 день','62,4',chip('Реструктуризация','warning')]},
+        {c:['Г. Саидова','K-2026/0146','23 дня','11,8',chip('Переговоры','warning')]},
+        {c:['И. Азимов','K-2026/0132','9 дней','13,1',chip('Напоминание','info')]}]))}
+    ${sect('Переходы между корзинами','За октябрь 2026.',
+      `<div class="bars">
+        ${brow('1–30 → 31–60',38,'9 дог.','w')}
+        ${brow('31–60 → 61–90',21,'5 дог.','w')}
+        ${brow('61–90 → 90+',12,'3 дог.','e')}
+        ${brow('Погашено полностью',46,'11 дог.')}
+        ${brow('Реструктуризировано',8,'2 дог.')}
+      </div>
+      <p class="hint" style="margin-top:14px">Ожидаемый кредит банка по ипотеке в портфель взыскания не входит (ВЗ-10, ИП-07).</p>`)}
+  </div>`;
+
+const BANKS = [
+  ['Нацбанк','Янги уй','20%','25%','180 мес.','1,5 млрд',chip('Аккредитован','success')],
+  ['Ипотека-банк','Оилавий','21%','20%','240 мес.','1,2 млрд',chip('Аккредитован','success')],
+  ['Асака-банк','Стандарт','24%','30%','120 мес.','900 млн',chip('Аккредитован','success')],
+  ['Trustbank','Субсидия 12%','12%','25%','180 мес.','1,0 млрд',chip('Субсидия застройщика','warning')],
+  ['Хамкорбанк','Молодая семья','18%','15%','180 мес.','800 млн',chip('На аккредитации','info')]
+];
+
+SCREENS.mortgage = () => head('Финансы сделки','Ипотека',['ИП-04','ИП-01','ИП-07','ИП-10'],
+  'Ипотечная сделка идёт по обычной воронке плюс заявки в банки. В графике договора кредит банка — отдельная строка с плательщиком «банк».')
++ `<div class="grid g4 mb">
+    ${kpi('Заявок за период','38','в 5 банков')}
+    ${kpi('Одобрено','24','63% · средний срок 9 дней')}
+    ${kpi('Отказов','7','чаще всего — кредитная история')}
+    ${kpi('Ожидается от банков','842 млн','по 6 подписанным договорам')}
+  </div>
+  ${sect('Заявка №318 · А. Ибрагимов · Нацбанк «Янги уй»',null,
+    `<div class="steps" style="margin-bottom:16px">
+      <div class="step done"><div class="n">Документы</div><div class="w">21.10.2026</div></div>
+      <div class="step done"><div class="n">Подана в банк</div><div class="w">24.10.2026</div></div>
+      <div class="step done"><div class="n">На рассмотрении</div><div class="w">25.10.2026</div></div>
+      <div class="step done"><div class="n">Одобрена</div><div class="w">31.10.2026</div></div>
+      <div class="step now"><div class="n">Оценка объекта</div><div class="w">с 03.11.2026</div></div>
+      <div class="step"><div class="n">Кредитный договор</div><div class="w">—</div></div>
+      <div class="step"><div class="n">Кредит перечислен</div><div class="w">—</div></div>
+    </div>
+    <div class="grid g3">
+      <dl class="kv">
+        <dt>Сделка</dt><dd><span class="link" onclick="go('deal')">№2011</span></dd>
+        <dt>Помещение</dt><dd>Дом 3 · №71 · 54,2 м²</dd>
+        <dt>Цена</dt><dd>702,0 млн</dd>
+        <dt>Основная заявка</dt><dd>${chip('Да','success')}</dd>
+      </dl>
+      <dl class="kv">
+        <dt>ПВ клиента</dt><dd>175,5 млн (25%)</dd>
+        <dt>Кредит банка</dt><dd><b>526,5 млн</b></dd>
+        <dt>Ставка</dt><dd>20% годовых, 180 мес.</dd>
+        <dt>Срок перечисления</dt><dd>10 рабочих дней после подписания</dd>
+      </dl>
+      <dl class="kv">
+        <dt>Бронь</dt><dd>${chip('Продлена автоматически до 24.11','info')}</dd>
+        <dt>Чек-лист документов</dt><dd>7 из 8 ${chip('Нет справки о доходах','warning')}</dd>
+        <dt>Заявки в другие банки</dt><dd>Асака-банк — отказ</dd>
+      </dl>
+    </div>
+    <div class="alert info" style="margin-top:16px">
+      <span>Пока заявка подана или на рассмотрении, бронь продлевается автоматически до ожидаемой даты решения, но не дольше 30 дней — без согласования РОП, в отличие от обычного продления (ИП-06).</span></div>`,'mb')}
+  <div class="grid g-2-1 mb">
+    ${sect('Заявки в банки',null,
+      table([{t:'№'},{t:'Клиент'},{t:'Банк и программа'},{t:'Кредит, млн',n:1},{t:'Подана'},{t:'Статус'}],[
+        {c:['318','А. Ибрагимов','Нацбанк · Янги уй','526,5','24.10',chip('Оценка объекта','info')]},
+        {c:['317','О. Камилов','Ипотека-банк · Оилавий','802,0','22.10',chip('Кредит перечислен','success')]},
+        {c:['316','Ж. Эргашев','Нацбанк · Янги уй','765,0','20.10',chip('Кредитный договор подписан','success')]},
+        {c:['315','М. Турсунова','Асака-банк · Стандарт','410,0','18.10',chip('Отказ · кредитная история','error')]},
+        {c:['314','Н. Юлдашев','Trustbank · Субсидия 12%','486,0','16.10',chip('На рассмотрении','warning')]},
+        {c:['313','С. Абдуллаева','Хамкорбанк · Молодая семья','680,0','14.10',chip('Одобрена','success')]}]))}
+    ${sect('Ожидаемые поступления от банков','Задержка банка показывается отдельно и не считается просрочкой клиента (ИП-07).',
+      table([{t:'Договор'},{t:'Сумма, млн',n:1},{t:'Ожидается'}],[
+        {c:['K-2026/0144','526,5','21.11.2026']},
+        {c:['K-2026/0141','765,0','14.11.2026']},
+        {c:['K-2026/0138','802,0',chip('Перечислен','success')]},
+        {c:['K-2026/0135','316,0',chip('Задержка 6 дней','warning')]}]))}
+  </div>
+  ${sect('Справочник банков и программ','Ведут директор и администратор (ИП-01).',
+    table([{t:'Банк'},{t:'Программа'},{t:'Ставка',n:1},{t:'Мин. ПВ',n:1},{t:'Макс. срок'},{t:'Макс. сумма',n:1},{t:'Статус'}],
+      BANKS.map(b=>({c:b}))))}`;
+
+const VZ_STAGES = [
+  ['Напоминание','1 – 5 дней просрочки','Автоматические SMS и Telegram, задача менеджеру',14,'info'],
+  ['Переговоры','с 6-го дня, закрепление за специалистом','Звонки, выяснение причины, обещание оплаты',16,'warning'],
+  ['Обещание оплаты','по договорённости с клиентом','Контроль даты и суммы',7,'warning'],
+  ['Претензия','30 дней','Претензия по шаблону, согласование юриста, вручение',5,'error'],
+  ['Реструктуризация','по решению директора','Новый график, допсоглашение',2,'warning'],
+  ['Передано юристу','90 дней','Пакет документов, судебная стадия','3','error'],
+  ['Закрыто','долг погашен или договор расторгнут','Снятие закрепления',11,'success']
+];
+
+SCREENS.collect = () => head('Финансы сделки','Взыскание долга',['ВЗ-02','ВЗ-03','ВЗ-05','ВЗ-11'],
+  'Просроченные договоры переходят к специалисту по взысканию: своя очередь, стадии работы, шаблоны документов и отчёт по возврату. Система предлагает следующую стадию по дням просрочки, решение принимает специалист.')
++ `<div class="grid g4 mb">
+    ${kpi('Портфель просрочки','1,24 млрд','47 договоров закреплено')}
+    ${kpi('Собрано за период','386 млн','11 договоров закрыто')}
+    ${kpi('Процент возврата','31%','собрано ÷ просрочка на начало')}
+    ${kpi('Нарушенных обещаний','9','из 23 обещаний оплаты')}
+  </div>
+  ${sect('Стадии работы','Переход между стадиями пишется в историю (ВЗ-02).',
+    `<div class="grid g4" style="gap:10px">
+      ${VZ_STAGES.map(s=>`<div style="border:1px solid var(--line);border-radius:8px;padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <b style="font-size:13px">${s[0]}</b><span class="chip ${s[4]}">${s[3]}</span></div>
+        <div class="muted" style="font-size:11px;margin:4px 0 6px">${s[1]}</div>
+        <div style="font-size:12px">${s[2]}</div></div>`).join('')}
+    </div>`,'mb')}
+  <div class="paper mb">${filters([
+    {l:'Специалист',v:'Хасанов А.',on:true},{l:'Стадия',v:'Все'},{l:'Проект',v:'Все'},
+    {l:'Корзина',v:'Все'},'<span class="btn">Расчёт долга (PDF)</span>',
+    '<span class="btn plain">Претензия</span>','<span class="btn plain">Акт сверки</span>'])}
+    <div class="sect">
+      <h3>Очередь должников</h3>
+      <p class="hint">Договор с просрочкой дольше 5 дней после льготного периода закрепляется за специалистом. Менеджер продаж остаётся в сделке, но задачи по долгу уходят специалисту (ВЗ-01).</p>
+      ${table([{t:'Клиент'},{t:'Договор'},{t:'Просрочка, дн.',n:1},{t:'Долг, млн',n:1},{t:'Пени, млн',n:1},
+               {t:'Стадия'},{t:'Обещание оплаты'},{t:'Нарушений',n:1}],[
+        {c:['Б. Мирзаев','<span class="link">K-2026/0121</span>','142','104,2','8,3',
+            chip('Передано юристу','error'),'—','3']},
+        {c:['К. Рустамов','<span class="link">K-2026/0088</span>','98','86,0','5,1',
+            chip('Претензия','error'),'—','2']},
+        {c:['Ф. Нурматова','<span class="link">K-2026/0104</span>','71','62,4','3,8',
+            chip('Реструктуризация','warning'),'—','1']},
+        {c:['Г. Саидова','<span class="link">K-2026/0146</span>','23','11,4','0,42',
+            chip('Переговоры','warning'),'15.11.2026 · 13,1 млн','0']},
+        {c:['И. Азимов','<span class="link">K-2026/0132</span>','9','13,1','0,09',
+            chip('Напоминание','info'),'12.11.2026 · 13,1 млн','0']},
+        {c:['Т. Сафаров','<span class="link">K-2026/0119</span>','34','26,8','1,2',
+            chip('Обещание оплаты','warning'),'20.11.2026 · 26,8 млн','1']},
+        {c:['Э. Каримова','<span class="link">K-2026/0097</span>','6','7,2','0,02',
+            chip('Переговоры','warning'),'—','0']}])}
+    </div>
+  </div>
+  <div class="grid g3">
+    ${sect('Документы по шаблонам','На узбекском и русском. Претензии и уведомления согласует юрист (ВЗ-05, ДГ-08).',
+      table([{t:'Документ'},{t:'Согласование'}],[
+        {c:['Расчёт задолженности','не требуется']},
+        {c:['Претензия','юрист']},
+        {c:['Акт сверки взаиморасчётов','не требуется']},
+        {c:['Уведомление о расторжении','юрист']}]) +
+      `<p class="hint" style="margin:12px 0 0">Расчёт задолженности строится на любую дату: основной долг по строкам графика, пени, итого (ВЗ-04).</p>`)}
+    ${sect('Правила контакта','ВЗ-06.',
+      `<dl class="kv">
+        <dt>Разрешённые часы</dt><dd>09:00 – 20:00</dd>
+        <dt>Не чаще</dt><dd>2 раз в день</dd>
+        <dt>Шаблоны</dt><dd>по стадии, с суммой и датой</dd>
+        <dt>Звонки</dt><dd>из карточки, с записью</dd>
+      </dl>
+      <div class="alert warn" style="margin-top:14px">
+        <span>Новая бронь для клиента с просрочкой больше 30 дней требует согласования директора (ВЗ-09).</span></div>`)}
+    ${sect('Судебная стадия','Пакет собирается автоматически: договор, график, расчёт долга, претензия с отметкой о вручении (ВЗ-08).',
+      table([{t:'Договор'},{t:'Дело'},{t:'Статус'}],[
+        {c:['K-2026/0121','№ 4-1182/26',chip('Решение в нашу пользу','success')]},
+        {c:['K-2026/0066','№ 4-0974/26',chip('Исполнение','info')]},
+        {c:['K-2026/0041','—',chip('Готовится иск','warning')]}]))}
+  </div>`;
+</script>
+
+<!-- ======================= Блоки 6 и 7. Коммуникации, отчёты ======================= -->
+<script>
+SCREENS.comms = () => head('Коммуникации','Звонки и Telegram',['КМ-02','КМ-05','КМ-07','КМ-09'],
+  'Звонки, Telegram и SMS пишутся в карточку клиента. Модуль не привязан к провайдеру: требуется SIP-транк с узбекскими номерами, API событий звонка, выгрузка записей и пул номеров для коллтрекинга.')
++ `<div class="grid g4 mb">
+    ${kpi('Входящих за период','1 642','принято 1 418 · 86%')}
+    ${kpi('Пропущено','224','13,6% · перезвонено 198')}
+    ${kpi('Время до перезвона','21 мин','медиана · SLA 30 мин')}
+    ${kpi('Результативных','1 104','разговор дольше 30 секунд')}
+  </div>
+  <div class="paper mb">${filters([
+    {l:'Период',v:'Октябрь 2026',on:true},{l:'Направление',v:'Все'},{l:'Сотрудник',v:'Все'},
+    {l:'Номер коллтрекинга',v:'Все'},{l:'Результат',v:'Все'},'<span class="btn ghost">Excel</span>'])}
+    <div class="sect">
+      <h3>Журнал звонков</h3>
+      ${table([{t:'Дата и время'},{t:'Направление'},{t:'Номер'},{t:'Сотрудник'},{t:'Ожидание'},
+               {t:'Длительность'},{t:'Номер коллтрекинга'},{t:'Результат'},{t:'Запись'}],[
+        {c:['09.11 10:12',chip('Входящий','info'),'+998 90 ··· 67','Садыков И.','8 с','4:12','+998 71 200-11-01 · Instagram',
+            chip('Целевая','success'),'<span class="link">▶ 4:12</span>']},
+        {c:['09.11 09:58',chip('Исходящий','neutral'),'+998 93 ··· 21','Азизова Д.','—','6:40','—',
+            chip('Результативный','success'),'<span class="link">▶ 6:40</span>']},
+        {c:['09.11 09:41',chip('Пропущенный','error'),'+998 97 ··· 44','—','32 с','—','+998 71 200-11-04 · Билборд',
+            chip('Задача «перезвонить»','warning'),'—']},
+        {c:['09.11 09:30',chip('Входящий','info'),'+998 91 ··· 08','Рахимов О.','5 с','1:18','+998 71 200-11-02 · Сайт',
+            chip('Нецелевая · риелтор','neutral'),'<span class="link">▶ 1:18</span>']},
+        {c:['08.11 18:22',chip('Входящий','info'),'+998 90 ··· 55','Юсупова М.','11 с','9:05','+998 71 200-11-01 · Instagram',
+            chip('Назначен визит','success'),'<span class="link">▶ 9:05</span>']},
+        {c:['08.11 17:04',chip('Исходящий','neutral'),'+998 94 ··· 12','Садыков И.','—','0:22','—',
+            chip('Не дозвонился','neutral'),'—']}])}
+      <p class="hint" style="margin:12px 0 0">Входящий с нового номера создаёт обращение с источником по номеру коллтрекинга. Звонок известного клиента идёт его ответственному, при недоступности — в колл-центр (КМ-03).</p>
+    </div>
+  </div>
+  <div class="grid g-2-1 mb">
+    ${sect('Нагрузка по часам','Тепловая карта принятых звонков, 09:00 – 20:00 (ОТ, отчёт «Звонки»).',
+      `<div class="tw"><div class="hm">
+        <div class="hl"></div>${['9','10','11','12','13','14','15','16','17','18','19','20'].map(h=>`<div class="hl">${h}</div>`).join('')}
+        ${[['Пн',[14,38,52,61,34,48,66,72,58,41,22,9]],
+           ['Вт',[12,34,49,58,31,45,62,68,54,38,19,7]],
+           ['Ср',[16,41,55,64,36,51,70,76,61,44,24,10]],
+           ['Чт',[13,36,50,59,33,47,64,70,56,40,21,8]],
+           ['Пт',[18,44,58,68,38,54,74,81,66,48,27,11]],
+           ['Сб',[21,48,62,71,42,58,69,64,47,31,14,5]],
+           ['Вс',[8,18,26,31,19,24,29,27,20,13,6,2]]].map(([d,v])=>
+          `<div class="hl">${d}</div>` + v.map(n=>{
+            const a=(n/81).toFixed(2);
+            return `<div class="hc" style="background:color-mix(in srgb,var(--primary) ${Math.round(a*100)}%,transparent);
+              color:${a>0.5?'#fff':'var(--text)'}">${n}</div>`;}).join('')).join('')}
+      </div></div>
+      <p class="hint" style="margin-top:12px">Пик — 15:00 – 17:00. Данные используются для планирования смен операторов (ЛД-09).</p>`)}
+    ${sect('Статический коллтрекинг','Отдельный номер на каждый офлайн-канал и площадку (КМ-06).',
+      table([{t:'Номер'},{t:'Канал'},{t:'Звонков',n:1}],[
+        {c:['200-11-01','Instagram','612']},
+        {c:['200-11-02','Сайт','418']},
+        {c:['200-11-03','Telegram','286']},
+        {c:['200-11-04','Билборд Чиланзар','142']},
+        {c:['200-11-05','Радио','98']},
+        {c:['200-11-06','Основной номер','86']}]))}
+  </div>
+  <div class="grid g3">
+    ${sect('Telegram-бот компании','На узбекском и русском: заявка с выбором проекта и комнатности, телефон — кнопкой «Поделиться контактом» (КМ-07).',
+      `<div class="feed">
+        <div class="ev"><div class="m">09.11 10:40 · бот</div><div class="x">Новая заявка: Чинор Парк, 2 комнаты, +998 93 ··· 21</div></div>
+        <div class="ev"><div class="m">09.11 10:12 · клиент</div><div class="x">«Есть ли рассрочка на 36 месяцев?»</div></div>
+        <div class="ev"><div class="m">09.11 10:14 · Азизова Д.</div><div class="x">Ответ отправлен из CRM</div></div>
+      </div>
+      <p class="hint" style="margin-top:10px">Переписка видна в карточке клиента, менеджер отвечает из CRM (КМ-08).</p>`)}
+    ${sect('Личные Telegram менеджеров','Через Telegram Business: бот получает сообщения клиентов и отвечает от имени менеджера (КМ-09).',
+      table([{t:'Менеджер'},{t:'Аккаунт'},{t:'Статус'}],[
+        {c:['Азизова Д.','@d_azizova',chip('Подключён','success')]},
+        {c:['Юсупова М.','@m_yusupova',chip('Подключён','success')]},
+        {c:['Рахимов О.','@o_rahimov',chip('Нужен Premium','warning')]},
+        {c:['Садыков И.','—',chip('Не подключён','neutral')]}]) +
+      `<p class="hint" style="margin:12px 0 0">Условия: рабочие аккаунты на номерах компании, Telegram Premium, личные чаты исключены в настройках бота.</p>`)}
+    ${sect('Сервисные SMS','В MVP только сервисные: напоминания о платежах и подтверждение брони. Язык — из карточки клиента (КМ-11).',
+      table([{t:'Шаблон'},{t:'Язык'},{t:'Отправлено',n:1}],[
+        {c:['Подтверждение брони','uz / ru','95']},
+        {c:['Напоминание за 5 дней','uz / ru','412']},
+        {c:['Просрочка платежа','uz / ru','168']},
+        {c:['Код 2FA','uz / ru','1 204']}]))}
+  </div>`;
+
+let RTAB = 'src';
+function setRTab(t){ RTAB=t; render(); }
+
+const R_TABS = [['src','Источники лидов','ОТ, пример из ТЗ'],['funnel','Воронка','ОТ'],
+  ['calls','Звонки','ОТ'],['kpi','KPI сотрудников','ОТ'],['plan','План / факт','ОТ-06'],
+  ['mkt','Маркетинговые метрики','МК-01…11'],['dict','Словарь показателей','ОТ-14']];
+
+const R_BODY = {
+src: () => sect('Отчёт по источникам · когортный режим',
+  'Считается по обращениям. В примере digital даёт 77% обращений, но только 47% договоров — именно такие разрывы отчёт должен показывать. Каждая цифра открывает список записей.',
+  table([{t:'Тип / источник'},{t:'Обращения',n:1},{t:'Целевые',n:1},{t:'Визиты',n:1},
+         {t:'Брони',n:1},{t:'Договоры',n:1},{t:'Конверсия в договор',n:1}],[
+    {cls:'group',c:['Digital','<span class="link">910</span>','590','173','47','31','3,4%']},
+    {cls:'sub',c:['— Instagram','420','260','70','18','12','2,9%']},
+    {cls:'sub',c:['— Telegram','310','210','62','17','11','3,5%']},
+    {cls:'sub',c:['— Сайт','180','120','41','12','8','4,4%']},
+    {c:['Офлайн-реклама','<span class="link">95</span>','70','30','9','6','6,3%']},
+    {c:['Агенты','<span class="link">60</span>','55','33','14','10','16,7%']},
+    {c:['Рекомендации','<span class="link">45</span>','40','25','10','8','17,8%']},
+    {c:['Визит в офис','<span class="link">70</span>','66','66','15','11','15,7%']},
+    {cls:'total',c:['Итого','1 180','821','327','95','66','5,6%']}])),
+
+funnel: () => sect('Отчёт по воронке','Точка передачи «колл-центр → продажи» выделена. Отчёт считается по истории событий, а не по текущему состоянию (ОТ-03).',
+  table([{t:'Этап'},{t:'Вошло',n:1},{t:'Конверсия в следующий',n:1},{t:'От первого этапа',n:1},
+         {t:'Отказы',n:1},{t:'Медианное время, дн.',n:1}],[
+    {c:['Новая','1 180','95,0%','100%','59','0,2']},
+    {c:['В работе','1 121','73,2%','95,0%','300','1,4']},
+    {cls:'group',c:['<b>Целевая</b> · передача в продажи','<b>821</b>','51,3%','69,6%','—','2,1']},
+    {c:['Визит назначен','421','77,7%','35,7%','94','3,6']},
+    {c:['Визит состоялся','327','29,1%','27,7%','232','9,8']},
+    {c:['Бронь','95','69,5%','8,1%','29','4,2']},
+    {c:['Договор','66','100%','5,6%','—','16,4']},
+    {cls:'total',c:['Продано','66','','5,6%','214 отказов','38,0 цикл сделки']}])),
+
+calls: () => sect('Отчёт по звонкам','Разрезы: дни, часы, сотрудники, номера коллтрекинга.',
+  table([{t:'Сотрудник'},{t:'Входящие',n:1},{t:'Принято',n:1},{t:'Пропущено',n:1},{t:'Доля пропущенных',n:1},
+         {t:'Перезвон в SLA',n:1},{t:'Исходящие',n:1},{t:'Результативные',n:1},{t:'Ср. длительность'}],[
+    {c:['Садыков И.','486','428','58','11,9%','52','214','312','3:48']},
+    {c:['Рахимов О.','412','344','68','16,5%','54','186','248','3:12']},
+    {c:['Азизова Д.','318','292','26','8,2%','25','264','286','5:06']},
+    {c:['Юсупова М.','286','264','22','7,7%','22','198','242','4:42']},
+    {c:['Остальные','140','90','50','35,7%','45','62','16','1:54']},
+    {cls:'total',c:['Итого','1 642','1 418','224','13,6%','198','924','1 104','4:02']}])),
+
+kpi: () => `<div class="grid g2">
+  ${sect('KPI колл-центра',null,
+    table([{t:'Оператор'},{t:'Обработано',n:1},{t:'SLA',n:1},{t:'Доля целевых',n:1},{t:'Передано',n:1}],[
+      {c:['Садыков И.','486','94%','71%','342']},
+      {c:['Рахимов О.','412','89%','66%','272']},
+      {c:['Усманова Л.','282','96%','74%','209']},
+      {cls:'total',c:['Итого','1 180','92%','69,6%','823']}]))}
+  ${sect('KPI продаж',null,
+    table([{t:'Менеджер'},{t:'Визиты',n:1},{t:'Брони',n:1},{t:'Договоры',n:1},{t:'Сумма, млн',n:1},
+           {t:'Без задач',n:1},{t:'Просрочено задач',n:1}],[
+      {c:['Азизова Д.','98','31','22','21 040','1','0']},
+      {c:['Юсупова М.','86','26','18','17 280','2','1']},
+      {c:['Рахимов О.','74','21','14','12 460','4','3']},
+      {c:['Садыков И.','69','17','12','10 640','5','4']},
+      {cls:'total',c:['Итого','327','95','66','61 420','12','8']}]))}</div>`,
+
+plan: () => sect('План / факт · месяц × проект × менеджер',
+  'Планы вводят РОП или директор вручную либо импортом из Excel. Факт чистый: подписанные в периоде минус расторгнутые в периоде (ОТ-06).',
+  table([{t:'Разрез'},{t:'План, дог.',n:1},{t:'Факт, дог.',n:1},{t:'%',n:1},
+         {t:'План, млн',n:1},{t:'Факт, млн',n:1},{t:'%',n:1},{t:'Поступления, млн',n:1}],[
+    {cls:'group',c:['Янги Шахар','44','42','95%','40 000','39 180','98%','11 420']},
+    {cls:'sub',c:['— Азизова Д.','18','22','122%','16 000','21 040','132%','6 280']},
+    {cls:'sub',c:['— Садыков И.','14','12','86%','12 000','10 640','89%','2 940']},
+    {cls:'sub',c:['— Рахимов О.','12','8','67%','12 000','7 500','63%','2 200']},
+    {cls:'group',c:['Чинор Парк','26','24','92%','24 000','22 240','93%','6 880']},
+    {cls:'sub',c:['— Юсупова М.','18','18','100%','16 000','17 280','108%','5 120']},
+    {cls:'sub',c:['— Рахимов О.','8','6','75%','8 000','4 960','62%','1 760']},
+    {cls:'total',c:['Итого','70','66','94%','64 000','61 420','96%','18 300']}])),
+
+mkt: () => `${sect('Маркетинговые метрики',
+  'Считаются из расходов, которые маркетолог вносит по источникам и кампаниям. Каналы сравниваются по CPQL и CPO, а не по CPL: у сайта самый дорогой лид среди digital, но самая дешёвая продажа.',
+  table([{t:'Источник'},{t:'Расходы, млн сум',n:1},{t:'CPL, тыс. сум',n:1},{t:'CPQL, тыс. сум',n:1},
+         {t:'CPO, млн сум',n:1},{t:'ДРР',n:1}],[
+    {c:['Instagram','84','200','323','7,0','7,1%']},
+    {c:['Telegram','62','200','295','5,6','6,0%']},
+    {c:['Сайт','42','233','350','5,3','5,3%']},
+    {c:['Офлайн-реклама','57','600','814','9,5','10,1%']},
+    {cls:'total',c:['Итого','245','208','298','3,7','6,6%']}]),'mb')}
+  <div class="grid g2">
+    ${sect('Формулы',null,
+      table([{t:'Метрика'},{t:'Формула'}],[
+        {c:['CPL','Расходы ÷ обращения']},
+        {c:['CPQL','Расходы ÷ целевые обращения']},
+        {c:['CPV','Расходы ÷ состоявшиеся визиты']},
+        {c:['CPB','Расходы ÷ брони']},
+        {c:['CPO','Расходы ÷ чистые договоры']},
+        {c:['CAC','(Расходы + комиссии агентов) ÷ новые покупатели']},
+        {c:['ДРР','Расходы ÷ сумма договоров × 100%']},
+        {c:['ROMI','(Сумма договоров × маржинальность − расходы) ÷ расходы × 100%']}]))}
+    ${sect('Правила расчёта',null,
+      `<dl class="kv">
+        <dt>МК-02</dt><dd>Расход в USD пересчитывается по курсу ЦБ на дату документа</dd>
+        <dt>МК-03</dt><dd>Месячный расход распределяется по дням равномерно</dd>
+        <dt>МК-04</dt><dd>Расход без проекта распределяется пропорционально обращениям</dd>
+        <dt>МК-05</dt><dd>По умолчанию когортный режим</dd>
+        <dt>МК-07</dt><dd>В знаменатель идут чистые договоры, расторгнутые исключаются</dd>
+        <dt>МК-08</dt><dd>Нет результата — в ячейке «—», не ноль</dd>
+        <dt>МК-11</dt><dd>Без маржинальности ROMI не показывается</dd>
+      </dl>
+      <div class="alert info" style="margin-top:14px">
+        <span>По текущему плану учёт расходов — этап 2. В прототипе показан, чтобы согласовать состав метрик заранее.</span></div>`)}
+  </div>`,
+
+dict: () => sect('Словарь показателей','У каждого показателя в отчёте есть подсказка с формулой (ОТ-14).',
+  table([{t:'Показатель'},{t:'Формула'},{t:'Где используется'}],[
+    {c:['Обращения','Число обращений за период','Источники, дашборд']},
+    {c:['Уникальные клиенты','Клиенты, чьё первое обращение попало в период','Источники']},
+    {c:['Доля целевых','Целевые ÷ квалифицированные обращения','Источники, KPI колл-центра']},
+    {c:['Конверсия этапа','Дошедшие до следующего этапа ÷ вошедшие в этап','Воронка']},
+    {c:['Сквозная конверсия','Договоры ÷ обращения','Источники, воронка']},
+    {c:['Время первой реакции','Медиана от создания сделки до первого контакта','KPI']},
+    {c:['Соблюдение SLA','Сделки с контактом в срок ÷ все новые сделки','KPI']},
+    {c:['Доля пропущенных','Пропущенные ÷ входящие звонки','Звонки']},
+    {c:['Время до перезвона','Медиана от пропущенного до исходящего на этот номер','Звонки']},
+    {c:['Результативный звонок','Разговор не короче 30 секунд','Звонки, KPI']},
+    {c:['Цикл сделки','Медиана дней от первого обращения до подписания','Воронка, договоры']},
+    {c:['Средний чек','Сумма договоров ÷ число договоров','Договоры']},
+    {c:['Средняя цена м²','Сумма договоров ÷ проданная площадь','Договоры']},
+    {c:['Доля рассрочки','Договоры в рассрочку ÷ все договоры','Договоры']},
+    {c:['Чистые продажи','Подписанные − расторгнутые за период','Договоры, план/факт']},
+    {c:['Выполнение плана','Факт ÷ план × 100%','План/факт, дашборд']},
+    {c:['Темп продаж','Проданная площадь в месяц, среднее за 3 месяца','Остатки, дашборд']},
+    {c:['Срок реализации остатков','Остаток площади ÷ темп продаж','Остатки, дашборд']},
+    {c:['Собираемость платежей','Поступило ÷ начислено к оплате за период','Финансы, дашборд']},
+    {c:['Просроченная задолженность','Сумма просроченных строк графика + пени','Дебиторка, дашборд']}]))
+};
+
+SCREENS.reports = () => head('Отчёты','Отчёты',['ОТ-01','ОТ-04','ОТ-11','ОТ-13'],
+  'Каждая цифра кликабельна до исходных записей. Общие фильтры: период, проект, дом, источник, отдел, сотрудник, модель атрибуции. Любой отчёт сохраняется как представление и приходит по расписанию.')
++ `<div class="paper mb">
+    <div class="tabs">${R_TABS.map(([id,t,c])=>
+      `<button class="${RTAB===id?'on':''}" onclick="setRTab('${id}')">${t}</button>`).join('')}</div>
+    ${filters([{l:'Период',v:'Октябрь 2026',on:true},{l:'Сравнить с',v:'Сентябрь 2026'},
+      {l:'Проект',v:'Все'},{l:'Атрибуция',v:'Первое касание'},{l:'Режим',v:'Когортный',on:true},
+      '<span class="btn ghost">Excel</span>','<span class="btn ghost">PDF</span>',
+      '<span class="btn plain">Сохранить представление</span>','<span class="btn plain">Рассылка по расписанию</span>'])}
+  </div>
+  ${(R_BODY[RTAB]||R_BODY.src)()}
+  <div class="footnote">Отчёты считаются по истории событий: отчёт за прошедший месяц не меняется задним числом (ОТ-03). В когортном режиме незавершённые периоды помечаются (ОТ-04). Данные отстают от событий не больше чем на 5 минут (ОТ-15).</div>`;
+</script>
+
+<!-- ======================= Блок 8. Администрирование ======================= -->
+<script>
+const ROLES = ['ОКЦ','РКЦ','МП','РОП','МРК','ЮР','БУХ','ВЗ','ДИР','АДМ'];
+const MATRIX = [
+  ['h','Клиенты и сделки'],
+  ['Просмотр клиентов и сделок','Свои','Отдел','Свои','Отдел','Все','Дог.','Дог.','Закр.','Все','—'],
+  ['Создание клиента и обращения','✓','✓','✓','✓','—','—','—','—','✓','—'],
+  ['Редактирование полей','Свои','Отдел','Свои','Отдел','—','—','—','Закр.','Все','—'],
+  ['Перевод по этапам и в «Отказ»','Свои, до «Целевая»','Отдел','Свои, после передачи','Отдел','—','—','—','—','Все','—'],
+  ['Переназначение ответственного','—','Отдел','—','Отдел','—','—','—','—','Все','—'],
+  ['Объединение дублей','—','Отдел','—','Отдел','—','—','—','—','Все','—'],
+  ['Паспортные данные и ПИНФЛ','—','—','Свои','Отдел','—','Дог.','Дог.','Закр.','Все','—'],
+  ['Статус «на смене»','Свой','Отдел','Свой','Отдел','—','—','—','Свой','Все','—'],
+  ['h','Звонки и переписка'],
+  ['Звонок, Telegram, SMS клиенту','Свои','Отдел','Свои','Отдел','—','—','—','Закр.','—','—'],
+  ['Записи разговоров и история переписки','Свои','Отдел','Свои','Отдел','—','—','—','Закр.','Все','—'],
+  ['h','Объекты и цены'],
+  ['Просмотр шахматки и цен','✓','✓','✓','✓','✓','✓','✓','✓','✓','✓'],
+  ['Калькулятор и коммерческое предложение','✓','✓','✓','✓','—','—','—','—','✓','—'],
+  ['Изменение прайса и коэффициентов','—','—','—','—','—','—','—','—','✓','—'],
+  ['Статусы «резерв» и «не в продаже»','—','—','—','—','—','—','—','—','✓','—'],
+  ['Импорт помещений','—','—','—','—','—','—','—','—','✓','✓'],
+  ['h','Бронь и скидки'],
+  ['Создание и ручное снятие брони','—','—','Свои','Отдел','—','—','—','—','Все','—'],
+  ['Продление брони','—','—','—','Отдел','—','—','—','—','Все','—'],
+  ['Запрос индивидуальной скидки','—','—','Свои','Отдел','—','—','—','—','—','—'],
+  ['Согласование индивидуальной скидки','—','—','—','—','—','—','—','—','✓','—'],
+  ['Управление акциями','—','—','—','—','✓','—','—','—','✓','—'],
+  ['h','Договоры'],
+  ['Создание договора, допсоглашения, расторжения','—','—','Свои','Отдел','—','—','—','—','Все','—'],
+  ['Согласование документов','—','—','—','—','—','✓','—','—','—','—'],
+  ['Перевод в «Подписан»','—','—','Свои','Отдел','—','✓','—','—','Все','—'],
+  ['Шаблоны документов','—','—','—','—','—','✓','—','—','—','—'],
+  ['Реестр договоров','—','—','Свои','Отдел','Все','Все','Все','Закр.','Все','—'],
+  ['h','Ипотека'],
+  ['Ипотечные заявки и их статусы','—','—','Свои','Отдел','—','—','—','—','Все','—'],
+  ['Справочник банков и программ','—','—','—','—','—','—','—','—','✓','✓'],
+  ['Ожидаемые поступления от банков','—','—','—','Отдел','—','—','Все','—','Все','—'],
+  ['h','Финансы'],
+  ['Просмотр графиков, платежей, задолженности','—','—','Свои','Отдел','—','Все','Все','Закр.','Все','—'],
+  ['Ввод и подтверждение платежей, разбор непривязанных','—','—','—','—','—','—','✓','—','—','—'],
+  ['Запрос нестандартного графика','—','—','Свои','Отдел','—','—','—','—','—','—'],
+  ['Согласование графика, списание пени','—','—','—','—','—','—','—','—','✓','—'],
+  ['Проведение возврата','—','—','—','—','—','—','✓','—','—','—'],
+  ['h','Работа с задолженностью'],
+  ['Очередь должников и стадии взыскания','—','—','—','—','—','—','Просмотр','Закр.','Все','—'],
+  ['Обещания оплаты, расчёт долга, акты сверки','—','—','—','—','—','—','Все','Закр.','Все','—'],
+  ['Подготовка претензий и уведомлений','—','—','—','—','—','—','—','Закр.','—','—'],
+  ['Подготовка реструктуризации','—','—','—','—','—','—','—','Закр.','Все','—'],
+  ['Передача юристу и судебная стадия','—','—','—','—','—','Все','—','Закр., передача','Все','—'],
+  ['Закрепление и переназначение специалиста','—','—','—','—','—','—','—','—','✓','—'],
+  ['Согласование брони при просрочке 30+ дней','—','—','—','—','—','—','—','—','✓','—'],
+  ['h','Отчёты'],
+  ['KPI сотрудников','Свои','Отдел','Свои','Отдел','—','—','—','Свои','Все','—'],
+  ['Источники, звонки, воронка, маркетинг','—','Отдел','—','Отдел','Все','—','—','—','Все','—'],
+  ['Договоры, план/факт','—','—','Свои','Отдел','Все','—','Все','—','Все','—'],
+  ['Отчёт «Ипотека»','—','—','Свои','Отдел','—','—','Все','—','Все','—'],
+  ['Отчёт «Взыскание»','—','—','—','—','—','Все','Все','Свои','Все','—'],
+  ['Дашборд руководителя','—','Отдел','—','Отдел','Все','—','—','—','Все','—'],
+  ['Ввод планов','—','—','—','Отдел','—','—','—','—','Все','—'],
+  ['Ввод расходов на рекламу, маржинальность','—','—','—','—','Расходы','—','—','—','✓','—'],
+  ['Экспорт в Excel и PDF','—','✓','—','✓','✓','✓','✓','✓','✓','—'],
+  ['Общие представления и рассылки','—','✓','—','✓','✓','—','—','—','✓','—'],
+  ['h','Администрирование'],
+  ['Пользователи, роли, права','—','—','—','—','—','—','—','—','—','✓'],
+  ['Настраиваемые поля и карточки','—','—','—','—','—','—','—','—','—','✓'],
+  ['Справочники источников и причин','—','—','—','—','Источники','—','—','—','—','✓'],
+  ['Схемы рассрочки, сроки брони, SLA, стадии','—','—','—','—','—','—','—','—','✓','✓'],
+  ['Журнал действий','—','—','—','—','—','—','—','—','✓','✓'],
+  ['Массовая передача клиентов','—','Отдел','—','Отдел','—','—','—','—','Все','Все']
+];
+const cellv = v => v==='✓' ? '<span class="v-yes">✓</span>'
+  : v==='—' ? '<span class="v-no">—</span>' : `<span class="v-sc">${esc(v)}</span>`;
+
+SCREENS.roles = () => head('Администрирование','Права и роли',['АД-01','АД-05','АД-06'],
+  'Права настраиваются как действие × объект × область: свои, отдел, все. Отдельно — паспортные данные, записи звонков, экспорт. Доступ можно ограничить проектами. Новые роли создаются копированием существующих.')
++ `<div class="grid g4 mb">
+    ${kpi('Ролей по умолчанию','10','ОКЦ, РКЦ, МП, РОП, МРК, ЮР, БУХ, ВЗ, ДИР, АДМ')}
+    ${kpi('Пользователей','34','активных 31')}
+    ${kpi('2FA обязательна','7 ролей','директор, РОП, РКЦ, юрист, бухгалтер, ВЗ, администратор')}
+    ${kpi('Ограничение по проектам','есть','доступ можно сузить до одного ЖК')}
+  </div>
+  ${sect('Матрица прав по ролям',
+    '«Свои» — записи, где сотрудник ответственный; «Отдел» — записи своего отдела; «Дог.» — записи с договором; «Закр.» — договоры, закреплённые за специалистом по взысканию. Матрица — значения по умолчанию. Администратор не видит данных клиентов, только настройки.',
+    `<div class="mx"><table class="mx-t">
+      <thead><tr><th>Действие</th>${ROLES.map(r=>`<th>${r}</th>`).join('')}</tr></thead>
+      <tbody>${MATRIX.map(r=> r[0]==='h'
+        ? `<tr class="hdr"><td colspan="11">${esc(r[1])}</td></tr>`
+        : `<tr><td>${esc(r[0])}</td>${r.slice(1).map(v=>`<td>${cellv(v)}</td>`).join('')}</tr>`).join('')}
+      </tbody></table></div>`,'mb')}
+  <div class="grid g3">
+    ${sect('Двухфакторная аутентификация','Код через служебный бот или приложение-аутентификатор (АД-06).',
+      table([{t:'Роль'},{t:'2FA'}],[
+        {c:['Директор',chip('Обязательна','error')]},
+        {c:['РОП',chip('Обязательна','error')]},
+        {c:['Руководитель колл-центра',chip('Обязательна','error')]},
+        {c:['Юрист',chip('Обязательна','error')]},
+        {c:['Бухгалтер',chip('Обязательна','error')]},
+        {c:['Специалист по взысканию',chip('Обязательна','error')]},
+        {c:['Администратор',chip('Обязательна','error')]},
+        {c:['Менеджер продаж',chip('По желанию','neutral')]},
+        {c:['Оператор колл-центра',chip('По желанию','neutral')]},
+        {c:['Маркетолог',chip('По желанию','neutral')]}]))}
+    ${sect('Передача при увольнении','Клиенты, сделки и задачи передаются массово; деактивированный пользователь сразу теряет доступ (АД-05).',
+      `<dl class="kv">
+        <dt>Сотрудник</dt><dd>Садыков И. · отпуск до 24.11</dd>
+        <dt>Клиентов</dt><dd>68</dd>
+        <dt>Открытых сделок</dt><dd>31</dd>
+        <dt>Задач</dt><dd>14</dd>
+        <dt>Принимает</dt><dd>Рахимов О.</dd>
+      </dl>
+      <div style="margin-top:14px"><span class="btn">Передать всё</span></div>`)}
+    ${sect('Язык и формат','АД-02.',
+      `<dl class="kv">
+        <dt>Языки интерфейса</dt><dd>Узбекский (латиница) — основной, русский</dd>
+        <dt>Справочники</dt><dd>Названия на обоих языках</dd>
+        <dt>Даты</dt><dd>дд.мм.гггг</dd>
+        <dt>Разряды</dt><dd>пробелом: 1 063 800 000</dd>
+        <dt>Учётная валюта</dt><dd>UZS; USD справочно по курсу ЦБ</dd>
+      </dl>`)}
+  </div>`;
+
+SCREENS.fields = () => head('Администрирование','Настраиваемые поля',['ЛД-17','ЛД-19','ЛД-21','ЛД-22'],
+  'Администратор добавляет поля к клиенту, обращению, сделке, помещению и договору без разработчика. Новое поле сразу работает в фильтрах, отчётах, импорте и шаблонах документов.')
++ `<div class="paper mb">${filters([
+    {l:'Объект',v:'Сделка',on:true},{l:'Проект',v:'Все'},{l:'Показывать',v:'Активные'},
+    '<span class="btn">Добавить поле</span>','<span class="btn plain">Настроить карточку</span>'])}
+    <div class="sect">
+      ${table([{t:'Поле'},{t:'Тип'},{t:'Обязательность'},{t:'Проекты'},{t:'Права'},{t:'В отчётах'},{t:'Статус'}],[
+        {c:['Проект и дом','Список','С «Целевая»','Все',
+            'Просмотр: все · Изменение: МП, РОП',chip('Группировка','info'),chip('Системное','neutral')]},
+        {c:['Бюджет','Сумма UZS, диапазон','С «Целевая»','Все',
+            'Просмотр: все · Изменение: МП','—',chip('Системное','neutral')]},
+        {c:['Форма оплаты','Список','С «Целевая»','Все',
+            'Просмотр: все · Изменение: МП, РОП',chip('Группировка','info'),chip('Системное','neutral')]},
+        {c:['Откуда узнал','Список','Нет','Все',
+            'Просмотр: все · Изменение: ОКЦ, МП',chip('Группировка','info'),chip('Активно','success')]},
+        {c:['Нужен паркинг','Флаг','Нет','Янги Шахар',
+            'Просмотр: все · Изменение: МП','—',chip('Активно','success')]},
+        {c:['Готов к сделке','Список','Нет','Все',
+            'Просмотр: все · Изменение: МП',chip('Группировка','info'),chip('Активно','success')]},
+        {c:['Файл согласия на ПДн','Файл','До договора','Все',
+            'Просмотр: МП, ЮР, ДИР','—',chip('Активно','success')]},
+        {c:['Агент','Ссылка на запись','Нет','Все',
+            'Просмотр: все · Изменение: РОП','—',chip('Активно','success')]},
+        {c:['Старый код сделки UySot','Строка','Нет','Все',
+            'Просмотр: АДМ, ДИР','—',chip('В архиве','neutral')]}])}
+      <p class="hint" style="margin:12px 0 0">Поле и значение списка не удаляются, а архивируются: из формы ввода пропадают, в старых записях и отчётах остаются (ЛД-22).</p>
+    </div>
+  </div>
+  <div class="grid g2">
+    ${sect('Типы полей','ЛД-18.',
+      `<div style="display:flex;gap:7px;flex-wrap:wrap">
+        ${['строка','текст','число','сумма UZS','дата','дата-время','список','множественный список',
+           'флаг','телефон','ссылка','файл','пользователь','ссылка на запись']
+          .map(t=>chip(t,'primary')).join('')}
+      </div>
+      <p class="hint" style="margin-top:14px">Свойства поля: название и подсказка на uz и ru, значение по умолчанию, маска или правило проверки, обязательность (всегда или с определённого этапа), права на просмотр и изменение по ролям, проекты, в которых поле действует (ЛД-19).</p>`)}
+    ${sect('Настройка карточки','Секции, порядок полей, сворачиваемые секции. Системные поля нельзя удалить или отключить, можно только переименовать подпись (ЛД-20).',
+      `<div style="display:flex;flex-direction:column;gap:8px">
+        ${[['Основное','Этап, ответственные, проект, дом','4 поля'],
+           ['Потребность','Комнатность, бюджет, форма оплаты, цель','4 поля'],
+           ['Источники','Первое и последнее касание, UTM','3 поля · свёрнута'],
+           ['Дополнительно','Откуда узнал, паркинг, готовность','3 поля'],
+           ['Документы','Согласие на ПДн, паспорт','2 поля · по правам']]
+          .map(([n,f,c])=>`<div style="border:1px solid var(--line);border-radius:7px;padding:10px 12px;
+            display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+            <div><b style="font-size:13px">${n}</b><div class="muted" style="font-size:11px">${f}</div></div>
+            <span class="muted" style="font-size:11px;white-space:nowrap">${c}</span></div>`).join('')}
+      </div>`)}
+  </div>`;
+
+SCREENS.journal = () => head('Администрирование','Журнал действий',['АД-04','ОТ-12'],
+  'Кто, когда и что изменил — с значениями «было» и «стало». Отдельно логируются просмотр паспортных данных и экспорт. Удаление записей запрещено, только архивирование.')
++ `<div class="paper mb">${filters([
+    {l:'Период',v:'09.11.2026',on:true},{l:'Пользователь',v:'Все'},{l:'Объект',v:'Все'},
+    {l:'Тип действия',v:'Все'},'<span class="btn ghost">Excel</span>'])}
+    <div class="sect">
+      ${table([{t:'Время'},{t:'Пользователь'},{t:'Роль'},{t:'Объект'},{t:'Действие'},{t:'Было → стало'},{t:'IP'}],[
+        {c:['11:40:18','Исаев Р.','ЮР','Договор K-2026/0147','Возврат на правку',
+            'На согласовании → Черновик','10.0.4.18']},
+        {c:['10:21:02','Азизова Д.','МП','Договор K-2026/0147','Отправлен юристу',
+            'Черновик → На согласовании','10.0.4.22']},
+        {c:['10:12:44','Юсупова М.','МП','Помещение №94','Просмотр карточки','—','10.0.4.31']},
+        {c:['09:58:11','Хасанов А.','ВЗ','Клиент К. Рустамов',
+            chip('Просмотр паспортных данных','warning'),'—','10.0.4.44']},
+        {c:['09:40:07','Азизова Д.','МП','Сделка №2014','Создана задача','— → «Перезвонить»','10.0.4.22']},
+        {c:['09:12:55','Азизов Т.','ДИР','Скидка по сделке №1998','Согласована индивидуальная скидка',
+            '0% → 1,5%','10.0.4.2']},
+        {c:['08:44:30','Каримова Н.','БУХ','Платёж п/п 1377','Подтверждён',
+            'К оплате → Частично','10.0.4.57']},
+        {c:['08:30:12','Азизов Т.','ДИР','Прайс · Дом 3','Массовое изменение цен',
+            '+4% к 62 помещениям','10.0.4.2']},
+        {c:['08:02:40','Рахимов О.','МП','Отчёт «Договоры»',
+            chip('Экспорт в Excel','info'),'66 строк','10.0.4.19']},
+        {c:['07:50:00','Система','—','Брони','Автоматическое снятие по истечении',
+            'Бронь → Свободно · 3 помещения','—']}])}
+    </div>
+  </div>
+  <div class="grid g3">
+    ${sect('Резервное копирование','АД-07.',
+      `<dl class="kv">
+        <dt>Размещение</dt><dd>Серверы и копии в Узбекистане</dd>
+        <dt>Периодичность</dt><dd>Ежедневно, 03:00</dd>
+        <dt>Срок хранения</dt><dd>30 дней (настраивается)</dd>
+        <dt>Последняя копия</dt><dd>${chip('09.11.2026 03:00 · успешно','success')}</dd>
+      </dl>`)}
+    ${sect('Миграция из UySot','АД-09.',
+      table([{t:'Сущность'},{t:'Перенесено',n:1},{t:'Сверка'}],[
+        {c:['Клиенты','3 412',chip('✓','success')]},
+        {c:['Сделки','4 188',chip('✓','success')]},
+        {c:['Помещения','1 024',chip('✓','success')]},
+        {c:['Договоры','284',chip('✓','success')]},
+        {c:['Графики и платежи','9 640',chip('Расхождение 2 строки','warning')]}]) +
+      `<p class="hint" style="margin:12px 0 0">Пробная миграция и сверка итогов — до запуска.</p>`)}
+    ${sect('Адаптивность','АД-08.',
+      `<p class="hint">Все экраны работают на телефоне. Приоритет для мобильной вёрстки — карточка клиента, шахматка, задачи, звонок из карточки.</p>
+       <div class="alert ok"><span>Сузьте окно браузера, чтобы увидеть мобильную вёрстку прототипа.</span></div>`)}
+  </div>`;
+
+SCREENS.roadmap = () => head('Этапы','Этапы 2 и 3',null,
+  'Всё, что обсуждено и сознательно не вошло в MVP. Раздел нужен, чтобы объём первого этапа был зафиксирован, а отложенное не потерялось.')
++ `<div class="grid g2 mb">
+    ${sect('В MVP · 8 блоков',null,
+      table([{t:'Блок'},{t:'Состав'}],[
+        {c:['1. Объекты','Иерархия ЖК, статусы помещений, два прайса, шахматка, карточка, остатки']},
+        {c:['2. Лиды и воронка','Источники, дедупликация, колл-центр → продажи, воронка, SLA, задачи']},
+        {c:['3. Бронь и скидки','Бесплатная и платная бронь, акции, индивидуальные скидки']},
+        {c:['4. Договоры','ДДУ, КП и ипотечные, шаблоны, согласование юристом, допсоглашения']},
+        {c:['5. Финансы сделки','Расчёт стоимости, рассрочка, ипотека, калькулятор, поступления, пени, взыскание']},
+        {c:['6. Коммуникации','Телефония, коллтрекинг, Telegram, сервисные SMS']},
+        {c:['7. Отчёты','Источники, звонки, договоры, воронка, KPI, план/факт, дашборд']},
+        {c:['8. Администрирование','Роли и права, языки, журнал, 2FA, миграция из UySot']}]))}
+    ${sect('Отложено',null,
+      `<div class="rm">
+        ${[['Этап 2','Агенты','Кабинет агента, закрепление клиента, расчёт комиссий, онлайн-бронь из кабинета, шахматка для агентов'],
+           ['Этап 2','Маркетинг','Учёт расходов на рекламу, CPL, CPA, ROMI; динамический коллтрекинг для сайта'],
+           ['Этап 2','Коммуникации','Instagram, SMS-рассылки, чек-листы оценки звонков'],
+           ['Этап 2','Объекты','Интерактивный поэтажный план, API статусов для сайта и порталов'],
+           ['Этап 2','Бронь','Очередь на забронированное помещение'],
+           ['Этап 2','Договоры','Электронная подпись E-IMZO, переуступка прав'],
+           ['Этап 3','Постпродажа','Приёмка, передача ключей, гарантийные замечания, передача в УК'],
+           ['Этап 3','Кабинет покупателя','Telegram-бот: график платежей, документы, ход строительства, онлайн-оплата Payme / Click / Uzum'],
+           ['Этап 3','Звонки','Распознавание речи и автоматические резюме — когда качество для узбекского будет достаточным']]
+          .map(([ph,n,d])=>`<div class="rmi">
+            <div class="ph" style="background:${ph==='Этап 2'?'var(--warning-bg);color:var(--warning)':'var(--info-bg);color:var(--info)'}">${ph}</div>
+            <div><b style="font-size:13px">${n}</b><div class="muted" style="font-size:12px">${d}</div></div>
+          </div>`).join('')}
+      </div>`)}
+  </div>
+  ${sect('Открытые вопросы к заказчику',null,
+    `<div class="grid g2">
+      <dl class="kv">
+        <dt>Учёт расходов</dt><dd>Метрики CPL и CPO без расходов не считаются. Оставляем в этапе 2 или переносим в MVP?</dd>
+        <dt>Методы расчёта рассрочки</dt><dd>Какой из трёх методов (А, Б, В) используется сейчас и нужны ли все три?</dd>
+        <dt>Субсидия ставки</dt><dd>Планируется ли программа с субсидией и в цену она входит или в расходы продаж?</dd>
+      </dl>
+      <dl class="kv">
+        <dt>Провайдер телефонии</dt><dd>Есть ли действующая АТС с API или выбираем вместе?</dd>
+        <dt>Сумма прописью на латинице</dt><dd>Отдельная задача разработки — подтверждаем объём?</dd>
+        <dt>Миграция из UySot</dt><dd>Нужен доступ к выгрузке для пробного переноса и сверки</dd>
+      </dl>
+    </div>`)}`;
+</script>
+
+<script>render();</script>
+</body>
+</html>

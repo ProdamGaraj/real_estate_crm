@@ -59,7 +59,8 @@ export interface Payment {
   method: string;
   due_date: string;
   payment_date: string | null;
-  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'TO_BE_RETURNED' | 'RETURNED';
+  /** CANCELLED — платёж отменённой или расторгнутой сделки: денег по нему не ждут */
+  status: 'PENDING' | 'PAID' | 'OVERDUE' | 'TO_BE_RETURNED' | 'RETURNED' | 'CANCELLED';
   status_display: string;
   created_at: string;
   payment_type: string;

@@ -208,7 +208,10 @@
       "applications": "Applications",
       "deals": "Deals",
       "date_from": "Created From",
-      "date_to": "Created To"
+      "date_to": "Created To",
+      "duplicate_title": "This client may already exist",
+      "duplicate_create_anyway": "Create anyway",
+      "duplicate_save_anyway": "Save anyway"
     },
     "applications": {
       "title": "Applications",
@@ -500,7 +503,9 @@
       "payment_plan": "Payment plan",
       "payment_plan_hint": "The plan decides which discounts apply; the discounted price is split into payments by the plan.",
       "no_plan": "Not selected",
-      "view_only": "You can view this deal but not change or cancel it: it was created by another employee ({{author}}). Its author or a manager with rights to edit department or company deals can change it or remove the booking."
+      "view_only": "You can view this deal but not change or cancel it: it was created by another employee ({{author}}). Its author or a manager with rights to edit department or company deals can change it or remove the booking.",
+      "actual_terms": "The contract schedule has {{count}} payment(s), {{paid}} paid. Dates: {{first}} to {{last}}.",
+      "terms_mismatch": "This does not match the «{{plan}}» plan ({{expected}} payment(s)) — check the contract terms."
     },
     "projects": {
       "title": "Projects",
@@ -733,7 +738,9 @@
       "payment_plans_short": "Payment plans",
       "any_plan": "Any plan",
       "only_for_plans": "only for plans: {{plans}}",
-      "choose_plan_first": "choose a matching payment plan in the deal"
+      "choose_plan_first": "choose a matching payment plan in the deal",
+      "created_by": "Created by",
+      "updated_by": "Changed by"
     },
     "permissions": {
       "permissions_matrix": "Permissions Matrix"
@@ -1264,7 +1271,9 @@
       "paid": "Paid",
       "overdue": "Overdue",
       "to_be_returned": "To Be Returned",
-      "returned": "Returned"
+      "returned": "Returned",
+      "CANCELLED": "Cancelled",
+      "cancelled": "cancelled"
     },
     "building": {
       "UNDER_REVIEW": "Under Review",

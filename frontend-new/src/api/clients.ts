@@ -69,10 +69,49 @@ export type ClientPayload = {
   full_name: string;
   phone_number: string; // Отправляем один основной номер
   comment?: string;
+  /**
+   * Подтверждение создания клиента, похожего на уже существующего.
+   * Сервер отклоняет совпадение по телефону, ПИНФЛ или паспорту, пока
+   * менеджер не подтвердит, что это другой человек.
+   */
+  confirm_duplicate?: boolean;
 };
 
+/** Клиент, на которого похож вводимый: приходит в ошибке сервера */
+export interface DuplicateClientHint {
+  id: number;
+  full_name: string;
+  match: 'phone' | 'pinfl' | 'passport';
+}
+
+/**
+ * Разбирает ответ сервера о дубликате: текст предупреждения и найденные
+ * карточки. null — ошибка не про дубликат.
+ */
+export function duplicateClientError(error: unknown): { message: string; clients: DuplicateClientHint[] } | null {
+  const data = (error as { response?: { data?: Record<string, unknown> } })?.response?.data;
+  const warning = data?.duplicate_client;
+  if (!warning) {
+    return null;
+  }
+  const clients = Array.isArray(data?.duplicates)
+    ? (data!.duplicates as Record<string, unknown>[]).map((item) => ({
+        id: Number(item.id),
+        full_name: String(item.full_name ?? ''),
+        match: String(item.match ?? 'phone') as DuplicateClientHint['match'],
+      }))
+    : [];
+  return {
+    message: Array.isArray(warning) ? warning.join(' ') : String(warning),
+    clients,
+  };
+}
+
 // Тип для данных при ОБНОВЛЕНИИ через детальную карточку
-export type ClientUpdatePayload = Partial<Omit<ClientDetail, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'applications' | 'logs'>>;
+export type ClientUpdatePayload = Partial<Omit<ClientDetail, 'id' | 'created_at' | 'updated_at' | 'created_by' | 'applications' | 'logs'>> & {
+  /** Подтверждение правки, после которой клиент совпадает с другой карточкой */
+  confirm_duplicate?: boolean;
+};
 
 
 // Тип для объекта с параметрами фильтрации

@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework import serializers
+from apps.common import EmployeeNameField
 from .models import Payment, PaymentType, BeneficiaryAccount
 from apps.crm.serializers import ClientListSerializer
 
@@ -58,8 +59,8 @@ class BeneficiaryAccountSerializer(serializers.ModelSerializer):
 class PaymentSerializer(serializers.ModelSerializer):
     payment_type = serializers.StringRelatedField(read_only=True)
     beneficiary_account = serializers.StringRelatedField(read_only=True)
-    created_by = serializers.StringRelatedField(read_only=True)
-    responsible_employee = serializers.StringRelatedField(read_only=True)
+    created_by = EmployeeNameField()
+    responsible_employee = EmployeeNameField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     # Клиент восстанавливал справочники поиском по названию с запасным нулём,
     # поэтому удаление типа платежа ломало правку графика
@@ -137,11 +138,14 @@ class PaymentSerializer(serializers.ModelSerializer):
             return data
 
         # По проведённому платежу деньги уже прошли: менять сумму, срок и
-        # валюту нельзя, иначе график расходится с договором в обход проверок
+        # валюту нельзя, иначе график расходится с договором в обход проверок.
+        # Отменённый платёж (сделка отменена или расторгнута) правке тоже
+        # не подлежит: его сумма осталась историей несостоявшегося договора
         locked_statuses = (
             Payment.PaymentStatus.PAID,
             Payment.PaymentStatus.TO_BE_RETURNED,
             Payment.PaymentStatus.RETURNED,
+            Payment.PaymentStatus.CANCELLED,
         )
         # Отметить оплату по недействующей сделке нельзя: деньги по такой
         # сделке уже не принимаются, остаётся только возврат
@@ -169,9 +173,11 @@ class PaymentSerializer(serializers.ModelSerializer):
                 if field in data and data[field] != getattr(instance, field)
             ]
             if changed:
+                hint = (' Сначала отмените оплату.'
+                        if instance.status != Payment.PaymentStatus.CANCELLED else '')
                 raise serializers.ValidationError(
                     f'Нельзя изменить {", ".join(changed)} платежа со статусом '
-                    f'«{instance.get_status_display()}». Сначала отмените оплату.'
+                    f'«{instance.get_status_display()}».{hint}'
                 )
         return data
 
