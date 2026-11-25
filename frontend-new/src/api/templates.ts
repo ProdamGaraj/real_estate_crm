@@ -5,12 +5,24 @@ export interface Template {
   id: number;
   name: string;
   file: string; // URL to the file
+  /**
+   * Для чего шаблон: договор по сделке или договор брони. У них разные
+   * метки (у брони нет графика платежей, зато есть срок и взнос), поэтому
+   * списки шаблонов в сделке и в брони не смешиваются
+   */
+  kind: 'DEAL' | 'BOOKING';
   applies_to_projects: number[];
   applies_to_buildings: number[];
   applies_to_property_types: string[];
 }
 export const getAvailableTemplates = async (dealId: number): Promise<Template[]> => {
   const response = await apiClient.get(`/deals/${dealId}/available-templates/`);
+  return response.data;
+};
+
+/** Шаблоны договора брони, подходящие объекту этой брони */
+export const getBookingTemplates = async (bookingId: number): Promise<Template[]> => {
+  const response = await apiClient.get(`/bookings/${bookingId}/available-templates/`);
   return response.data;
 };
 export const getTemplates = async (): Promise<Template[]> => {

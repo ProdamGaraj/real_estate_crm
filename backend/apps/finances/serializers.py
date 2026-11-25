@@ -71,11 +71,20 @@ class PaymentSerializer(serializers.ModelSerializer):
     client = ClientListSerializer(read_only=True)
     # ИСПРАВЛЕНИЕ: Заменяем прямое поле на SerializerMethodField
     deal = serializers.SerializerMethodField()
+    # Взнос за бронь: по этому признаку витрины отделяют деньги броней от
+    # контрактации и план-факта, а карточка сделки показывает взнос первой
+    # строкой графика
+    booking = serializers.PrimaryKeyRelatedField(read_only=True)
+    is_booking_fee = serializers.SerializerMethodField()
 
     # Раньше это были сырые IntegerField: существование записи не проверялось,
     # принадлежность компании — тем более, а несуществующий id давал 500
+    # Тип платежа необязателен: у взноса за бронь его нет — бронь не идёт
+    # ни по одному плану оплаты, — а после оформления брони в сделку эта
+    # строка попадает в график сделки и возвращается обратно при сохранении
     payment_type_id = serializers.PrimaryKeyRelatedField(
-        queryset=PaymentType.objects.all(), source='payment_type', write_only=True
+        queryset=PaymentType.objects.all(), source='payment_type', write_only=True,
+        required=False, allow_null=True
     )
     beneficiary_account_id = serializers.PrimaryKeyRelatedField(
         queryset=BeneficiaryAccount.objects.all(), source='beneficiary_account', write_only=True
@@ -94,10 +103,14 @@ class PaymentSerializer(serializers.ModelSerializer):
             'beneficiary_account_id', 'responsible_employee_id', 'client', 'deal',
             'payment_type_ref', 'beneficiary_account_ref',
             'entered_amount', 'entered_currency', 'entered_rate',
+            'booking', 'is_booking_fee',
         ]
         # Исходный ввод заполняет сервер при пересчёте графика, а не клиент
-        read_only_fields = ['created_at', 'status_display', 'client', 'status',
+        read_only_fields = ['created_at', 'status_display', 'client', 'status', 'booking',
                             'entered_amount', 'entered_currency', 'entered_rate']
+
+    def get_is_booking_fee(self, obj):
+        return obj.booking_id is not None
 
     def validate_payment_type_id(self, value):
         """Тип платежа — своей компании или общесистемный."""

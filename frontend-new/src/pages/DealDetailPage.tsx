@@ -260,9 +260,9 @@ export default function DealDetailPage() {
           {t('pages.deals.view_only', { author: deal.created_by || '—' })}
         </Alert>
       )}
-      {/* Паспорт клиента идёт в договор: без него бронь не уходит в работу,
-          а сделка не закрывается. Предупреждаем заранее, а не отказом сервера */}
-      {['BOOKING', 'IN_PROGRESS'].includes(deal.status) && missingPassport.length > 0 && (
+      {/* Паспорт клиента идёт в договор: без него сделку не закрыть.
+          Предупреждаем заранее, а не отказом сервера */}
+      {deal.status === 'IN_PROGRESS' && missingPassport.length > 0 && (
         <Alert
           severity="warning"
           sx={{ mb: 2 }}
@@ -272,7 +272,7 @@ export default function DealDetailPage() {
             </Button>
           }
         >
-          {t(deal.status === 'BOOKING' ? 'pages.deals.passport_needed_booking' : 'pages.deals.passport_needed_in_progress', {
+          {t('pages.deals.passport_needed_in_progress', {
             fields: missingPassport.map(field => t(`pages.clients.${field}`)).join(', '),
           })}
         </Alert>
@@ -325,8 +325,31 @@ export default function DealDetailPage() {
                               <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('pages.deals.property')}:</b> {deal.property.property_type} №{deal.property.unit_number}, {deal.property.area} {t('common.sqm')}</Typography>
                           </Grid>
                           <Grid size={{ xs: 12, sm: 6 }}>
-                              <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('pages.deals.booking_start')}:</b> {new Date(deal.booking_start_date).toLocaleString(getDateLocale())}</Typography>
-                              <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('pages.deals.booking_end')}:</b> {new Date(deal.booking_end_date).toLocaleString(getDateLocale())}</Typography>
+                              <Typography variant={isMobile ? 'body2' : 'body1'}><b>{t('table.created_at')}:</b> {new Date(deal.created_at).toLocaleString(getDateLocale())}</Typography>
+                              {/* Срок, даты и цена брони живут на брони, а не на сделке */}
+                              {deal.booking_info ? (
+                                <>
+                                  <Typography variant={isMobile ? 'body2' : 'body1'}>
+                                    <b>{t('pages.deals.from_booking')}:</b>{' '}
+                                    <MuiLink component={RouterLink} to={`/bookings/${deal.booking_info.id}`}>
+                                      №{deal.booking_info.id}
+                                    </MuiLink>
+                                    {deal.booking_info.start_date
+                                      ? ` (${new Date(deal.booking_info.start_date).toLocaleDateString(getDateLocale())})`
+                                      : ''}
+                                  </Typography>
+                                  <Typography variant={isMobile ? 'body2' : 'body1'}>
+                                    <b>{t('pages.bookings.booked_price')}:</b>{' '}
+                                    {deal.booking_info.price
+                                      ? formatMoney(deal.booking_info.price, deal.booking_info.currency, i18n.language)
+                                      : '—'}
+                                  </Typography>
+                                </>
+                              ) : (
+                                <Typography variant={isMobile ? 'body2' : 'body1'} color="text.secondary">
+                                  {t('pages.deals.without_booking')}
+                                </Typography>
+                              )}
                           </Grid>
                       </Grid>
                       <Button onClick={() => setActiveStep(1)} variant="contained" sx={{mt: 2}} disabled={isDealReadOnly} size={isMobile ? 'small' : 'medium'}>{t('common.next')}</Button>

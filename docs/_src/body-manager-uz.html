@@ -158,7 +158,7 @@
 
     <div class="note">
       <p><b>Mijoz butunlay o&lsquo;chirilmaydi.</b> O&lsquo;chirish tugmasi kartochkani <span class="ui">Arxivda</span> holatiga o&lsquo;tkazadi: u ro&lsquo;yxatlardan yo&lsquo;qoladi, lekin arizalar, uchrashuvlar, bitimlar, fayllar va butun tarix joyida qoladi. Kartochka yana kerak bo&lsquo;lsa, administrator unga faol holatni qaytaradi.</p>
-      <p>Mijoz bo&lsquo;yicha <span class="ui">Bron</span> yoki <span class="ui">Jarayonda</span> holatidagi bitim turganda u arxivga o&lsquo;tmaydi: tizim avval yakunlash yoki bekor qilish kerak bo&lsquo;lgan bitim raqamlarini aytadi.</p>
+      <p>Mijoz bo&lsquo;yicha <span class="ui">Jarayonda</span> holatidagi bitim yoki tirik bron turganda u arxivga o&lsquo;tmaydi: tizim avval yakunlash, rasmiylashtirish yoki bekor qilish kerak bo&lsquo;lgan bitim va bron raqamlarini aytadi.</p>
     </div>
   </section>
 
@@ -315,7 +315,7 @@
         <tbody>
           <tr><td><span class="chip g">Tanlov</span></td><td>Bo&lsquo;sh</td><td>Sotuvda: mijozga taklif qilish va bron qilish mumkin</td></tr>
           <tr><td><span class="chip b">Rezerv</span></td><td>Sotuvdan chiqarilgan</td><td>Ob&lsquo;ekt tizimda bor, lekin <b>sotilmaydi</b>. Mijozga taklif qilmang</td></tr>
-          <tr><td><span class="chip y">Bron</span></td><td>Bitim ochilgan</td><td>Ob&lsquo;ekt band</td></tr>
+          <tr><td><span class="chip y">Bron</span></td><td>Amaldagi bron mavjud</td><td>Ob&lsquo;ekt bron bilan band. Navbatga turish mumkin</td></tr>
           <tr><td><span class="chip p">Bitim jarayonda</span></td><td>To&lsquo;lov jadvali bor</td><td>Bitim ketyapti, ob&lsquo;ekt mavjud emas</td></tr>
           <tr><td><span class="chip r">Sotilgan</span></td><td>Sotilgan</td><td>Shartnoma ikki tomondan imzolangan</td></tr>
         </tbody>
@@ -328,7 +328,9 @@
       <table>
         <thead><tr><th>Tugma</th><th>Qachon mavjud</th><th>Nima qiladi</th></tr></thead>
         <tbody>
-          <tr><td><span class="ui">Bron qilish</span></td><td><span class="ui">Tanlov</span> holati</td><td>Bitim yaratish formasini ochadi</td></tr>
+          <tr><td><span class="ui">Bron qilish</span></td><td><span class="ui">Tanlov</span> holati</td><td>Bron formasini ochadi: mijoz va muddat (kun)</td></tr>
+          <tr><td><span class="ui">Navbatga turish</span></td><td>Ob&lsquo;ekt bron yoki bitim bilan band</td><td>Xuddi shu forma: bron navbat oxiriga turadi, faollashmaguncha narx va sanalar bo&lsquo;lmaydi</td></tr>
+          <tr><td><span class="ui">Bronni ochish</span></td><td>Ob&lsquo;ektda amaldagi bron bor</td><td>Bron kartochkasini ochadi — bitim shu yerdan tuziladi</td></tr>
           <tr><td><span class="ui">Rezerv qilish</span> / <span class="ui">Rezervni bekor qilish</span></td><td><span class="ui">Tanlov</span> va <span class="ui">Rezerv</span> holatlari</td><td>Ob&lsquo;ektni sotuvdan chiqaradi va qaytaradi. <b>Menejer amali emas</b> &mdash; qarorni rahbar qabul qiladi, administrator bajaradi. Tugmalar faqat ob&lsquo;ektlarni o&lsquo;zgartirish huquqi bo&lsquo;lganda ko&lsquo;rinadi</td></tr>
           <tr><td><span class="ui">Bitimga o&lsquo;tish</span></td><td>Ob&lsquo;ekt bo&lsquo;yicha bitim mavjud</td><td>Bitim kartochkasini ochadi</td></tr>
           <tr><td><span class="ui">Izohni saqlash</span></td><td>Doim</td><td>Ob&lsquo;ektga eslatma yozadi</td></tr>
@@ -339,7 +341,7 @@
     <div class="tip">
       <p><b>Rezerv &mdash; bu bron emas.</b> Rezervdagi ob&lsquo;ekt <b>sotilmaydi</b>: u tizimga kiritilgan, ammo sotuvdan chiqarilgan &mdash; masalan, quruvchi yoki rahbariyat tomonidan ushlab turilgan. Bu &laquo;mijoz band qilgan&raquo; emas, balki &laquo;rasman bor, aslida yo&lsquo;q&raquo; degani.</p>
       <p>Mijozga rezervdagi ob&lsquo;ekt yoqib qolsa &mdash; <b>hech narsa va&lsquo;da qilmang</b>: tizim uni bron qilishga yo&lsquo;l qo&lsquo;ymaydi. Ob&lsquo;ektni sotuvga chiqarishni faqat rahbar hal qiladi va bu administratorga so&lsquo;rov orqali bajariladi. Avval kelishuv, keyin mijoz bilan suhbat.</p>
-      <p><span class="ui">Bron</span> mutlaqo boshqa narsa: bu allaqachon muddati va majburiyatlari bo&lsquo;lgan bitim. &laquo;Har ehtimolga qarshi&raquo; bron qilmang: ob&lsquo;ekt sotuvdan chiqib ketadi.</p>
+      <p><span class="ui">Bron</span> mutlaqo boshqa narsa: bu muddati, badali va mijoz oldidagi majburiyatlari bo&lsquo;lgan alohida yozuv. &laquo;Har ehtimolga qarshi&raquo; bron qilmang: ob&lsquo;ekt sotuvdan chiqadi, mijozda esa badal bo&lsquo;yicha qarz paydo bo&lsquo;ladi.</p>
     </div>
 
     <p>Bino kartochkasidagi <span class="ui">Planlar</span> yorlig&lsquo;i korpusning barcha tipik planlarini rasmlari bilan ko&lsquo;rsatadi — mijozga ko&lsquo;rsatish uchun qulay.</p>
@@ -348,39 +350,82 @@
   <!-- ═══════════════ 07 ═══════════════ -->
   <section class="ch" id="c7">
     <h3><em>07</em>Bron va bitim</h3>
-    <p class="lede">Bitim to&lsquo;rt bosqichda olib boriladi. Oldingisi yopilmaguncha keyingisi ochilmaydi.</p>
+    <p class="lede">Bron va bitim — ikki xil yozuv. Bron ob&lsquo;ektni mijoz uchun ushlab turadi, bitim esa shartnoma bo&lsquo;yicha ish boshlanganda tuziladi.</p>
 
     <div class="flow">
-      <div class="st"><b>1. Ma&lsquo;lumot</b><span>Mijoz, ob&lsquo;ekt, muddat</span></div>
+      <div class="st"><b>1. Bron</b><span>Mijoz, muddat (kun), badal</span></div>
       <div class="ar">&rarr;</div>
-      <div class="st"><b>2. Shartlar</b><span>Narx va chegirmalar</span></div>
+      <div class="st"><b>2. Bitim</b><span>Narx va chegirmalar</span></div>
       <div class="ar">&rarr;</div>
       <div class="st"><b>3. To&lsquo;lov jadvali</b><span>Summani taqsimlash</span></div>
       <div class="ar">&rarr;</div>
       <div class="st"><b>4. Hujjatlar</b><span>Shartnoma va imzolar</span></div>
     </div>
 
-    <p>Bitimlar <span class="path">Bitimlar</span> bo&lsquo;limida jamlangan. Bitimni shartnoma bo&lsquo;yicha topish uchun filtrlardagi <span class="ui">Shartnoma raqami</span> maydoniga raqamni yoki uning bir qismini kiriting — katta-kichik harf ahamiyatsiz, raqam ro&lsquo;yxat qatorida ko&lsquo;rinadi.</p>
+    <p>Bronlar <span class="path">Bronlar</span>, bitimlar <span class="path">Bitimlar</span> bo&lsquo;limida jamlangan. Bitim yoki bronni shartnoma bo&lsquo;yicha topish uchun filtrlardagi <span class="ui">Shartnoma raqami</span> maydoniga raqamni yoki uning bir qismini kiriting — katta-kichik harf ahamiyatsiz.</p>
+
+    <div class="note">
+      <p><b>Nima o&lsquo;zgardi.</b> Avval bron bitimning holati edi: &laquo;bron qilish&raquo; &laquo;bitim yaratish&raquo; degani edi, birinchi saqlangan jadval esa uni ishga o&lsquo;tkazardi. Endi bron — o&lsquo;z muddati, narxi, shartnomasi va badali bo&lsquo;lgan alohida yozuv. Bronda to&lsquo;lov jadvali yo&lsquo;q, jadvalni saqlash bitim holatini ham o&lsquo;zgartirmaydi.</p>
+    </div>
 
     <h4>Bron yaratish</h4>
     <ol class="steps">
-      <li><p>Ob&lsquo;ekt kartochkasida <span class="ui">Bron qilish</span> ni bosing.</p></li>
-      <li><p>Ro&lsquo;yxatdan <span class="ui">Mijoz</span> ni tanlang — ism yonida asosiy telefon ko&lsquo;rsatiladi.</p></li>
-      <li><p>Mijoz ariza bo&lsquo;yicha kelgan bo&lsquo;lsa, uni <span class="ui">Ariza (ixtiyoriy)</span> maydonida tanlang — ro&lsquo;yxatda shu mijozning ochiq arizalari bo&lsquo;ladi. Bu bog&lsquo;lanish voronkani yopadi: bitim muvaffaqiyatli yopilganda ariza ham u bilan birga yopiladi.</p></li>
-      <li><p><span class="ui">Bron tugash sanasi</span> ni ko&lsquo;rsating — ob&lsquo;ekt mijoz uchun qaysi sanagacha ushlab turiladi.</p></li>
-      <li><p><span class="ui">Bitim yaratish</span> tugmasini bosing.</p></li>
+      <li><p>Ob&lsquo;ekt kartochkasida <span class="ui">Bron qilish</span> ni bosing. Ob&lsquo;ekt band bo&lsquo;lsa, tugma <span class="ui">Navbatga turish</span> deb nomlanadi.</p></li>
+      <li><p>Ro&lsquo;yxatdan <span class="ui">Mijoz</span> ni tanlang — ism yonida asosiy telefon ko&lsquo;rsatiladi. <b>Bron uchun pasport ma&lsquo;lumotlari kerak emas</b>: ular bitim tuzishda kerak bo&lsquo;ladi.</p></li>
+      <li><p>Mijoz ariza bo&lsquo;yicha kelgan bo&lsquo;lsa, uni <span class="ui">Ariza (ixtiyoriy)</span> maydonida tanlang. Bu bog&lsquo;lanish voronkani yopadi: ariza bitimga o&lsquo;tadi va u bilan birga yopiladi.</p></li>
+      <li><p><span class="ui">Bron muddati, kun</span> ni ko&lsquo;rsating — ob&lsquo;ekt necha kun ushlab turiladi. Eng kam muddat kompaniya sozlamalarida belgilangan, maydon ostida eslatma ko&lsquo;rinadi.</p></li>
+      <li><p><span class="ui">Bron qilish</span> tugmasini bosing.</p></li>
     </ol>
 
-    <p>Shundan so&lsquo;ng: bitim <span class="chip y">Bron</span> holatini oladi, ob&lsquo;ekt ham <span class="chip y">Bron</span> holatiga o&lsquo;tadi, narx va 1 m&sup2; narxi joriy holatda qayd etiladi. Keyinchalik narxlar o&lsquo;zgarsa, bu sizning bitimingizga ta&lsquo;sir qilmaydi.</p>
-    <p>Bitim kompaniyangizning bitimlar valyutasida yuritiladi. Loyiha praysi boshqa valyutada bo&lsquo;lsa — masalan, narxlar dollarda, bitimlar esa so&lsquo;mda, — narx bron kunidagi kurs bo&lsquo;yicha qayta hisoblanadi. Prays bo&lsquo;yicha dastlabki narx va kurs &laquo;Shartlar&raquo; bosqichida ko&lsquo;rinadi. Tizim kurs yo&lsquo;qligi haqida xabar bersa (&laquo;Нет курса … на …&raquo;), kurs hali yuklanmagan: administrator yoki moliyachiga murojaat qiling.</p>
+    <p><b>Ob&lsquo;ekt bo&lsquo;sh edi.</b> Bron darhol amalga kiradi: sanalar yoziladi, ob&lsquo;ekt narxi qayd etiladi va badal yaratiladi. Ob&lsquo;ekt <span class="chip y">Bron</span> holatini oladi. Keyinchalik prays o&lsquo;zgarsa, bu sizning broningizga ta&lsquo;sir qilmaydi.</p>
+    <p><b>Ob&lsquo;ekt band edi.</b> Bron navbat oxiriga <span class="chip b">Navbatda</span> holati bilan turadi. Unda hozircha narx ham, sanalar ham, badal ham yo&lsquo;q — bron amalga kirganda paydo bo&lsquo;ladi.</p>
+
+    <h4>Ob&lsquo;ekt bo&lsquo;yicha bronlar navbati</h4>
+    <p>Bitta ob&lsquo;ektga xohlagancha bron qo&lsquo;yish mumkin. Navbat qat&lsquo;iy yaratilgan sana bo&lsquo;yicha — bronlarni joyini almashtirib bo&lsquo;lmaydi.</p>
+    <ul class="list">
+      <li><p>Navbat ob&lsquo;ekt va bron kartochkasida ko&lsquo;rinadi: amaldagi bron belgilangan, qolganlari tartib raqami bilan turadi.</p></li>
+      <li><p>Navbatdagi bronlarning sanalari <b>taxminiy</b> va &laquo;taxminiy&raquo; so&lsquo;zi bilan belgilangan: oldingi bronning tugashi keyingisining boshlanishi. Oldingi bron uzaytirilsa yoki bekor qilinsa, sanalar suriladi. Taxminiy sanani mijozga aniq sana sifatida aytmang.</p></li>
+      <li><p>Ob&lsquo;ekt bo&lsquo;yicha bitim ketayotgan bo&lsquo;lsa, navbatdagi bronlarda sana umuman bo&lsquo;lmaydi — &laquo;kutilmoqda&raquo; deb turadi.</p></li>
+      <li><p>Boshqa menejerning broni mijozini ko&lsquo;rmaysiz — faqat ob&lsquo;ekt bandligi va navbat uzunligini ko&lsquo;rasiz.</p></li>
+    </ul>
+
+    <p>Amaldagi bron muddati tugaganda yoki bekor qilinganda ob&lsquo;ekt navbatdagi keyingi bronga o&lsquo;tadi: unga sanalar yoziladi, badali yaratiladi va narxi qayd etiladi. <b>Shu vaqt ichida prays ko&lsquo;tarilgan bo&lsquo;lsa, keyingi bron yangi narxni oladi</b> — ko&lsquo;tarilish ob&lsquo;ektga aynan shu paytda yetib boradi.</p>
+
+    <h4>Bron uchun badal</h4>
+    <p>Amaldagi bron bo&lsquo;yicha bitta to&lsquo;lov — badal yaratiladi. Summa qat&lsquo;iy, kompaniya sozlamalaridan, kompaniya bitimlari valyutasida (loyiha praysi boshqa valyutada bo&lsquo;lishi mumkin).</p>
+    <ul class="list">
+      <li><p>Badal — <b>haqiqiy qarz</b>: u <span class="path">Moliya</span> bo&lsquo;limida ko&lsquo;rinadi va to&lsquo;lanmaguncha &laquo;To&lsquo;lanishi kerak&raquo; da hisoblanadi.</p></li>
+      <li><p>Bron muddati tugasa yoki bekor qilinsa, qarz o&lsquo;zi olib tashlanadi va kechikishda qolmaydi.</p></li>
+      <li><p>Bron bo&lsquo;yicha bitim tuzilganda badal bitim jadvalining birinchi qatoriga aylanadi. Shuning uchun <span class="ui">Shartnoma narxi</span> uni o&lsquo;z ichiga olishi kerak, aks holda jadval summa bilan to&lsquo;g&lsquo;ri kelmaydi.</p></li>
+      <li><p>Sozlamalarda badal summasi nol bo&lsquo;lsa, bron bepul va to&lsquo;lov yaratilmaydi.</p></li>
+    </ul>
+
+    <h4>Bronni uzaytirish</h4>
+    <p>Bron kartochkasida — <span class="ui">Uzaytirish</span>. Yangi muddatni kunda ko&lsquo;rsating. Uzaytirish bepul: birinchi badal uzaytirilgan muddatni qoplaydi. Muddati tugamagan bronni navbatning har qanday joyida uzaytirish mumkin; orqadagi bronlarning sanalari o&lsquo;zi qayta hisoblanadi.</p>
+
+    <h4>Bronni bekor qilish</h4>
+    <p>Bron kartochkasidagi <span class="ui">Bronni bekor qilish</span>, sabab ko&lsquo;rsatish shart. To&lsquo;lanmagan badal olib tashlanadi, ob&lsquo;ekt navbatdagi keyingi bronga o&lsquo;tadi yoki <span class="chip g">Tanlov</span> ga qaytadi. Bitim tuzilgan bronni bu yo&lsquo;l bilan bekor qilib bo&lsquo;lmaydi: uning taqdirini bitim hal qiladi.</p>
+
+    <h4>Bron bo&lsquo;yicha bitim tuzish</h4>
+    <ol class="steps">
+      <li><p><b>Amaldagi</b> bron kartochkasini ochib <span class="ui">Bitim tuzish</span> ni bosing.</p></li>
+      <li><p>Mijozning pasport ma&lsquo;lumotlari to&lsquo;ldirilmagan bo&lsquo;lsa, tugma ishlamaydi — kartochka qaysi maydonlar yetishmayotganini aytadi. Pasportsiz shartnoma tuzilmaydi.</p></li>
+    </ol>
+    <p>Bitim darhol <span class="chip b">Jarayonda</span> holatida yaratiladi, ob&lsquo;ekt <span class="chip p">Bitim jarayonda</span> ga o&lsquo;tadi, bron esa <span class="chip g">Bitimga aylantirilgan</span> holatini oladi va bitimning bir qismiga aylanadi.</p>
+    <p><b>Bitim narxi — bron narxi, praysdan emas.</b> Bron amal qilgan vaqtda prays ko&lsquo;tarilgan bo&lsquo;lishi mumkin, lekin mijoz bilan bron paytidagi narx haqida kelishilgan. Bitim kompaniyangizning bitimlar valyutasida yuritiladi: loyiha praysi boshqa valyutada bo&lsquo;lsa, bron narxi bitim kunidagi kurs bo&lsquo;yicha qayta hisoblanadi, dastlabki narx va kurs &laquo;Shartlar&raquo; bosqichida ko&lsquo;rinadi. Tizim &laquo;Нет курса … на …&raquo; deb yozsa, kurs hali yuklanmagan — administrator yoki moliyachiga murojaat qiling.</p>
 
     <div class="warn">
-      <p><b>Bitta ob&lsquo;ekt — bitta bitim.</b> Ob&lsquo;ekt bo&lsquo;yicha <span class="ui">Bron</span>, <span class="ui">Jarayonda</span> yoki <span class="ui">Muvaffaqiyatli yopilgan</span> holatidagi bitim bo&lsquo;lsa, tizim yangisini yaratishga ruxsat bermaydi. Sotilgan ob&lsquo;ektni qayta bron qilib bo&lsquo;lmaydi — avval eskisini bekor qilish yoki shartnomasini buzish kerak.</p>
-      <p>Ikki menejer <span class="ui">Bron qilish</span> ni bir vaqtda bossa, bronni faqat bittasi oladi — ikkinchisiga tizim rad javobini ko&lsquo;rsatadi.</p>
+      <p><b>Bitta ob&lsquo;ekt — bitta bitim.</b> Ob&lsquo;ekt bo&lsquo;yicha <span class="ui">Jarayonda</span> yoki <span class="ui">Muvaffaqiyatli yopilgan</span> bitim bo&lsquo;lsa, tizim yangisini yaratishga ruxsat bermaydi. Sotilgan ob&lsquo;ektni bron qilib bo&lsquo;lmaydi.</p>
+      <p><b>Band ob&lsquo;ekt bo&lsquo;yicha bitimni bronni chetlab o&lsquo;tib tuzib bo&lsquo;lmaydi.</b> Ob&lsquo;ekt bron qilingan bo&lsquo;lsa, bitim faqat shu bron bo&lsquo;yicha tuziladi — aks holda u navbatni chetlab o&lsquo;tgan bo&lsquo;lardi.</p>
+      <p>Ikki menejer <span class="ui">Bron qilish</span> ni bir vaqtda bossa, amaldagi bronni faqat bittasi oladi — ikkinchisi navbatda bo&lsquo;ladi.</p>
+    </div>
+
+    <div class="note">
+      <p><b>Navbat bilan keyin nima bo&lsquo;ladi.</b> Bitim bekor qilindi yoki shartnomasi buzildi — bron olib tashlanadi, ob&lsquo;ekt navbatdagi keyingi bronga o&lsquo;tadi (prays o&lsquo;zgargan bo&lsquo;lsa, yangi narx bilan). Bitim muvaffaqiyatli yopildi — navbatdagi qolgan bronlar &laquo;boshqa bron bitimga aylandi&raquo; sababi bilan olib tashlanadi, qarzlari bekor qilinadi, ob&lsquo;ekt <span class="chip r">Sotilgan</span> bo&lsquo;ladi.</p>
     </div>
 
     <h4>1-bosqich. Bitim ma&lsquo;lumotlari</h4>
-    <p>Ma&lsquo;lumot ekrani: mijoz, ob&lsquo;ekt, <span class="ui">Bron boshi</span>, <span class="ui">Bron oxiri</span>, boshlang&lsquo;ich narx va 1 m&sup2; narxi. Tekshiring va <span class="ui">Keyingi</span> ni bosing.</p>
+    <p>Ma&lsquo;lumot ekrani: mijoz, ob&lsquo;ekt, bitim yaratilgan sana, u o&lsquo;sib chiqqan bronga havola va bron bo&lsquo;yicha narx. Tekshiring va <span class="ui">Keyingi</span> ni bosing.</p>
 
     <h4>2-bosqich. Bitim shartlari</h4>
     <ol class="steps">
@@ -491,7 +536,7 @@
     </ol>
 
     <div class="note">
-      <p><b>Bronni bitim muallifi yoki rahbar bekor qila oladi.</b> Bo&lsquo;limdagi hamkasbingiz bitimini ko&lsquo;rasiz, lekin uni o&lsquo;zgartira yoki bekor qila olmaysiz — kartochka tepasida bu haqda yozilgan, <span class="ui">Bekor qilish / Shartnomani buzish</span> tugmasi esa yo&lsquo;q. Bekor qilish oynasi rad etsa, sababini yozadi: huquq yo&lsquo;q, bekor qilish sababi ko&lsquo;rsatilmagan, bekor qilish sanasi yoki hujjati yo&lsquo;q.</p>
+      <p><b>Bitimni bekor qilish yoki bronni olib tashlashni ularning muallifi yoki rahbar qila oladi.</b> Bo&lsquo;limdagi hamkasbingiz yozuvini ko&lsquo;rasiz, lekin uni o&lsquo;zgartira olmaysiz — kartochka tepasida bu haqda yozilgan, <span class="ui">Bekor qilish / Shartnomani buzish</span> va <span class="ui">Bronni bekor qilish</span> tugmalari esa yo&lsquo;q. Oyna rad etsa, sababini yozadi: huquq yo&lsquo;q, sabab ko&lsquo;rsatilmagan, sana yoki hujjat yo&lsquo;q.</p>
     </div>
 
     <div class="cols">
@@ -568,7 +613,10 @@
     <p><span class="chip g">Tanlov</span> <span class="chip b">Rezerv</span> <span class="chip y">Bron</span> <span class="chip p">Bitim jarayonda</span> <span class="chip r">Sotilgan</span></p>
 
     <h5>Bitim</h5>
-    <p><span class="chip y">Bron</span> <span class="chip b">Jarayonda</span> <span class="chip g">Muvaffaqiyatli yopilgan</span> <span class="chip n">Bekor qilingan</span> <span class="chip r">Shartnoma buzilgan</span></p>
+    <p><span class="chip b">Jarayonda</span> <span class="chip g">Muvaffaqiyatli yopilgan</span> <span class="chip n">Bekor qilingan</span> <span class="chip r">Shartnoma buzilgan</span></p>
+
+    <h5>Bron</h5>
+    <p><span class="chip b">Navbatda</span> <span class="chip y">Amalda</span> <span class="chip g">Bitimga aylantirilgan</span> <span class="chip n">Muddati tugagan</span> <span class="chip r">Bekor qilingan</span></p>
 
     <h5>To&lsquo;lov</h5>
     <p><span class="chip b">To&lsquo;lanishi kerak</span> <span class="chip g">To&lsquo;langan</span> <span class="chip r">Muddati o&lsquo;tgan</span> <span class="chip y">Qaytarilishi kerak</span> <span class="chip n">Qaytarilgan</span></p>
@@ -576,13 +624,16 @@
     <h4>Holatlar bir-biri bilan qanday bog&lsquo;langan</h4>
     <div class="scroll">
       <table>
-        <thead><tr><th>Sizning amalingiz</th><th>Bitim holati</th><th>Ob&lsquo;ekt holati</th></tr></thead>
+        <thead><tr><th>Sizning amalingiz</th><th>Bron holati</th><th>Bitim holati</th><th>Ob&lsquo;ekt holati</th></tr></thead>
         <tbody>
-          <tr><td>Ob&lsquo;ekt sotuvdan chiqarildi (rahbar va administrator)</td><td class="num">&mdash;</td><td><span class="chip b">Rezerv</span></td></tr>
-          <tr><td>Bitim (bron) yaratildi</td><td><span class="chip y">Bron</span></td><td><span class="chip y">Bron</span></td></tr>
-          <tr><td>To&lsquo;lov jadvali saqlandi</td><td><span class="chip b">Jarayonda</span></td><td><span class="chip p">Bitim jarayonda</span></td></tr>
-          <tr><td>Ikkala imzo sanasi to&lsquo;ldirildi</td><td><span class="chip g">Muvaffaqiyatli yopilgan</span></td><td><span class="chip r">Sotilgan</span></td></tr>
-          <tr><td>Bitim bekor qilindi</td><td><span class="chip n">Bekor qilingan</span></td><td><span class="chip g">Tanlov</span></td></tr>
+          <tr><td>Ob&lsquo;ekt sotuvdan chiqarildi (rahbar va administrator)</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td><span class="chip b">Rezerv</span></td></tr>
+          <tr><td>Bo&lsquo;sh ob&lsquo;ekt bron qilindi</td><td><span class="chip y">Amalda</span></td><td class="num">&mdash;</td><td><span class="chip y">Bron</span></td></tr>
+          <tr><td>Band ob&lsquo;ekt bron qilindi</td><td><span class="chip b">Navbatda</span></td><td class="num">&mdash;</td><td>o&lsquo;zgarmaydi</td></tr>
+          <tr><td>Bron muddati tugadi yoki bekor qilindi</td><td><span class="chip n">Muddati tugagan</span> / <span class="chip r">Bekor qilingan</span></td><td class="num">&mdash;</td><td><span class="chip g">Tanlov</span> yoki navbatdagi keyingi bron ostida <span class="chip y">Bron</span></td></tr>
+          <tr><td>Bron bo&lsquo;yicha bitim tuzildi</td><td><span class="chip g">Bitimga aylantirilgan</span></td><td><span class="chip b">Jarayonda</span></td><td><span class="chip p">Bitim jarayonda</span></td></tr>
+          <tr><td>To&lsquo;lov jadvali saqlandi</td><td>o&lsquo;zgarmaydi</td><td>o&lsquo;zgarmaydi</td><td>o&lsquo;zgarmaydi</td></tr>
+          <tr><td>Ikkala imzo sanasi to&lsquo;ldirildi</td><td><span class="chip g">Bitimga aylantirilgan</span> bo&lsquo;lib qoladi, navbatdagi qolgan bronlar olib tashlanadi</td><td><span class="chip g">Muvaffaqiyatli yopilgan</span></td><td><span class="chip r">Sotilgan</span></td></tr>
+          <tr><td>Bitim bekor qilindi yoki shartnomasi buzildi</td><td><span class="chip r">Bekor qilingan</span></td><td><span class="chip n">Bekor qilingan</span> / <span class="chip r">Shartnoma buzilgan</span></td><td><span class="chip g">Tanlov</span> yoki navbatdagi keyingi bron ostida <span class="chip y">Bron</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -604,7 +655,16 @@
       <dd>Ko&lsquo;rsatilgan email boshqa mijozda band bo&lsquo;lishi mumkin. Bazani <span class="ui">Email bo&lsquo;yicha qidirish</span> orqali tekshiring yoki maydonni bo&lsquo;sh qoldiring.</dd>
 
       <dt>Ob&lsquo;ektni bron qila olmayapman</dt>
-      <dd>Ob&lsquo;ekt bo&lsquo;yicha bitim bor — <span class="ui">Bron</span>, <span class="ui">Jarayonda</span> yoki <span class="ui">Muvaffaqiyatli yopilgan</span>. Uni <span class="ui">Bitimga o&lsquo;tish</span> orqali oching. Ob&lsquo;ekt sotilgan bo&lsquo;lsa, uni bron qilib bo&lsquo;lmaydi. Yana bir sabab — shartnomasi buzilgan bitim ob&lsquo;ekti bo&lsquo;lib, mijozga puli hali qaytarilmagan.</dd>
+      <dd>Ob&lsquo;ekt <span class="ui">Rezerv</span> da yoki sotilgan — uni bron qilib bo&lsquo;lmaydi. Ob&lsquo;ekt shunchaki bron yoki bitim bilan band bo&lsquo;lsa, bron baribir tuziladi: u navbatga turadi. Yana bir sabab — muddat kompaniya sozlamalaridagi eng kam muddatdan qisqa yoki badal uchun hisob ko&lsquo;rsatilmagan (bu administratorga).</dd>
+
+      <dt>Bron bo&lsquo;yicha bitim tuza olmayapman</dt>
+      <dd>Uch narsani tekshiring: bron amalda (navbatda emas va muddati tugamagan), bitim shu mijozga tuzilmoqda va mijozning pasport ma&lsquo;lumotlari to&lsquo;ldirilgan. Bron muddati tugagan bo&lsquo;lsa, uni uzaytirib bo&lsquo;lmaydi — yangi bron yarating.</dd>
+
+      <dt>Mijoz badalni to&lsquo;lagan, lekin bitim jadvalida u yo&lsquo;q</dt>
+      <dd>Badal bron bo&lsquo;yicha bitim tuzilganda jadvalga tushadi va uning birinchi qatori bo&lsquo;ladi. Agar u yerda bo&lsquo;lmasa, bitim bronsiz tuzilgan. <span class="ui">Shartnoma narxi</span> ni ham tekshiring: u badalni o&lsquo;z ichiga olishi kerak.</dd>
+
+      <dt>Navbatdagi bron sanalari o&lsquo;zi o&lsquo;zgardi</dt>
+      <dd>Shunday bo&lsquo;lishi kerak: navbatdagi bronlarning sanalari taxminiy va &laquo;taxminiy&raquo; so&lsquo;zi bilan belgilangan. Oldingi bron uzaytirildi yoki bekor qilindi — butun navbat surildi. Aniq sanalar bron amalga kirganda paydo bo&lsquo;ladi.</dd>
 
       <dt>To&lsquo;lov jadvali saqlanmayapti</dt>
       <dd>Barcha to&lsquo;lovlar summasi <span class="ui">Shartnoma narxi</span> ga mos kelmayapti. <span class="ui">Qoldiq</span> maydonini nolga tenglashtiring.</dd>

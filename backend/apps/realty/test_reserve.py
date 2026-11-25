@@ -5,7 +5,7 @@
 """
 
 import io
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pandas as pd
@@ -48,7 +48,12 @@ class PropertyReserveTests(TestCase):
         self.head = self._user('head', Permission.objects.filter(
             resource__in=SALES + CATALOG, scope__in=['OWN', 'COMPANY'],
         ))
-        self.client_obj = Client.objects.create(full_name='Клиент', company=self.company, created_by=self.manager)
+        # Паспорт заполнен: сделку без паспортных данных не оформить
+        self.client_obj = Client.objects.create(
+            full_name='Клиент', company=self.company, created_by=self.manager,
+            passport_series='AA', passport_number='1234567', passport_issued_by='ИИБ',
+            passport_issued_date=date(2020, 1, 15), pinfl='12345678901234',
+        )
 
     def _user(self, username, permissions):
         role = Role.objects.create(name=username, code=username.upper())
@@ -68,7 +73,6 @@ class PropertyReserveTests(TestCase):
     def book(self, user):
         return self.api(user).post('/api/deals/', {
             'client': self.client_obj.id, 'property': self.unit.id,
-            'booking_end_date': (timezone.now() + timedelta(days=5)).isoformat(),
         }, format='json')
 
     def set_status(self, user, value):
@@ -107,7 +111,7 @@ class PropertyReserveTests(TestCase):
         response = self.book(self.manager)
         self.assertEqual(response.status_code, 201, response.data)
         self.unit.refresh_from_db()
-        self.assertEqual(self.unit.status, Property.PropertyStatus.BOOKING)
+        self.assertEqual(self.unit.status, Property.PropertyStatus.IN_DEAL)
 
     def test_manager_cannot_put_unit_in_reserve(self):
         self.unit.status = Property.PropertyStatus.SELECTION

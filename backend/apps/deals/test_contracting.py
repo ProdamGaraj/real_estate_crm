@@ -53,7 +53,6 @@ class ContractingTests(TestCase):
                                        unit_number=str(self.units), floor=1, area=Decimal('40'), price=price)
         return Deal.objects.create(company=self.company, client=client or self.client_a, property=unit,
                                    status=status, created_by=self.newbie, currency='UZS',
-                                   booking_end_date=timezone.now() + timedelta(days=3),
                                    initial_price=price, initial_price_per_sqm=Decimal('1'),
                                    contract_price=price, contract_date=contract_date, closed_at=closed_at)
 
@@ -63,10 +62,10 @@ class ContractingTests(TestCase):
     def test_in_progress_and_closed_deals_count_others_do_not(self):
         in_progress = self.deal(Deal.DealStatus.IN_PROGRESS, Decimal('100'), contract_date=self.today)
         closed = self.deal(Deal.DealStatus.CLOSED_WON, Decimal('200'), contract_date=self.today)
-        # Без даты договора — по дате закрытия, а если нет и её — по дате брони
+        # Без даты договора — по дате закрытия, а если нет и её — по дате создания сделки
         closed_no_date = self.deal(Deal.DealStatus.CLOSED_WON, Decimal('300'), closed_at=timezone.now())
         in_progress_no_date = self.deal(Deal.DealStatus.IN_PROGRESS, Decimal('400'))
-        for status in (Deal.DealStatus.BOOKING, Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED):
+        for status in (Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED):
             self.deal(status, Decimal('999'), contract_date=self.today)
         # Договор прошлого месяца в этот месяц не попадает
         self.deal(Deal.DealStatus.IN_PROGRESS, Decimal('999'), contract_date=self.month_start - timedelta(days=1))

@@ -46,6 +46,9 @@ export const SETTINGS_TABS: SettingsTabConfig[] = [
   { id: 'realty', labelKey: 'pages.settings.realty_tab', resources: ['BUILDING_TYPE'] },
   { id: 'finances', labelKey: 'pages.settings.finances_tab', resources: ['PAYMENT_TYPE', 'BENEFICIARY_ACCOUNT'] },
   { id: 'currencies', labelKey: 'pages.settings.currencies_tab', resources: ['EXCHANGE_RATE'] },
+  // Взнос за бронь и минимальный срок задаёт руководство, а не менеджер,
+  // который бронирует, — поэтому вкладка идёт по праву на настройки
+  { id: 'bookings', labelKey: 'pages.settings.bookings_tab', resources: ['SETTINGS'] },
   { id: 'templates', labelKey: 'pages.settings.templates_tab', resources: ['TEMPLATE'] },
   { id: 'api-keys', labelKey: 'pages.settings.api_keys_tab', resources: ['PARTNER_API_KEY'] },
 ];

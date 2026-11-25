@@ -53,8 +53,7 @@ class PaymentTermsTests(TestCase):
                                        area=Decimal('40'), price=price)
         return Deal.objects.create(company=self.company, client=self.client_a, property=unit,
                                    status=Deal.DealStatus.IN_PROGRESS, created_by=self.user,
-                                   currency='UZS', booking_end_date=timezone.now() + timedelta(days=3),
-                                   initial_price=price, initial_price_per_sqm=Decimal('1'),
+                                   currency='UZS', initial_price=price, initial_price_per_sqm=Decimal('1'),
                                    contract_price=price, payment_plan=self.plan)
 
     def payment(self, deal, amount, status=Payment.PaymentStatus.PENDING, due_date=None):

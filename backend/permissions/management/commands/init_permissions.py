@@ -245,7 +245,7 @@ class Command(BaseCommand):
             # Все разрешения уровня DEPARTMENT и OWN для основных ресурсов
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',
-                'DEAL', 'PAYMENT', 'TASK'
+                'BOOKING', 'DEAL', 'PAYMENT', 'TASK'
             ]
             
             permissions = Permission.objects.filter(
@@ -291,7 +291,7 @@ class Command(BaseCommand):
         # При --sync-roles состав прав обновляется и у существующей роли
         if self._should_fill(role, created):
             # Полный доступ к своим клиентам, заявкам, встречам, сделкам, задачам
-            own_resources = ['CLIENT', 'APPLICATION', 'MEETING', 'DEAL', 'PAYMENT', 'TASK']
+            own_resources = ['CLIENT', 'APPLICATION', 'MEETING', 'BOOKING', 'DEAL', 'PAYMENT', 'TASK']
             own_permissions = Permission.objects.filter(
                 resource__in=own_resources,
                 scope='OWN'
@@ -348,7 +348,7 @@ class Command(BaseCommand):
             main_resources = [
                 'CLIENT', 'APPLICATION', 'MEETING',
                 'PROJECT', 'BUILDING', 'PROPERTY',
-                'DEAL', 'PAYMENT', 'TASK',
+                'BOOKING', 'DEAL', 'PAYMENT', 'TASK',
                 'DASHBOARD', 'REPORT'
             ]
             

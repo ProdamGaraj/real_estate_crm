@@ -17,6 +17,7 @@ const routes: RouteConfig[] = [
     { path: '/applications', resource: 'APPLICATION' },
     { path: '/meetings', resource: 'MEETING' },
     { path: '/tasks', resource: 'TASK' },
+    { path: '/bookings', resource: 'BOOKING' },
     { path: '/deals', resource: 'DEAL' },
     { path: '/projects', resource: 'PROJECT' },
     { path: '/finances', resource: 'PAYMENT' },

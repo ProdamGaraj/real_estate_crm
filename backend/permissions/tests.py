@@ -188,7 +188,6 @@ class SharedReferenceVisibilityTests(TestCase):
                                        floor=2, area=Decimal('40'), price=Decimal('100'))
         client = Client.objects.create(full_name='Клиент', company=self.company, created_by=self.user)
         deal = Deal.objects.create(company=self.company, client=client, property=prop, created_by=self.user,
-                                   booking_end_date=timezone.now() + timedelta(days=5),
                                    initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2'))
 
         response = self.client.get(f'/api/deals/{deal.id}/available-templates/')

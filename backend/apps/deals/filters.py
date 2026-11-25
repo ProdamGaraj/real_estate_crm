@@ -1,6 +1,36 @@
 # dieforglory/ai_crm/ai_crm-297f05ecec9a7a368e6ea96ef53d61a3abc0291f/real_estate_crm/backend/apps/deals/filters.py
 from django_filters import rest_framework as filters
-from .models import Deal
+from .models import Booking, Deal
+
+
+class BookingFilter(filters.FilterSet):
+    client_name = filters.CharFilter(field_name='client__full_name', lookup_expr='icontains')
+    contract_number = filters.CharFilter(field_name='contract_number', lookup_expr='icontains')
+    property_id = filters.NumberFilter(field_name='property__id')
+    project_id = filters.NumberFilter(field_name='property__building__project__id')
+    building_id = filters.NumberFilter(field_name='property__building__id')
+    created_by_id = filters.NumberFilter(field_name='created_by__id')
+    status = filters.ChoiceFilter(choices=Booking.BookingStatus.choices)
+    # Действующие и ожидающие одним фильтром: с ними и работают
+    live = filters.BooleanFilter(method='filter_live')
+    created_at_after = filters.DateFilter(field_name='created_at', lookup_expr='date__gte')
+    created_at_before = filters.DateFilter(field_name='created_at', lookup_expr='date__lte')
+    ends_before = filters.DateFilter(field_name='end_date', lookup_expr='date__lte')
+
+    class Meta:
+        model = Booking
+        fields = [
+            'client_name', 'contract_number', 'property_id', 'project_id', 'building_id',
+            'created_by_id', 'status', 'live', 'created_at_after', 'created_at_before',
+            'ends_before',
+        ]
+
+    def filter_live(self, queryset, name, value):
+        if value is None:
+            return queryset
+        if value:
+            return queryset.filter(status__in=Booking.LIVE_STATUSES)
+        return queryset.exclude(status__in=Booking.LIVE_STATUSES)
 
 class DealFilter(filters.FilterSet):
     client_name = filters.CharFilter(field_name='client__full_name', lookup_expr='icontains')

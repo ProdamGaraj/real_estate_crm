@@ -2,8 +2,9 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.db.models import Q, Count, Case, When, BooleanField, Sum
-from .models import Deal
+from .models import Booking, Deal
 from apps.realty.models import Property, Discount
+from apps.realty.services import log_property
 from .serializers import DealCreateSerializer, DealDetailSerializer, DealListSerializer
 from apps.realty.serializers import DiscountListSerializer
 from rest_framework import generics, status
@@ -12,6 +13,10 @@ from .models import Deal, DealLog
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 from rest_framework import serializers
+from .booking import (
+    BookingError, attach_booking_to_deal, cancel_booking_of_deal, cancel_queue, resettle_property,
+)
+from .occupancy import property_holder
 from .filters import DealFilter
 from apps.finances.models import Payment
 from apps.finances.currency import RateUnavailable, company_base_currency, cross_rate, money, stored_rate
@@ -37,9 +42,10 @@ class PropertyUnavailable(Exception):
 class DealSummaryView(APIView):
     permission_classes = [IsAuthenticated, ReportPermission]
 
-    # Колонки сводной таблицы: ключ в ответе API → статус сделки
+    # Колонки сводной таблицы: ключ в ответе API → статус сделки.
+    # Колонки «Бронь» здесь больше нет: бронь — отдельная сущность со своей
+    # сводкой (`BookingSummaryView`), и в воронке сделок брони её искажали
     STATUS_COLUMNS = (
-        ('booking', Deal.DealStatus.BOOKING),
         ('in_progress', Deal.DealStatus.IN_PROGRESS),
         ('closed_won', Deal.DealStatus.CLOSED_WON),
         ('terminated', Deal.DealStatus.TERMINATED),
@@ -50,17 +56,17 @@ class DealSummaryView(APIView):
     EXCEL_TEXT = {
         'ru': {
             'group': {'created_by': 'Менеджер', 'project': 'Проект', 'status': 'Статус'},
-            'booking': 'Бронь', 'in_progress': 'В работе', 'closed_won': 'Успешно закрыта',
+            'in_progress': 'В работе', 'closed_won': 'Успешно закрыта',
             'terminated': 'Расторгнута', 'cancelled': 'Отменена', 'total': 'Итого (без отменённых)',
         },
         'en': {
             'group': {'created_by': 'Manager', 'project': 'Project', 'status': 'Status'},
-            'booking': 'Booking', 'in_progress': 'In progress', 'closed_won': 'Closed won',
+            'in_progress': 'In progress', 'closed_won': 'Closed won',
             'terminated': 'Terminated', 'cancelled': 'Cancelled', 'total': 'Total (excl. cancelled)',
         },
         'uz': {
             'group': {'created_by': 'Menejer', 'project': 'Loyiha', 'status': 'Holat'},
-            'booking': 'Bron', 'in_progress': 'Jarayonda', 'closed_won': 'Muvaffaqiyatli yopilgan',
+            'in_progress': 'Jarayonda', 'closed_won': 'Muvaffaqiyatli yopilgan',
             'terminated': 'Shartnoma buzilgan', 'cancelled': 'Bekor qilingan',
             'total': 'Jami (bekor qilinganlarsiz)',
         },
@@ -75,7 +81,7 @@ class DealSummaryView(APIView):
         for row in rows:
             values = [row[key] for key in columns]
             if group_by == 'status':
-                # В строке — код статуса (BOOKING); в файле — его название
+                # В строке — код статуса (IN_PROGRESS); в файле — его название
                 key = {code.value: name for name, code in self.STATUS_COLUMNS}.get(row['group'])
                 values[0] = text.get(key, row['group'])
             table.append(values)
@@ -103,7 +109,6 @@ class DealSummaryView(APIView):
 
         # Widgets data
         widgets_data = queryset.aggregate(
-            booking_count=Count('id', filter=Q(status=Deal.DealStatus.BOOKING)),
             in_progress_count=Count('id', filter=Q(status=Deal.DealStatus.IN_PROGRESS)),
             closed_won_count=Count('id', filter=Q(status=Deal.DealStatus.CLOSED_WON)),
             terminated_count=Count('id', filter=Q(status=Deal.DealStatus.TERMINATED)),
@@ -176,13 +181,12 @@ class DealListView(generics.ListCreateAPIView):
     # Статусы сделки, при которых объект уже занят. CLOSED_WON обязателен:
     # без него проданный объект можно было продать повторно.
     BLOCKING_DEAL_STATUSES = (
-        Deal.DealStatus.BOOKING,
         Deal.DealStatus.IN_PROGRESS,
         Deal.DealStatus.CLOSED_WON,
     )
-    # Статусы объекта, из которых допустимо начинать новую сделку. «Резерв»
-    # сюда не входит: объект в резерве не бронирует и не продаёт никто, пока
-    # сотрудник с правом изменения объектов не снимет резерв
+    # Статусы объекта, из которых допустимо начинать сделку без брони.
+    # «Резерв» сюда не входит: объект в резерве не бронирует и не продаёт
+    # никто, пока сотрудник с правом изменения объектов не снимет резерв
     AVAILABLE_PROPERTY_STATUSES = (
         Property.PropertyStatus.SELECTION,
     )
@@ -194,10 +198,30 @@ class DealListView(generics.ListCreateAPIView):
         try:
             with transaction.atomic():
                 # Блокируем объект до конца транзакции: без этого два менеджера
-                # проходят проверку одновременно и создают две брони на одну квартиру
-                property_instance = Property.objects.select_for_update().get(
-                    pk=serializer.validated_data['property'].pk
-                )
+                # проходят проверку одновременно и создают две сделки на одну квартиру
+                property_instance = Property.objects.select_for_update().select_related(
+                    'building__project'
+                ).get(pk=serializer.validated_data['property'].pk)
+
+                booking = serializer.validated_data.get('booking')
+                if booking is not None:
+                    # Бронь тоже под блокировкой: иначе ночной прогон может
+                    # снять её по истечении срока прямо во время оформления
+                    booking = Booking.objects.select_for_update().get(pk=booking.pk)
+                    if booking.property_id != property_instance.pk:
+                        raise PropertyUnavailable("Бронь оформлена на другой объект.")
+                    if booking.status != Booking.BookingStatus.ACTIVE:
+                        raise PropertyUnavailable(
+                            f"Сделка оформляется только по действующей брони, а эта — "
+                            f"«{booking.get_status_display()}»."
+                        )
+                    if booking.is_expired_by_date:
+                        raise PropertyUnavailable(
+                            f"Срок брони истёк {booking.end_date:%d.%m.%Y %H:%M}. "
+                            f"Продлите бронь или оформите новую."
+                        )
+                    if booking.client_id != serializer.validated_data['client'].pk:
+                        raise PropertyUnavailable("Бронь оформлена на другого клиента.")
 
                 if Deal.objects.filter(
                     property=property_instance,
@@ -210,21 +234,42 @@ class DealListView(generics.ListCreateAPIView):
                         "Объект в резерве — бронировать и продавать его нельзя. "
                         "Снять резерв может сотрудник с правом изменения объектов."
                     )
-                if property_instance.status not in self.AVAILABLE_PROPERTY_STATUSES:
-                    raise PropertyUnavailable(
-                        f"Объект недоступен для брони: текущий статус — "
-                        f"«{property_instance.get_status_display()}»."
-                    )
 
-                self.perform_create(serializer, property_instance)
-        except PropertyUnavailable as error:
+                if booking is None:
+                    # Сделка без брони — только по свободному объекту. Занятый
+                    # объект оформляется через свою бронь: иначе сделка обошла
+                    # бы очередь, в которой уже кто-то стоит
+                    if property_instance.status not in self.AVAILABLE_PROPERTY_STATUSES:
+                        holder_kind, holder = property_holder(property_instance)
+                        if holder_kind == 'booking':
+                            raise PropertyUnavailable(
+                                f"Объект забронирован (бронь №{holder.id}). Оформите сделку "
+                                f"по этой брони или снимите её."
+                            )
+                        raise PropertyUnavailable(
+                            f"Объект недоступен для сделки: текущий статус — "
+                            f"«{property_instance.get_status_display()}»."
+                        )
+
+                # Сделка — это договор, а договор без паспортных данных клиента
+                # не составить. Раньше проверка стояла на сохранении графика,
+                # то есть на переводе брони в работу; теперь бронь — отдельная
+                # сущность, и этот рубеж — создание сделки
+                passport_error = serializer.validated_data['client'].passport_required_error(
+                    'оформить сделку'
+                )
+                if passport_error:
+                    raise PropertyUnavailable(passport_error)
+
+                self.perform_create(serializer, property_instance, booking)
+        except (PropertyUnavailable, BookingError) as error:
             return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
         response_serializer = DealDetailSerializer(serializer.instance, context=self.get_serializer_context())
         headers = self.get_success_headers(response_serializer.data)
         return Response(response_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer, property_instance=None):
+    def perform_create(self, serializer, property_instance=None, booking=None):
         if property_instance is None:
             property_instance = serializer.validated_data['property']
         # Определяем компанию из профиля пользователя
@@ -232,19 +277,26 @@ class DealListView(generics.ListCreateAPIView):
         if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
             company = self.request.user.profile.company
 
-        # У объекта с нулевой площадью цена за м² не считается, а поле обязательное
-        price_per_sqm = property_instance.price_per_sqm
-        if price_per_sqm is None:
+        # Цена сделки — цена брони, зафиксированная при её активации: прайс
+        # мог подняться, пока бронь действовала, но с клиентом договорились
+        # о цене на момент брони. Без брони цена берётся из прайса объекта.
+        catalog_price = booking.price if booking is not None and booking.price else property_instance.price
+        area = property_instance.area
+        if not catalog_price or not area or area <= 0:
             raise PropertyUnavailable(
                 "У объекта не заполнены площадь или стоимость — "
                 "невозможно зафиксировать цену сделки."
             )
+        price_per_sqm = round(catalog_price / area, 2)
 
         # Сделка ведётся в валюте сделок компании, а прайс проекта может быть
-        # в другой валюте: цену пересчитываем по курсу на дату брони и
+        # в другой валюте: цену пересчитываем по курсу на дату сделки и
         # запоминаем исходную цену и курс — так расчёт можно проверить
         deal_currency = company_base_currency(company)
-        catalog_currency = property_instance.building.project.price_currency or deal_currency
+        catalog_currency = (
+            booking.currency if booking is not None and booking.currency
+            else property_instance.building.project.price_currency
+        ) or deal_currency
         try:
             rate = cross_rate(catalog_currency, deal_currency, timezone.localdate(), company)
         except RateUnavailable as error:
@@ -252,10 +304,11 @@ class DealListView(generics.ListCreateAPIView):
 
         deal = serializer.save(
             created_by=self.request.user,
+            status=Deal.DealStatus.IN_PROGRESS,
             currency=deal_currency,
-            initial_price=money(property_instance.price * rate),
+            initial_price=money(catalog_price * rate),
             initial_price_per_sqm=money(price_per_sqm * rate),
-            catalog_price=property_instance.price,
+            catalog_price=catalog_price,
             catalog_currency=catalog_currency,
             catalog_rate=stored_rate(rate),
             company=company
@@ -265,17 +318,37 @@ class DealListView(generics.ListCreateAPIView):
                 deal=deal,
                 user=self.request.user,
                 action=(
-                    f"Цена по прайсу {property_instance.price} {catalog_currency} пересчитана "
+                    f"Цена по прайсу {catalog_price} {catalog_currency} пересчитана "
                     f"по курсу {stored_rate(rate).normalize():f} в {deal.initial_price} {deal_currency}."
                 )
             )
-        property_instance.status = Property.PropertyStatus.BOOKING
+
+        property_instance.status = Property.PropertyStatus.IN_DEAL
         property_instance.save(update_fields=['status', 'updated_at'])
+        log_property(property_instance, self.request.user,
+                     f"Объект в сделке №{deal.id}: «Сделка в работе».")
         DealLog.objects.create(
             deal=deal,
             user=self.request.user,
-            action=f"Сделка создана (Бронь) для клиента '{deal.client}' по объекту '{deal.property}'."
+            action=f"Сделка создана для клиента '{deal.client}' по объекту '{deal.property}'."
         )
+
+        if booking is not None:
+            # Бронь становится частью сделки: статус CONVERTED, взнос
+            # получает ссылку на сделку и входит в её график первой строкой
+            attach_booking_to_deal(booking, deal, actor=self.request.user)
+            if booking.application_id and not deal.application_id:
+                deal.application_id = booking.application_id
+                deal.save(update_fields=['application', 'updated_at'])
+            DealLog.objects.create(
+                deal=deal,
+                user=self.request.user,
+                action=(
+                    f"Сделка оформлена по брони №{booking.id} от "
+                    f"{booking.start_date:%d.%m.%Y}: цена брони {booking.price} "
+                    f"{booking.currency} зафиксирована как цена сделки."
+                )
+            )
 
 
 class DealCancelOrTerminatePermission(DealPermission):
@@ -363,15 +436,36 @@ class DealCancelOrTerminateView(APIView):
                 if cancelled:
                     action_log += f" Платежей отменено: {cancelled}."
 
-            # Обновляем статус объекта недвижимости
+            deal.save()
+
+            # Бронь сделки отменяется вместе со сделкой, и очередь
+            # продвигается: следующая бронь становится действующей с этого
+            # момента, расчётные даты всей очереди пересчитываются
+            booking = cancel_booking_of_deal(
+                deal,
+                actor=request.user,
+                reason=f"Сделка №{deal.id} {deal.get_status_display().lower()}. {action_log}",
+                # Очередь двигает `resettle_property` ниже — один раз на весь
+                # переход, иначе объект пересчитывался бы дважды
+                advance=False,
+            )
+            if booking is not None:
+                action_log += f" Бронь №{booking.id} снята."
+
+            # Объект: занятость пересчитывается одной функцией — она же
+            # переносит новую цену из прайса и активирует следующую бронь
             if pending_refund:
                 action_log += " Объект освободится после возврата всех платежей."
             else:
-                property_obj = deal.property
-                property_obj.status = Property.PropertyStatus.SELECTION
-                property_obj.save(update_fields=['status', 'updated_at'])
-
-            deal.save()
+                property_obj = Property.objects.select_for_update().select_related(
+                    'building__project'
+                ).get(pk=deal.property_id)
+                following = resettle_property(
+                    property_obj, actor=request.user,
+                    reason=f"сделка №{deal.id} {deal.get_status_display().lower()}",
+                )
+                if following is not None:
+                    action_log += f" Объект перешёл к следующей брони в очереди (№{following.id})."
 
             # Логируем действие
             DealLog.objects.create(deal=deal, user=request.user, action=action_log)
@@ -571,6 +665,22 @@ class DealDetailView(generics.RetrieveUpdateAPIView):
                     user=self.request.user,
                     action="Статус сделки изменен на 'Успешно закрыта'."
                 )
+                log_property(instance.property, self.request.user,
+                             f"Объект продан по сделке №{instance.id}.")
+                # Объект продан — ждать в очереди больше нечего: хвост
+                # очереди снимается с причиной «другая бронь стала сделкой»,
+                # неоплаченные взносы по этим броням снимаются вместе с ними
+                cancelled = cancel_queue(
+                    instance.property,
+                    actor=self.request.user,
+                    reason=f"Объект продан по сделке №{instance.id} — другая бронь стала сделкой.",
+                )
+                if cancelled:
+                    DealLog.objects.create(
+                        deal=instance,
+                        user=self.request.user,
+                        action=f"Очередь броней по объекту снята: {cancelled}."
+                    )
                 self._close_related_application(instance)
 
     def _close_related_application(self, deal):

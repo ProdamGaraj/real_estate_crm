@@ -128,6 +128,10 @@ class DiscountPermission(BaseResourcePermission):
 
 
 # Permissions для Deals модуля
+class BookingPermission(BaseResourcePermission):
+    resource_type = 'BOOKING'
+
+
 class DealPermission(BaseResourcePermission):
     resource_type = 'DEAL'
 

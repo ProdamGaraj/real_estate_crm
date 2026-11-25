@@ -11,6 +11,8 @@ import ClientDetailPage from './pages/ClientDetailPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import ApplicationDetailPage from './pages/ApplicationDetailPage';
 import DealsPage from './pages/DealsPage';
+import BookingsPage from './pages/BookingsPage';
+import BookingDetailPage from './pages/BookingDetailPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import SettingsPage from './pages/SettingsPage';
@@ -124,6 +126,22 @@ const router = createBrowserRouter([
             element: (
               <PermissionRoute resource="TASK" action="VIEW">
                 <TaskDetailPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'bookings',
+            element: (
+              <PermissionRoute resource="BOOKING" action="VIEW">
+                <BookingsPage />
+              </PermissionRoute>
+            )
+          },
+          {
+            path: 'bookings/:bookingId',
+            element: (
+              <PermissionRoute resource="BOOKING" action="VIEW">
+                <BookingDetailPage />
               </PermissionRoute>
             )
           },

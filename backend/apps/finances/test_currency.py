@@ -143,7 +143,6 @@ class MultiCurrencyDealTests(TestCase):
     def book(self):
         response = self.api.post('/api/deals/', {
             'client': self.client_obj.id, 'property': self.property.id,
-            'booking_end_date': (timezone.now() + timedelta(days=5)).isoformat(),
         }, format='json')
         self.assertEqual(response.status_code, 201, response.data)
         return Deal.objects.get(pk=response.data['id'])
@@ -166,7 +165,6 @@ class MultiCurrencyDealTests(TestCase):
         ExchangeRate.objects.all().delete()
         response = self.api.post('/api/deals/', {
             'client': self.client_obj.id, 'property': self.property.id,
-            'booking_end_date': (timezone.now() + timedelta(days=5)).isoformat(),
         }, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertIn('Нет курса USD', response.data['error'])
@@ -327,7 +325,7 @@ class MultiCurrencyDealTests(TestCase):
         for price, currency in ((Decimal('1000'), 'USD'), (Decimal('5000000'), 'UZS')):
             Deal.objects.create(
                 company=self.company, client=self.client_obj, property=self.property, created_by=self.user,
-                booking_end_date=timezone.now(), initial_price=price, initial_price_per_sqm=Decimal('1'),
+                initial_price=price, initial_price_per_sqm=Decimal('1'),
                 contract_price=price, currency=currency, status=Deal.DealStatus.CLOSED_WON,
                 closed_at=timezone.now(), contract_date=self.today,
             )
@@ -356,7 +354,7 @@ class LegacyDealsMixin:
     def legacy_deal(self, price='21000', payments=('7000', '7000', '7000'), **extra):
         deal = Deal.objects.create(
             company=self.company, client=self.client_obj, property=self.property, created_by=self.user,
-            booking_end_date=timezone.now(), initial_price=Decimal(price), initial_price_per_sqm=Decimal('420'),
+            initial_price=Decimal(price), initial_price_per_sqm=Decimal('420'),
             contract_price=Decimal(price), currency='UZS', status=Deal.DealStatus.IN_PROGRESS, **extra,
         )
         for index, amount in enumerate(payments):
@@ -580,8 +578,6 @@ class DiscountPaymentPlanTests(LegacyDealsMixin, TestCase):
         self.api = APIClient()
         self.api.force_authenticate(User.objects.get(pk=self.user.pk))
         self.deal = self.legacy_deal(payments=())
-        self.deal.status = Deal.DealStatus.BOOKING
-        self.deal.save()
 
     def patch_deal(self, **data):
         return self.api.patch(f'/api/deals/{self.deal.id}/', data, format='json')

@@ -1,6 +1,6 @@
 # real_estate_crm/backend/apps/finances/views.py
 
-from rest_framework import generics, status
+from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -261,24 +261,33 @@ class PaymentMarkAsReturnedView(APIView):
 
         До этого момента объект намеренно остаётся занятым: продавать квартиру,
         по которой ещё не рассчитались с прежним клиентом, нельзя.
+
+        Это тот самый отказ по договору, после которого объект должен выйти
+        в продажу **по новой цене**. Поэтому освобождение идёт через общую
+        функцию занятости: она переносит ожидающую цену и активирует
+        следующую бронь из очереди. Дописывать перенос цены здесь отдельно
+        нельзя — именно так и теряется повышение прайса.
         """
+        from apps.deals.booking import resettle_property
+
         deal = payment.deal
         if not deal or deal.status != Deal.DealStatus.TERMINATED:
             return
         if deal.payments.filter(status=Payment.PaymentStatus.TO_BE_RETURNED).exists():
             return
 
-        property_obj = deal.property
-        if property_obj.status == Property.PropertyStatus.SELECTION:
-            return
-
-        property_obj.status = Property.PropertyStatus.SELECTION
-        property_obj.save(update_fields=['status', 'updated_at'])
-        DealLog.objects.create(
-            deal=deal,
-            user=user,
-            action="Все платежи возвращены — объект освобождён и снова доступен для продажи."
+        property_obj = Property.objects.select_for_update().select_related(
+            'building__project'
+        ).get(pk=deal.property_id)
+        following = resettle_property(
+            property_obj, actor=user,
+            reason=f"все платежи по расторгнутой сделке №{deal.id} возвращены",
         )
+        action = "Все платежи возвращены — объект освобождён и снова доступен для продажи."
+        if following is not None:
+            action = (f"Все платежи возвращены — объект перешёл к следующей брони "
+                      f"в очереди (№{following.id}).")
+        DealLog.objects.create(deal=deal, user=user, action=action)
 
 
 class PaymentTypeListView(CompanyScopedReferenceMixin, generics.ListCreateAPIView):
@@ -305,16 +314,47 @@ class BeneficiaryAccountListView(generics.ListCreateAPIView):
         serializer.save(company=company_for_new_record(self.request), created_by=self.request.user)
 
 
+class SchedulePermission(permissions.BasePermission):
+    """
+    Доступ к графику платежей: права на платежи **или** на сделки.
+
+    График — это платежи, и бухгалтеру нужно их править, не имея права
+    менять условия сделки. Проверка только по ресурсу PAYMENT не годится
+    в обратную сторону: менеджер собирает график сам, а отдельного права
+    на платежи у него может не быть.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return (can_user_perform_action(user, 'EDIT', 'PAYMENT')
+                or can_user_perform_action(user, 'ADD', 'PAYMENT')
+                or can_user_perform_action(user, 'EDIT', 'DEAL'))
+
+
 class DealPaymentScheduleCreateView(APIView):
     """
     Создаёт или обновляет график платежей сделки.
 
-    Принимает список платежей. Строки с существующим `id` обновляются на месте —
-    поэтому отметки об оплате и фактические даты не теряются при правке графика.
-    Строки без `id` создаются заново, отсутствующие в запросе — удаляются.
-    Удалить платёж, по которому уже прошли деньги, нельзя.
+    Принимает список платежей — или объект ``{"payments": [...],
+    "reason": "..."}``, когда правка требует причины. Строки с существующим
+    `id` обновляются на месте, поэтому отметки об оплате и фактические даты
+    не теряются при правке графика. Строки без `id` создаются заново,
+    отсутствующие в запросе — удаляются. Удалить платёж, по которому уже
+    прошли деньги, нельзя.
+
+    Права: ``EDIT PAYMENT`` **или** ``EDIT DEAL``. Бухгалтеру нужно править
+    график, не имея права менять условия сделки, — раньше проверялось
+    только право на сделку, и бухгалтер был заблокирован.
+
+    График правится **в любом статусе сделки**, включая отменённую и
+    расторгнутую: по таким договорам идут возвраты и перерасчёты, а
+    запрет означал, что исправить ошибку в графике уже нельзя. Для
+    отменённой и расторгнутой сделки обязательна причина — она попадает
+    в журнал сделки.
     """
-    permission_classes = [IsAuthenticated, PaymentPermission]
+    permission_classes = [IsAuthenticated, SchedulePermission]
 
     # Статусы, которые отражают реальное движение денег: такие платежи
     # нельзя молча удалить или сбросить при пересборке графика.
@@ -323,6 +363,8 @@ class DealPaymentScheduleCreateView(APIView):
         Payment.PaymentStatus.TO_BE_RETURNED,
         Payment.PaymentStatus.RETURNED,
     )
+    # Статусы сделки, в которых правка графика требует причины в журнале
+    REASON_REQUIRED_STATUSES = (Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED)
 
     def post(self, request, deal_pk, *args, **kwargs):
         try:
@@ -330,33 +372,32 @@ class DealPaymentScheduleCreateView(APIView):
         except Deal.DoesNotExist:
             return Response({"error": "Сделка не найдена."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Проверяем доступ к этой сделке (scope-фильтрация)
-        if not can_user_perform_action(request.user, 'EDIT', 'DEAL', obj=deal):
-            return Response({"error": "У вас нет доступа к этой сделке."}, status=status.HTTP_403_FORBIDDEN)
+        # График — это платежи, поэтому права на платежи достаточно. Право
+        # на сделку тоже подходит: менеджер собирает график сам
+        if not (can_user_perform_action(request.user, 'EDIT', 'PAYMENT', obj=deal)
+                or can_user_perform_action(request.user, 'EDIT', 'DEAL', obj=deal)):
+            return Response({"error": "У вас нет доступа к графику платежей этой сделки."},
+                            status=status.HTTP_403_FORBIDDEN)
 
-        if deal.status in (Deal.DealStatus.CANCELLED, Deal.DealStatus.TERMINATED):
-            return Response(
-                {"error": "Сделка отменена или расторгнута — изменить график платежей нельзя."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        payments_data = request.data
+        reason = ''
+        if isinstance(payments_data, dict):
+            reason = str(payments_data.get('reason') or '').strip()
+            payments_data = payments_data.get('payments')
+        if not isinstance(payments_data, list) or not all(isinstance(p, dict) for p in payments_data):
+            return Response({"error": "Ожидается список платежей."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Первый график переводит бронь в работу, а договор без паспортных
-        # данных клиента не составить. Правку графика сделки, которая уже
-        # в работе, не запрещаем: паспорт проверится при закрытии сделки
-        if deal.status == Deal.DealStatus.BOOKING:
-            passport_error = deal.client.passport_required_error(
-                'сохранить график платежей и перевести сделку в работу'
-            )
-            if passport_error:
-                return Response({"error": passport_error}, status=status.HTTP_400_BAD_REQUEST)
+        if deal.status in self.REASON_REQUIRED_STATUSES and not reason:
+            return Response({
+                "error": (
+                    f"Сделка {deal.get_status_display().lower()} — для правки графика "
+                    f"укажите причину: она записывается в журнал сделки."
+                )
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         if not deal.contract_price:
             return Response({"error": "Для создания графика необходимо указать 'Стоимость по договору' в сделке."},
                             status=status.HTTP_400_BAD_REQUEST)
-
-        payments_data = request.data
-        if not isinstance(payments_data, list) or not all(isinstance(p, dict) for p in payments_data):
-            return Response({"error": "Ожидается список платежей."}, status=status.HTTP_400_BAD_REQUEST)
 
         existing_payments = {p.id: p for p in deal.payments.all()}
 
@@ -519,6 +560,22 @@ class DealPaymentScheduleCreateView(APIView):
                 resulting_payments.append(PaymentSerializer(payment).data)
 
             for payment in removed_payments:
+                if payment.booking_id:
+                    # Взнос за бронь не удаляется вместе со строкой графика:
+                    # это отдельный платёж брони, по которому могли ждать
+                    # деньги до сделки. Он лишь выходит из графика сделки
+                    payment.deal = None
+                    payment.save(update_fields=['deal', 'updated_at'])
+                    DealLog.objects.create(
+                        deal=deal,
+                        user=request.user,
+                        action=(
+                            f"Взнос по брони №{payment.booking_id} на {payment.amount} "
+                            f"{payment.currency} выведен из графика сделки, но сохранён "
+                            f"как платёж брони."
+                        )
+                    )
+                    continue
                 # Логи платежа удаляются каскадом, поэтому переносим суть
                 # в журнал сделки — иначе история правки графика теряется
                 DealLog.objects.create(
@@ -531,30 +588,26 @@ class DealPaymentScheduleCreateView(APIView):
                 )
                 payment.delete()
 
-            if deal.status == Deal.DealStatus.BOOKING:
-                deal.status = Deal.DealStatus.IN_PROGRESS
-                deal.property.status = Property.PropertyStatus.IN_DEAL
-                deal.save()
-                deal.property.save()
-                DealLog.objects.create(
-                    deal=deal,
-                    user=request.user,
-                    action=f"График платежей создан на сумму {total_amount}. Статус сделки изменен на 'В работе'."
-                )
-            else:  # Если график просто обновляется
-                changes = []
-                if created_count:
-                    changes.append(f"добавлено {created_count}")
-                if updated_count:
-                    changes.append(f"изменено {updated_count}")
-                if removed_payments:
-                    changes.append(f"удалено {len(removed_payments)}")
-                details = f" Платежей: {', '.join(changes)}." if changes else ""
-                DealLog.objects.create(
-                    deal=deal,
-                    user=request.user,
-                    action=f"График платежей обновлен. Новая общая сумма: {total_amount}.{details}"
-                )
+            # Статус сделки сохранением графика больше не меняется. Раньше
+            # первый сохранённый график сам переводил бронь в работу, и
+            # поправить график, не закрыв бронь, было нельзя: из 184 броней
+            # ни у одной не было ни одной строки графика. Теперь бронь —
+            # отдельная сущность, а сделка создаётся сразу «В работе».
+            changes = []
+            if created_count:
+                changes.append(f"добавлено {created_count}")
+            if updated_count:
+                changes.append(f"изменено {updated_count}")
+            if removed_payments:
+                changes.append(f"удалено {len(removed_payments)}")
+            details = f" Платежей: {', '.join(changes)}." if changes else ""
+            action = f"График платежей обновлен. Новая общая сумма: {total_amount}.{details}"
+            if deal.status in self.REASON_REQUIRED_STATUSES:
+                action += (f" Сделка {deal.get_status_display().lower()}, "
+                           f"правка по причине: {reason}")
+            elif reason:
+                action += f" Причина правки: {reason}"
+            DealLog.objects.create(deal=deal, user=request.user, action=action)
 
         return Response(resulting_payments, status=status.HTTP_201_CREATED)
 
@@ -662,7 +715,7 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
         не фиксировался, и понять его можно было только вручную сверив график.
         """
         deal = payment.deal
-        if not deal or deal.status not in (Deal.DealStatus.BOOKING, Deal.DealStatus.IN_PROGRESS):
+        if not deal or deal.status != Deal.DealStatus.IN_PROGRESS:
             return
         if deal.payments.exclude(status=Payment.PaymentStatus.PAID).exists():
             return

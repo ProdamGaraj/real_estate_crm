@@ -26,7 +26,9 @@ import calendar
 from apps.deals.contracting import contracted_deals
 from apps.deals.models import Deal
 from apps.finances.models import Payment
-from apps.finances.services import exclude_dead_deals, refresh_overdue_payments_throttled
+from apps.finances.services import (
+    exclude_booking_fees, exclude_dead_deals, refresh_overdue_payments_throttled,
+)
 import pandas as pd
 from django.http import HttpResponse
 from permissions.permissions import (
@@ -310,11 +312,22 @@ class DashboardAnalyticsView(APIView):
             (price, currency, contracted_on) for price, currency, contracted_on, *_ in contracting_rows
         )
         # Поступления за месяц — сколько клиенты реально заплатили (оплаченные
-        # платежи по дате оплаты), как «Поступления» в отчётах
-        monthly_receipts = to_base.total(payments_qs.filter(
+        # платежи по дате оплаты), как «Поступления» в отчётах. Взносы по
+        # броням сюда не входят: бронь — не договор, и в отчётах план-факт
+        # таких платежей нет (там выборка идёт по сделке). Иначе дашборд и
+        # отчёт за один и тот же месяц расходились бы
+        paid_this_month = payments_qs.filter(
             status=Payment.PaymentStatus.PAID,
             payment_date__range=[start_of_month, end_of_month],
-        ).values_list('amount', 'currency', 'payment_date'))
+        )
+        monthly_receipts = to_base.total(
+            exclude_booking_fees(paid_this_month).values_list('amount', 'currency', 'payment_date')
+        )
+        # Взносы по броням показываются отдельной строкой
+        booking_fees = to_base.total(
+            paid_this_month.filter(booking__isnull=False, deal__isnull=True)
+            .values_list('amount', 'currency', 'payment_date')
+        )
         # Актуализируем просрочку, иначе цифра зависит от того, открывал ли
         # кто-то сегодня раздел «Финансы»
         refresh_overdue_payments_throttled(payments_qs)
@@ -377,6 +390,9 @@ class DashboardAnalyticsView(APIView):
                 'clientsInProgress': clients_in_progress,
                 'monthlyContracting': monthly_contracting,
                 'monthlyReceipts': monthly_receipts,
+                # Взносы по броням за месяц: в контрактацию и план-факт они
+                # не входят, поэтому стоят отдельной цифрой
+                'bookingFees': booking_fees,
                 'overduePayments': overdue_payments,
                 # Валюта, в которой даны суммы, и валюты без курса (их суммы не учтены)
                 'currency': to_base.target,
@@ -498,12 +514,20 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
         """
         # По клиенту с незакрытой сделкой работа продолжается: спрятав его
         # карточку, менеджер потерял бы контакты и историю прямо посреди сделки
-        from apps.deals.models import Deal
+        from apps.deals.models import Booking, Deal
         from rest_framework.exceptions import ValidationError as DRFValidationError
 
-        active_deals = instance.deals.filter(status__in=(
-            Deal.DealStatus.BOOKING, Deal.DealStatus.IN_PROGRESS
-        ))
+        live_bookings = instance.bookings.filter(status__in=Booking.LIVE_STATUSES)
+        if live_bookings.exists():
+            numbers = ", ".join(f"№{booking.id}" for booking in live_bookings[:5])
+            raise DRFValidationError({
+                'detail': (
+                    f'По клиенту есть брони: {numbers}. '
+                    f'Сначала снимите их или оформите в сделку.'
+                )
+            })
+
+        active_deals = instance.deals.filter(status=Deal.DealStatus.IN_PROGRESS)
         if active_deals.exists():
             numbers = ", ".join(f"№{deal.id}" for deal in active_deals[:5])
             raise DRFValidationError({

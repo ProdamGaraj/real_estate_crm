@@ -30,6 +30,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -69,6 +70,7 @@ const navItems: NavItem[] = [
   { textKey: 'nav.applications', icon: <AssignmentIcon />, path: '/applications', resource: 'APPLICATION' },
   { textKey: 'nav.meetings', icon: <EventIcon />, path: '/meetings', resource: 'MEETING' },
   { textKey: 'nav.tasks', icon: <ChecklistIcon />, path: '/tasks', resource: 'TASK' },
+  { textKey: 'nav.bookings', icon: <BookmarkIcon />, path: '/bookings', resource: 'BOOKING' },
   { textKey: 'nav.deals', icon: <BusinessCenterIcon />, path: '/deals', resource: 'DEAL' },
   { textKey: 'nav.projects', icon: <AccountBalanceIcon />, path: '/projects', resource: 'PROJECT' },
   { textKey: 'nav.finances', icon: <PaymentsIcon />, path: '/finances', resource: 'PAYMENT' },

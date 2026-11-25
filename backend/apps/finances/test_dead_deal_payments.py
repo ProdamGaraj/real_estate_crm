@@ -71,7 +71,6 @@ class DeadDealPaymentTests(TestCase):
                                        status=Property.PropertyStatus.IN_DEAL)
         return Deal.objects.create(company=self.company, client=self.client_a, property=unit,
                                    status=status, created_by=self.user, currency='UZS',
-                                   booking_end_date=timezone.now() + timedelta(days=3),
                                    initial_price=price, initial_price_per_sqm=Decimal('1'),
                                    contract_price=price, contract_date=self.today,
                                    client_signature_date=self.today)
@@ -108,7 +107,7 @@ class DeadDealPaymentTests(TestCase):
         self.assertEqual(pending.status, Payment.PaymentStatus.CANCELLED)
 
     def test_cancelled_deal_cancels_its_schedule(self):
-        deal = self.deal(status=Deal.DealStatus.BOOKING)
+        deal = self.deal(status=Deal.DealStatus.IN_PROGRESS)
         deal.client_signature_date = None
         deal.save(update_fields=['client_signature_date'])
         pending = self.payment(deal, '5000000', Payment.PaymentStatus.PENDING)

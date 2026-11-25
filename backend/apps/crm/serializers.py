@@ -288,13 +288,22 @@ class ClientDetailSerializer(serializers.ModelSerializer):
 
         from apps.deals.models import Deal
 
-        active = self.instance.deals.filter(status__in=(
-            Deal.DealStatus.BOOKING, Deal.DealStatus.IN_PROGRESS
-        ))
+        active = self.instance.deals.filter(status=Deal.DealStatus.IN_PROGRESS)
         if active.exists():
             numbers = ", ".join(f"№{deal.id}" for deal in active[:5])
             raise serializers.ValidationError(
                 f'По клиенту идут сделки: {numbers}. Сначала завершите или отмените их.'
+            )
+
+        # Брони клиента держат его так же, как сделки: по снятой в архив
+        # карточке менеджер потерял бы контакты посреди живой брони
+        from apps.deals.models import Booking
+
+        bookings = self.instance.bookings.filter(status__in=Booking.LIVE_STATUSES)
+        if bookings.exists():
+            numbers = ", ".join(f"№{booking.id}" for booking in bookings[:5])
+            raise serializers.ValidationError(
+                f'По клиенту есть брони: {numbers}. Сначала снимите их или оформите в сделку.'
             )
         return value
 

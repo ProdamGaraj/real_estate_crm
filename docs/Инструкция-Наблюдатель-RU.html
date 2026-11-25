@@ -407,7 +407,7 @@ dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
       <table>
         <thead><tr><th>Статус сделки</th><th>Что это значит</th><th>На что смотреть</th></tr></thead>
         <tbody>
-          <tr><td><span class="chip y">Бронь</span></td><td>Объект закреплён за клиентом до даты окончания брони</td><td>Истекающие брони: просроченные система снимает сама, объект возвращается в продажу</td></tr>
+          <tr><td><span class="chip y">Бронь</span></td><td>Объект закреплён за клиентом действующей бронью; за ней может стоять очередь</td><td>Истекающие брони: просроченные система снимает сама, объект уходит следующей брони очереди или возвращается в продажу</td></tr>
           <tr><td><span class="chip b">В работе</span></td><td>Цена согласована, есть график платежей</td><td>Сделки без номера договора неделями — застряли на оформлении</td></tr>
           <tr><td><span class="chip g">Успешно закрыта</span></td><td>Договор подписан обеими сторонами</td><td>Это продажи; дата закрытия идёт в отчёты</td></tr>
           <tr><td><span class="chip n">Отменена</span></td><td>Отменена без оплат и подписи</td><td>Доля отмен по менеджерам</td></tr>
@@ -475,7 +475,7 @@ dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
       <table>
         <thead><tr><th>Блок</th><th>Что измеряет</th><th>Откуда факт</th></tr></thead>
         <tbody>
-          <tr><td><span class="ui">Кол-во, шт.</span></td><td>Количество сделок по договорам</td><td>Сделки «В работе» и «Успешно закрыта» с датой договора в периоде (без даты договора — по дате закрытия или брони)</td></tr>
+          <tr><td><span class="ui">Кол-во, шт.</span></td><td>Количество сделок по договорам</td><td>Сделки «В работе» и «Успешно закрыта» с датой договора в периоде (без даты договора — по дате закрытия или создания сделки). Брони и взносы по ним сюда не входят</td></tr>
           <tr><td><span class="ui">Контрактация</span></td><td>Сумма заключённых договоров</td><td>Стоимость по договору тех же сделок, в валюте сделок компании по курсу на дату договора</td></tr>
           <tr><td><span class="ui">Поступления</span></td><td>Фактически полученные деньги</td><td>Оплаченные платежи с датой оплаты в периоде, в валюте сделок компании по курсу на дату оплаты</td></tr>
         </tbody>
@@ -584,7 +584,10 @@ dl.qa dd{margin:6px 0 0;color:var(--ink-2);max-width:68ch}
     <h5>Объект недвижимости</h5>
     <p><span class="chip g">Подбор</span> <span class="chip b">Резерв</span> <span class="chip y">Бронь</span> <span class="chip p">Сделка в работе</span> <span class="chip r">Сделка проведена</span></p>
     <h5>Сделка</h5>
-    <p><span class="chip y">Бронь</span> <span class="chip b">В работе</span> <span class="chip g">Успешно закрыта</span> <span class="chip n">Отменена</span> <span class="chip r">Расторгнута</span></p>
+    <p><span class="chip b">В работе</span> <span class="chip g">Успешно закрыта</span> <span class="chip n">Отменена</span> <span class="chip r">Расторгнута</span></p>
+
+    <h5>Бронь</h5>
+    <p><span class="chip b">В очереди</span> <span class="chip y">Действует</span> <span class="chip g">Оформлена в сделку</span> <span class="chip n">Истекла</span> <span class="chip r">Снята</span></p>
     <h5>Платёж</h5>
     <p><span class="chip b">К оплате</span> <span class="chip g">Оплачен</span> <span class="chip r">Просрочен</span> <span class="chip y">К возврату</span> <span class="chip n">Возвращен</span></p>
     <h5>Задача</h5>

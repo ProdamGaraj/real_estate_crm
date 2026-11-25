@@ -27,11 +27,29 @@ export interface PaymentTerms {
   matches_plan: boolean | null;
 }
 
+/**
+ * Бронь, из которой выросла сделка. Срок, даты, цена на момент брони и
+ * договор брони живут на самой брони, а не на сделке
+ */
+export interface DealBookingInfo {
+  id: number;
+  status: string;
+  status_display: string;
+  start_date: string | null;
+  end_date: string | null;
+  duration_days: number;
+  price: string | null;
+  currency: string;
+  contract_number: string | null;
+  contract_date: string | null;
+}
+
 export interface Deal {
   id: number;
-  status: 'BOOKING' | 'IN_PROGRESS' | 'CLOSED_WON' | 'CANCELLED'| 'TERMINATED';
-  booking_start_date: string;
-  booking_end_date: string;
+  /** Статуса «Бронь» у сделки больше нет: бронь — отдельная сущность */
+  status: 'IN_PROGRESS' | 'CLOSED_WON' | 'CANCELLED'| 'TERMINATED';
+  /** null — сделка оформлена без брони (продажа по свободному объекту) */
+  booking_info: DealBookingInfo | null;
   client: Client; // Вложенный объект клиента
   property: Property; // Вложенный объект недвижимости
   created_by: string | null;
@@ -59,8 +77,8 @@ export interface Deal {
   /** Может ли текущий пользователь менять и отменять сделку (null — сервер не сообщил) */
   can_edit?: boolean | null;
   /**
-   * Незаполненные паспортные данные клиента (коды полей). Без них бронь не
-   * переходит в работу, а сделка не закрывается
+   * Незаполненные паспортные данные клиента (коды полей). Без них сделку
+   * не оформить и не закрыть
    */
   client_missing_passport_fields?: string[];
   contract_number?: string;
@@ -150,10 +168,16 @@ export const replaceDealScan = async ({ dealId, kind, file }: {
 export interface DealPayload {
   client: number;
   property: number;
-  booking_end_date: string;
+  /**
+   * Действующая бронь, по которой оформляется сделка: цена берётся из брони,
+   * а сама бронь становится её частью. Без брони сделку можно оформить
+   * только по свободному объекту
+   */
+  booking?: number | null;
   /**
    * Заявка, из которой выросла сделка. Необязательна, но с ней замыкается
    * воронка: при успешном закрытии сделки заявка закрывается сама.
+   * При оформлении по брони переносится с брони.
    */
   application?: number | null;
 }
@@ -264,7 +288,6 @@ export interface DealSummaryFilters {
  */
 export interface DealSummaryRow {
     group: string;
-    booking: number;
     in_progress: number;
     closed_won: number;
     terminated: number;
@@ -275,7 +298,6 @@ export interface DealSummaryRow {
 export interface DealSummaryResponse {
     summary: DealSummaryRow[];
     widgets: {
-        booking_count: number;
         in_progress_count: number;
         closed_won_count: number;
         terminated_count: number;

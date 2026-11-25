@@ -23,6 +23,12 @@ export default function TemplateManager() {
 
   const columns: GridColDef[] = [
     { field: 'name', headerName: t('pages.templates.template_name'), flex: 1 },
+    {
+      // Без вида шаблона в списке не понять, почему договор не появился
+      // в брони: он заведён как договор по сделке
+      field: 'kind', headerName: t('pages.templates.kind'), flex: 1,
+      valueFormatter: (value: string) => t(`pages.templates.kind_${String(value).toLowerCase()}`, value),
+    },
     { field: 'file', headerName: t('pages.templates.template_file'), flex: 1, renderCell: (params) => <MuiLink href={params.value} target="_blank" rel="noopener noreferrer">{t('common.download')}</MuiLink> },
     {
       field: 'actions',

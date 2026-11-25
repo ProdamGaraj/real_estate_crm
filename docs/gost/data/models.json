@@ -2080,6 +2080,46 @@
     "default": null
    },
    {
+    "name": "pending_price",
+    "column": "pending_price",
+    "type": "DecimalField",
+    "verbose": "Цена из прайса, ожидающая применения",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 18,
+    "decimal_places": 2,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "pending_price_set_at",
+    "column": "pending_price_set_at",
+    "type": "DateTimeField",
+    "verbose": "Когда записана ожидающая цена",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
     "name": "description",
     "column": "description",
     "type": "TextField",
@@ -2197,6 +2237,130 @@
     "related_table": "auth_user",
     "through_table": null,
     "on_delete": "SET_NULL",
+    "default": null
+   }
+  ]
+ },
+ {
+  "app": "realty",
+  "model": "PropertyLog",
+  "table": "realty_propertylog",
+  "verbose": "Лог объекта",
+  "verbose_plural": "Логи объектов",
+  "doc": "Логирование изменений по объекту недвижимости.\n\nЗаведён вместе с `pending_price`: одно поле ожидающей цены молча\nперезаписывается, и если второй прайс пришёл раньше, чем применился\nпервый, первый исчезал без следа. Здесь остаётся, кто загрузил цену,\nкогда она была перенесена в `price` и почему объект освободился.",
+  "unique_together": [],
+  "constraints": [],
+  "indexes": [
+   {
+    "fields": [
+     "property",
+     "-created_at"
+    ],
+    "name": "realty_prop_propert_884f80_idx"
+   }
+  ],
+  "ordering": [
+   "-created_at"
+  ],
+  "fields": [
+   {
+    "name": "id",
+    "column": "id",
+    "type": "BigAutoField",
+    "verbose": "ID",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": true,
+    "primary_key": true,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "property",
+    "column": "property_id",
+    "type": "ForeignKey",
+    "verbose": "Объект недвижимости",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "realty.Property",
+    "related_table": "realty_property",
+    "through_table": null,
+    "on_delete": "CASCADE",
+    "default": null
+   },
+   {
+    "name": "user",
+    "column": "user_id",
+    "type": "ForeignKey",
+    "verbose": "Пользователь",
+    "help": "",
+    "null": true,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "auth.User",
+    "related_table": "auth_user",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   },
+   {
+    "name": "action",
+    "column": "action",
+    "type": "TextField",
+    "verbose": "Совершенное действие",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "created_at",
+    "column": "created_at",
+    "type": "DateTimeField",
+    "verbose": "Время",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
     "default": null
    }
   ]
@@ -4657,6 +4821,615 @@
  },
  {
   "app": "deals",
+  "model": "Booking",
+  "table": "deals_booking",
+  "verbose": "Бронь",
+  "verbose_plural": "Брони",
+  "doc": "Бронь объекта: лёгкая запись перед сделкой.\n\nРаньше бронь была статусом сделки, и из-за этого 279 из 724 сделок\nоказались бронями и мёртвыми бронями без договора и без денег — они\nискажали воронку. График платежей нельзя было поправить, не закрыв\nбронь: сохранение графика само переводило бронь в работу. У брони не\nбыло ни своей цены, ни своего срока, ни своего договора, а на один\nобъект нельзя было поставить больше одной брони — очередь выразить\nбыло нечем.\n\nУ брони нет графика платежей: по ней один платёж — взнос, фиксированной\nсуммой из настроек компании. Срок задаётся в днях; даты записываются\nпри активации, а у броней в очереди проецируются (конец предыдущей —\nначало следующей) и в базе не хранятся.",
+  "unique_together": [],
+  "constraints": [
+   "uniq_active_booking_per_property",
+   "uniq_booking_contract_number_per_company"
+  ],
+  "indexes": [
+   {
+    "fields": [
+     "property",
+     "status"
+    ],
+    "name": "deals_booki_propert_dd6a44_idx"
+   },
+   {
+    "fields": [
+     "company",
+     "status"
+    ],
+    "name": "deals_booki_company_0554f8_idx"
+   },
+   {
+    "fields": [
+     "status",
+     "end_date"
+    ],
+    "name": "deals_booki_status_b05b22_idx"
+   },
+   {
+    "fields": [
+     "created_by",
+     "status"
+    ],
+    "name": "deals_booki_created_f53e85_idx"
+   },
+   {
+    "fields": [
+     "created_at"
+    ],
+    "name": "deals_booki_created_c36eea_idx"
+   }
+  ],
+  "ordering": [
+   "-created_at",
+   "-id"
+  ],
+  "fields": [
+   {
+    "name": "id",
+    "column": "id",
+    "type": "BigAutoField",
+    "verbose": "ID",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": true,
+    "primary_key": true,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "company",
+    "column": "company_id",
+    "type": "ForeignKey",
+    "verbose": "Компания",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "permissions.Company",
+    "related_table": "permissions_company",
+    "through_table": null,
+    "on_delete": "PROTECT",
+    "default": null
+   },
+   {
+    "name": "client",
+    "column": "client_id",
+    "type": "ForeignKey",
+    "verbose": "Клиент",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "crm.Client",
+    "related_table": "crm_client",
+    "through_table": null,
+    "on_delete": "PROTECT",
+    "default": null
+   },
+   {
+    "name": "property",
+    "column": "property_id",
+    "type": "ForeignKey",
+    "verbose": "Объект недвижимости",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "realty.Property",
+    "related_table": "realty_property",
+    "through_table": null,
+    "on_delete": "PROTECT",
+    "default": null
+   },
+   {
+    "name": "deal",
+    "column": "deal_id",
+    "type": "OneToOneField",
+    "verbose": "Сделка",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": true,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "deals.Deal",
+    "related_table": "deals_deal",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   },
+   {
+    "name": "application",
+    "column": "application_id",
+    "type": "ForeignKey",
+    "verbose": "Заявка",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "crm.Application",
+    "related_table": "crm_application",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   },
+   {
+    "name": "status",
+    "column": "status",
+    "type": "CharField",
+    "verbose": "Статус брони",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 20,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "PENDING_QUEUE",
+      "В очереди"
+     ],
+     [
+      "ACTIVE",
+      "Активна"
+     ],
+     [
+      "CONVERTED",
+      "Оформлена в сделку"
+     ],
+     [
+      "EXPIRED",
+      "Истекла"
+     ],
+     [
+      "CANCELLED",
+      "Отменена"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "Booking.BookingStatus.PENDING_QUEUE"
+   },
+   {
+    "name": "duration_days",
+    "column": "duration_days",
+    "type": "PositiveSmallIntegerField",
+    "verbose": "Срок брони, дней",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "start_date",
+    "column": "start_date",
+    "type": "DateTimeField",
+    "verbose": "Дата начала брони",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "end_date",
+    "column": "end_date",
+    "type": "DateTimeField",
+    "verbose": "Дата окончания брони",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "price",
+    "column": "price",
+    "type": "DecimalField",
+    "verbose": "Цена объекта на момент брони",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 18,
+    "decimal_places": 2,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "currency",
+    "column": "currency",
+    "type": "CharField",
+    "verbose": "Валюта цены (валюта прайса проекта)",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 3,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "UZS",
+      "Узбекский сум"
+     ],
+     [
+      "USD",
+      "Доллар США"
+     ],
+     [
+      "EUR",
+      "Евро"
+     ],
+     [
+      "RUB",
+      "Российский рубль"
+     ],
+     [
+      "CNY",
+      "Китайский юань"
+     ],
+     [
+      "KZT",
+      "Казахстанский тенге"
+     ],
+     [
+      "GBP",
+      "Фунт стерлингов"
+     ],
+     [
+      "AED",
+      "Дирхам ОАЭ"
+     ],
+     [
+      "TRY",
+      "Турецкая лира"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "contract_number",
+    "column": "contract_number",
+    "type": "CharField",
+    "verbose": "Номер договора брони",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 100,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "contract_date",
+    "column": "contract_date",
+    "type": "DateField",
+    "verbose": "Дата договора брони",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "signed_scan",
+    "column": "signed_scan",
+    "type": "FileField",
+    "verbose": "Скан подписанного договора брони",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 100,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "cancellation_reason",
+    "column": "cancellation_reason",
+    "type": "TextField",
+    "verbose": "Причина снятия",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "created_at",
+    "column": "created_at",
+    "type": "DateTimeField",
+    "verbose": "Дата создания",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "updated_at",
+    "column": "updated_at",
+    "type": "DateTimeField",
+    "verbose": "Дата последнего изменения",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "created_by",
+    "column": "created_by_id",
+    "type": "ForeignKey",
+    "verbose": "Менеджер",
+    "help": "",
+    "null": true,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "auth.User",
+    "related_table": "auth_user",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   }
+  ]
+ },
+ {
+  "app": "deals",
+  "model": "BookingLog",
+  "table": "deals_bookinglog",
+  "verbose": "Лог брони",
+  "verbose_plural": "Логи броней",
+  "doc": "Логирование изменений по брони",
+  "unique_together": [],
+  "constraints": [],
+  "indexes": [],
+  "ordering": [
+   "-created_at"
+  ],
+  "fields": [
+   {
+    "name": "id",
+    "column": "id",
+    "type": "BigAutoField",
+    "verbose": "ID",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": true,
+    "primary_key": true,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "booking",
+    "column": "booking_id",
+    "type": "ForeignKey",
+    "verbose": "Бронь",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "deals.Booking",
+    "related_table": "deals_booking",
+    "through_table": null,
+    "on_delete": "CASCADE",
+    "default": null
+   },
+   {
+    "name": "user",
+    "column": "user_id",
+    "type": "ForeignKey",
+    "verbose": "Пользователь",
+    "help": "",
+    "null": true,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "auth.User",
+    "related_table": "auth_user",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   },
+   {
+    "name": "action",
+    "column": "action",
+    "type": "TextField",
+    "verbose": "Совершенное действие",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   },
+   {
+    "name": "created_at",
+    "column": "created_at",
+    "type": "DateTimeField",
+    "verbose": "Время",
+    "help": "",
+    "null": false,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": null
+   }
+  ]
+ },
+ {
+  "app": "deals",
   "model": "Deal",
   "table": "deals_deal",
   "verbose": "Сделка",
@@ -4702,12 +5475,6 @@
      "contract_date"
     ],
     "name": "deals_deal_contrac_ae3b74_idx"
-   },
-   {
-    "fields": [
-     "booking_end_date"
-    ],
-    "name": "deals_deal_booking_78a970_idx"
    }
   ],
   "ordering": [
@@ -4829,10 +5596,6 @@
     "decimal_places": null,
     "choices": [
      [
-      "BOOKING",
-      "Бронь"
-     ],
-     [
       "IN_PROGRESS",
       "В работе"
      ],
@@ -4853,47 +5616,7 @@
     "related_table": null,
     "through_table": null,
     "on_delete": null,
-    "default": "Deal.DealStatus.BOOKING"
-   },
-   {
-    "name": "booking_start_date",
-    "column": "booking_start_date",
-    "type": "DateTimeField",
-    "verbose": "Дата начала брони",
-    "help": "",
-    "null": false,
-    "blank": true,
-    "unique": false,
-    "primary_key": false,
-    "max_length": null,
-    "max_digits": null,
-    "decimal_places": null,
-    "choices": [],
-    "related_model": null,
-    "related_table": null,
-    "through_table": null,
-    "on_delete": null,
-    "default": null
-   },
-   {
-    "name": "booking_end_date",
-    "column": "booking_end_date",
-    "type": "DateTimeField",
-    "verbose": "Плановая дата окончания брони",
-    "help": "",
-    "null": false,
-    "blank": false,
-    "unique": false,
-    "primary_key": false,
-    "max_length": null,
-    "max_digits": null,
-    "decimal_places": null,
-    "choices": [],
-    "related_model": null,
-    "related_table": null,
-    "through_table": null,
-    "on_delete": null,
-    "default": null
+    "default": "Deal.DealStatus.IN_PROGRESS"
    },
    {
     "name": "currency",
@@ -6111,6 +6834,12 @@
    },
    {
     "fields": [
+     "booking"
+    ],
+    "name": "finances_pa_booking_478a85_idx"
+   },
+   {
+    "fields": [
      "responsible_employee",
      "status"
     ],
@@ -6177,6 +6906,26 @@
     "choices": [],
     "related_model": "deals.Deal",
     "related_table": "deals_deal",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   },
+   {
+    "name": "booking",
+    "column": "booking_id",
+    "type": "ForeignKey",
+    "verbose": "Бронь",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "deals.Booking",
+    "related_table": "deals_booking",
     "through_table": null,
     "on_delete": "SET_NULL",
     "default": null
@@ -7691,7 +8440,7 @@
   "table": "documents_template",
   "verbose": "Шаблон документа",
   "verbose_plural": "Шаблоны документов",
-  "doc": "Template(id, name, file, applies_to_property_types, company, created_by, created_at, updated_at)",
+  "doc": "Template(id, name, kind, file, applies_to_property_types, company, created_by, created_at, updated_at)",
   "unique_together": [],
   "constraints": [],
   "indexes": [],
@@ -7738,6 +8487,35 @@
     "through_table": null,
     "on_delete": null,
     "default": null
+   },
+   {
+    "name": "kind",
+    "column": "kind",
+    "type": "CharField",
+    "verbose": "Для чего шаблон",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": 10,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [
+     [
+      "DEAL",
+      "Договор по сделке"
+     ],
+     [
+      "BOOKING",
+      "Договор брони"
+     ]
+    ],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "Template.Kind.DEAL"
    },
    {
     "name": "file",
@@ -8411,6 +9189,66 @@
     "through_table": null,
     "on_delete": null,
     "default": "Company.RateSource.CBU"
+   },
+   {
+    "name": "booking_fee_amount",
+    "column": "booking_fee_amount",
+    "type": "DecimalField",
+    "verbose": "Взнос за бронь",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": 18,
+    "decimal_places": 2,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "0"
+   },
+   {
+    "name": "booking_fee_account",
+    "column": "booking_fee_account_id",
+    "type": "ForeignKey",
+    "verbose": "Счёт для взноса за бронь",
+    "help": "",
+    "null": true,
+    "blank": true,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": "finances.BeneficiaryAccount",
+    "related_table": "finances_beneficiaryaccount",
+    "through_table": null,
+    "on_delete": "SET_NULL",
+    "default": null
+   },
+   {
+    "name": "min_booking_days",
+    "column": "min_booking_days",
+    "type": "PositiveSmallIntegerField",
+    "verbose": "Минимальный срок брони, дней",
+    "help": "",
+    "null": false,
+    "blank": false,
+    "unique": false,
+    "primary_key": false,
+    "max_length": null,
+    "max_digits": null,
+    "decimal_places": null,
+    "choices": [],
+    "related_model": null,
+    "related_table": null,
+    "through_table": null,
+    "on_delete": null,
+    "default": "1"
    },
    {
     "name": "created_at",
@@ -9185,6 +10023,10 @@
      [
       "DISCOUNT",
       "Скидки"
+     ],
+     [
+      "BOOKING",
+      "Брони"
      ],
      [
       "DEAL",

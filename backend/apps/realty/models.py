@@ -236,6 +236,18 @@ class Property(models.Model):
     area = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Площадь (кв.м)")
     has_finishing = models.BooleanField(default=False, verbose_name="Наличие отделки")
     price = models.DecimalField(max_digits=18, decimal_places=2, verbose_name="Стоимость")
+    # Цена из последней загрузки прайса, ещё не применённая к объекту.
+    # Загрузка пишет её всем объектам, включая забронированные, в сделке и
+    # проданные: раньше занятые объекты пропускались, и новые цены по ним
+    # в базе не хранились вообще — после отказа по договору объект уходил
+    # в продажу по цене до повышения. В `price` значение переносится в тот
+    # момент, когда объект перестаёт быть занятым (apps/realty/services.py).
+    # Имя `new_price` сознательно не используется: после первого переноса
+    # по нему не понять, что новее — `price` или `new_price`.
+    pending_price = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True,
+                                        verbose_name="Цена из прайса, ожидающая применения")
+    pending_price_set_at = models.DateTimeField(null=True, blank=True,
+                                                verbose_name="Когда записана ожидающая цена")
     description = models.TextField(blank=True, verbose_name="Описание")
     layout = models.ForeignKey(Layout, on_delete=models.SET_NULL, null=True, blank=True, related_name="properties",
                                verbose_name="Планировка")
@@ -272,6 +284,32 @@ class Property(models.Model):
         if self.area and self.price and self.area > 0:
             return round(self.price / self.area, 2)
         return None
+
+
+class PropertyLog(models.Model):
+    """
+    Логирование изменений по объекту недвижимости.
+
+    Заведён вместе с `pending_price`: одно поле ожидающей цены молча
+    перезаписывается, и если второй прайс пришёл раньше, чем применился
+    первый, первый исчезал без следа. Здесь остаётся, кто загрузил цену,
+    когда она была перенесена в `price` и почему объект освободился.
+    """
+    property = models.ForeignKey(Property, on_delete=models.CASCADE, related_name="logs",
+                                 verbose_name="Объект недвижимости")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+                             verbose_name="Пользователь")
+    action = models.TextField(verbose_name="Совершенное действие")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Время")
+
+    class Meta:
+        verbose_name = "Лог объекта"
+        verbose_name_plural = "Логи объектов"
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['property', '-created_at'])]
+
+    def __str__(self):
+        return f"Лог для объекта {self.property_id} от {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class Discount(models.Model):

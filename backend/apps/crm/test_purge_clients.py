@@ -72,8 +72,9 @@ class PurgeClientsTests(TestCase):
         # Настоящий клиент: его данные трогать нельзя
         self.real_client = Client.objects.create(full_name='Настоящий Клиент', company=self.company)
         self.real_client.relatives.add(self.test_client)
-        self.unit_booked = self.unit('4', Property.PropertyStatus.BOOKING)
-        self.real_deal = self.deal(self.real_client, self.unit_booked, Deal.DealStatus.BOOKING)
+        self.unit_booked = self.unit('4', Property.PropertyStatus.IN_DEAL)
+        # Сделка другого клиента: при удалении «нашего» объект остаётся за ней
+        self.real_deal = self.deal(self.real_client, self.unit_booked, Deal.DealStatus.IN_PROGRESS)
         self.real_payment = self.payment(self.real_client, self.real_deal)
 
         # Задача не привязана к клиенту в базе: команда её только показывает
@@ -87,8 +88,7 @@ class PurgeClientsTests(TestCase):
 
     def deal(self, client, unit, status, application=None):
         return Deal.objects.create(company=self.company, client=client, property=unit, status=status,
-                                   application=application, booking_end_date=timezone.now() + timedelta(days=3),
-                                   initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2.5'),
+                                   application=application, initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2.5'),
                                    contract_price=Decimal('100'), created_by=self.user)
 
     def payment(self, client, deal):
@@ -135,7 +135,7 @@ class PurgeClientsTests(TestCase):
             self.assertEqual(unit.status, Property.PropertyStatus.SELECTION)
         self.unit_reserved.refresh_from_db()
         self.assertEqual(self.unit_reserved.status, Property.PropertyStatus.RESERVE)
-        self.assertIn('возвращены в продажу', report)
+        self.assertIn('Объекты', report)
         self.assertTrue(Project.objects.filter(pk=self.project.pk).exists())
         self.assertEqual(Property.objects.filter(building=self.building).count(), 4)
 
@@ -144,7 +144,7 @@ class PurgeClientsTests(TestCase):
         self.assertTrue(Payment.objects.filter(pk=self.real_payment.pk).exists())
         self.assertFalse(self.real_client.relatives.exists())
         self.unit_booked.refresh_from_db()
-        self.assertEqual(self.unit_booked.status, Property.PropertyStatus.BOOKING)
+        self.assertEqual(self.unit_booked.status, Property.PropertyStatus.IN_DEAL)
         self.assertTrue(Task.objects.filter(pk=self.task.pk).exists())
 
     def test_unknown_client_id_stops_without_changes(self):

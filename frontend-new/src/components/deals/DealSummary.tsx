@@ -79,7 +79,6 @@ export default function DealSummary() {
             // При группировке по статусу в строке приходит код статуса
             valueFormatter: (value: string) => filters.group_by === 'status' ? t(`statuses.deal.${value}`, value) : value,
         },
-        statusColumn('booking', 'BOOKING'),
         statusColumn('in_progress', 'IN_PROGRESS'),
         statusColumn('closed_won', 'CLOSED_WON'),
         statusColumn('terminated', 'TERMINATED'),
@@ -100,11 +99,13 @@ export default function DealSummary() {
     return (
         <Stack spacing={2}>
             <Grid container spacing={2}>
-                <Grid item xs={12} sm={4} md={2.4}><KpiCard title={t('pages.deals.status_booking')} value={data?.widgets.booking_count || 0} color="info.main" linkTo={{ tab: 0, filters: { status: 'BOOKING' } }} /></Grid>
-                <Grid item xs={12} sm={4} md={2.4}><KpiCard title={t('pages.deals.status_in_progress')} value={data?.widgets.in_progress_count || 0} color="primary.main" linkTo={{ tab: 0, filters: { status: 'IN_PROGRESS' } }}/></Grid>
-                <Grid item xs={12} sm={4} md={2.4}><KpiCard title={t('pages.deals.status_completed')} value={data?.widgets.closed_won_count || 0} color="success.main" linkTo={{ tab: 0, filters: { status: 'CLOSED_WON' } }}/></Grid>
-                <Grid item xs={12} sm={6} md={2.4}><KpiCard title={t('pages.deals.status_terminated')} value={data?.widgets.terminated_count || 0} color="warning.main" linkTo={{ tab: 0, filters: { status: 'TERMINATED' } }}/></Grid>
-                <Grid item xs={12} sm={6} md={2.4}><KpiCard title={t('pages.deals.status_cancelled')} value={data?.widgets.cancelled_count || 0} color="error.main" linkTo={{ tab: 0, filters: { status: 'CANCELLED' } }}/></Grid>
+                {/* Колонки и плитки «Бронь» здесь больше нет: бронь — отдельная
+                    сущность со своим разделом, а в воронке сделок брони
+                    искажали и число сделок, и конверсию */}
+                <Grid item xs={12} sm={4} md={3}><KpiCard title={t('pages.deals.status_in_progress')} value={data?.widgets.in_progress_count || 0} color="primary.main" linkTo={{ tab: 0, filters: { status: 'IN_PROGRESS' } }}/></Grid>
+                <Grid item xs={12} sm={4} md={3}><KpiCard title={t('pages.deals.status_completed')} value={data?.widgets.closed_won_count || 0} color="success.main" linkTo={{ tab: 0, filters: { status: 'CLOSED_WON' } }}/></Grid>
+                <Grid item xs={12} sm={6} md={3}><KpiCard title={t('pages.deals.status_terminated')} value={data?.widgets.terminated_count || 0} color="warning.main" linkTo={{ tab: 0, filters: { status: 'TERMINATED' } }}/></Grid>
+                <Grid item xs={12} sm={6} md={3}><KpiCard title={t('pages.deals.status_cancelled')} value={data?.widgets.cancelled_count || 0} color="error.main" linkTo={{ tab: 0, filters: { status: 'CANCELLED' } }}/></Grid>
             </Grid>
 
             <Paper sx={{ p: 2 }}>

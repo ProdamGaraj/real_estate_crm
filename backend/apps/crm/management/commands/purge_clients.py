@@ -2,6 +2,7 @@
 Полное удаление клиентов (например, тестовых) и всего, что с ними связано.
 
 Удаляется:
+  - брони клиентов — вместе с журналами броней и сканами договоров брони;
   - сделки клиентов — вместе с журналами сделок, применёнными скидками
     и сканами (подписанный договор, документ о расторжении);
   - платежи — по клиенту и по его сделкам, вместе с журналами платежей;
@@ -11,8 +12,8 @@
   - карточки клиентов.
 
 Не удаляется: проекты, дома, объекты, планировки, скидки, шаблоны, планы продаж.
-Объекты, которые держали удалённые сделки, возвращаются в «Подбор» (если их не
-держит другая сделка). Дашборд, отчёты и сводные таблицы считаются из базы на
+Объекты, которые держали удалённые брони и сделки, возвращаются в «Подбор» —
+или переходят к следующей брони в очереди, если она есть. Дашборд, отчёты и сводные таблицы считаются из базы на
 лету, поэтому сразу после удаления показывают цифры уже без этих клиентов.
 
     python manage.py purge_clients 23 18            # пробный запуск: что будет удалено
@@ -31,8 +32,8 @@ from django.db import transaction
 from django.db.models import Q
 
 from apps.crm.models import Application, Client, ClientFile, Meeting
-from apps.deals.models import Deal
-from apps.deals.occupancy import EXPECTED_PROPERTY_STATUS, OCCUPIED_STATUSES, pending_refund_deal
+from apps.deals.booking import resettle_property
+from apps.deals.models import Booking, Deal
 from apps.finances.models import Payment
 from apps.realty.models import Property
 from apps.tasks.models import Task
@@ -67,6 +68,10 @@ class Command(BaseCommand):
         # по клиенту и по его сделкам, — чтобы не остался ни один «висящий» платёж.
         # Заявки и встречи берутся вместе с мягко удалёнными: менеджер по умолчанию их не скрывает.
         deals = Deal.objects.filter(client__in=clients)
+        # Бронь защищает клиента от удаления (PROTECT), как и сделка, поэтому
+        # брони удаляются в той же цепочке. Платежи-взносы собираются по
+        # клиенту, так что отдельного пути для них не нужно
+        bookings = Booking.objects.filter(client__in=clients)
         payments = Payment.objects.filter(Q(client__in=clients) | Q(deal__in=deals))
         meetings = Meeting.objects.filter(client__in=clients)
         applications = Application.objects.filter(client__in=clients)
@@ -75,6 +80,7 @@ class Command(BaseCommand):
         # Шаг 3. Запоминаем объекты, которые держат эти сделки: после удаления сделок
         # их статус надо пересчитать, иначе объект остался бы «Бронь» или «Продан» без сделки.
         property_ids = set(deals.values_list('property_id', flat=True))
+        property_ids |= set(bookings.values_list('property_id', flat=True))
 
         # Шаг 4. Запоминаем файлы на диске — сканы сделок и файлы клиентов. Удалим их только
         # после успешного сохранения в базе: откат транзакции файлы бы уже не вернул.
@@ -83,6 +89,9 @@ class Command(BaseCommand):
             for scan in (deal.signed_document_scan, deal.termination_document_scan):
                 if scan:
                     files.append((scan.storage, scan.name))
+        for booking in bookings:
+            if booking.signed_scan:
+                files.append((booking.signed_scan.storage, booking.signed_scan.name))
         for client_file in ClientFile.objects.filter(client__in=clients):
             if client_file.file:
                 files.append((client_file.file.storage, client_file.file.name))
@@ -103,30 +112,26 @@ class Command(BaseCommand):
             # клиента от удаления (PROTECT). Журналы платежей, сделок, встреч и заявок, скидки
             # сделок, телефоны, файлы и журнал клиента Django удаляет каскадом вместе
             # со «своими» записями — их число тоже попадает в итог.
-            for queryset in (payments, deals, meetings, applications, client_rows):
+            # Брони удаляются после платежей (взнос ссылается на бронь) и до
+            # сделок: бронь ссылается на сделку через OneToOne с SET_NULL
+            for queryset in (payments, bookings, deals, meetings, applications, client_rows):
                 _, per_model = queryset.delete()
                 counts.update(per_model)
 
-            # Шаг 7. Пересчитываем статусы объектов удалённых сделок — по тем же правилам,
-            # что и команда check_property_statuses:
-            #   - объект держит другая живая сделка → статус по этой сделке;
-            #   - объект держит другая расторгнутая сделка с невозвращёнными платежами → не трогаем;
-            #   - иначе занятый объект («Бронь», «Сделка в работе», «Продан») → «Подбор»;
-            #   - «Подбор» и «Резерв» не трогаем: резерв ставят вручную, сделки он не касается.
-            for prop in Property.objects.filter(pk__in=property_ids).select_related('building'):
-                live = prop.deals.filter(status__in=EXPECTED_PROPERTY_STATUS.keys()).order_by('-id').first()
-                if live:
-                    target = EXPECTED_PROPERTY_STATUS[live.status]
-                elif pending_refund_deal(prop):
-                    continue
-                elif prop.status in OCCUPIED_STATUSES:
-                    target = Property.PropertyStatus.SELECTION
-                else:
-                    continue
-                if prop.status != target:
-                    released.append((prop, prop.get_status_display(), Property.PropertyStatus(target).label))
-                    prop.status = target
-                    prop.save(update_fields=['status', 'updated_at'])
+            # Шаг 7. Пересчитываем занятость объектов удалённых броней и сделок
+            # той же функцией, что и рабочий код: она учитывает чужую живую
+            # сделку, незавершённый возврат и очередь броней, переносит
+            # ожидающую цену и активирует следующую бронь.
+            for prop in Property.objects.filter(pk__in=property_ids).select_related(
+                'building__project'
+            ):
+                was_status, was_label = prop.status, prop.get_status_display()
+                following = resettle_property(prop, actor=None, reason='клиент удалён')
+                if prop.status != was_status:
+                    label = prop.get_status_display()
+                    if following is not None:
+                        label += f' (бронь №{following.id})'
+                    released.append((prop, was_label, label))
 
             if apply:
                 # Шаг 8а. Настоящий запуск: файлы удаляются с диска после коммита транзакции.

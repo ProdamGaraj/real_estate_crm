@@ -15,6 +15,7 @@ import TemplateManager from '../components/settings/TemplateManager';
 import TemplateTagsCheatSheet from '../components/settings/TemplateTagsCheatSheet';
 import PartnerAPIKeyManager from '../components/settings/PartnerAPIKeyManager';
 import CurrencySettingsManager from '../components/settings/CurrencySettingsManager';
+import BookingSettingsManager from '../components/settings/BookingSettingsManager';
 import CompaniesPage from './permissions/CompaniesPage';
 import DepartmentsPage from './permissions/DepartmentsPage';
 import RolesPage from './permissions/RolesPage';
@@ -148,6 +149,11 @@ export default function SettingsPage() {
         {/* Вкладка "Валюты" */}
         <TabPanel active={activeTabId === 'currencies'}>
           <CurrencySettingsManager />
+        </TabPanel>
+
+        {/* Вкладка "Брони": взнос, счёт получателя, минимальный срок */}
+        <TabPanel active={activeTabId === 'bookings'}>
+          <BookingSettingsManager />
         </TabPanel>
 
         {/* Вкладка "Шаблоны" */}

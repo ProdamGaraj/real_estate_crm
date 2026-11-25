@@ -1,12 +1,14 @@
 """
-Бронь и её отмена.
+Сделка и её отмена.
 
 Менеджеры жаловались, что «не могут снять бронь»: кнопка «Отменить /
 Расторгнуть» была у всех, кто видит сделку, а сервер отменял только сделки в
 пределах права «Изменение» — и окно показывало «Request failed with status
 code 403». Теперь сделка сообщает, может ли пользователь её менять, а
-расхождения статусов объектов со сделками находит и исправляет команда
-check_property_statuses.
+расхождения статусов объектов с бронями и сделками находит и исправляет
+команда check_property_statuses.
+
+Сама бронь — отдельная сущность, её переходы проверяются в test_booking.py.
 """
 
 import io
@@ -28,13 +30,13 @@ from apps.finances.models import BeneficiaryAccount, Payment, PaymentType
 from apps.realty.models import Building, Project, Property
 from permissions.models import Company, Department, Permission, Role, UserProfile
 
-from .models import Deal, DealLog
+from .models import Booking, Deal, DealLog
 
 User = get_user_model()
 
 
 @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
-class BookingCancellationTests(TestCase):
+class DealCancellationTests(TestCase):
     def setUp(self):
         call_command('init_permissions', stdout=io.StringIO())
         self.company = Company.objects.create(name='Продажи', code='SALES', deal_currency='UZS',
@@ -50,7 +52,13 @@ class BookingCancellationTests(TestCase):
         )
         self.anna = self._user('anna', manager_rights)
         self.boris = self._user('boris', manager_rights)
-        self.client_obj = Client.objects.create(full_name='Клиент', company=self.company, created_by=self.anna)
+        # Паспорт заполнен: без него сделку не оформить — договор без
+        # паспортных данных не составить
+        self.client_obj = Client.objects.create(
+            full_name='Клиент', company=self.company, created_by=self.anna,
+            passport_series='AA', passport_number='1234567', passport_issued_by='ИИБ',
+            passport_issued_date=date(2020, 1, 15), pinfl='12345678901234',
+        )
 
     def _user(self, username, permissions):
         role, _ = Role.objects.get_or_create(name='Менеджер продаж', code='SALES_MANAGER')
@@ -74,16 +82,23 @@ class BookingCancellationTests(TestCase):
     def book(self, user, unit):
         response = self.api(user).post('/api/deals/', {
             'client': self.client_obj.id, 'property': unit.id,
-            'booking_end_date': (timezone.now() + timedelta(days=5)).isoformat(),
         }, format='json')
         self.assertEqual(response.status_code, 201, response.data)
         return response.data['id']
+
+    def test_new_deal_starts_in_progress(self):
+        unit = self.unit('20')
+        deal_id = self.book(self.anna, unit)
+        # Сделка создаётся сразу «В работе»: статуса «Бронь» у неё больше нет
+        self.assertEqual(Deal.objects.get(pk=deal_id).status, Deal.DealStatus.IN_PROGRESS)
+        unit.refresh_from_db()
+        self.assertEqual(unit.status, Property.PropertyStatus.IN_DEAL)
 
     def cancel(self, user, deal_id):
         return self.api(user).post(f'/api/deals/{deal_id}/cancel/', {'cancellation_reason': 'Клиент передумал'},
                                    format='multipart')
 
-    def test_author_cancels_own_booking(self):
+    def test_author_cancels_own_deal(self):
         unit = self.unit()
         deal_id = self.book(self.anna, unit)
         self.assertTrue(self.api(self.anna).get(f'/api/deals/{deal_id}/').data['can_edit'])
@@ -93,7 +108,7 @@ class BookingCancellationTests(TestCase):
         unit.refresh_from_db()
         self.assertEqual(unit.status, Property.PropertyStatus.SELECTION)
 
-    def test_colleague_sees_booking_read_only_and_gets_clear_refusal(self):
+    def test_colleague_sees_deal_read_only_and_gets_clear_refusal(self):
         deal_id = self.book(self.anna, self.unit())
         response = self.api(self.boris).get(f'/api/deals/{deal_id}/')
         self.assertEqual(response.status_code, 200)
@@ -102,7 +117,7 @@ class BookingCancellationTests(TestCase):
         refusal = self.cancel(self.boris, deal_id)
         self.assertEqual(refusal.status_code, 403)
         self.assertIn('нет доступа', refusal.data['error'])
-        self.assertEqual(Deal.objects.get(pk=deal_id).status, Deal.DealStatus.BOOKING)
+        self.assertEqual(Deal.objects.get(pk=deal_id).status, Deal.DealStatus.IN_PROGRESS)
 
     def test_cancellation_without_reason_is_explained(self):
         deal_id = self.book(self.anna, self.unit())
@@ -127,7 +142,6 @@ class CheckPropertyStatusesTests(TestCase):
 
     def deal(self, unit, status):
         return Deal.objects.create(company=self.company, client=self.client_obj, property=unit, status=status,
-                                   booking_end_date=timezone.now() + timedelta(days=3),
                                    initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2.5'),
                                    created_by=self.user)
 
@@ -148,8 +162,12 @@ class CheckPropertyStatusesTests(TestCase):
         Payment.objects.create(deal=terminated, client=self.client_obj, company=self.company, amount=Decimal('10'),
                                currency='UZS', payment_type=ptype, beneficiary_account=account,
                                due_date=timezone.localdate(), status=Payment.PaymentStatus.TO_BE_RETURNED)
+        # Объект с действующей бронью — так и должно быть
         fine = self.unit('4', Property.PropertyStatus.BOOKING)
-        self.deal(fine, Deal.DealStatus.BOOKING)
+        Booking.objects.create(company=self.company, client=self.client_obj, property=fine,
+                               status=Booking.BookingStatus.ACTIVE, duration_days=3,
+                               start_date=timezone.now(), end_date=timezone.now() + timedelta(days=3),
+                               price=Decimal('100'), currency='UZS')
 
         report = self.run_command()
         self.assertIn('Найдено расхождений: 2', report)
@@ -205,7 +223,6 @@ class DealContractNumberSearchTests(TestCase):
         client = Client.objects.create(full_name='Клиент', company=company)
         return Deal.objects.create(company=company, client=client, property=unit,
                                    status=Deal.DealStatus.IN_PROGRESS, contract_number=contract_number,
-                                   booking_end_date=timezone.now() + timedelta(days=3),
                                    initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2.5'),
                                    created_by=self.user)
 
@@ -231,8 +248,13 @@ class DealContractNumberSearchTests(TestCase):
 @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
 class DealPassportRequirementTests(TestCase):
     """
-    Паспортные данные клиента идут в договор: без них бронь не переходит
-    в работу (первый график платежей), а сделка не закрывается (даты подписания).
+    Паспортные данные клиента идут в договор: без них **не оформить сделку**,
+    а начатая сделка не закрывается (даты подписания).
+
+    Рубеж переехал: раньше паспорт проверялся при сохранении первого графика,
+    потому что именно график переводил бронь в работу. Теперь бронь — отдельная
+    сущность, для неё паспорт не нужен (клиент приходит с одним телефоном), а
+    сделка без паспорта не создаётся вовсе.
     """
 
     def setUp(self):
@@ -246,12 +268,11 @@ class DealPassportRequirementTests(TestCase):
         self.client_obj = Client.objects.create(full_name='Иванов Иван', company=self.company,
                                                 passport_series='AA', passport_number='1234567')
         project = Project.objects.create(name='ЖК', address='А', company=self.company)
-        building = Building.objects.create(project=project, name='1', floors_count=9)
-        unit = Property.objects.create(building=building, property_type='APARTMENT', unit_number='7', floor=2,
+        self.building = Building.objects.create(project=project, name='1', floors_count=9)
+        unit = Property.objects.create(building=self.building, property_type='APARTMENT', unit_number='7', floor=2,
                                        area=Decimal('50'), price=Decimal('1000'),
-                                       status=Property.PropertyStatus.BOOKING)
+                                       status=Property.PropertyStatus.IN_DEAL)
         self.deal = Deal.objects.create(company=self.company, client=self.client_obj, property=unit,
-                                        booking_end_date=timezone.now() + timedelta(days=5),
                                         initial_price=Decimal('1000'), initial_price_per_sqm=Decimal('20'),
                                         contract_price=Decimal('1000'), created_by=self.user)
         self.ptype = PaymentType.objects.create(name='Взнос', company=self.company)
@@ -280,26 +301,36 @@ class DealPassportRequirementTests(TestCase):
         self.assertEqual(self.card()['client_missing_passport_fields'],
                          ['passport_issued_by', 'passport_issued_date', 'pinfl'])
 
-    def test_booking_does_not_go_to_work_without_passport(self):
-        response = self.save_schedule()
+    def new_deal(self, unit_number='8'):
+        unit = Property.objects.create(building=self.building, property_type='APARTMENT',
+                                       unit_number=unit_number, floor=2, area=Decimal('50'),
+                                       price=Decimal('1000'))
+        return self.api.post('/api/deals/', {
+            'client': self.client_obj.id, 'property': unit.id,
+        }, format='json')
+
+    def test_deal_is_not_created_without_passport(self):
+        response = self.new_deal()
         self.assertEqual(response.status_code, 400)
         self.assertIn('Кем выдан паспорт', response.data['error'])
         self.assertIn('ПИНФЛ', response.data['error'])
         self.assertNotIn('Серия паспорта', response.data['error'])
-        self.deal.refresh_from_db()
-        self.assertEqual(self.deal.status, Deal.DealStatus.BOOKING)
-        self.assertFalse(self.deal.payments.exists())
 
-    def test_booking_goes_to_work_with_passport(self):
+    def test_deal_is_created_with_passport(self):
         self.fill_passport()
+        response = self.new_deal('9')
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data['status'], Deal.DealStatus.IN_PROGRESS)
+
+    def test_schedule_saves_without_changing_deal_status(self):
+        # Сохранение графика больше не меняет статус сделки: из-за этого
+        # побочного действия бухгалтер не мог поправить график брони
         self.assertEqual(self.save_schedule().status_code, 201)
         self.deal.refresh_from_db()
         self.assertEqual(self.deal.status, Deal.DealStatus.IN_PROGRESS)
-        self.assertEqual(self.card()['client_missing_passport_fields'], [])
+        self.assertEqual(self.deal.payments.count(), 1)
 
     def test_deal_in_work_without_passport_is_editable_but_does_not_close(self):
-        # Сделка ушла в работу до того, как паспорт стал обязательным
-        Deal.objects.filter(pk=self.deal.pk).update(status=Deal.DealStatus.IN_PROGRESS)
         self.assertEqual(self.save_schedule().status_code, 201)
         today = timezone.localdate().isoformat()
         # Одна дата подписания сделку не закрывает — её сохранить можно
@@ -357,7 +388,6 @@ class DealScanTests(TestCase):
                                        floor=1, area=Decimal('40'), price=Decimal('100'),
                                        status=Property.PropertyStatus.SOLD)
         return Deal.objects.create(company=self.company, client=self.client_obj, property=unit, status=status,
-                                   booking_end_date=timezone.now() + timedelta(days=3),
                                    initial_price=Decimal('100'), initial_price_per_sqm=Decimal('2.5'),
                                    contract_price=Decimal('100'), created_by=self.admin)
 
@@ -400,8 +430,8 @@ class DealScanTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('Расторгнута', response.data['error'])
 
-    def test_booking_has_no_contract_scan_yet(self):
-        response = self.upload(self.deal(Deal.DealStatus.BOOKING), 'signed')
+    def test_cancelled_deal_has_no_contract_scan(self):
+        response = self.upload(self.deal(Deal.DealStatus.CANCELLED), 'signed')
         self.assertEqual(response.status_code, 400)
         self.assertIn('В работе', response.data['error'])
 
@@ -472,19 +502,18 @@ class DealSummaryByStatusTests(TestCase):
         project = Project.objects.create(name='ЖК', address='А', company=self.company)
         self.building = Building.objects.create(project=project, name='1', floors_count=9)
         self.client_obj = Client.objects.create(full_name='Клиент', company=self.company)
-        statuses = ([Deal.DealStatus.BOOKING] * 2 + [Deal.DealStatus.CLOSED_WON] * 3
+        statuses = ([Deal.DealStatus.IN_PROGRESS] * 2 + [Deal.DealStatus.CLOSED_WON] * 3
                     + [Deal.DealStatus.TERMINATED] * 4 + [Deal.DealStatus.CANCELLED] * 5)
         for number, deal_status in enumerate(statuses):
             unit = Property.objects.create(building=self.building, property_type='APARTMENT',
                                            unit_number=str(number), floor=1, area=Decimal('40'), price=Decimal('1'))
             Deal.objects.create(company=self.company, client=self.client_obj, property=unit, status=deal_status,
-                                created_by=self.manager, booking_end_date=timezone.now() + timedelta(days=3),
-                                initial_price=Decimal('1'), initial_price_per_sqm=Decimal('1'))
+                                created_by=self.manager, initial_price=Decimal('1'), initial_price_per_sqm=Decimal('1'))
 
     def test_manager_row_is_split_by_status_and_total_skips_cancelled(self):
         rows = self.api.get('/api/deals/summary/', {'group_by': 'created_by'}).data['summary']
         self.assertEqual(rows, [{
-            'group': 'Xojimurod Ortiqov', 'booking': 2, 'in_progress': 0, 'closed_won': 3,
+            'group': 'Xojimurod Ortiqov', 'in_progress': 2, 'closed_won': 3,
             'terminated': 4, 'cancelled': 5, 'total': 9,
         }])
 
@@ -493,7 +522,7 @@ class DealSummaryByStatusTests(TestCase):
         response = self.api.get('/api/deals/summary/', {'group_by': 'status', 'export': 'excel', 'lang': 'ru'})
         self.assertEqual(response.status_code, 200)
         table = pd.read_excel(io.BytesIO(response.content))
-        self.assertEqual(list(table.columns), ['Статус', 'Бронь', 'В работе', 'Успешно закрыта', 'Расторгнута',
+        self.assertEqual(list(table.columns), ['Статус', 'В работе', 'Успешно закрыта', 'Расторгнута',
                                                'Отменена', 'Итого (без отменённых)'])
         cancelled = table[table['Статус'] == 'Отменена'].iloc[0]
         self.assertEqual((cancelled['Отменена'], cancelled['Итого (без отменённых)']), (5, 0))

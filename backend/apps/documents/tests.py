@@ -73,7 +73,6 @@ class GenerateDocumentBase(TestCase):
         self.client_obj = Client.objects.create(full_name='Иванов Иван', company=self.company)
         self.deal = Deal.objects.create(
             company=self.company, client=self.client_obj, property=prop,
-            booking_end_date=timezone.now() + timedelta(days=7),
             initial_price=Decimal('500000000'), initial_price_per_sqm=Decimal('10000000'),
             contract_number='Д-1', contract_date=timezone.now().date(), created_by=self.user,
         )
@@ -236,3 +235,78 @@ class GenerateDocumentFiltersTests(GenerateDocumentBase):
         text = self.generate().replace(' ', ' ')
         self.assertIn('100 000 000 (юз миллион) сўм; 6 000 000 (олти миллион) сўм; '
                       'Тел: +998901112233 / +998939718811', text)
+
+
+class GenerateBookingDocumentTests(GenerateDocumentBase):
+    """
+    Договор брони — свой документ со своими метками: срок в днях, даты
+    брони, цена на момент брони и взнос. Шаблоны сделки и брони не
+    смешиваются: иначе в брони печатался договор долевого участия.
+    """
+
+    def setUp(self):
+        super().setUp()
+        from apps.deals.models import Booking
+        from apps.finances.models import BeneficiaryAccount, Payment
+
+        self.company.booking_fee_amount = Decimal('1000000')
+        self.account = BeneficiaryAccount.objects.create(name='Счёт', details='-', company=self.company)
+        self.company.booking_fee_account = self.account
+        self.company.min_booking_days = 1
+        self.company.save()
+
+        self.booking = Booking.objects.create(
+            company=self.company, client=self.client_obj, property=self.deal.property,
+            status=Booking.BookingStatus.ACTIVE, duration_days=5,
+            start_date=timezone.now(), end_date=timezone.now() + timedelta(days=5),
+            price=Decimal('40500.00'), currency='USD', contract_number='Б-1',
+            contract_date=timezone.localdate(), created_by=self.user,
+        )
+        self.fee = Payment.objects.create(
+            company=self.company, booking=self.booking, client=self.client_obj,
+            amount=Decimal('1000000'), currency='UZS', beneficiary_account=self.account,
+            method='CASHLESS', due_date=timezone.localdate(),
+        )
+        self.booking_template = Template.objects.create(
+            name='Договор брони', company=self.company, kind=Template.Kind.BOOKING,
+            file=SimpleUploadedFile('booking.docx', docx_bytes(
+                'Бронь №{{ booking.contract_number }} на {{ booking.duration_days }} дн., '
+                'цена {{ booking.price|money }} {{ booking.currency }}, '
+                'взнос {{ fee.amount|money }} ({{ fee.amount|amount_words }})'
+            )),
+        )
+
+    def booking_url(self, template=None):
+        template = template or self.booking_template
+        return f'/api/bookings/{self.booking.id}/generate-document/{template.id}/'
+
+    def test_booking_contract_prints_term_price_and_fee(self):
+        response = self.api.get(self.booking_url())
+        self.assertEqual(response.status_code, 200, getattr(response, 'data', None))
+        text = docx_text(response.content).replace(' ', ' ')
+        self.assertIn('Бронь №Б-1 на 5 дн., цена 40 500 USD, '
+                      'взнос 1 000 000 (один миллион сумов)', text)
+
+    def test_available_templates_are_split_by_kind(self):
+        booking_list = self.api.get(f'/api/bookings/{self.booking.id}/available-templates/').data
+        self.assertEqual([row['id'] for row in booking_list], [self.booking_template.id])
+        deal_list = self.api.get(f'/api/deals/{self.deal.id}/available-templates/').data
+        self.assertEqual([row['id'] for row in deal_list], [self.template.id])
+
+    def test_deal_template_is_not_printed_for_a_booking(self):
+        response = self.api.get(self.booking_url(self.template))
+        self.assertEqual(response.status_code, 404)
+
+    def test_booking_template_is_not_printed_for_a_deal(self):
+        response = self.api.get(
+            f'/api/deals/{self.deal.id}/generate-document/{self.booking_template.id}/')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('договор брони', response.data['error'])
+
+    def test_cancelled_booking_prints_nothing(self):
+        from apps.deals.models import Booking
+
+        Booking.objects.filter(pk=self.booking.pk).update(status=Booking.BookingStatus.CANCELLED)
+        response = self.api.get(self.booking_url())
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('документы по ней больше не формируются', response.data['error'])

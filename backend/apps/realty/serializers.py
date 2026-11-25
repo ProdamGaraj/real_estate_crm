@@ -107,6 +107,11 @@ class BuildingLogSerializer(serializers.ModelSerializer):
 class PropertyListSerializer(serializers.ModelSerializer):
     layout = LayoutMiniSerializer(read_only=True)
     active_deal_id = serializers.SerializerMethodField()
+    # Действующая бронь объекта и длина очереди за ней: статус «Бронь» сам
+    # по себе не говорит, сколько человек стоит за объектом
+    active_booking_id = serializers.SerializerMethodField()
+    booking_queue_length = serializers.SerializerMethodField()
+    booking_end_date = serializers.SerializerMethodField()
     # Расторгнутая сделка с невозвращёнными платежами, которая держит объект занятым
     pending_refund_deal_id = serializers.SerializerMethodField()
     # Цена объекта задана в валюте прайса его проекта
@@ -117,7 +122,8 @@ class PropertyListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'unit_number', 'property_type', 'status', 'area', 'price', 'price_currency',
             'floor', 'entrance', 'riser', 'has_finishing', 'layout', 'description', 'active_deal_id',
-            'pending_refund_deal_id',
+            'pending_refund_deal_id', 'active_booking_id', 'booking_queue_length', 'booking_end_date',
+            'pending_price',
         ]
 
     def get_active_deal_id(self, obj):
@@ -125,14 +131,40 @@ class PropertyListSerializer(serializers.ModelSerializer):
         Ищет активную сделку (не отмененную/расторгнутую/завершенную) для этого объекта
         и возвращает ее ID.
         """
+        # Статуса «Бронь» у сделки больше нет: объект держит либо живая
+        # сделка, либо отдельная бронь (см. active_booking_id)
         active_statuses = [
-            'BOOKING',
             'IN_PROGRESS',
             'CLOSED_WON'
         ]
         # Используем related_name 'deals', который мы задали в модели
         active_deal = obj.deals.filter(status__in=active_statuses).first()
         return active_deal.id if active_deal else None
+
+    def _active_booking(self, obj):
+        if not hasattr(self, '_booking_cache'):
+            self._booking_cache = {}
+        if obj.id not in self._booking_cache:
+            from apps.deals.occupancy import active_booking
+            self._booking_cache[obj.id] = active_booking(obj)
+        return self._booking_cache[obj.id]
+
+    def get_active_booking_id(self, obj):
+        booking = self._active_booking(obj)
+        return booking.id if booking else None
+
+    def get_booking_end_date(self, obj):
+        """До какого числа объект занят бронью: нужно и на шахматке."""
+        booking = self._active_booking(obj)
+        return booking.end_date if booking else None
+
+    def get_booking_queue_length(self, obj):
+        """Сколько броней ждёт очереди. Действующая бронь здесь не считается."""
+        from apps.deals.models import Booking
+
+        return Booking.objects.filter(
+            property=obj, status=Booking.BookingStatus.PENDING_QUEUE
+        ).count()
 
     def get_pending_refund_deal_id(self, obj):
         """
@@ -156,7 +188,7 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
     возвращается в подбор и продаётся повторно.
     """
 
-    # Статусы, которыми управляет сделка, а не пользователь
+    # Статусы, которыми управляет процесс брони и сделки, а не пользователь
     DEAL_MANAGED_STATUSES = (
         Property.PropertyStatus.BOOKING,
         Property.PropertyStatus.IN_DEAL,
@@ -178,6 +210,11 @@ class PropertyDetailSerializer(serializers.ModelSerializer):
             )
 
         if current_status in self.DEAL_MANAGED_STATUSES:
+            if current_status == Property.PropertyStatus.BOOKING:
+                raise serializers.ValidationError(
+                    'Объект забронирован. Сначала снимите бронь — или она снимется сама, '
+                    'когда истечёт её срок.'
+                )
             raise serializers.ValidationError(
                 f'Объект занят сделкой (статус — «{self.instance.get_status_display()}»). '
                 f'Сначала отмените или расторгните сделку.'

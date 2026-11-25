@@ -3,6 +3,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import HandshakeIcon from '@mui/icons-material/Handshake';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import LeaderboardIcon from '@mui/icons-material/Leaderboard';
@@ -117,6 +118,10 @@ export default function DashboardPage() {
             <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.monthly_contracting')} value={formatMoney(kpi.monthlyContracting, moneyLabel, i18n.language)} icon={<MonetizationOnIcon />} color="info.main" compact={isMobile} /></Grid>
             <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.monthly_receipts')} value={formatMoney(kpi.monthlyReceipts, moneyLabel, i18n.language)} icon={<AccountBalanceWalletIcon />} color="secondary.main" compact={isMobile} /></Grid>
             <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.overdue_payments')} value={formatMoney(kpi.overduePayments, moneyLabel, i18n.language)} icon={<EventBusyIcon />} color="error.main" compact={isMobile} /></Grid>
+            {/* Взносы по броням стоят отдельно: бронь — не договор, в контрактацию и план-факт они не входят */}
+            {kpi.bookingFees !== undefined && (
+              <Grid size={{ xs: 6, sm: 6, md: 4 }}><KpiCard title={t('pages.dashboard.booking_fees')} value={formatMoney(kpi.bookingFees, moneyLabel, i18n.language)} icon={<BookmarkIcon />} color="info.main" compact={isMobile} /></Grid>
+            )}
         </Grid>
 
         {/* Блок воронок и графиков */}

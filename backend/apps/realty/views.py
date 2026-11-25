@@ -1,5 +1,6 @@
 import io
 import logging
+from decimal import Decimal, InvalidOperation
 
 import pandas as pd
 from django.http import HttpResponse
@@ -27,6 +28,7 @@ from apps.common import format_field_change
 from .models import (
     Project, Building, BuildingType, Property, Layout, Discount, DiscountLog, BuildingLog, ProjectImage, BuildingImage
 )
+from .services import apply_pending_prices_bulk, set_pending_price
 from .serializers import (
     ProjectListSerializer, ProjectDetailSerializer,
     BuildingSerializer, BuildingTypeSerializer,  # <-- Добавьте BuildingMiniSerializer
@@ -342,6 +344,9 @@ class PropertyUploadView(APIView):
             created_count = 0
             updated_count = 0
             skipped_in_deal = 0
+            # Цены, отложенные до освобождения объекта, и применённые сразу
+            price_deferred = 0
+            price_applied = 0
             skipped_empty = 0
             skipped_no_unit = 0
             skipped_duplicates = 0
@@ -386,12 +391,26 @@ class PropertyUploadView(APIView):
                 area_val = row.get('Площадь (кв.м)')
                 price_val = row.get('Стоимость')
                 
+                # Цена из файла не пишется в `price` напрямую: она проходит
+                # через `pending_price` и применяется, только когда объект
+                # свободен. Так новая цена сохраняется и у занятых объектов —
+                # раньше их пропускали, и новых цен по ним в базе не было
+                # вовсе, поэтому после отказа по договору объект уходил
+                # в продажу по цене до повышения
+                price_from_file = None
+                if pd.notna(price_val):
+                    try:
+                        price_from_file = Decimal(str(price_val)).quantize(Decimal('0.01'))
+                    except (InvalidOperation, ValueError):
+                        errors_list.append(
+                            f"Строка {index + 2}: не удалось прочитать цену «{price_val}»"
+                        )
+
                 property_data = {
                     'floor': int(floor_val) if pd.notna(floor_val) else 0,
                     'entrance': str(entrance_val).strip() if pd.notna(entrance_val) else None,
                     'riser': str(riser_val).strip() if pd.notna(riser_val) else '',
                     'area': float(area_val) if pd.notna(area_val) else 0,
-                    'price': float(price_val) if pd.notna(price_val) else 0,
                     'has_finishing': _parse_excel_bool(row.get('Наличие отделки (TRUE/FALSE)')),
                     'description': str(row.get('Описание', '')).strip() if pd.notna(row.get('Описание')) else '',
                     'property_type': valid_types.get(row.get('Тип объекта'), Property.PropertyType.APARTMENT),
@@ -427,14 +446,21 @@ class PropertyUploadView(APIView):
                         unit_number=unit_number,
                     ).first()
                     if existing_property:
-                        # Объект в брони или сделке не трогаем: загрузка прайса
-                        # переписывала цену и площадь квартиры, по которой уже
-                        # зафиксированы условия договора
+                        # У занятого объекта меняется только цена, и только
+                        # в `pending_price`: площадь, этаж и планировку менять
+                        # нельзя — по ним уже зафиксированы условия договора
                         if existing_property.status not in allowed_statuses_from_excel:
                             skipped_in_deal += 1
+                            if set_pending_price(
+                                existing_property, price_from_file, request.user,
+                                note=f"Объект занят («{existing_property.get_status_display()}»), "
+                                     f"цена применится при освобождении.",
+                            ):
+                                price_deferred += 1
                             errors_list.append(
                                 f"Строка {index + 2}: объект {unit_number} занят "
-                                f"(«{existing_property.get_status_display()}») — пропущен"
+                                f"(«{existing_property.get_status_display()}») — обновлена "
+                                f"только цена, она применится при освобождении"
                             )
                             continue
 
@@ -454,6 +480,7 @@ class PropertyUploadView(APIView):
                                 )
                         existing_property.updated_by = request.user
                         existing_property.save()
+                        set_pending_price(existing_property, price_from_file, request.user)
                         updated_count += 1
                     else:
                         if status_from_file not in allowed_statuses_from_excel:
@@ -466,6 +493,7 @@ class PropertyUploadView(APIView):
                             )
                             status_from_file = Property.PropertyStatus.SELECTION
                         property_data['status'] = status_from_file
+                        property_data['price'] = price_from_file if price_from_file is not None else 0
                         Property.objects.create(
                             building=building,
                             unit_number=unit_number,
@@ -476,11 +504,22 @@ class PropertyUploadView(APIView):
                 except Exception as row_error:
                     errors_list.append(f"Строка {index + 2}: {str(row_error)}")
             
+            # Перенос ожидающих цен у свободных объектов — один запрос на дом,
+            # а не по запросу на объект: в доме бывает около тысячи объектов
+            price_applied = apply_pending_prices_bulk(
+                Property.objects.filter(building=building), request.user,
+                reason=f'загрузка прайса в дом «{building.name}»',
+            )
+
             result_message = f'Успешно загружено. Создано: {created_count}, Обновлено: {updated_count}'
+            if price_applied or price_deferred:
+                result_message += (f'. Цены: применено {price_applied}, '
+                                   f'отложено до освобождения {price_deferred}')
             if skipped_empty > 0 or skipped_no_unit > 0 or skipped_duplicates > 0 or skipped_in_deal > 0:
                 result_message += (
                     f'. Пропущено: {skipped_empty} пустых, {skipped_no_unit} без номера, '
-                    f'{skipped_duplicates} дубликатов, {skipped_in_deal} занятых сделкой'
+                    f'{skipped_duplicates} дубликатов, {skipped_in_deal} занятых '
+                    f'(у них обновлена только цена)'
                 )
             if duplicates_in_file:
                 result_message += f'. ВНИМАНИЕ: В файле найдены дубликаты номеров объектов!'
@@ -498,6 +537,8 @@ class PropertyUploadView(APIView):
                     'skipped_no_unit': skipped_no_unit,
                     'skipped_duplicates': skipped_duplicates,
                     'skipped_in_deal': skipped_in_deal,
+                    'price_applied': price_applied,
+                    'price_deferred': price_deferred,
                     'duplicates_in_file': duplicates_in_file[:20] if duplicates_in_file else [],  # Первые 20 дубликатов
                     'errors': errors_list[:10] if errors_list else []  # Первые 10 ошибок
                 }

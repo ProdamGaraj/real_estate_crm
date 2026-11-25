@@ -89,6 +89,7 @@ export default function RoleDetailPage() {
     APPLICATION: t('pages.settings.permissions.resource_application'),
     APPLICATION_STATUS: t('pages.settings.permissions.resource_application_status'),
     MEETING: t('pages.settings.permissions.resource_meeting'),
+    BOOKING: t('pages.settings.permissions.resource_booking'),
     DEAL: t('pages.settings.permissions.resource_deal'),
     PAYMENT: t('pages.settings.permissions.resource_payment'),
     PAYMENT_TYPE: t('pages.settings.permissions.resource_payment_type'),

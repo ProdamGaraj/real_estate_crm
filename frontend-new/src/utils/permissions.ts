@@ -14,6 +14,7 @@ export type ResourceType =
   | 'PROPERTY'
   | 'LAYOUT'
   | 'DISCOUNT'
+  | 'BOOKING'
   | 'DEAL'
   | 'PAYMENT'
   | 'PAYMENT_TYPE'

@@ -40,7 +40,7 @@ class PaymentScheduleTests(APITestCase):
         profile.save()
 
         self.company = Company.objects.create(name='Компания', code='CO')
-        # С паспортом: без него первый график не переводит бронь в работу
+        # С паспортом: без него сделку не оформить
         self.client_obj = Client.objects.create(full_name='Иванов Иван', company=self.company, **PASSPORT)
 
         project = Project.objects.create(name='ЖК', address='ул. Тестовая, 1', company=self.company)
@@ -52,7 +52,6 @@ class PaymentScheduleTests(APITestCase):
 
         self.deal = Deal.objects.create(
             client=self.client_obj, property=self.property, company=self.company,
-            booking_end_date=date.today() + timedelta(days=30),
             initial_price=Decimal('1000.00'), initial_price_per_sqm=Decimal('20.00'),
             contract_price=Decimal('1000.00'),
         )
@@ -84,12 +83,14 @@ class PaymentScheduleTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         return list(self.deal.payments.order_by('due_date'))
 
-    def test_schedule_creation_moves_deal_and_property_to_in_progress(self):
+    def test_schedule_creation_does_not_change_deal_status(self):
+        # Сохранение графика больше не переводит сделку в работу: статус
+        # менялся побочным действием, и поправить график было нельзя,
+        # не закрыв бронь. Бронь теперь отдельная сущность
         self._create_initial_schedule()
         self.deal.refresh_from_db()
-        self.property.refresh_from_db()
         self.assertEqual(self.deal.status, Deal.DealStatus.IN_PROGRESS)
-        self.assertEqual(self.property.status, Property.PropertyStatus.IN_DEAL)
+        self.assertEqual(self.deal.payments.count(), 2)
 
     def test_editing_schedule_preserves_paid_marks(self):
         first, second = self._create_initial_schedule()

@@ -38,6 +38,26 @@ class Company(models.Model):
     rate_source = models.CharField(max_length=10, choices=RateSource.choices, default=RateSource.CBU,
                                    verbose_name="Источник курса")
 
+    # --- Настройки брони ---
+    # Взнос за бронь: фиксированная сумма в валюте фактической оплаты, то есть
+    # в валюте сделок компании (прайс проекта может быть в другой валюте).
+    # По нему создаётся единственный платёж брони — реальный долг клиента.
+    booking_fee_amount = models.DecimalField(max_digits=18, decimal_places=2, default=0,
+                                             verbose_name="Взнос за бронь")
+    # Счёт получателя взноса: у платежа поле обязательное и защищено PROTECT,
+    # поэтому без счёта по умолчанию бронь оформить нельзя
+    booking_fee_account = models.ForeignKey(
+        'finances.BeneficiaryAccount',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='companies_for_booking_fee',
+        verbose_name="Счёт для взноса за бронь"
+    )
+    # Минимальный срок брони в днях: бронь оформляется на срок, а не датой
+    min_booking_days = models.PositiveSmallIntegerField(default=1,
+                                                        verbose_name="Минимальный срок брони, дней")
+
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
@@ -118,6 +138,7 @@ class Permission(models.Model):
         LAYOUT = 'LAYOUT', 'Планировки'
         DISCOUNT = 'DISCOUNT', 'Скидки'
         # Deals модуль
+        BOOKING = 'BOOKING', 'Брони'
         DEAL = 'DEAL', 'Сделки'
         # Finances модуль
         PAYMENT = 'PAYMENT', 'Платежи'

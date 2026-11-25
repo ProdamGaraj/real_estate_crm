@@ -11,7 +11,7 @@ from apps.finances.models import Payment, PaymentType
 LOG_PAGE_SIZE = 50
 
 from rest_framework import serializers
-from .models import Deal, DealLog
+from .models import Booking, BookingLog, Deal, DealLog
 from apps.crm.serializers import ClientListSerializer
 # ИСПРАВЛЕНИЕ: Импортируем DiscountListSerializer
 from apps.realty.serializers import PropertyListSerializer, DiscountListSerializer
@@ -19,13 +19,38 @@ from apps.realty.serializers import PropertyListSerializer, DiscountListSerializ
 
 class DealCreateSerializer(serializers.ModelSerializer):
     """
-    Сериализатор для создания новой сделки (бронирования).
-    Принимает ID клиента, объекта и дату окончания брони.
+    Сериализатор для создания новой сделки.
+
+    Основной путь — сделка по действующей брони: ``booking`` передан, цена
+    берётся из брони, бронь становится её частью. Сделка по свободному
+    объекту (продажа без брони) оформляется без ``booking``.
     """
 
     class Meta:
         model = Deal
-        fields = ['client', 'property', 'booking_end_date', 'application']
+        fields = ['client', 'property', 'application', 'booking']
+
+    booking = serializers.PrimaryKeyRelatedField(
+        queryset=Booking.objects.all(), required=False, allow_null=True, write_only=True,
+        help_text="Действующая бронь, по которой оформляется сделка"
+    )
+
+    def validate_booking(self, value):
+        """Бронь должна быть доступна пользователю (scope-check)."""
+        if value is None:
+            return value
+        from permissions.backends import get_filtered_queryset
+
+        user = self.context['request'].user
+        accessible = get_filtered_queryset(user, Booking.objects.filter(pk=value.pk), 'BOOKING')
+        if not accessible.exists():
+            raise serializers.ValidationError('Бронь не найдена или недоступна.')
+        return value
+
+    def create(self, validated_data):
+        # Бронь обрабатывает view: она же блокирует её и объект в транзакции
+        validated_data.pop('booking', None)
+        return super().create(validated_data)
 
     def validate_application(self, value):
         """Заявка должна быть доступна пользователю и принадлежать тому же клиенту"""
@@ -72,6 +97,232 @@ class DealCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Объект недвижимости не найден или недоступен.')
         return value
 
+class BookingLogSerializer(serializers.ModelSerializer):
+    user = EmployeeNameField()
+
+    class Meta:
+        model = BookingLog
+        fields = ['id', 'user', 'action', 'created_at']
+        read_only_fields = ['created_at']
+
+
+class BookingCreateSerializer(serializers.ModelSerializer):
+    """
+    Оформление брони: клиент, объект, срок в днях.
+
+    Даты не принимаются: бронь оформляется на срок, а фактические даты
+    записываются в момент активации. Бронь при занятом объекте встаёт
+    в конец очереди — без дат и без цены.
+    """
+
+    class Meta:
+        model = Booking
+        fields = ['client', 'property', 'duration_days', 'application',
+                  'contract_number', 'contract_date']
+
+    def validate_client(self, value):
+        from permissions.backends import get_filtered_queryset
+        from apps.crm.models import Client
+
+        user = self.context['request'].user
+        if not get_filtered_queryset(user, Client.objects.filter(pk=value.pk), 'CLIENT').exists():
+            raise serializers.ValidationError('Клиент не найден или недоступен.')
+        return value
+
+    def validate_property(self, value):
+        from apps.realty.views import _filter_by_company_scope
+        from apps.realty.models import Property
+
+        user = self.context['request'].user
+        accessible = _filter_by_company_scope(
+            user, Property.objects.filter(pk=value.pk), 'building__project__company', 'PROPERTY'
+        )
+        if not accessible.exists():
+            raise serializers.ValidationError('Объект недвижимости не найден или недоступен.')
+        return value
+
+    def validate_application(self, value):
+        if value is None:
+            return value
+        from permissions.backends import get_filtered_queryset
+        from apps.crm.models import Application
+
+        user = self.context['request'].user
+        if not get_filtered_queryset(user, Application.objects.filter(pk=value.pk), 'APPLICATION').exists():
+            raise serializers.ValidationError('Заявка не найдена или недоступна.')
+        return value
+
+    def validate_contract_number(self, value):
+        return _validate_booking_contract_number(self, value)
+
+    def validate(self, data):
+        data = super().validate(data)
+        application = data.get('application')
+        client = data.get('client')
+        if application and client and application.client_id != client.pk:
+            raise serializers.ValidationError({'application': 'Заявка оформлена на другого клиента.'})
+        return data
+
+
+class BookingListSerializer(serializers.ModelSerializer):
+    client = serializers.StringRelatedField()
+    property = serializers.StringRelatedField()
+    created_by = EmployeeNameField()
+    # Место в очереди и расчётные даты считаются на лету: в базе их нет
+    queue_position = serializers.SerializerMethodField()
+    projected_start_date = serializers.SerializerMethodField()
+    projected_end_date = serializers.SerializerMethodField()
+    dates_projected = serializers.SerializerMethodField()
+    fee_status = serializers.SerializerMethodField()
+    deal_id = serializers.IntegerField(source='deal.id', read_only=True, default=None)
+
+    class Meta:
+        model = Booking
+        fields = ['id', 'status', 'client', 'property', 'duration_days', 'start_date', 'end_date',
+                  'price', 'currency', 'contract_number', 'contract_date', 'created_by',
+                  'created_at', 'queue_position', 'projected_start_date', 'projected_end_date',
+                  'dates_projected', 'fee_status', 'deal_id']
+
+    def _schedule(self, obj):
+        """
+        Расчётные даты очереди считаются один раз на объект.
+
+        Список броней — это десятки записей по одному объекту, и считать
+        проекцию для каждой заново значило бы повторять одни и те же
+        запросы: кеш живёт в контексте сериализатора.
+        """
+        from .booking import projected_schedule
+
+        cache = self.context.setdefault('_projected', {})
+        if obj.property_id not in cache:
+            cache[obj.property_id] = projected_schedule(obj.property)
+        return cache[obj.property_id].get(obj.id) or {}
+
+    def get_queue_position(self, obj):
+        from .booking import queue_position
+
+        return queue_position(obj)
+
+    def get_projected_start_date(self, obj):
+        return self._schedule(obj).get('start_date')
+
+    def get_projected_end_date(self, obj):
+        return self._schedule(obj).get('end_date')
+
+    def get_dates_projected(self, obj):
+        return self._schedule(obj).get('projected', False)
+
+    def get_fee_status(self, obj):
+        """Статус взноса: ``None`` — взноса нет (бронь без платы)."""
+        payment = next(iter(obj.payments.all()), None)
+        if payment is None:
+            return None
+        return {
+            'id': payment.id,
+            'amount': str(payment.amount),
+            'currency': payment.currency,
+            'due_date': payment.due_date,
+            'status': payment.status,
+            'status_display': payment.get_status_display(),
+            'paid': payment.status == 'PAID',
+        }
+
+
+class BookingDetailSerializer(BookingListSerializer):
+    """Карточка брони: вложенные клиент и объект, журнал, права."""
+    client = ClientListSerializer(read_only=True)
+    property = PropertyListSerializer(read_only=True)
+    logs = serializers.SerializerMethodField()
+    logs_total = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
+    # Брони, стоящие в очереди за этой, — чтобы менеджер видел всю очередь
+    queue = serializers.SerializerMethodField()
+    client_missing_passport_fields = serializers.SerializerMethodField()
+
+    class Meta(BookingListSerializer.Meta):
+        fields = BookingListSerializer.Meta.fields + [
+            'application', 'cancellation_reason', 'signed_scan', 'company',
+            'logs', 'logs_total', 'can_edit', 'queue', 'client_missing_passport_fields',
+        ]
+        read_only_fields = ['status', 'start_date', 'end_date', 'price', 'currency',
+                            'created_by', 'created_at', 'company', 'client', 'property']
+
+    def get_logs(self, obj):
+        return BookingLogSerializer(obj.logs.all()[:LOG_PAGE_SIZE], many=True).data
+
+    def get_logs_total(self, obj):
+        return obj.logs.count()
+
+    def get_can_edit(self, obj):
+        request = self.context.get('request')
+        if request is None:
+            return None
+        from permissions.backends import can_user_perform_action
+
+        return can_user_perform_action(request.user, 'EDIT', 'BOOKING', obj=obj)
+
+    def get_client_missing_passport_fields(self, obj):
+        # Для брони паспорт не нужен — он понадобится при оформлении сделки,
+        # и карточка предупреждает об этом заранее
+        return obj.client.missing_passport_fields()
+
+    def get_queue(self, obj):
+        from .booking import projected_schedule
+        from .occupancy import active_booking, booking_queue
+
+        schedule = projected_schedule(obj.property)
+        rows = []
+        current = active_booking(obj.property)
+        for booking in ([current] if current else []) + list(booking_queue(obj.property)):
+            dates = schedule.get(booking.id) or {}
+            rows.append({
+                'id': booking.id,
+                'status': booking.status,
+                'client': str(booking.client),
+                'duration_days': booking.duration_days,
+                'start_date': dates.get('start_date'),
+                'end_date': dates.get('end_date'),
+                'projected': dates.get('projected', False),
+                'is_current': booking.id == obj.id,
+            })
+        return rows
+
+    def to_representation(self, instance):
+        from real_estate_project.media_access import build_media_url
+
+        data = super().to_representation(instance)
+        if instance.signed_scan:
+            data['signed_scan'] = build_media_url(instance.signed_scan)
+        return data
+
+    def validate_contract_number(self, value):
+        return _validate_booking_contract_number(self, value)
+
+
+def _validate_booking_contract_number(serializer, value):
+    """
+    Номер договора брони уникален внутри компании.
+
+    У броней своя серия номеров, отдельная от номеров договоров сделок:
+    проверять их вместе значило бы, что номер брони №1 мешает завести
+    договор сделки №1.
+    """
+    if not value:
+        return None
+    company_id = getattr(serializer.instance, 'company_id', None)
+    if company_id is None:
+        request = serializer.context.get('request')
+        profile = getattr(getattr(request, 'user', None), 'profile', None)
+        company_id = getattr(profile, 'company_id', None)
+
+    query = Booking.objects.filter(contract_number=value, company_id=company_id)
+    if serializer.instance:
+        query = query.exclude(pk=serializer.instance.pk)
+    if query.exists():
+        raise serializers.ValidationError('Бронь с таким номером договора уже существует.')
+    return value
+
+
 class DealLogSerializer(serializers.ModelSerializer):
     user = EmployeeNameField()
 
@@ -114,6 +365,29 @@ class DealDetailSerializer(serializers.ModelSerializer):
     # Незаполненные паспортные данные клиента: карточка сделки предупреждает
     # заранее, а не отказом при сохранении графика или подписании
     client_missing_passport_fields = serializers.SerializerMethodField()
+
+    # Бронь, из которой выросла сделка: даты, цена и договор брони живут
+    # на ней, а не на сделке
+    booking_info = serializers.SerializerMethodField()
+
+    def get_booking_info(self, obj):
+        from .booking import booking_for_deal
+
+        booking = booking_for_deal(obj)
+        if booking is None:
+            return None
+        return {
+            'id': booking.id,
+            'status': booking.status,
+            'status_display': booking.get_status_display(),
+            'start_date': booking.start_date,
+            'end_date': booking.end_date,
+            'duration_days': booking.duration_days,
+            'price': str(booking.price) if booking.price is not None else None,
+            'currency': booking.currency,
+            'contract_number': booking.contract_number,
+            'contract_date': booking.contract_date,
+        }
 
     def get_client_missing_passport_fields(self, obj):
         return obj.client.missing_passport_fields()
@@ -283,7 +557,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deal
         fields = [
-            'id', 'status', 'booking_start_date', 'booking_end_date', 'client', 'property',
+            'id', 'status', 'client', 'property', 'booking_info',
             'initial_price', 'initial_price_per_sqm', 'contract_price', 'currency', 'notes',
             'created_by', 'created_at', 'applied_discounts', 'applied_discounts_ids',
             'payments', 'contract_number', 'contract_date', 'application', 'logs_total',
@@ -295,7 +569,7 @@ class DealDetailSerializer(serializers.ModelSerializer):
         # Валюта сделки задаётся настройкой компании при брони и дальше не меняется:
         # весь график платежей хранится в ней
         read_only_fields = [
-            'id', 'status', 'booking_start_date', 'client', 'property', 'application',
+            'id', 'status', 'client', 'property', 'application',
             'initial_price', 'initial_price_per_sqm', 'created_by', 'created_at', 'applied_discounts', 'payments','logs','cancellation_reason', 'termination_document_scan', 'termination_date',
             'currency', 'catalog_price', 'catalog_currency', 'catalog_rate', 'company',
         ]

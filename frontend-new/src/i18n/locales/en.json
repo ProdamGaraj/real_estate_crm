@@ -82,7 +82,8 @@
     "errors": "Errors",
     "no_client": "No client specified",
     "success": "Success",
-    "updated_at": "Updated"
+    "updated_at": "Updated",
+    "saved": "Saved"
   },
   "nav": {
     "app_title": "Real Estate CRM",
@@ -102,7 +103,8 @@
     "department_label": "Department:",
     "no_email": "No email",
     "more": "More",
-    "my_profile": "My profile"
+    "my_profile": "My profile",
+    "bookings": "Bookings"
   },
   "profile": {
     "personal_data": "Personal details",
@@ -171,7 +173,8 @@
       "upcoming_meetings": "Upcoming meetings",
       "sales_label": "Contracting:",
       "no_data": "No data to display",
-      "missing_rates": "No rate for {{currencies}}: amounts in these currencies are not included in the totals. Update rates in Settings (Currencies)."
+      "missing_rates": "No rate for {{currencies}}: amounts in these currencies are not included in the totals. Update rates in Settings (Currencies).",
+      "booking_fees": "Booking fees this month"
     },
     "clients": {
       "title": "Clients",
@@ -424,8 +427,6 @@
       "logs": "Logs",
       "client_label": "Client:",
       "property_label": "Property:",
-      "booking_start": "Booking Start:",
-      "booking_end": "Booking End:",
       "initial_price": "Initial Price",
       "price_per_sqm_initial": "Price per sqm (initial)",
       "contract_price": "Contract Price",
@@ -471,7 +472,6 @@
       "initial_price_per_sqm": "Price per sqm (initial)",
       "save_and_schedule": "Save and Go to Schedule",
       "save_price_first": "First save \"Contract Price\" on the previous step.",
-      "passport_needed_booking": "To save the payment schedule and move the deal to work, fill in the client's passport details: {{fields}}.",
       "passport_needed_in_progress": "To close the deal (both signature dates), fill in the client's passport details: {{fields}}.",
       "open_client": "Open client",
       "signed_uploaded": "Signed document uploaded.",
@@ -490,12 +490,10 @@
       "summary_group": "Group",
       "total_deals": "Total Deals",
       "summary_total": "Total (excl. cancelled)",
-      "status_booking": "Booking",
       "status_in_progress": "In Progress",
       "status_completed": "Completed",
       "status_terminated": "Terminated",
       "status_cancelled": "Cancelled",
-      "booking_end_date": "Booking End Date",
       "create_deal": "Create Deal",
       "application_optional": "Application (optional)",
       "currency_fixed_hint": "Set by company settings at booking",
@@ -505,7 +503,9 @@
       "no_plan": "Not selected",
       "view_only": "You can view this deal but not change or cancel it: it was created by another employee ({{author}}). Its author or a manager with rights to edit department or company deals can change it or remove the booking.",
       "actual_terms": "The contract schedule has {{count}} payment(s), {{paid}} paid. Dates: {{first}} to {{last}}.",
-      "terms_mismatch": "This does not match the «{{plan}}» plan ({{expected}} payment(s)) — check the contract terms."
+      "terms_mismatch": "This does not match the «{{plan}}» plan ({{expected}} payment(s)) — check the contract terms.",
+      "from_booking": "From booking",
+      "without_booking": "Deal created without a booking"
     },
     "projects": {
       "title": "Projects",
@@ -635,7 +635,9 @@
       "reserved_notice_manager": "This unit is reserved: it cannot be booked or sold. To make it available for sale, click \"Remove Reserve\".",
       "open_deal": "Open deal",
       "held_by_refund": "The unit is held by terminated deal #{{id}}: it will be released once all payments are returned to the client (\"Return\" button in the deal schedule).",
-      "status_mismatch": "The unit status does not match its deals: there is no active deal. Contact the administrator to return it to sale."
+      "status_mismatch": "The unit status does not match its deals: there is no active deal. Contact the administrator to return it to sale.",
+      "book_in_queue": "Join the queue",
+      "pending_price_note": "New price list value — {{price}}. It applies when the unit is released."
     },
     "finances": {
       "title": "Finances",
@@ -984,7 +986,8 @@
         "actions": "Actions",
         "employees": "Employees",
         "company": "Company",
-        "resource_exchange_rate": "Exchange rates"
+        "resource_exchange_rate": "Exchange rates",
+        "resource_booking": "Bookings"
       },
       "currencies_tab": "Currencies",
       "currencies": {
@@ -1045,6 +1048,18 @@
         "plan_FULL_hint": "The full amount in one payment. Create a \"100% payment\" discount under Discounts and limit it to this plan.",
         "plan_INSTALLMENT_hint": "A down payment (at least the given percent) and equal monthly payments.",
         "plan_DEFERRED_hint": "A down payment and the rest in one payment after the given number of months (mortgage). 0 — the rest right away."
+      },
+      "bookings_tab": "Bookings",
+      "booking": {
+        "title": "Booking settings",
+        "hint": "The booking fee is a fixed amount in the company's deal currency. Zero means a free booking: no payment is created.",
+        "fee_amount": "Booking fee amount",
+        "fee_amount_hint": "In the company deal currency ({{currency}})",
+        "fee_account": "Beneficiary account for the fee",
+        "min_days": "Minimum booking term, days",
+        "min_days_hint": "Bookings shorter than this are not allowed",
+        "account_required": "Choose a beneficiary account — a booking with a fee cannot be created without one.",
+        "no_company": "Booking settings belong to a company. Your profile has no company set."
       }
     },
     "api_keys": {
@@ -1102,7 +1117,10 @@
       "tags_cheatsheet": "Tags Cheatsheet",
       "apply_to_projects": "Apply to projects",
       "apply_to_buildings": "Apply to buildings",
-      "property_types": "Property types"
+      "property_types": "Property types",
+      "kind": "Template kind",
+      "kind_deal": "Deal contract",
+      "kind_booking": "Booking contract"
     },
     "payments": {
       "actually_paid": "Actually paid",
@@ -1111,12 +1129,60 @@
       "mark_as_returned": "Mark as returned",
       "method": "Method",
       "payment_number": "Payment #{{id}}"
+    },
+    "bookings": {
+      "title": "Bookings",
+      "card_title": "Booking #{{id}}",
+      "create": "Book",
+      "duration": "Term",
+      "duration_days": "Booking term, days",
+      "days": "{{count}} d.",
+      "dates": "Validity",
+      "projected": "projected",
+      "projected_hint": "Dates are projected from the queue: the previous booking ends where the next one starts. They shift if a booking ahead is extended or cancelled.",
+      "waiting_for_deal": "waiting",
+      "booked_price": "Booked price",
+      "price_on_activation": "fixed on activation",
+      "fee": "Booking fee",
+      "no_fee": "No fee set in company settings — the booking is free",
+      "open_fee": "Open payment",
+      "fee_notice": "A booking fee of {{amount}} will be created",
+      "contract": "Booking contract",
+      "contract_number": "Booking contract number",
+      "contract_date": "Booking contract date",
+      "edit_contract": "Contract number and date",
+      "upload_scan": "Upload scan",
+      "replace_scan": "Replace scan",
+      "open_scan": "Open contract scan",
+      "queue_title": "Booking queue for the unit",
+      "queue_position": "In queue: {{position}}",
+      "this_booking": "this booking",
+      "other_manager": "Another manager's booking",
+      "will_queue": "The unit is taken — this booking joins the queue at position {{position}}. Price and dates are fixed when it becomes active.",
+      "extend": "Extend",
+      "extend_hint": "Extension is free: the first fee covers the extended term. Dates of the bookings behind this one are recalculated automatically.",
+      "cancel": "Cancel booking",
+      "cancel_confirm": "Cancel booking",
+      "cancel_hint": "The unpaid fee will be cancelled and the unit will pass to the next booking in the queue or return to selection.",
+      "make_deal": "Create deal",
+      "expired_notice": "The booking term has expired. It will be cancelled automatically by the nightly job and can no longer be extended.",
+      "converted_notice": "Deal #{{id}} was created from this booking.",
+      "overdue_notice": "Bookings past their term: {{count}}. They will be cancelled automatically by the nightly job.",
+      "passport_needed": "The deal needs the client's passport details: {{fields}}. The booking itself does not require them.",
+      "fill_passport": "Fill in",
+      "open_booking": "Open booking",
+      "client_name": "Client",
+      "filter_live": "Active and queued",
+      "filter_all": "All",
+      "min_days_hint": "Company minimum is {{days}} d.",
+      "min_days_error": "The term cannot be shorter than {{days}} d."
     }
   },
   "documents": {
     "no_templates": "No templates available for this deal. Check template settings.",
     "generate": "Generate",
-    "generation_failed": "Failed to generate document."
+    "generation_failed": "Failed to generate document.",
+    "no_booking_templates": "No booking contract templates. Add a template with the \"Booking contract\" kind in settings."
   },
   "files": {
     "file": "File",
@@ -1157,7 +1223,6 @@
     "deal_contract_number": "Contract Number",
     "deal_contract_date": "Contract Date",
     "deal_contract_price": "Contract price with digit grouping: 247 231 950",
-    "deal_booking_end": "Booking End Date",
     "property": "Property",
     "property_number": "Property Number",
     "property_floor": "Floor",
@@ -1201,7 +1266,20 @@
     "first_payment": "First schedule payment — e.g. the deposit in a booking agreement",
     "filter_number": "Number without trailing zeros: 48.00 → 48, 120.50 → 120,5 — for area",
     "filter_words_uz_cyr": "Number in Uzbek Cyrillic words, without currency",
-    "filter_amount_words_uz_cyr": "Amount in Uzbek Cyrillic words with currency"
+    "filter_amount_words_uz_cyr": "Amount in Uzbek Cyrillic words with currency",
+    "booking": "Booking",
+    "booking_id": "Booking number in the system",
+    "booking_contract_number": "Booking contract number",
+    "booking_contract_date": "Booking contract date",
+    "booking_duration": "Booking term in days",
+    "booking_start": "Booking start date",
+    "booking_end": "Booking end date",
+    "booking_price": "Unit price at the time of booking",
+    "booking_price_words": "Booked price in words",
+    "booking_currency": "Currency of the booked price",
+    "booking_fee": "Booking fee amount",
+    "booking_fee_words": "Booking fee in words",
+    "booking_fee_due": "Booking fee due date"
   },
   "statuses": {
     "client": {
@@ -1241,7 +1319,6 @@
       "cancelled": "Cancelled"
     },
     "deal": {
-      "BOOKING": "Booking",
       "IN_PROGRESS": "In Progress",
       "CLOSED_WON": "Closed Won",
       "CANCELLED": "Cancelled",
@@ -1327,6 +1404,13 @@
       "DEPARTMENT": "Department",
       "COMPANY": "Company",
       "SYSTEM": "System"
+    },
+    "booking": {
+      "PENDING_QUEUE": "In queue",
+      "ACTIVE": "Active",
+      "CONVERTED": "Converted to deal",
+      "EXPIRED": "Expired",
+      "CANCELLED": "Cancelled"
     }
   },
   "property_types": {

@@ -424,6 +424,74 @@
   "doc": "Возвращает список скидок, доступных для объекта в сделке."
  },
  {
+  "path": "/api/bookings/",
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "view": "apps.deals.booking_views.BookingListView",
+  "doc": "GET — список броней, POST — оформление брони."
+ },
+ {
+  "path": "/api/bookings/summary/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.deals.booking_views.BookingSummaryView",
+  "doc": "Сводка по броням: сколько действующих, в очереди, истёкших, снятых."
+ },
+ {
+  "path": "/api/bookings/settings/",
+  "methods": [
+   "GET",
+   "PATCH"
+  ],
+  "view": "apps.deals.booking_views.BookingSettingsView",
+  "doc": "Настройки брони компании: взнос, счёт получателя, минимальный срок."
+ },
+ {
+  "path": "/api/bookings/<int:pk>/",
+  "methods": [
+   "GET",
+   "PATCH",
+   "PUT"
+  ],
+  "view": "apps.deals.booking_views.BookingDetailView",
+  "doc": "Карточка брони. Менять можно только номер и дату договора брони и заявку:"
+ },
+ {
+  "path": "/api/bookings/<int:pk>/extend/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.deals.booking_views.BookingExtendView",
+  "doc": "Продление брони: правка срока в днях."
+ },
+ {
+  "path": "/api/bookings/<int:pk>/cancel/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.deals.booking_views.BookingCancelView",
+  "doc": "Снятие брони вручную: долг по взносу снимается, очередь продвигается."
+ },
+ {
+  "path": "/api/bookings/<int:pk>/scan/",
+  "methods": [
+   "POST"
+  ],
+  "view": "apps.deals.booking_views.BookingScanView",
+  "doc": "Загрузка и замена скана подписанного договора брони."
+ },
+ {
+  "path": "/api/properties/<int:property_pk>/booking-queue/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.deals.booking_views.PropertyBookingQueueView",
+  "doc": "Очередь броней объекта с расчётными датами."
+ },
+ {
   "path": "/api/finances/payments/",
   "methods": [
    "GET"
@@ -574,6 +642,22 @@
   ],
   "view": "apps.documents.views.GenerateDocumentView",
   "doc": ""
+ },
+ {
+  "path": "/api/bookings/<int:booking_pk>/available-templates/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.documents.views.BookingTemplatesListView",
+  "doc": "Шаблоны договора брони, подходящие объекту этой брони."
+ },
+ {
+  "path": "/api/bookings/<int:booking_pk>/generate-document/<int:template_pk>/",
+  "methods": [
+   "GET"
+  ],
+  "view": "apps.documents.views.GenerateBookingDocumentView",
+  "doc": "Договор брони по шаблону."
  },
  {
   "path": "/api/reports/plan-fact/",

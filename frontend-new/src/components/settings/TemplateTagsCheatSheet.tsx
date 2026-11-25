@@ -41,8 +41,23 @@ export default function TemplateTagsCheatSheet() {
       { tag: '{{deal.initial_price|money}}', desc: t('template_tags.deal_initial_price') },
       { tag: '{{deal.currency}}', desc: t('template_tags.deal_currency') },
       { tag: '{{deal.payment_plan.name}}', desc: t('template_tags.deal_payment_plan') },
-      { tag: '{{deal.booking_end_date|date}}', desc: t('template_tags.deal_booking_end') },
       { tag: '{{first_payment.amount|money}}', desc: t('template_tags.first_payment') },
+    ],
+    // Договор брони: свой вид шаблона и свои метки. Графика платежей у брони
+    // нет, зато есть срок в днях, даты брони и взнос
+    [t('template_tags.booking')]: [
+      { tag: '{{booking.id}}', desc: t('template_tags.booking_id') },
+      { tag: '{{booking.contract_number}}', desc: t('template_tags.booking_contract_number') },
+      { tag: '{{booking.contract_date|date}}', desc: t('template_tags.booking_contract_date') },
+      { tag: '{{booking.duration_days}}', desc: t('template_tags.booking_duration') },
+      { tag: '{{booking.start_date|date}}', desc: t('template_tags.booking_start') },
+      { tag: '{{booking.end_date|date}}', desc: t('template_tags.booking_end') },
+      { tag: '{{booking.price|money}}', desc: t('template_tags.booking_price') },
+      { tag: '{{booking.price|amount_words}}', desc: t('template_tags.booking_price_words') },
+      { tag: '{{booking.currency}}', desc: t('template_tags.booking_currency') },
+      { tag: '{{fee.amount|money}}', desc: t('template_tags.booking_fee') },
+      { tag: '{{fee.amount|amount_words}}', desc: t('template_tags.booking_fee_words') },
+      { tag: '{{fee.due_date|date}}', desc: t('template_tags.booking_fee_due') },
     ],
     [t('template_tags.property')]: [
       { tag: '{{property.unit_number}}', desc: t('template_tags.property_number') },

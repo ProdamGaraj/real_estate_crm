@@ -4,13 +4,15 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog, DialogTitle, DialogContent, Typography, Box, TextField, Button,
-  Stack, CircularProgress, MobileStepper, Paper, Grid, Divider, Alert
+  Stack, CircularProgress, MobileStepper, Paper, Grid, Divider, Alert,
+  Link as MuiLink
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import type { Property } from '../../api/buildings';
 import { updateProperty } from '../../api/properties';
 import { createDeal } from '../../api/deals';
-import type { DealPayload } from '../../api/deals';
+import { createBooking, getPropertyBookingQueue } from '../../api/bookings';
+import type { BookingPayload } from '../../api/bookings';
 import BookingForm from '../deals/BookingForm';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
@@ -22,6 +24,7 @@ import InstallmentCalculator from '../installments/InstallmentCalculator';
 import { useAuthStore } from '../../store/authStore';
 import { hasPermission } from '../../utils/permissions';
 import { extractApiError } from '../../utils/apiError';
+import { getDateLocale } from '../../utils/dateLocale';
 
 interface ModalProps {
   property: Property | null;
@@ -39,6 +42,10 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
   const navigate = useNavigate();
   const [isBookingModalOpen, setBookingModalOpen] = useState(false);
   const [isInstallmentOpen, setInstallmentOpen] = useState(false);
+  const { user } = useAuthStore();
+  const canViewBookings = hasPermission(user, 'VIEW', 'BOOKING');
+  const canAddBooking = hasPermission(user, 'ADD', 'BOOKING');
+  const canAddDeal = hasPermission(user, 'ADD', 'DEAL');
 
   // Рассрочку считаем в валюте сделок компании: цена из прайса пересчитывается
   // по сегодняшнему курсу так же, как при брони
@@ -67,6 +74,14 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
         })
       : t('installments.no_rate', { currency: priceCurrency }))
     : null;
+  // Очередь броней объекта: менеджер должен видеть, до какого числа объект
+  // занят и сколько человек стоит за ним. Расчётные даты считает сервер
+  const { data: queue } = useQuery({
+    queryKey: ['propertyBookingQueue', property?.id],
+    queryFn: () => getPropertyBookingQueue(property!.id),
+    enabled: open && Boolean(property?.id) && canViewBookings,
+  });
+
   const { register, handleSubmit, setValue } = useForm<{ description: string }>();
 
   const [activeStep, setActiveStep] = useState(0);
@@ -109,23 +124,45 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
     onError: (error: unknown) => alert(extractApiError(error, t('errors.update_error'))),
   });
 
+  const refreshBuilding = () => {
+      queryClient.invalidateQueries({ queryKey: ['building', String(buildingId)] });
+      queryClient.invalidateQueries({ queryKey: ['propertyBookingQueue'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+  };
+
+  // Бронь — отдельная запись: по свободному объекту она становится
+  // действующей сразу, по занятому встаёт в конец очереди
+  const createBookingMutation = useMutation({
+      mutationFn: createBooking,
+      onSuccess: (data) => {
+          refreshBuilding();
+          setBookingModalOpen(false);
+          onClose();
+          navigate(`/bookings/${data.id}`);
+      },
+      // Объект успели поставить в резерв, срок короче минимального,
+      // не задан счёт для взноса и т.п.
+      onError: (error: unknown) => {
+          refreshBuilding();
+          alert(extractApiError(error, t('errors.error_occurred')));
+      },
+  });
+
+  // Сделка оформляется по действующей брони: цена берётся из брони
   const createDealMutation = useMutation({
       mutationFn: createDeal,
       onSuccess: (data) => {
-          queryClient.invalidateQueries({ queryKey: ['building', String(buildingId)] });
-          setBookingModalOpen(false);
+          refreshBuilding();
           onClose();
           navigate(`/deals/${data.id}`);
       },
-      // Объект успели забронировать или поставить в резерв, нет курса валюты и т.п.
       onError: (error: unknown) => {
-          queryClient.invalidateQueries({ queryKey: ['building', String(buildingId)] });
+          refreshBuilding();
           alert(extractApiError(error, t('errors.error_occurred')));
       },
   });
 
   // Резерв ставит и снимает только тот, кто может изменять объекты
-  const { user } = useAuthStore();
   const canManageReserve = hasPermission(user, 'EDIT', 'PROPERTY');
 
   const handleStatusChange = (status: 'SELECTION' | 'RESERVE') => {
@@ -138,9 +175,9 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
     updatePropMutation.mutate({ buildingId, propertyId: property.id, payload: { description: data.description } });
   };
 
-  const onBookingSubmit = (data: DealPayload) => {
+  const onBookingSubmit = (data: BookingPayload) => {
       if (!property) return;
-      createDealMutation.mutate({ ...data, property: property.id });
+      createBookingMutation.mutate({ ...data, property: property.id });
   };
 
   if (!property) return null;
@@ -232,8 +269,51 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
                 <Typography><b>{t('pages.properties.finishing')}:</b> {property.has_finishing ? t('common.yes') : t('common.no')}</Typography>
               </Stack>
 
-              {/* Занят, а живой сделки нет: ждёт возврата платежей или статус разошёлся со сделками */}
-              {['BOOKING', 'IN_DEAL', 'SOLD'].includes(property.status) && !property.active_deal_id && (
+              {/* Очередь броней: действующая бронь и те, кто ждёт за ней.
+                  Даты броней в очереди расчётные — в базе их нет */}
+              {queue && queue.queue.length > 0 && (
+                <Paper variant="outlined" sx={{ p: 1.5, mb: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t('pages.bookings.queue_title')}
+                  </Typography>
+                  <Stack spacing={0.5}>
+                    {queue.queue.map((row) => (
+                      <Stack key={row.id} direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                        <Typography variant="body2" sx={{ minWidth: 28 }}>
+                          {row.position === 0 ? '▸' : `${row.position}.`}
+                        </Typography>
+                        <Typography variant="body2">
+                          {row.accessible
+                            ? (
+                              <MuiLink component={RouterLink} to={`/bookings/${row.id}`} underline="hover">
+                                {row.client || `№${row.id}`}
+                              </MuiLink>
+                            )
+                            : t('pages.bookings.other_manager')}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {row.start_date && row.end_date
+                            ? `${new Date(row.start_date).toLocaleDateString(getDateLocale())} — ${new Date(row.end_date).toLocaleDateString(getDateLocale())}`
+                            : t('pages.bookings.waiting_for_deal')}
+                          {row.projected ? ` (${t('pages.bookings.projected')})` : ''}
+                        </Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                  {queue.pending_price && (
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                      {t('pages.properties.pending_price_note', {
+                        price: formatMoney(queue.pending_price, property.price_currency || '', i18n.language),
+                      })}
+                    </Typography>
+                  )}
+                </Paper>
+              )}
+
+              {/* Занят, а живой сделки и брони нет: ждёт возврата платежей
+                  или статус разошёлся с бронями и сделками */}
+              {['BOOKING', 'IN_DEAL', 'SOLD'].includes(property.status) && !property.active_deal_id
+                && !property.active_booking_id && (
                 <Alert
                   severity="warning"
                   sx={{ mt: 2 }}
@@ -268,9 +348,20 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
                       <Button variant="contained" onClick={() => handleStatusChange('RESERVE')} disabled={updatePropMutation.isPending}>{t('pages.properties.reserve')}</Button>}
                     {property.status === 'RESERVE' && canManageReserve &&
                       <Button variant="outlined" onClick={() => handleStatusChange('SELECTION')} disabled={updatePropMutation.isPending}>{t('pages.properties.remove_reserve')}</Button>}
-                    {/* Объект в резерве не бронирует никто, пока резерв не снят */}
-                    {property.status === 'SELECTION' &&
-                      <Button variant="contained" color="secondary" onClick={() => setBookingModalOpen(true)}>{t('pages.properties.book')}</Button>}
+                    {/* Объект в резерве не бронирует никто, пока резерв не снят.
+                        По занятому объекту бронь встаёт в очередь — кнопка та же */}
+                    {property.status !== 'RESERVE' && property.status !== 'SOLD' && canAddBooking &&
+                      <Button variant="contained" color="secondary" onClick={() => setBookingModalOpen(true)}>
+                        {property.status === 'SELECTION'
+                          ? t('pages.properties.book')
+                          : t('pages.properties.book_in_queue')}
+                      </Button>}
+                    {/* Сделка оформляется по действующей брони: её цена
+                        зафиксирована в момент брони */}
+                    {property.active_booking_id && canAddDeal &&
+                      <Button variant="outlined" component={RouterLink} to={`/bookings/${property.active_booking_id}`}>
+                        {t('pages.bookings.open_booking')}
+                      </Button>}
                   </>
                 )}
                 {/* Варианты оплаты для клиента — в любом статусе объекта */}
@@ -311,7 +402,12 @@ export default function PropertyDetailModal({ property, buildingId, buildingName
       <Dialog open={isBookingModalOpen} onClose={() => setBookingModalOpen(false)}>
           <DialogTitle>{t('pages.properties.book_property', { number: property.unit_number })}</DialogTitle>
           <DialogContent>
-              <BookingForm onSubmit={onBookingSubmit} isPending={createDealMutation.isPending} />
+              <BookingForm
+                onSubmit={onBookingSubmit}
+                isPending={createBookingMutation.isPending}
+                occupied={Boolean(queue && (queue.live_deal_id || queue.queue.length > 0))}
+                queueLength={queue?.queue.length || 0}
+              />
           </DialogContent>
       </Dialog>
     </>

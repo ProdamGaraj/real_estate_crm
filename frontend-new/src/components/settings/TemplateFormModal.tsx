@@ -20,6 +20,8 @@ interface TemplateFormModalProps {
 
 interface FormInputs {
   name: string;
+  /** Договор по сделке или договор брони: у них разные метки */
+  kind: 'DEAL' | 'BOOKING';
   file: FileList;
   applies_to_projects: number[];
   applies_to_buildings: number[];
@@ -35,6 +37,7 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
   const queryClient = useQueryClient();
   const { register, handleSubmit, control, watch, reset } = useForm<FormInputs>({
     defaultValues: {
+      kind: 'DEAL',
       applies_to_projects: [],
       applies_to_buildings: [],
       applies_to_property_types: [],
@@ -59,6 +62,7 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
   const onSubmit = (data: FormInputs) => {
     const formData = new FormData();
     formData.append('name', data.name);
+    formData.append('kind', data.kind);
     if (data.file[0]) {
       formData.append('file', data.file[0]);
     }
@@ -79,6 +83,21 @@ export default function TemplateFormModal({ open, onClose }: TemplateFormModalPr
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
             <TextField label={t('pages.templates.template_name')} {...register('name', { required: true })} required />
+            {/* Вид шаблона: в брони печатается договор брони, в сделке —
+                договор по сделке. Списки шаблонов не смешиваются */}
+            <Controller
+              name="kind"
+              control={control}
+              render={({ field }) => (
+                <FormControl>
+                  <InputLabel>{t('pages.templates.kind')}</InputLabel>
+                  <Select {...field} label={t('pages.templates.kind')}>
+                    <MenuItem value="DEAL">{t('pages.templates.kind_deal')}</MenuItem>
+                    <MenuItem value="BOOKING">{t('pages.templates.kind_booking')}</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+            />
             <TextField type="file" InputLabelProps={{ shrink: true }} label={t('pages.templates.template_file')} {...register('file', { required: true })} required inputProps={{ accept: ".docx" }} />
 
             <Controller

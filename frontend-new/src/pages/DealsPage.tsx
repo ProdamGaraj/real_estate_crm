@@ -211,7 +211,6 @@ export default function DealsPage() {
                                             <InputLabel>{t('forms.status')}</InputLabel>
                                             <Select {...field} label={t('forms.status')}>
                                                 <MenuItem value=""><em>{t('common.all')}</em></MenuItem>
-                                                <MenuItem value="BOOKING">{t('statuses.deal.BOOKING')}</MenuItem>
                                                 <MenuItem value="IN_PROGRESS">{t('statuses.deal.IN_PROGRESS')}</MenuItem>
                                                 <MenuItem value="CLOSED_WON">{t('statuses.deal.CLOSED_WON')}</MenuItem>
                                                 <MenuItem value="CANCELLED">{t('statuses.deal.CANCELLED')}</MenuItem>

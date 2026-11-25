@@ -4,7 +4,18 @@ from django.core.validators import FileExtensionValidator
 from apps.realty.models import Project, Building
 
 class Template(models.Model):
+
+    class Kind(models.TextChoices):
+        DEAL = 'DEAL', 'Договор по сделке'
+        BOOKING = 'BOOKING', 'Договор брони'
+
     name = models.CharField(max_length=255, verbose_name="Название шаблона")
+    # Договор брони и договор сделки — разные документы с разными метками:
+    # в договоре брони нет графика платежей, зато есть срок брони и взнос.
+    # Без разделения оба списка шаблонов показывали всё подряд, и в брони
+    # печатался договор долевого участия
+    kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.DEAL,
+                            verbose_name="Для чего шаблон")
     file = models.FileField(
         upload_to='templates/',
         verbose_name="Файл шаблона (.docx)",

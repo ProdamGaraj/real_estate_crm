@@ -126,6 +126,16 @@ class Payment(models.Model):
     # --- Участники и связи ---
     deal = models.ForeignKey('deals.Deal', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments',
                              verbose_name="Сделка")
+    # Взнос за бронь. После оформления брони в сделку у строки заполнены
+    # **оба** поля: `booking` остаётся как происхождение (по нему отчёты
+    # отделяют деньги броней от контрактации и план-факта), `deal`
+    # добавляется, чтобы взнос вошёл в график сделки первой строкой.
+    # Ограничение «есть сделка или бронь» держится на уровне приложения:
+    # до появления броней платежи с пустой сделкой уже были в базе
+    # (сделка удалена через админку — SET_NULL), и CHECK на таблице
+    # не дал бы накатить миграцию.
+    booking = models.ForeignKey('deals.Booking', on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name='payments', verbose_name="Бронь")
     client = models.ForeignKey('crm.Client', on_delete=models.PROTECT, related_name='payments', verbose_name="Клиент")
     responsible_employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
                                              related_name='responsible_for_payments',
@@ -176,6 +186,7 @@ class Payment(models.Model):
             models.Index(fields=['company', 'status']),
             models.Index(fields=['payment_date']),
             models.Index(fields=['deal']),
+            models.Index(fields=['booking']),
             models.Index(fields=['responsible_employee', 'status']),
         ]
 

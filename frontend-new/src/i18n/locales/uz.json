@@ -82,7 +82,8 @@
     "errors": "Xatolar",
     "no_client": "Mijoz ko‘rsatilmagan",
     "success": "Muvaffaqiyatli",
-    "updated_at": "Yangilangan"
+    "updated_at": "Yangilangan",
+    "saved": "Saqlandi"
   },
   "nav": {
     "app_title": "Ko'chmas mulk CRM",
@@ -102,7 +103,8 @@
     "department_label": "Bo'lim:",
     "no_email": "Email yo'q",
     "more": "Boshqa",
-    "my_profile": "Mening profilim"
+    "my_profile": "Mening profilim",
+    "bookings": "Bronlar"
   },
   "profile": {
     "personal_data": "Shaxsiy ma'lumotlar",
@@ -171,7 +173,8 @@
       "upcoming_meetings": "Kelgusi uchrashuvlar",
       "sales_label": "Shartnoma tuzish:",
       "no_data": "Ko'rsatish uchun ma'lumot yo'q",
-      "missing_rates": "{{currencies}} kursi yo'q: bu valyutalardagi summalar jamiga kirmadi. Kurslarni sozlamalarda («Valyutalar») yangilang."
+      "missing_rates": "{{currencies}} kursi yo'q: bu valyutalardagi summalar jamiga kirmadi. Kurslarni sozlamalarda («Valyutalar») yangilang.",
+      "booking_fees": "Oylik bron badallari"
     },
     "clients": {
       "title": "Mijozlar",
@@ -424,8 +427,6 @@
       "logs": "Loglar",
       "client_label": "Mijoz:",
       "property_label": "Ob'ekt:",
-      "booking_start": "Bron boshi:",
-      "booking_end": "Bron oxiri:",
       "initial_price": "Narx (boshlang'ich)",
       "price_per_sqm_initial": "1 m² narxi (boshlang'ich)",
       "contract_price": "Shartnoma narxi",
@@ -455,7 +456,6 @@
       "status": "Holat",
       "client": "Mijoz",
       "property": "Ob'ekt",
-      "booking_end_date": "Bron tugash sanasi",
       "create_deal": "Bitim yaratish",
       "group_by": "Guruhlash",
       "group_by_manager": "Menejer bo'yicha",
@@ -467,7 +467,6 @@
       "summary_group": "Guruh",
       "total_deals": "Jami bitimlar",
       "summary_total": "Jami (bekor qilinganlarsiz)",
-      "status_booking": "Bron",
       "status_in_progress": "Jarayonda",
       "status_completed": "Yakunlangan",
       "status_terminated": "Shartnomasi buzilgan",
@@ -488,7 +487,6 @@
       "initial_price_per_sqm": "1 m² narxi (boshlang'ich)",
       "save_and_schedule": "Saqlash va jadvalga o'tish",
       "save_price_first": "Avval oldingi bosqichda \"Shartnoma narxi\" ni saqlang.",
-      "passport_needed_booking": "To'lov jadvalini saqlash va bitimni ishga o'tkazish uchun mijozning pasport ma'lumotlarini to'ldiring: {{fields}}.",
       "passport_needed_in_progress": "Bitimni yopish (ikkala imzolash sanasi) uchun mijozning pasport ma'lumotlarini to'ldiring: {{fields}}.",
       "open_client": "Mijozni ochish",
       "signed_uploaded": "Imzolangan hujjat yuklandi.",
@@ -505,7 +503,9 @@
       "no_plan": "Tanlanmagan",
       "view_only": "Siz bitimni ko'rishingiz mumkin, lekin uni o'zgartira yoki bekor qila olmaysiz: uni boshqa xodim ({{author}}) yaratgan. Bitimni yoki bronni uning muallifi yoki bo'lim yoki kompaniya bitimlarini o'zgartirish huquqi bor rahbar o'zgartira oladi.",
       "actual_terms": "Shartnoma jadvalida {{count}} ta to'lov bor, {{paid}} tasi to'langan. Muddatlar: {{first}} dan {{last}} gacha.",
-      "terms_mismatch": "«{{plan}}» rejasiga ({{expected}} ta to'lov) to'g'ri kelmaydi — shartnoma shartlarini tekshiring."
+      "terms_mismatch": "«{{plan}}» rejasiga ({{expected}} ta to'lov) to'g'ri kelmaydi — shartnoma shartlarini tekshiring.",
+      "from_booking": "Bron asosida",
+      "without_booking": "Bitim bronsiz tuzilgan"
     },
     "projects": {
       "title": "Loyihalar",
@@ -635,7 +635,9 @@
       "reserved_notice_manager": "Obyekt rezervda: uni bron qilish va sotish mumkin emas. Sotish mumkin bo'lishi uchun «Rezervni bekor qilish» ni bosing.",
       "open_deal": "Bitimni ochish",
       "held_by_refund": "Obyekt bekor qilingan №{{id}} bitim bilan band: mijozga barcha to'lovlar qaytarilgach (bitim jadvalidagi «Qaytarish» tugmasi) u bo'shaydi.",
-      "status_mismatch": "Obyekt holati bitimlarga mos emas: u bo'yicha faol bitim yo'q. Administratorga murojaat qiling — u obyektni sotuvga qaytaradi."
+      "status_mismatch": "Obyekt holati bitimlarga mos emas: u bo'yicha faol bitim yo'q. Administratorga murojaat qiling — u obyektni sotuvga qaytaradi.",
+      "book_in_queue": "Navbatga turish",
+      "pending_price_note": "Prays bo&lsquo;yicha yangi narx — {{price}}. U obyekt bo&lsquo;shaganda qo&lsquo;llanadi."
     },
     "finances": {
       "title": "Moliya",
@@ -984,7 +986,8 @@
         "actions": "Amallar",
         "employees": "Xodimlar",
         "company": "Kompaniya",
-        "resource_exchange_rate": "Valyuta kurslari"
+        "resource_exchange_rate": "Valyuta kurslari",
+        "resource_booking": "Bronlar"
       },
       "currencies_tab": "Valyutalar",
       "currencies": {
@@ -1045,6 +1048,18 @@
         "plan_FULL_hint": "Butun summa bitta to'lovda. «100% to'lov uchun» chegirmasini «Chegirmalar» bo'limida yarating va unda shu rejani ko'rsating.",
         "plan_INSTALLMENT_hint": "Boshlang'ich to'lov (ko'rsatilgan foizdan kam emas) va har oy teng to'lovlar.",
         "plan_DEFERRED_hint": "Boshlang'ich to'lov va qoldiq ko'rsatilgan oylardan keyin bitta to'lovda (ipoteka). 0 — qoldiq darhol."
+      },
+      "bookings_tab": "Bronlar",
+      "booking": {
+        "title": "Bron sozlamalari",
+        "hint": "Bron uchun badal — kompaniya bitimlari valyutasidagi qat&lsquo;iy summa. Nol bepul bronni bildiradi: to&lsquo;lov yaratilmaydi.",
+        "fee_amount": "Bron uchun badal summasi",
+        "fee_amount_hint": "Kompaniya bitimlari valyutasida ({{currency}})",
+        "fee_account": "Badal uchun oluvchi hisobi",
+        "min_days": "Eng kam bron muddati, kun",
+        "min_days_hint": "Bundan qisqa muddatga bron qilib bo&lsquo;lmaydi",
+        "account_required": "Oluvchi hisobini ko&lsquo;rsating — hisobsiz badalli bron yaratilmaydi.",
+        "no_company": "Bron sozlamalari kompaniya uchun beriladi. Profilingizda kompaniya ko&lsquo;rsatilmagan."
       }
     },
     "api_keys": {
@@ -1102,7 +1117,10 @@
       "tags_cheatsheet": "Teglar bo'yicha yordam",
       "apply_to_projects": "Loyihalarga qo'llash",
       "apply_to_buildings": "Binolarga qo'llash",
-      "property_types": "Mulk turlari"
+      "property_types": "Mulk turlari",
+      "kind": "Shablon turi",
+      "kind_deal": "Bitim shartnomasi",
+      "kind_booking": "Bron shartnomasi"
     },
     "payments": {
       "actually_paid": "Haqiqatda to'langan",
@@ -1111,12 +1129,60 @@
       "mark_as_returned": "Qaytarilgan deb belgilash",
       "method": "To'lov usuli",
       "payment_number": "To'lov №{{id}}"
+    },
+    "bookings": {
+      "title": "Bronlar",
+      "card_title": "Bron №{{id}}",
+      "create": "Bron qilish",
+      "duration": "Muddat",
+      "duration_days": "Bron muddati, kun",
+      "days": "{{count}} kun",
+      "dates": "Amal qilish muddati",
+      "projected": "taxminiy",
+      "projected_hint": "Sanalar navbat bo&lsquo;yicha hisoblangan: oldingi bronning tugashi keyingisining boshlanishi. Oldingi bron uzaytirilsa yoki bekor qilinsa, ular suriladi.",
+      "waiting_for_deal": "kutilmoqda",
+      "booked_price": "Bron bo&lsquo;yicha narx",
+      "price_on_activation": "faollashganda qayd etiladi",
+      "fee": "Bron uchun badal",
+      "no_fee": "Sozlamalarda badal ko&lsquo;rsatilmagan — bron bepul",
+      "open_fee": "To&lsquo;lovni ochish",
+      "fee_notice": "Bron uchun {{amount}} badal yaratiladi",
+      "contract": "Bron shartnomasi",
+      "contract_number": "Bron shartnomasi raqami",
+      "contract_date": "Bron shartnomasi sanasi",
+      "edit_contract": "Shartnoma raqami va sanasi",
+      "upload_scan": "Skanni yuklash",
+      "replace_scan": "Skanni almashtirish",
+      "open_scan": "Shartnoma skanini ochish",
+      "queue_title": "Obyekt bo&lsquo;yicha bronlar navbati",
+      "queue_position": "Navbatda: {{position}}",
+      "this_booking": "shu bron",
+      "other_manager": "Boshqa menejerning broni",
+      "will_queue": "Obyekt band — bron navbatga {{position}}-o&lsquo;rin bilan turadi. Narx va sanalar bron amalga kirganda qayd etiladi.",
+      "extend": "Uzaytirish",
+      "extend_hint": "Uzaytirish bepul: birinchi badal uzaytirilgan muddatni qoplaydi. Orqadagi bronlarning sanalari o&lsquo;zi qayta hisoblanadi.",
+      "cancel": "Bronni bekor qilish",
+      "cancel_confirm": "Bekor qilish",
+      "cancel_hint": "To&lsquo;lanmagan badal bekor qilinadi, obyekt navbatdagi keyingi bronga o&lsquo;tadi yoki tanlovga qaytadi.",
+      "make_deal": "Bitim tuzish",
+      "expired_notice": "Bron muddati tugagan. U keyingi tungi ishga tushirishda avtomatik bekor qilinadi, uzaytirib bo&lsquo;lmaydi.",
+      "converted_notice": "Shu bron asosida №{{id}} bitim tuzilgan.",
+      "overdue_notice": "Muddati tugagan bronlar: {{count}}. Ular keyingi tungi ishga tushirishda avtomatik bekor qilinadi.",
+      "passport_needed": "Bitim tuzish uchun mijozning pasport ma&lsquo;lumotlari kerak: {{fields}}. Bronning o&lsquo;zi uchun ular talab qilinmaydi.",
+      "fill_passport": "To&lsquo;ldirish",
+      "open_booking": "Bronni ochish",
+      "client_name": "Mijoz",
+      "filter_live": "Amalda va navbatda",
+      "filter_all": "Barchasi",
+      "min_days_hint": "Kompaniya sozlamalari bo&lsquo;yicha eng kam muddat — {{days}} kun.",
+      "min_days_error": "Muddat {{days}} kundan kam bo&lsquo;lishi mumkin emas."
     }
   },
   "documents": {
     "no_templates": "Bu bitim uchun mos shablonlar yo'q. Shablon sozlamalarini tekshiring.",
     "generate": "Yaratish",
-    "generation_failed": "Hujjatni yaratishda xatolik."
+    "generation_failed": "Hujjatni yaratishda xatolik.",
+    "no_booking_templates": "Bron shartnomasi shablonlari yo&lsquo;q. Sozlamalarda «Bron shartnomasi» turidagi shablon qo&lsquo;shing."
   },
   "files": {
     "file": "Fayl",
@@ -1163,7 +1229,6 @@
       "cancelled": "Bo'lib o'tmadi"
     },
     "deal": {
-      "BOOKING": "Bron",
       "IN_PROGRESS": "Jarayonda",
       "CLOSED_WON": "Muvaffaqiyatli yopilgan",
       "CANCELLED": "Bekor qilingan",
@@ -1249,6 +1314,13 @@
       "DEPARTMENT": "Bo'lim",
       "COMPANY": "Kompaniya",
       "SYSTEM": "Tizim"
+    },
+    "booking": {
+      "PENDING_QUEUE": "Navbatda",
+      "ACTIVE": "Amalda",
+      "CONVERTED": "Bitimga aylantirilgan",
+      "EXPIRED": "Muddati tugagan",
+      "CANCELLED": "Bekor qilingan"
     }
   },
   "property_types": {
@@ -1533,7 +1605,6 @@
     "project_name": "Loyiha nomi",
     "cheatsheet_description": "Metkani .docx matniga qo'ying — hujjat yaratilganda u bitim ma'lumotlari bilan almashtiriladi. Metkalar ma'lumot olinadigan jadvallar bo'yicha guruhlangan.",
     "cheatsheet_title": "Belgilar bo'yicha qo'llanma",
-    "deal_booking_end": "Bron tugash sanasi",
     "deal_contract_date": "Shartnoma sanasi",
     "deal_contract_number": "Shartnoma raqami",
     "deal_contract_price": "Shartnoma narxi, xonalar bo'sh joy bilan: 247 231 950",
@@ -1569,7 +1640,20 @@
     "first_payment": "Jadvaldagi birinchi to'lov — masalan, bron shartnomasidagi zakalat",
     "filter_number": "Son ortiqcha nollarsiz: 48.00 → 48, 120.50 → 120,5 — maydon uchun",
     "filter_words_uz_cyr": "Son o'zbek tilida kirill yozuvida so'z bilan, valyutasiz: «юз миллион»",
-    "filter_amount_words_uz_cyr": "Summa o'zbek tilida kirill yozuvida so'z bilan, valyuta bilan: «юз миллион сўм»"
+    "filter_amount_words_uz_cyr": "Summa o'zbek tilida kirill yozuvida so'z bilan, valyuta bilan: «юз миллион сўм»",
+    "booking": "Bron",
+    "booking_id": "Tizimdagi bron raqami",
+    "booking_contract_number": "Bron shartnomasi raqami",
+    "booking_contract_date": "Bron shartnomasi sanasi",
+    "booking_duration": "Bron muddati, kun",
+    "booking_start": "Bron boshlanish sanasi",
+    "booking_end": "Bron tugash sanasi",
+    "booking_price": "Bron vaqtidagi obyekt narxi",
+    "booking_price_words": "Bron narxi so&lsquo;z bilan",
+    "booking_currency": "Bron narxi valyutasi",
+    "booking_fee": "Bron badali summasi",
+    "booking_fee_words": "Badal summasi so&lsquo;z bilan",
+    "booking_fee_due": "Badal to&lsquo;lov muddati"
   },
   "months": {
     "1": "Yanvar",
