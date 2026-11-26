@@ -199,7 +199,10 @@ export default function BookingDetailPage() {
                   <b>{t('table.amount')}:</b>{' '}
                   {formatMoney(booking.fee_status.amount, booking.fee_status.currency, i18n.language)}
                 </Typography>
-                <Typography><b>{t('table.status')}:</b> {booking.fee_status.status_display}</Typography>
+                <Typography>
+                  <b>{t('table.status')}:</b>{' '}
+                  {t(`statuses.payment.${booking.fee_status.status}`, booking.fee_status.status_display)}
+                </Typography>
                 <Typography><b>{t('table.due_date')}:</b> {formatDate(booking.fee_status.due_date, i18n.language)}</Typography>
                 <Button component={RouterLink} to={`/finances/${booking.fee_status.id}`} size="small">
                   {t('pages.bookings.open_fee')}
@@ -279,7 +282,7 @@ export default function BookingDetailPage() {
         <Grid size={{ xs: 12 }}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
-              {t('pages.deals.history')} {booking.logs_total ? `(${booking.logs_total})` : ''}
+              {t('pages.bookings.history')} {booking.logs_total ? `(${booking.logs_total})` : ''}
             </Typography>
             <Stack spacing={1} divider={<Divider flexItem />}>
               {booking.logs.map((log) => (
@@ -327,7 +330,7 @@ export default function BookingDetailPage() {
           </Typography>
           <TextField
             autoFocus fullWidth multiline rows={3} required
-            label={t('pages.deals.cancellation_reason')}
+            label={t('pages.bookings.cancellation_reason')}
             value={reason} onChange={(event) => setReason(event.target.value)}
           />
         </DialogContent>

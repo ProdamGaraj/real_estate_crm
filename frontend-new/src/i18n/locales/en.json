@@ -1175,7 +1175,9 @@
       "filter_live": "Active and queued",
       "filter_all": "All",
       "min_days_hint": "Company minimum is {{days}} d.",
-      "min_days_error": "The term cannot be shorter than {{days}} d."
+      "min_days_error": "The term cannot be shorter than {{days}} d.",
+      "cancellation_reason": "Reason for cancelling",
+      "history": "Booking log"
     }
   },
   "documents": {
@@ -1453,7 +1455,8 @@
     "OTHER": "Other",
     "PARTNER_API_KEY": "Partner API Keys",
     "TASK_LOG": "Task Logs",
-    "EXCHANGE_RATE": "Exchange rates"
+    "EXCHANGE_RATE": "Exchange rates",
+    "BOOKING": "Bookings"
   },
   "forms": {
     "full_name": "Full Name",

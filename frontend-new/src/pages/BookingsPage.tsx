@@ -103,7 +103,8 @@ export default function BookingsPage() {
         if (!fee) return <Typography variant="body2" color="text.secondary">—</Typography>;
         return (
           <MuiLink component={RouterLink} to={`/finances/${fee.id}`} underline="hover">
-            {formatMoney(fee.amount, fee.currency, i18n.language)} · {fee.status_display}
+            {formatMoney(fee.amount, fee.currency, i18n.language)} ·{' '}
+            {t(`statuses.payment.${fee.status}`, fee.status_display)}
           </MuiLink>
         );
       },
@@ -123,7 +124,8 @@ export default function BookingsPage() {
     {
       key: 'fee_status', label: t('pages.bookings.fee'),
       render: (_value, row) => row.fee_status
-        ? `${formatMoney(row.fee_status.amount, row.fee_status.currency, i18n.language)} · ${row.fee_status.status_display}`
+        ? `${formatMoney(row.fee_status.amount, row.fee_status.currency, i18n.language)} · `
+          + t(`statuses.payment.${row.fee_status.status}`, row.fee_status.status_display)
         : '—',
     },
     { key: 'created_by', label: t('table.manager') },

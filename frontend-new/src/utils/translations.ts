@@ -118,7 +118,7 @@ export const translateStatus = (status: string, category?: string): string => {
   // Try to find in any category
   const categories = [
     'client', 'application', 'application_source', 'meeting', 
-    'deal', 'task', 'task_priority', 'payment', 'building', 
+    'booking', 'deal', 'task', 'task_priority', 'payment', 'building', 
     'property', 'property_type', 'role_scope', 'role_category',
     'permission_action', 'permission_scope'
   ];

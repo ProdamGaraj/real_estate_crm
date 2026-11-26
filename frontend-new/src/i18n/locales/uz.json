@@ -637,7 +637,7 @@
       "held_by_refund": "Obyekt bekor qilingan №{{id}} bitim bilan band: mijozga barcha to'lovlar qaytarilgach (bitim jadvalidagi «Qaytarish» tugmasi) u bo'shaydi.",
       "status_mismatch": "Obyekt holati bitimlarga mos emas: u bo'yicha faol bitim yo'q. Administratorga murojaat qiling — u obyektni sotuvga qaytaradi.",
       "book_in_queue": "Navbatga turish",
-      "pending_price_note": "Prays bo&lsquo;yicha yangi narx — {{price}}. U obyekt bo&lsquo;shaganda qo&lsquo;llanadi."
+      "pending_price_note": "Prays bo'yicha yangi narx — {{price}}. U obyekt bo'shaganda qo'llanadi."
     },
     "finances": {
       "title": "Moliya",
@@ -1052,14 +1052,14 @@
       "bookings_tab": "Bronlar",
       "booking": {
         "title": "Bron sozlamalari",
-        "hint": "Bron uchun badal — kompaniya bitimlari valyutasidagi qat&lsquo;iy summa. Nol bepul bronni bildiradi: to&lsquo;lov yaratilmaydi.",
+        "hint": "Bron uchun badal — kompaniya bitimlari valyutasidagi qat'iy summa. Nol bepul bronni bildiradi: to'lov yaratilmaydi.",
         "fee_amount": "Bron uchun badal summasi",
         "fee_amount_hint": "Kompaniya bitimlari valyutasida ({{currency}})",
         "fee_account": "Badal uchun oluvchi hisobi",
         "min_days": "Eng kam bron muddati, kun",
-        "min_days_hint": "Bundan qisqa muddatga bron qilib bo&lsquo;lmaydi",
-        "account_required": "Oluvchi hisobini ko&lsquo;rsating — hisobsiz badalli bron yaratilmaydi.",
-        "no_company": "Bron sozlamalari kompaniya uchun beriladi. Profilingizda kompaniya ko&lsquo;rsatilmagan."
+        "min_days_hint": "Bundan qisqa muddatga bron qilib bo'lmaydi",
+        "account_required": "Oluvchi hisobini ko'rsating — hisobsiz badalli bron yaratilmaydi.",
+        "no_company": "Bron sozlamalari kompaniya uchun beriladi. Profilingizda kompaniya ko'rsatilmagan."
       }
     },
     "api_keys": {
@@ -1139,13 +1139,13 @@
       "days": "{{count}} kun",
       "dates": "Amal qilish muddati",
       "projected": "taxminiy",
-      "projected_hint": "Sanalar navbat bo&lsquo;yicha hisoblangan: oldingi bronning tugashi keyingisining boshlanishi. Oldingi bron uzaytirilsa yoki bekor qilinsa, ular suriladi.",
+      "projected_hint": "Sanalar navbat bo'yicha hisoblangan: oldingi bronning tugashi keyingisining boshlanishi. Oldingi bron uzaytirilsa yoki bekor qilinsa, ular suriladi.",
       "waiting_for_deal": "kutilmoqda",
-      "booked_price": "Bron bo&lsquo;yicha narx",
+      "booked_price": "Bron bo'yicha narx",
       "price_on_activation": "faollashganda qayd etiladi",
       "fee": "Bron uchun badal",
-      "no_fee": "Sozlamalarda badal ko&lsquo;rsatilmagan — bron bepul",
-      "open_fee": "To&lsquo;lovni ochish",
+      "no_fee": "Sozlamalarda badal ko'rsatilmagan — bron bepul",
+      "open_fee": "To'lovni ochish",
       "fee_notice": "Bron uchun {{amount}} badal yaratiladi",
       "contract": "Bron shartnomasi",
       "contract_number": "Bron shartnomasi raqami",
@@ -1154,35 +1154,37 @@
       "upload_scan": "Skanni yuklash",
       "replace_scan": "Skanni almashtirish",
       "open_scan": "Shartnoma skanini ochish",
-      "queue_title": "Obyekt bo&lsquo;yicha bronlar navbati",
+      "queue_title": "Obyekt bo'yicha bronlar navbati",
       "queue_position": "Navbatda: {{position}}",
       "this_booking": "shu bron",
       "other_manager": "Boshqa menejerning broni",
-      "will_queue": "Obyekt band — bron navbatga {{position}}-o&lsquo;rin bilan turadi. Narx va sanalar bron amalga kirganda qayd etiladi.",
+      "will_queue": "Obyekt band — bron navbatga {{position}}-o'rin bilan turadi. Narx va sanalar bron amalga kirganda qayd etiladi.",
       "extend": "Uzaytirish",
-      "extend_hint": "Uzaytirish bepul: birinchi badal uzaytirilgan muddatni qoplaydi. Orqadagi bronlarning sanalari o&lsquo;zi qayta hisoblanadi.",
+      "extend_hint": "Uzaytirish bepul: birinchi badal uzaytirilgan muddatni qoplaydi. Orqadagi bronlarning sanalari o'zi qayta hisoblanadi.",
       "cancel": "Bronni bekor qilish",
       "cancel_confirm": "Bekor qilish",
-      "cancel_hint": "To&lsquo;lanmagan badal bekor qilinadi, obyekt navbatdagi keyingi bronga o&lsquo;tadi yoki tanlovga qaytadi.",
+      "cancel_hint": "To'lanmagan badal bekor qilinadi, obyekt navbatdagi keyingi bronga o'tadi yoki tanlovga qaytadi.",
       "make_deal": "Bitim tuzish",
-      "expired_notice": "Bron muddati tugagan. U keyingi tungi ishga tushirishda avtomatik bekor qilinadi, uzaytirib bo&lsquo;lmaydi.",
+      "expired_notice": "Bron muddati tugagan. U keyingi tungi ishga tushirishda avtomatik bekor qilinadi, uzaytirib bo'lmaydi.",
       "converted_notice": "Shu bron asosida №{{id}} bitim tuzilgan.",
       "overdue_notice": "Muddati tugagan bronlar: {{count}}. Ular keyingi tungi ishga tushirishda avtomatik bekor qilinadi.",
-      "passport_needed": "Bitim tuzish uchun mijozning pasport ma&lsquo;lumotlari kerak: {{fields}}. Bronning o&lsquo;zi uchun ular talab qilinmaydi.",
-      "fill_passport": "To&lsquo;ldirish",
+      "passport_needed": "Bitim tuzish uchun mijozning pasport ma'lumotlari kerak: {{fields}}. Bronning o'zi uchun ular talab qilinmaydi.",
+      "fill_passport": "To'ldirish",
       "open_booking": "Bronni ochish",
       "client_name": "Mijoz",
       "filter_live": "Amalda va navbatda",
       "filter_all": "Barchasi",
-      "min_days_hint": "Kompaniya sozlamalari bo&lsquo;yicha eng kam muddat — {{days}} kun.",
-      "min_days_error": "Muddat {{days}} kundan kam bo&lsquo;lishi mumkin emas."
+      "min_days_hint": "Kompaniya sozlamalari bo'yicha eng kam muddat — {{days}} kun.",
+      "min_days_error": "Muddat {{days}} kundan kam bo'lishi mumkin emas.",
+      "cancellation_reason": "Bekor qilish sababi",
+      "history": "Bron jurnali"
     }
   },
   "documents": {
     "no_templates": "Bu bitim uchun mos shablonlar yo'q. Shablon sozlamalarini tekshiring.",
     "generate": "Yaratish",
     "generation_failed": "Hujjatni yaratishda xatolik.",
-    "no_booking_templates": "Bron shartnomasi shablonlari yo&lsquo;q. Sozlamalarda «Bron shartnomasi» turidagi shablon qo&lsquo;shing."
+    "no_booking_templates": "Bron shartnomasi shablonlari yo'q. Sozlamalarda «Bron shartnomasi» turidagi shablon qo'shing."
   },
   "files": {
     "file": "Fayl",
@@ -1361,7 +1363,8 @@
     "OTHER": "Boshqa",
     "PARTNER_API_KEY": "Hamkor API kalitlari",
     "TASK_LOG": "Vazifa loglari",
-    "EXCHANGE_RATE": "Valyuta kurslari"
+    "EXCHANGE_RATE": "Valyuta kurslari",
+    "BOOKING": "Bronlar"
   },
   "forms": {
     "full_name": "F.I.O.",
@@ -1649,12 +1652,12 @@
     "booking_start": "Bron boshlanish sanasi",
     "booking_end": "Bron tugash sanasi",
     "booking_price": "Bron vaqtidagi obyekt narxi",
-    "booking_price_words": "Bron narxi so&lsquo;z bilan",
+    "booking_price_words": "Bron narxi so'z bilan",
     "booking_currency": "Bron narxi valyutasi",
     "booking_fee": "Bron badali summasi",
-    "booking_fee_words": "Badal summasi so&lsquo;z bilan",
-    "booking_fee_due": "Badal to&lsquo;lov muddati",
-    "deal_price_per_sqm": "Shartnoma bo&lsquo;yicha 1 m² narxi (summa ÷ maydon)",
+    "booking_fee_words": "Badal summasi so'z bilan",
+    "booking_fee_due": "Badal to'lov muddati",
+    "deal_price_per_sqm": "Shartnoma bo'yicha 1 m² narxi (summa ÷ maydon)",
     "deal_purchase_purpose": "Bitim kartochkasidagi sotib olish maqsadi"
   },
   "months": {

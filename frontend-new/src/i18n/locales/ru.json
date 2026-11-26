@@ -1175,7 +1175,9 @@
       "filter_live": "Действующие и в очереди",
       "filter_all": "Все",
       "min_days_hint": "Минимальный срок по настройкам компании — {{days}} дн.",
-      "min_days_error": "Срок не может быть меньше {{days}} дн."
+      "min_days_error": "Срок не может быть меньше {{days}} дн.",
+      "cancellation_reason": "Причина снятия",
+      "history": "Журнал брони"
     }
   },
   "documents": {
@@ -1379,7 +1381,8 @@
     "OTHER": "Прочее",
     "PARTNER_API_KEY": "API-ключи партнёров",
     "TASK_LOG": "Логи задач",
-    "EXCHANGE_RATE": "Курсы валют"
+    "EXCHANGE_RATE": "Курсы валют",
+    "BOOKING": "Брони"
   },
   "template_tags": {
     "cheatsheet_title": "Шпаргалка по меткам",
