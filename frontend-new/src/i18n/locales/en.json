@@ -1120,7 +1120,9 @@
       "property_types": "Property types",
       "kind": "Template kind",
       "kind_deal": "Deal contract",
-      "kind_booking": "Booking contract"
+      "kind_booking": "Booking contract",
+      "company": "Company",
+      "company_shared": "Shared with every company"
     },
     "payments": {
       "actually_paid": "Actually paid",

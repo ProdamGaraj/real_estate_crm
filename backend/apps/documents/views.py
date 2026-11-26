@@ -17,7 +17,12 @@ from .models import Template
 from .serializers import TemplateSerializer
 from permissions.permissions import TemplatePermission
 from permissions.backends import can_user_perform_action, get_filtered_queryset
-from permissions.reference_scope import with_shared_records
+from permissions.reference_scope import (
+    company_for_new_record,
+    is_admin as is_reference_admin,
+    scope_reference_queryset,
+    with_shared_records,
+)
 
 
 class TemplateListCreateView(generics.ListCreateAPIView):
@@ -30,10 +35,14 @@ class TemplateListCreateView(generics.ListCreateAPIView):
         return with_shared_records(self.request.user, Template.objects.all(), 'TEMPLATE')
 
     def perform_create(self, serializer):
-        company = None
-        if hasattr(self.request.user, 'profile') and self.request.user.profile.company:
-            company = self.request.user.profile.company
-        serializer.save(company=company, created_by=self.request.user)
+        # Администратор может завести шаблон для конкретной компании или
+        # общий для всех (company: пусто) — как у остальных справочников.
+        # Раньше шаблон всегда оседал в компании автора, и шаблон, заведённый
+        # администратором из служебной компании, не видел ни один менеджер
+        serializer.save(
+            company=company_for_new_record(self.request),
+            created_by=self.request.user,
+        )
 
 
 class TemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -52,6 +61,29 @@ class TemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
             'TEMPLATE'
         )
 
+    def perform_update(self, serializer):
+        # Шаблон, заведённый не в той компании, администратор переносит
+        # отсюда: иначе менеджеры чужой компании его не увидят, а поправить
+        # можно было только в базе
+        if is_reference_admin(self.request.user) and 'company' in getattr(self.request, 'data', {}):
+            serializer.save(company=company_for_new_record(self.request))
+        else:
+            serializer.save()
+
+
+def printable_templates(user):
+    """
+    Шаблоны, которыми пользователь вправе напечатать документ.
+
+    Право TEMPLATE управляет справочником шаблонов в настройках, а не
+    печатью: менеджеру шаблоны заводит администратор, своих у менеджера
+    нет. Пока список фильтровался по области права, менеджер с правом
+    TEMPLATE/OWN видел пустой список и получал 404 «Шаблон не найден или
+    недоступен», а без права TEMPLATE — 403. Доступ к самому документу
+    по-прежнему решает право на сделку или бронь.
+    """
+    return scope_reference_queryset(user, Template.objects.all())
+
 
 def templates_for_property(user, prop, kind):
     """
@@ -64,7 +96,7 @@ def templates_for_property(user, prop, kind):
     project = building.project
 
     # Сначала фильтруем по полям, которые поддерживаются базой данных
-    queryset = Template.objects.filter(
+    queryset = printable_templates(user).filter(
         Q(applies_to_projects__isnull=True) | Q(applies_to_projects=project),
         Q(applies_to_buildings__isnull=True) | Q(applies_to_buildings=building),
         kind=kind,
@@ -80,12 +112,13 @@ def templates_for_property(user, prop, kind):
         if not applies_to_types or prop_type in applies_to_types:
             filtered_pks.append(template.pk)
 
-    return with_shared_records(user, Template.objects.filter(pk__in=filtered_pks), 'TEMPLATE')
+    return printable_templates(user).filter(pk__in=filtered_pks)
 
 
 class DealTemplatesListView(generics.ListAPIView):
+    """Шаблоны договора по сделке. Доступ решает право на сделку."""
     serializer_class = TemplateSerializer
-    permission_classes = [IsAuthenticated, TemplatePermission]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         deal_id = self.kwargs.get('deal_pk')
@@ -104,7 +137,7 @@ class DealTemplatesListView(generics.ListAPIView):
 class BookingTemplatesListView(generics.ListAPIView):
     """Шаблоны договора брони, подходящие объекту этой брони."""
     serializer_class = TemplateSerializer
-    permission_classes = [IsAuthenticated, TemplatePermission]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         try:
@@ -178,7 +211,7 @@ class GenerateBookingDocumentView(APIView):
     Метки: {{booking.*}}, {{client.*}}, {{property.*}}, {{building.*}},
     {{project.*}}, {{manager.*}}, {{fee.*}}, {{today}}.
     """
-    permission_classes = [IsAuthenticated, TemplatePermission]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, booking_pk, template_pk, *args, **kwargs):
         try:
@@ -201,7 +234,7 @@ class GenerateBookingDocumentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        template_qs = with_shared_records(request.user, Template.objects.all(), 'TEMPLATE')
+        template_qs = printable_templates(request.user)
         try:
             template = template_qs.get(pk=template_pk, kind=Template.Kind.BOOKING)
         except Template.DoesNotExist:
@@ -231,7 +264,8 @@ class GenerateBookingDocumentView(APIView):
 
 
 class GenerateDocumentView(APIView):
-    permission_classes = [IsAuthenticated, TemplatePermission]
+    """Договор по сделке. Доступ решает право на сделку, не право TEMPLATE."""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, deal_pk, template_pk, *args, **kwargs):
         try:
@@ -255,8 +289,8 @@ class GenerateDocumentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Шаблон тоже фильтруем по scope (нельзя использовать чужой шаблон)
-        template_qs = with_shared_records(request.user, Template.objects.all(), 'TEMPLATE')
+        # Шаблон чужой компании недоступен и здесь
+        template_qs = printable_templates(request.user)
         try:
             template = template_qs.get(pk=template_pk)
         except Template.DoesNotExist:

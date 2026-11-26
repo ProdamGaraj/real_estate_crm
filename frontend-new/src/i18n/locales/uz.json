@@ -1120,7 +1120,9 @@
       "property_types": "Mulk turlari",
       "kind": "Shablon turi",
       "kind_deal": "Bitim shartnomasi",
-      "kind_booking": "Bron shartnomasi"
+      "kind_booking": "Bron shartnomasi",
+      "company": "Kompaniya",
+      "company_shared": "Barcha kompaniyalar uchun umumiy"
     },
     "payments": {
       "actually_paid": "Haqiqatda to'langan",

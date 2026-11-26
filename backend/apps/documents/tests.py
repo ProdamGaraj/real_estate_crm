@@ -379,3 +379,144 @@ class ProtectedMediaDownloadTests(TestCase):
         response = self.client.get(self.template.file.url)
 
         self.assertEqual(response.status_code, 403)
+
+
+@override_settings(
+    MEDIA_ROOT=MEDIA_ROOT,
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}},
+)
+class ManagerPrintsContractTests(TestCase):
+    """
+    Менеджер печатает договор по своей сделке.
+
+    Право TEMPLATE управляет справочником шаблонов в настройках: менеджеру
+    шаблоны заводит администратор, своих у менеджера нет. Пока печать
+    фильтровалась по области этого права, менеджер с типовой ролью получал
+    403, а с правом TEMPLATE/OWN — пустой список и 404 «Шаблон не найден
+    или недоступен» на кнопке «Сформировать».
+    """
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(MEDIA_ROOT, ignore_errors=True)
+
+    def setUp(self):
+        from django.core.management import call_command
+        from permissions.models import Department, Permission, Role
+
+        call_command('init_permissions', stdout=io.StringIO())
+        self.company = Company.objects.create(name='Продажи', code='PRINT')
+        self.foreign = Company.objects.create(name='Служебная', code='PRINTSYS')
+        department = Department.objects.create(company=self.company, name='Отдел', code='PD1')
+
+        # Типовая роль менеджера: прав на шаблоны в ней нет вовсе
+        self.role = Role.objects.create(name='Менеджер', code='PRINT_MANAGER')
+        self.role.permissions.set(Role.objects.get(code='MANAGER').permissions.all())
+        self.permission_model = Permission
+
+        self.user = User.objects.create_user('manager-print', password='pass-for-tests')
+        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        profile.company, profile.department = self.company, department
+        profile.save()
+        profile.roles.set([self.role])
+        self.user = User.objects.get(pk=self.user.pk)
+        self.api = APIClient()
+        self.api.force_authenticate(self.user)
+
+        project = Project.objects.create(name='ЖК', address='Ташкент', company=self.company)
+        building = Building.objects.create(project=project, name='1', floors_count=9)
+        prop = Property.objects.create(
+            building=building, property_type='APARTMENT', unit_number='1', floor=1,
+            area=Decimal('50.00'), price=Decimal('100000000'),
+        )
+        client = Client.objects.create(
+            full_name='Клиент', company=self.company, created_by=self.user)
+        self.deal = Deal.objects.create(
+            company=self.company, client=client, property=prop,
+            initial_price=Decimal('100000000'), initial_price_per_sqm=Decimal('2000000'),
+            contract_number='Д-1', contract_date=timezone.now().date(), created_by=self.user,
+        )
+        self.template = Template.objects.create(
+            name='Инвестиционный договор', company=self.company, created_by=None,
+            file=SimpleUploadedFile('tpl.docx', docx_bytes('{{client.full_name}}')),
+        )
+
+    def add_template_permission(self, scope):
+        self.role.permissions.add(self.permission_model.objects.get(
+            action='VIEW', resource='TEMPLATE', scope=scope))
+
+    def list_url(self):
+        return f'/api/deals/{self.deal.id}/available-templates/'
+
+    def generate_url(self, template=None):
+        template = template or self.template
+        return f'/api/deals/{self.deal.id}/generate-document/{template.id}/'
+
+    def test_typical_manager_role_prints_without_template_rights(self):
+        response = self.api.get(self.list_url())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['id'] for row in response.data], [self.template.id])
+
+        document = self.api.get(self.generate_url())
+        self.assertEqual(document.status_code, 200)
+        self.assertIn('Клиент', docx_text(document.content))
+
+    def test_template_right_with_own_scope_does_not_hide_the_template(self):
+        # Самый частый перекос настройки: менеджеру дали VIEW TEMPLATE/OWN,
+        # своих шаблонов у него нет — и список оказывался пустым
+        self.add_template_permission('OWN')
+
+        self.assertEqual([row['id'] for row in self.api.get(self.list_url()).data],
+                         [self.template.id])
+        self.assertEqual(self.api.get(self.generate_url()).status_code, 200)
+
+    def test_template_of_another_company_stays_hidden(self):
+        foreign = Template.objects.create(
+            name='Чужой договор', company=self.foreign,
+            file=SimpleUploadedFile('foreign.docx', docx_bytes('x')),
+        )
+
+        self.assertNotIn(foreign.id, [row['id'] for row in self.api.get(self.list_url()).data])
+        self.assertEqual(self.api.get(self.generate_url(foreign)).status_code, 404)
+
+    def test_system_wide_template_is_printable(self):
+        shared = Template.objects.create(
+            name='Общий договор', company=None,
+            file=SimpleUploadedFile('shared.docx', docx_bytes('{{client.full_name}}')),
+        )
+
+        self.assertIn(shared.id, [row['id'] for row in self.api.get(self.list_url()).data])
+        self.assertEqual(self.api.get(self.generate_url(shared)).status_code, 200)
+
+    def test_deal_of_another_manager_is_still_refused(self):
+        # Печать перестала требовать прав на шаблоны, но доступ к сделке
+        # по-прежнему обязателен
+        other = User.objects.create_user('manager-other', password='pass-for-tests')
+        other_profile, _ = UserProfile.objects.get_or_create(user=other)
+        other_profile.company = self.company
+        other_profile.save()
+        other_profile.roles.set([self.role])
+        self.api.force_authenticate(User.objects.get(pk=other.pk))
+
+        self.assertEqual(self.api.get(self.generate_url()).status_code, 403)
+
+    def test_manager_still_cannot_manage_the_reference_book(self):
+        self.assertEqual(self.api.get('/api/templates/').status_code, 403)
+        self.assertEqual(
+            self.api.delete(f'/api/templates/{self.template.id}/').status_code, 403)
+
+    def test_diagnostic_command_explains_access(self):
+        from django.core.management import call_command
+
+        Template.objects.create(
+            name='Чужой договор', company=self.foreign,
+            file=SimpleUploadedFile('foreign2.docx', docx_bytes('x')),
+        )
+        out = io.StringIO()
+        call_command('check_templates', 'manager-print', '--deal', str(self.deal.id), stdout=out)
+        report = out.getvalue()
+
+        self.assertIn('Инвестиционный договор', report)
+        self.assertIn('шаблон другой компании', report)
+        self.assertIn('Продажи', report)

@@ -14,6 +14,13 @@ export interface Template {
   applies_to_projects: number[];
   applies_to_buildings: number[];
   applies_to_property_types: string[];
+  /**
+   * Компания-владелец. Пусто — общесистемный шаблон, доступен всем
+   * компаниям. Шаблон чужой компании менеджеры не видят, а администратор
+   * видит все шаблоны сразу — без этого поля подмену не заметить
+   */
+  company: number | null;
+  company_name: string | null;
 }
 export const getAvailableTemplates = async (dealId: number): Promise<Template[]> => {
   const response = await apiClient.get(`/deals/${dealId}/available-templates/`);

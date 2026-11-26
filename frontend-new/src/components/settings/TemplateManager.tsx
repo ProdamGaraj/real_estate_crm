@@ -29,6 +29,13 @@ export default function TemplateManager() {
       field: 'kind', headerName: t('pages.templates.kind'), flex: 1,
       valueFormatter: (value: string) => t(`pages.templates.kind_${String(value).toLowerCase()}`, value),
     },
+    {
+      // Чей шаблон: администратор видит все шаблоны сразу, и без этой
+      // колонки не понять, что шаблон заведён в другой компании и
+      // менеджерам он недоступен
+      field: 'company_name', headerName: t('pages.templates.company'), flex: 1,
+      valueFormatter: (value: string | null) => value || t('pages.templates.company_shared'),
+    },
     { field: 'file', headerName: t('pages.templates.template_file'), flex: 1, renderCell: (params) => <MuiLink href={params.value} target="_blank" rel="noopener noreferrer">{t('common.download')}</MuiLink> },
     {
       field: 'actions',

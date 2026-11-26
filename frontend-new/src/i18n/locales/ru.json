@@ -1120,7 +1120,9 @@
       "property_types": "Типы недвижимости",
       "kind": "Вид шаблона",
       "kind_deal": "Договор по сделке",
-      "kind_booking": "Договор брони"
+      "kind_booking": "Договор брони",
+      "company": "Компания",
+      "company_shared": "Общий для всех компаний"
     },
     "payments": {
       "payment_number": "Платеж №{{id}}",
