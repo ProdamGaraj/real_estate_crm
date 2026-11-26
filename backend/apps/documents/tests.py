@@ -11,6 +11,7 @@ import shutil
 import tempfile
 from datetime import timedelta
 from decimal import Decimal
+from urllib.parse import unquote
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -310,3 +311,71 @@ class GenerateBookingDocumentTests(GenerateDocumentBase):
         response = self.api.get(self.booking_url())
         self.assertEqual(response.status_code, 400)
         self.assertIn('документы по ней больше не формируются', response.data['error'])
+
+
+@override_settings(
+    MEDIA_ROOT=MEDIA_ROOT,
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}},
+)
+class ProtectedMediaDownloadTests(TestCase):
+    """
+    Скачивание файла шаблона.
+
+    Имена файлов у нас кириллические. В продакшене файл отдаёт nginx по
+    заголовку X-Accel-Redirect, а Django не-ASCII заголовок кодирует в
+    MIME-вид (=?utf-8?b?..) — nginx такой URI не разбирает и отвечает 404.
+    Поэтому путь в заголовке обязан быть percent-encoded.
+    """
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(MEDIA_ROOT, ignore_errors=True)
+
+    def setUp(self):
+        self.company = Company.objects.create(name='Компания', code='MEDIA')
+        self.template = Template.objects.create(
+            name='Договор инвестиции', company=self.company,
+            file=SimpleUploadedFile(
+                'Шаблон-Договор-инвестиции-YANGI-JAHON.docx',
+                docx_bytes('{{client.full_name}}'),
+            ),
+        )
+
+    def media_url(self):
+        from real_estate_project.media_access import build_media_url
+
+        return build_media_url(self.template.file)
+
+    def test_link_from_api_is_signed(self):
+        self.assertIn('token=', self.media_url())
+
+    @override_settings(MEDIA_USE_ACCEL_REDIRECT=True)
+    def test_accel_redirect_path_is_percent_encoded(self):
+        response = self.client.get(self.media_url())
+
+        self.assertEqual(response.status_code, 200)
+        location = response['X-Accel-Redirect']
+        # Заголовок ушёл как есть, без MIME-обёртки
+        self.assertNotIn('=?utf-8?', location)
+        location.encode('ascii')
+        self.assertTrue(location.startswith('/protected-media/templates/'))
+        # nginx распакует %XX обратно в имя файла на диске
+        self.assertEqual(unquote(location), '/protected-media/' + self.template.file.name)
+        self.assertEqual(
+            response['Content-Type'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        )
+
+    @override_settings(MEDIA_USE_ACCEL_REDIRECT=False)
+    def test_file_is_served_directly_without_nginx(self):
+        response = self.client.get(self.media_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b''.join(response.streaming_content).startswith(b'PK'))
+
+    @override_settings(MEDIA_USE_ACCEL_REDIRECT=True)
+    def test_without_token_file_is_not_given_away(self):
+        response = self.client.get(self.template.file.url)
+
+        self.assertEqual(response.status_code, 403)

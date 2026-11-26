@@ -14,6 +14,7 @@
 import mimetypes
 import os
 import posixpath
+from urllib.parse import quote
 
 from django.conf import settings
 from django.core import signing
@@ -105,9 +106,12 @@ def serve_media(request, path: str):
 
     if settings.MEDIA_USE_ACCEL_REDIRECT:
         response = HttpResponse()
-        # nginx подставит файл сам из internal-локации
-        response['X-Accel-Redirect'] = posixpath.join(
-            settings.MEDIA_ACCEL_LOCATION, relative_path
+        # nginx подставит файл сам из internal-локации.
+        # Путь обязательно percent-encode: имена файлов у нас кириллические,
+        # а заголовок с не-ASCII Django отдаёт в MIME-кодировке (=?utf-8?b?..),
+        # nginx такой URI не разбирает и отвечает 404
+        response['X-Accel-Redirect'] = quote(
+            posixpath.join(settings.MEDIA_ACCEL_LOCATION, relative_path)
         )
         content_type, _ = mimetypes.guess_type(relative_path)
         response['Content-Type'] = content_type or 'application/octet-stream'
