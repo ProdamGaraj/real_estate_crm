@@ -319,3 +319,116 @@ class ImportPaymentPlansTests(TestCase):
 
         self.assertIn('Строк в файле: 1', report)
         self.assertIn('Сделок к обновлению: 1', report)
+
+    # --- поправка на латиницу и опечатки ---------------------------------
+
+    def test_latin_b_matches_cyrillic_building(self):
+        # В файле дом «В» набран латинской «B», в базе он кириллический.
+        # Номер договора уже совпал, значит это тот же объект
+        deal = self.deal('11', 'В-1,166', '360000000',
+                         [('360000000', date(2026, 2, 1), Payment.PaymentStatus.PENDING)])
+        path = self.file([plan(11, 'B-1,166', 360000000, 108000000, 14000000)])
+
+        report = self.run_import(path, '--apply')
+
+        self.assertIn('с поправкой на латиницу: 1', report)
+        self.assertNotIn('Пропущено строк', report)
+        self.assertEqual(len(self.amounts(deal)), 19)
+
+    def test_cyrillic_be_is_still_not_cyrillic_ve(self):
+        # «Б» и «В» — разные дома, их складывать нельзя ни при какой правке
+        self.deal('11', 'Б-1,166', '360000000',
+                  [('360000000', date(2026, 2, 1), Payment.PaymentStatus.PENDING)])
+        path = self.file([plan(11, 'В-1,166', 360000000, 108000000, 14000000)])
+
+        report = self.run_import(path, '--apply')
+
+        self.assertIn('Пропущено строк: 1', report)
+
+    def test_force_unit_lets_a_typo_through(self):
+        # В файле у договора 345 помещение Г-1,237, а в базе Г-2,237
+        deal = self.deal('345', 'Г-2,237', '360000000',
+                         [('360000000', date(2026, 2, 1), Payment.PaymentStatus.PENDING)])
+        path = self.file([plan(345, 'Г-1,237', 360000000, 108000000, 14000000)])
+
+        self.assertIn('Пропущено строк: 1', self.run_import(path))
+
+        report = self.run_import(path, '--force-unit', '345', '--apply')
+
+        self.assertIn('принято по --force-unit', report)
+        self.assertEqual(len(self.amounts(deal)), 19)
+
+    # --- взнос за бронь ---------------------------------------------------
+
+    def test_booking_fee_is_left_alone(self):
+        from apps.deals.models import Booking
+
+        deal = self.deal('5', 'А-1,01', '360000000')
+        booking = Booking.objects.create(
+            company=self.company, client=self.client_obj, property=deal.property,
+            duration_days=5, start_date=date(2026, 1, 1), end_date=date(2026, 1, 6),
+            price=Decimal('360000000'), currency='UZS',
+            status=Booking.BookingStatus.CONVERTED, deal=deal)
+        fee = Payment.objects.create(
+            deal=deal, booking=booking, client=self.client_obj, company=self.company,
+            amount=Decimal('12000000'), currency='UZS', due_date=date(2026, 1, 2),
+            method=Payment.PaymentMethod.CASHLESS, beneficiary_account=self.account,
+            status=Payment.PaymentStatus.PAID)
+        path = self.file([plan(5, 'А-1,01', 360000000, 108000000, 14000000)])
+
+        report = self.run_import(path, '--apply')
+
+        fee.refresh_from_db()
+        self.assertEqual(fee.amount, Decimal('12000000.00'))
+        self.assertEqual(fee.status, Payment.PaymentStatus.PAID)
+        self.assertIn('взносов за бронь оставлено без изменений: 1', report)
+        # Сам план оплаты лёг рядом целиком
+        plan_rows = deal.payments.filter(booking__isnull=True)
+        self.assertEqual(plan_rows.count(), 19)
+        self.assertEqual(sum(p.amount for p in plan_rows), Decimal('360000000.00'))
+
+    # --- предупреждение о деньгах ----------------------------------------
+
+    def test_report_shows_how_much_paid_money_changes(self):
+        self.deal('5', 'А-1,01', '360000000', [
+            ('5886475', date(2026, 2, 1), Payment.PaymentStatus.PAID),
+            ('354113525', date(2026, 3, 1), Payment.PaymentStatus.PENDING),
+        ])
+        path = self.file([plan(5, 'А-1,01', 360000000, 108000000, 14000000)])
+
+        report = self.run_import(path)
+
+        self.assertIn('Деньги, помеченные как полученные', report)
+        self.assertIn('5 886 475.00 UZS', report)
+        self.assertIn('108 000 000.00 UZS', report)
+        self.assertIn('+102 113 525.00 UZS', report)
+
+    def test_paid_row_in_the_middle_is_paired_with_its_own_position(self):
+        # Проведённым может быть не первый платёж: раньше отчёт сравнивал
+        # его с первой строкой нового графика
+        self.deal('5', 'А-1,01', '360000000', [
+            ('108000000', date(2026, 2, 1), Payment.PaymentStatus.PENDING),
+            ('5000000', date(2026, 3, 1), Payment.PaymentStatus.PAID),
+            ('246999000', date(2026, 4, 1), Payment.PaymentStatus.PENDING),
+        ])
+        path = self.file([plan(5, 'А-1,01', 360000000, 108000000, 14000000)])
+
+        report = self.run_import(path)
+
+        self.assertIn('5000000.00 от 2026-03-01', report)
+        self.assertIn('-> 14000000.00 от 2026-03-01', report)
+
+    def test_price_ratio_summary_groups_systematic_changes(self):
+        for number, unit in (('5', 'А-1,01'), ('6', 'А-1,02'), ('7', 'А-1,03')):
+            self.deal(number, unit, '353188500',
+                      [('353188500', date(2026, 2, 1), Payment.PaymentStatus.PENDING)])
+        path = self.file([
+            plan(5, 'А-1,01', 360000000, 108000000, 14000000),
+            plan(6, 'А-1,02', 360000000, 108000000, 14000000),
+            plan(7, 'А-1,03', 360000000, 108000000, 14000000),
+        ])
+
+        report = self.run_import(path)
+
+        self.assertIn('отношение «цена в базе / цена в файле»', report)
+        self.assertIn('0.9811 — 3 договоров', report)

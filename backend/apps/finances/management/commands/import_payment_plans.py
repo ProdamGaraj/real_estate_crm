@@ -26,6 +26,7 @@
     python manage.py import_payment_plans "Shartnomalar JB.xlsx" --company JB --apply
 """
 
+import collections
 import io
 import json
 from decimal import Decimal, InvalidOperation
@@ -72,6 +73,20 @@ def money(value):
 
 def text(value):
     return str(value).strip() if value is not None else ''
+
+
+# Латинские буквы, неотличимые на вид от кириллических. В файле заказчика
+# дом «В» набран латинской «B» — в базе он кириллический. Буквы домов идут
+# А, Б, В, Г, Д, и латинской «B» там быть не может
+LOOKALIKES = str.maketrans({
+    'A': 'А', 'B': 'В', 'C': 'С', 'E': 'Е', 'H': 'Н', 'K': 'К', 'M': 'М',
+    'O': 'О', 'P': 'Р', 'T': 'Т', 'X': 'Х', 'Y': 'У',
+})
+
+
+def fold(value):
+    """Номер помещения без разницы между латиницей и кириллицей."""
+    return text(value).upper().translate(LOOKALIKES)
 
 
 def add_months(anchor, count):
@@ -139,6 +154,9 @@ class Command(BaseCommand):
                             help='Название типа платежа для новых строк графика')
         parser.add_argument('--limit', type=int, default=0,
                             help='Обработать только первые N строк файла — для пробы')
+        parser.add_argument('--force-unit', default='',
+                            help='Номера договоров через запятую, для которых расхождение '
+                                 'в номере помещения допустимо (опечатка в файле)')
 
     # --- подготовка -----------------------------------------------------
 
@@ -163,6 +181,12 @@ class Command(BaseCommand):
         self.skipped = []
         self.planned = []
         self.settled_touched = []
+        self.relettered = []
+        self.forced = []
+        self.booking_fees = []
+        self.forced_units = {
+            value.strip() for value in options['force_unit'].split(',') if value.strip()
+        }
 
         for row in rows:
             self._prepare(row, company)
@@ -215,25 +239,41 @@ class Command(BaseCommand):
         deal = matches[0]
         unit = text(deal.property.unit_number) if deal.property_id else ''
         if unit != row.unit_number:
-            return self.skipped.append(
-                (row, f'объект сделки — {unit or "не указан"}, а в файле {row.unit_number}'))
+            if unit and fold(unit) == fold(row.unit_number):
+                # Отличие только в латинице: номер договора уже совпал,
+                # значит это тот же объект, записанный другой раскладкой
+                self.relettered.append((row, deal, unit))
+            elif row.contract_number in self.forced_units:
+                self.forced.append((row, deal, unit))
+            else:
+                return self.skipped.append(
+                    (row, f'объект сделки — {unit or "не указан"}, а в файле {row.unit_number}'))
 
         if deal.currency != Payment.Currency.UZS:
             return self.skipped.append((row, f'сделка в валюте {deal.currency}, а файл в сумах'))
 
         existing = list(deal.payments.order_by('due_date', 'id'))
-        dates = self._dates(row, deal, existing)
+        # Взнос за бронь остаётся на месте и в план оплаты не входит
+        dates = self._dates(row, deal, [p for p in existing if not p.booking_id])
         if dates is None:
             return self.skipped.append(
                 (row, 'нет ни одного платежа и не указана дата договора — не от чего считать сроки'))
 
         amounts = row.balanced_amounts(row.total)
-        settled = [p for p in existing[:len(amounts)] if p.status in SETTLED_STATUSES]
-        for payment, amount, due_date in zip(settled, amounts, dates):
-            if payment.amount != amount or payment.due_date != due_date:
-                self.settled_touched.append((deal, payment, amount, due_date))
-        for payment in existing[len(amounts):]:
-            if payment.status in SETTLED_STATUSES:
+        # Пары «строка графика — что в неё встанет» берём по позиции:
+        # проведённый платёж может стоять не первым
+        for index, payment in enumerate(existing):
+            if payment.booking_id:
+                # Взнос за бронь — платёж брони, а не строка плана оплаты.
+                # Переписать его суммой из файла значит испортить и бронь
+                self.booking_fees.append((deal, payment))
+                continue
+            if payment.status not in SETTLED_STATUSES:
+                continue
+            if index < len(amounts):
+                if payment.amount != amounts[index] or payment.due_date != dates[index]:
+                    self.settled_touched.append((deal, payment, amounts[index], dates[index]))
+            else:
                 self.settled_touched.append((deal, payment, None, None))
 
         self.planned.append({
@@ -312,9 +352,10 @@ class Command(BaseCommand):
                         f'{deal.contract_price} {deal.currency} по файлу заказчика.'))
 
                 defaults = self._defaults(deal, existing, payment_type)
+                writable = [p for p in existing if not p.booking_id]
                 for index, (amount, due_date) in enumerate(zip(amounts, dates)):
-                    if index < len(existing):
-                        payment = existing[index]
+                    if index < len(writable):
+                        payment = writable[index]
                         payment.amount = amount
                         payment.due_date = due_date
                         if payment.status not in SETTLED_STATUSES:
@@ -334,14 +375,8 @@ class Command(BaseCommand):
                             status=resolve_unpaid_status(due_date), **defaults)
                         created += 1
 
-                for payment in existing[len(amounts):]:
-                    if payment.booking_id:
-                        # Взнос за бронь — отдельный платёж брони, он лишь
-                        # выходит из графика сделки
-                        payment.deal = None
-                        payment.save(update_fields=['deal', 'updated_at'])
-                    else:
-                        payment.delete()
+                for payment in writable[len(amounts):]:
+                    payment.delete()
                     removed += 1
 
                 DealLog.objects.create(deal=deal, user=None, action=(
@@ -371,11 +406,68 @@ class Command(BaseCommand):
 
     # --- отчёт ----------------------------------------------------------
 
+    def _report_money(self):
+        """Сколько денег числится полученными сейчас и будет числиться после."""
+        was = sum((payment.amount for _, payment, _, _ in self.settled_touched), Decimal(0))
+        becomes = sum((amount for _, _, amount, _ in self.settled_touched
+                       if amount is not None), Decimal(0))
+        if not self.settled_touched:
+            return
+        self.stdout.write('')
+        self.stdout.write(self.style.WARNING('Деньги, помеченные как полученные:'))
+        self.stdout.write(f'  сейчас по этим строкам: {was:,.2f} UZS'.replace(',', ' '))
+        self.stdout.write(f'  станет после замены:    {becomes:,.2f} UZS'.replace(',', ' '))
+        self.stdout.write(self.style.WARNING(
+            f'  разница:                {becomes - was:+,.2f} UZS'.replace(',', ' ')))
+
+    def _report_price_ratios(self, price_changes):
+        """
+        Во сколько раз стоимость в базе отличается от файла.
+
+        Одинаковое отношение у многих договоров значит, что в базе цена
+        получена из файла по общему правилу — например, применённой скидкой.
+        Такую правку стоит подтвердить у заказчика отдельно.
+        """
+        if not price_changes:
+            return
+        ratios = collections.Counter()
+        for plan in price_changes:
+            old_price = plan['deal'].contract_price
+            if not old_price:
+                ratios['стоимость не была указана'] += 1
+                continue
+            ratios[(old_price / plan['row'].total).quantize(Decimal('0.0001'))] += 1
+        self.stdout.write('  отношение «цена в базе / цена в файле»:')
+        for ratio, count in ratios.most_common(8):
+            self.stdout.write(f'    {ratio} — {count} договоров')
+
     def _report(self, backup_path):
         self.stdout.write('')
         self.stdout.write(f'Сделок к обновлению: {len(self.planned)}')
+        if self.relettered:
+            self.stdout.write(
+                f'  из них сопоставлено с поправкой на латиницу: {len(self.relettered)}')
+            for row, deal, unit in self.relettered[:5]:
+                self.stdout.write(f'    {row.contract_number}: в файле {row.unit_number}, '
+                                  f'в базе {unit} — тот же объект')
+            if len(self.relettered) > 5:
+                self.stdout.write(f'    … ещё {len(self.relettered) - 5}')
+        if self.forced:
+            self.stdout.write(self.style.WARNING(
+                f'  принято по --force-unit, несмотря на разные помещения: {len(self.forced)}'))
+            for row, deal, unit in self.forced:
+                self.stdout.write(f'    {row.contract_number}: в файле {row.unit_number}, '
+                                  f'в базе {unit}')
+        if self.booking_fees:
+            self.stdout.write(f'  взносов за бронь оставлено без изменений: '
+                              f'{len(self.booking_fees)}')
+
+        self._report_money()
+
         price_changes = [p for p in self.planned if p['price_changed']]
-        self.stdout.write(f'  из них со сменой стоимости по договору: {len(price_changes)}')
+        self.stdout.write('')
+        self.stdout.write(f'Сделок со сменой стоимости по договору: {len(price_changes)}')
+        self._report_price_ratios(price_changes)
         for plan in price_changes[:20]:
             self.stdout.write(
                 f"    {plan['deal'].contract_number} ({plan['row'].unit_number}): "
@@ -389,6 +481,9 @@ class Command(BaseCommand):
             self.stdout.write('')
             self.stdout.write(self.style.WARNING(
                 f'Затронуты платежи, по которым прошли деньги: {len(self.settled_touched)}'))
+            self.stdout.write(self.style.WARNING(
+                '  Отметка «Оплачен» сохраняется, а сумма берётся из файла: '
+                'в отчётах эти деньги будут считаться полученными.'))
             for deal, payment, amount, due_date in self.settled_touched[:30]:
                 if amount is None:
                     self.stdout.write(
