@@ -1279,7 +1279,9 @@
     "booking_currency": "Currency of the booked price",
     "booking_fee": "Booking fee amount",
     "booking_fee_words": "Booking fee in words",
-    "booking_fee_due": "Booking fee due date"
+    "booking_fee_due": "Booking fee due date",
+    "deal_price_per_sqm": "Contract price per m² (price ÷ area)",
+    "deal_purchase_purpose": "Purchase purpose from the deal card"
   },
   "statuses": {
     "client": {

@@ -1451,7 +1451,9 @@
     "booking_currency": "Валюта цены по брони",
     "booking_fee": "Сумма взноса за бронь",
     "booking_fee_words": "Сумма взноса прописью",
-    "booking_fee_due": "Срок оплаты взноса"
+    "booking_fee_due": "Срок оплаты взноса",
+    "deal_price_per_sqm": "Цена 1 м² по договору (стоимость ÷ площадь)",
+    "deal_purchase_purpose": "Цель приобретения из карточки сделки"
   },
   "forms": {
     "full_name": "ФИО",

@@ -39,6 +39,8 @@ export default function TemplateTagsCheatSheet() {
       { tag: '{{deal.contract_price|money}}', desc: t('template_tags.deal_contract_price') },
       { tag: '{{deal.contract_price|amount_words}}', desc: t('template_tags.deal_price_words') },
       { tag: '{{deal.initial_price|money}}', desc: t('template_tags.deal_initial_price') },
+      { tag: '{{deal.contract_price_per_sqm|money}}', desc: t('template_tags.deal_price_per_sqm') },
+      { tag: '{{deal.purchase_purpose.name}}', desc: t('template_tags.deal_purchase_purpose') },
       { tag: '{{deal.currency}}', desc: t('template_tags.deal_currency') },
       { tag: '{{deal.payment_plan.name}}', desc: t('template_tags.deal_payment_plan') },
       { tag: '{{first_payment.amount|money}}', desc: t('template_tags.first_payment') },

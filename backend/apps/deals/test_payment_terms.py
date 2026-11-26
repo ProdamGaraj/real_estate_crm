@@ -97,3 +97,33 @@ class PaymentTermsTests(TestCase):
         terms = self.terms(self.deal())
         self.assertEqual(terms['scheduled_payments'], 0)
         self.assertIsNone(terms['matches_plan'])
+
+
+class ContractPricePerSqmTests(PaymentTermsTests):
+    """
+    Цена 1 м² по договору — для договора инвестиции: в нём есть и сумма,
+    и цена за метр, и они обязаны сходиться. Поэтому метр считается от
+    стоимости по договору, а не от цены по прайсу: после скидки они расходятся.
+    """
+
+    def test_counts_from_contract_price_not_from_price_list(self):
+        deal = self.deal(price=Decimal('240000000'))
+        # Договорились со скидкой: цена метра должна считаться от неё
+        deal.contract_price = Decimal('228000000')
+        deal.save(update_fields=['contract_price'])
+        self.assertEqual(deal.contract_price_per_sqm, Decimal('5700000.00'))
+
+    def test_rounds_to_kopecks(self):
+        deal = self.deal(price=Decimal('240000000'))
+        deal.contract_price = Decimal('100000000')
+        deal.property.area = Decimal('27.00')
+        deal.property.save(update_fields=['area'])
+        deal.save(update_fields=['contract_price'])
+        self.assertEqual(deal.contract_price_per_sqm, Decimal('3703703.70'))
+
+    def test_empty_until_price_and_area_are_known(self):
+        deal = self.deal()
+        deal.contract_price = None
+        deal.save(update_fields=['contract_price'])
+        # В шаблоне договора такое поле печатается пустым, а не ошибкой
+        self.assertIsNone(deal.contract_price_per_sqm)

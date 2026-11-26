@@ -1653,7 +1653,9 @@
     "booking_currency": "Bron narxi valyutasi",
     "booking_fee": "Bron badali summasi",
     "booking_fee_words": "Badal summasi so&lsquo;z bilan",
-    "booking_fee_due": "Badal to&lsquo;lov muddati"
+    "booking_fee_due": "Badal to&lsquo;lov muddati",
+    "deal_price_per_sqm": "Shartnoma bo&lsquo;yicha 1 m² narxi (summa ÷ maydon)",
+    "deal_purchase_purpose": "Bitim kartochkasidagi sotib olish maqsadi"
   },
   "months": {
     "1": "Yanvar",
