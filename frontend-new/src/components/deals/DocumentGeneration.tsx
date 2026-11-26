@@ -16,7 +16,7 @@ interface DocumentGenerationProps {
 export default function DocumentGeneration({ deal }: DocumentGenerationProps) {
   const { t } = useTranslation();
 
-  const { data: templates, isLoading } = useQuery({
+  const { data: templates, isLoading, isError, error } = useQuery({
     queryKey: ['availableTemplates', deal.id],
     queryFn: () => getAvailableTemplates(deal.id),
   });
@@ -50,6 +50,13 @@ export default function DocumentGeneration({ deal }: DocumentGenerationProps) {
   };
 
   if (isLoading) return <CircularProgress />;
+
+  // Отказ в доступе выглядел так же, как пустой список: и там и там
+  // показывалось «нет подходящих шаблонов», и причину приходилось искать
+  // в логах сервера
+  if (isError) {
+    return <Alert severity="error">{extractApiError(error, t('documents.templates_failed'))}</Alert>;
+  }
 
   if (!templates || templates.length === 0) {
     return <Alert severity="info">{t('documents.no_templates')}</Alert>;

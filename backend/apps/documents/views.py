@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.db.models import Q
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from docxtpl import DocxTemplate
@@ -48,7 +48,9 @@ class TemplateListCreateView(generics.ListCreateAPIView):
 class TemplateDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TemplateSerializer
     permission_classes = [IsAuthenticated, TemplatePermission]
-    parser_classes = [MultiPartParser]
+    # JSON нужен, чтобы снять область применения: пустой список в
+    # multipart не передать, а именно он возвращает шаблон «во все сделки»
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_queryset(self):
         # Общесистемный шаблон можно открыть, но менять и удалять —
@@ -77,12 +79,21 @@ def printable_templates(user):
 
     Право TEMPLATE управляет справочником шаблонов в настройках, а не
     печатью: менеджеру шаблоны заводит администратор, своих у менеджера
-    нет. Пока список фильтровался по области права, менеджер с правом
-    TEMPLATE/OWN видел пустой список и получал 404 «Шаблон не найден или
-    недоступен», а без права TEMPLATE — 403. Доступ к самому документу
-    по-прежнему решает право на сделку или бронь.
+    нет. Пока список фильтровался только по области права, менеджер с
+    правом TEMPLATE/OWN видел пустой список и получал 404 «Шаблон не
+    найден или недоступен», а без права TEMPLATE — 403. Доступ к самому
+    документу по-прежнему решает право на сделку или бронь.
+
+    Берём объединение двух правил, чтобы никто не потерял доступ:
+    шаблоны своей компании и общие — плюс то, что открывает область
+    права TEMPLATE. У роли «Администратор компании» это право выдано с
+    областью «Вся система», и по ней видны шаблоны всех компаний.
     """
-    return scope_reference_queryset(user, Template.objects.all())
+    all_templates = Template.objects.all()
+    return all_templates.filter(
+        Q(pk__in=scope_reference_queryset(user, all_templates).values('pk'))
+        | Q(pk__in=with_shared_records(user, all_templates, 'TEMPLATE').values('pk'))
+    )
 
 
 def templates_for_property(user, prop, kind):

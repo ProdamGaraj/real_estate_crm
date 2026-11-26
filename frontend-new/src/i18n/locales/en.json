@@ -1121,8 +1121,9 @@
       "kind": "Template kind",
       "kind_deal": "Deal contract",
       "kind_booking": "Booking contract",
-      "company": "Company",
-      "company_shared": "Shared with every company"
+      "edit_template": "Edit template",
+      "file_optional": "Leave empty to keep the current file.",
+      "scope_hint": "An empty scope means the template is available everywhere. As soon as a project, building or property type is selected, the template only shows up for matching deals and bookings."
     },
     "payments": {
       "actually_paid": "Actually paid",
@@ -1186,7 +1187,8 @@
     "no_templates": "No templates available for this deal. Check template settings.",
     "generate": "Generate",
     "generation_failed": "Failed to generate document.",
-    "no_booking_templates": "No booking contract templates. Add a template with the \"Booking contract\" kind in settings."
+    "no_booking_templates": "No booking contract templates. Add a template with the \"Booking contract\" kind in settings.",
+    "templates_failed": "Could not load the list of templates."
   },
   "files": {
     "file": "File",

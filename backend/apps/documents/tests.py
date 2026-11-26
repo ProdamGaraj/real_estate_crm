@@ -520,3 +520,146 @@ class ManagerPrintsContractTests(TestCase):
         self.assertIn('Инвестиционный договор', report)
         self.assertIn('шаблон другой компании', report)
         self.assertIn('Продажи', report)
+
+    def test_system_scope_right_still_opens_other_companies(self):
+        # У роли «Администратор компании» право на шаблоны выдано с областью
+        # «Вся система»: по ней видны шаблоны всех компаний. Фильтрация
+        # только по компании отобрала бы этот доступ
+        foreign = Template.objects.create(
+            name='Шаблон другой компании', company=self.foreign,
+            file=SimpleUploadedFile('sys.docx', docx_bytes('{{client.full_name}}')),
+        )
+        self.add_template_permission('SYSTEM')
+
+        self.assertIn(foreign.id, [row['id'] for row in self.api.get(self.list_url()).data])
+        self.assertEqual(self.api.get(self.generate_url(foreign)).status_code, 200)
+
+
+@override_settings(
+    MEDIA_ROOT=MEDIA_ROOT,
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}},
+)
+class EditTemplateTests(TestCase):
+    """
+    Правка заведённого шаблона.
+
+    Шаблон можно было только создать и удалить. Если при создании по ошибке
+    выбрали тип недвижимости или дом, шаблон переставал показываться в
+    сделках, и исправить это было нечем — в карточке сделки оставалось
+    «Для этой сделки нет подходящих шаблонов».
+    """
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(MEDIA_ROOT, ignore_errors=True)
+
+    def setUp(self):
+        self.company = Company.objects.create(name='Продажи', code='EDIT')
+        self.other = Company.objects.create(name='Вторая', code='EDIT2')
+        self.user = User.objects.create_superuser('admin-edit', 'a@e.com', 'pass-for-tests')
+        profile, _ = UserProfile.objects.get_or_create(user=self.user)
+        profile.company = self.company
+        profile.is_system_admin = True
+        profile.save()
+        self.api = APIClient()
+        self.api.force_authenticate(self.user)
+
+        project = Project.objects.create(name='ЖК', address='Ташкент', company=self.company)
+        self.building = Building.objects.create(project=project, name='1', floors_count=9)
+        other_building = Building.objects.create(project=project, name='2', floors_count=9)
+        self.prop = Property.objects.create(
+            building=self.building, property_type='COMMERCIAL', unit_number='1', floor=1,
+            area=Decimal('50.00'), price=Decimal('100000000'),
+        )
+        client = Client.objects.create(full_name='Клиент', company=self.company)
+        self.deal = Deal.objects.create(
+            company=self.company, client=client, property=self.prop,
+            initial_price=Decimal('100000000'), initial_price_per_sqm=Decimal('2000000'),
+            contract_number='Д-1', contract_date=timezone.now().date(), created_by=self.user,
+        )
+        # Шаблон, спрятанный неверной областью применения: чужой дом и
+        # тип недвижимости, которого у объекта нет
+        self.template = Template.objects.create(
+            name='Инвестиционный договор', company=self.company,
+            file=SimpleUploadedFile('tpl.docx', docx_bytes('{{client.full_name}}')),
+            applies_to_property_types=['APARTMENT'],
+        )
+        self.template.applies_to_buildings.set([other_building])
+
+    def available(self):
+        return [row['id'] for row in
+                self.api.get(f'/api/deals/{self.deal.id}/available-templates/').data]
+
+    def test_wrong_scope_hides_the_template(self):
+        self.assertEqual(self.available(), [])
+
+    def test_clearing_the_scope_brings_the_template_back(self):
+        response = self.api.patch(
+            f'/api/templates/{self.template.id}/',
+            {
+                'name': 'Инвестиционный договор',
+                'kind': 'DEAL',
+                'applies_to_projects': [],
+                'applies_to_buildings': [],
+                'applies_to_property_types': [],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.template.refresh_from_db()
+        self.assertEqual(list(self.template.applies_to_buildings.all()), [])
+        self.assertEqual(self.template.applies_to_property_types, [])
+        self.assertEqual(self.available(), [self.template.id])
+
+    def test_scope_can_be_narrowed_to_the_right_building(self):
+        response = self.api.patch(
+            f'/api/templates/{self.template.id}/',
+            {
+                'applies_to_buildings': [self.building.id],
+                'applies_to_property_types': ['COMMERCIAL'],
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(self.available(), [self.template.id])
+
+    def test_kind_can_be_corrected(self):
+        response = self.api.patch(
+            f'/api/templates/{self.template.id}/', {'kind': 'BOOKING'}, format='json')
+
+        self.assertEqual(response.status_code, 200)
+        self.template.refresh_from_db()
+        self.assertEqual(self.template.kind, Template.Kind.BOOKING)
+
+    def test_admin_moves_the_template_between_companies(self):
+        moved = self.api.patch(
+            f'/api/templates/{self.template.id}/', {'company': self.other.id}, format='json')
+        self.assertEqual(moved.status_code, 200)
+        self.template.refresh_from_db()
+        self.assertEqual(self.template.company, self.other)
+
+        shared = self.api.patch(
+            f'/api/templates/{self.template.id}/', {'company': None}, format='json')
+        self.assertEqual(shared.status_code, 200)
+        self.template.refresh_from_db()
+        self.assertIsNone(self.template.company)
+        self.assertIsNone(shared.data['company_name'])
+
+    def test_file_can_be_replaced_without_touching_the_scope(self):
+        self.template.applies_to_property_types = []
+        self.template.save()
+        self.template.applies_to_buildings.set([self.building])
+
+        response = self.api.patch(
+            f'/api/templates/{self.template.id}/',
+            {'file': SimpleUploadedFile('new.docx', docx_bytes('{{deal.contract_number}}'))},
+            format='multipart',
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.template.refresh_from_db()
+        self.assertIn('new', self.template.file.name)
+        self.assertEqual(list(self.template.applies_to_buildings.all()), [self.building])

@@ -1121,8 +1121,9 @@
       "kind": "Shablon turi",
       "kind_deal": "Bitim shartnomasi",
       "kind_booking": "Bron shartnomasi",
-      "company": "Kompaniya",
-      "company_shared": "Barcha kompaniyalar uchun umumiy"
+      "edit_template": "Shablonni tahrirlash",
+      "file_optional": "Avvalgi fayl qolishi uchun bo'sh qoldiring.",
+      "scope_hint": "Qo'llanish doirasi bo'sh bo'lsa, shablon hamma joyda ochiq. Loyiha, bino yoki ko'chmas mulk turi tanlangan zahoti shablon faqat mos bitim va bronlarda ko'rinadi."
     },
     "payments": {
       "actually_paid": "Haqiqatda to'langan",
@@ -1186,7 +1187,8 @@
     "no_templates": "Bu bitim uchun mos shablonlar yo'q. Shablon sozlamalarini tekshiring.",
     "generate": "Yaratish",
     "generation_failed": "Hujjatni yaratishda xatolik.",
-    "no_booking_templates": "Bron shartnomasi shablonlari yo'q. Sozlamalarda «Bron shartnomasi» turidagi shablon qo'shing."
+    "no_booking_templates": "Bron shartnomasi shablonlari yo'q. Sozlamalarda «Bron shartnomasi» turidagi shablon qo'shing.",
+    "templates_failed": "Shablonlar ro'yxatini yuklab bo'lmadi."
   },
   "files": {
     "file": "Fayl",

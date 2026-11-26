@@ -24,7 +24,7 @@ interface Props {
 export default function BookingDocumentGeneration({ bookingId, disabled }: Props) {
   const { t } = useTranslation();
 
-  const { data: templates, isLoading } = useQuery({
+  const { data: templates, isLoading, isError, error } = useQuery({
     queryKey: ['bookingTemplates', bookingId],
     queryFn: () => getBookingTemplates(bookingId),
   });
@@ -58,6 +58,10 @@ export default function BookingDocumentGeneration({ bookingId, disabled }: Props
   };
 
   if (isLoading) return <CircularProgress size={24} />;
+  // Отказ в доступе выглядел так же, как пустой список
+  if (isError) {
+    return <Alert severity="error">{extractApiError(error, t('documents.templates_failed'))}</Alert>;
+  }
   if (!templates || templates.length === 0) {
     return <Alert severity="info">{t('documents.no_booking_templates')}</Alert>;
   }

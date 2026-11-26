@@ -44,6 +44,43 @@ export const createTemplate = async (formData: FormData): Promise<Template> => {
   return response.data;
 };
 
+export interface TemplateUpdatePayload {
+  name: string;
+  kind: 'DEAL' | 'BOOKING';
+  applies_to_projects: number[];
+  applies_to_buildings: number[];
+  applies_to_property_types: string[];
+  /** Только для системного администратора: null — общий для всех компаний */
+  company?: number | null;
+}
+
+/**
+ * Правка шаблона: название, вид, область применения, компания.
+ *
+ * Отправляется JSON-ом, а не формой: снять область применения можно только
+ * пустым списком, а в multipart пустой список не передать. Раньше шаблон
+ * можно было лишь завести и удалить — по ошибке выбранный тип недвижимости
+ * прятал шаблон во всех сделках, и исправить это было нечем.
+ */
+export const updateTemplate = async (
+  { id, payload }: { id: number; payload: TemplateUpdatePayload },
+): Promise<Template> => {
+  const response = await apiClient.patch(`/templates/${id}/`, payload);
+  return response.data;
+};
+
+/** Замена самого .docx у существующего шаблона */
+export const updateTemplateFile = async (
+  { id, file }: { id: number; file: File },
+): Promise<Template> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await apiClient.patch(`/templates/${id}/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
 export const deleteTemplate = async (id: number): Promise<void> => {
   await apiClient.delete(`/templates/${id}/`);
 };
